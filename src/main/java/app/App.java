@@ -1,13 +1,14 @@
 package app;
 
 import listeners.MessageListener;
+import log.DiscordLogger;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Activity;
 import net.dv8tion.jda.api.sharding.DefaultShardManagerBuilder;
 import net.dv8tion.jda.api.sharding.ShardManager;
 import net.dv8tion.jda.api.utils.SessionController;
 import net.dv8tion.jda.api.utils.SessionControllerAdapter;
-import utils.Logger;
+import log.Logger;
 
 import javax.security.auth.login.LoginException;
 import java.io.IOException;
@@ -53,7 +54,7 @@ public class App implements Runnable, Bot {
     public App() throws IOException, ParseException, LoginException {
         this.properties = new Properties();
 
-        this.logger = new Logger(this.properties.logTimeZone);
+        this.logger = new DiscordLogger(this.properties.logTimeZone);
         this.isConnected = new boolean[this.properties.shards];
 
         DefaultShardManagerBuilder builder = new DefaultShardManagerBuilder();

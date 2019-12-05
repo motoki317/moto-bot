@@ -1,7 +1,7 @@
 package app;
 
 import net.dv8tion.jda.api.sharding.ShardManager;
-import utils.Logger;
+import log.Logger;
 
 public interface Bot {
     ShardManager getManager();

@@ -73,7 +73,14 @@ public class MessageListener extends ListenerAdapter {
                     return;
                 }
 
-                this.bot.getLogger().log(event, false);
+                // Log and check spam
+                boolean isSpam = this.bot.getLogger().logEvent(event);
+                if (isSpam) {
+                    String message = "You are requesting commands too quickly! Please wait at least 1 second between each commands.";
+                    event.getChannel().sendMessage(message).queue();
+                    return;
+                }
+
                 command.process(event, args);
                 return;
             }
