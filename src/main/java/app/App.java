@@ -10,73 +10,66 @@ import net.dv8tion.jda.api.utils.SessionControllerAdapter;
 import utils.Logger;
 
 import javax.security.auth.login.LoginException;
-import java.util.Arrays;
+import java.io.IOException;
+import java.text.ParseException;
 
-public class App implements Runnable {
-    public static ShardManager MANAGER;
+public class App implements Runnable, Bot {
+    private final ShardManager manager;
 
-    public static Properties BOT_PROPERTIES;
+    private final Properties properties;
 
-    private static boolean[] isConnected;
+    private final Logger logger;
 
-    public static boolean isConnected(int shardId) {
-        return isConnected[shardId];
+    private boolean[] isConnected;
+
+    @Override
+    public ShardManager getManager() {
+        return this.manager;
     }
 
-    public static boolean isAllConnected() {
-        for (boolean shardConnected : isConnected) {
+    @Override
+    public Properties getProperties() {
+        return this.properties;
+    }
+
+    @Override
+    public Logger getLogger() {
+        return this.logger;
+    }
+
+    @Override
+    public boolean isConnected(int shardId) {
+        return this.isConnected[shardId];
+    }
+
+    @Override
+    public boolean isAllConnected() {
+        for (boolean shardConnected : this.isConnected) {
             if (!shardConnected) return false;
         }
         return true;
     }
 
-    public static void setAllConnected(boolean newState) {
-        Arrays.fill(isConnected, newState);
-    }
+    public App() throws IOException, ParseException, LoginException {
+        this.properties = new Properties();
 
-    static {
-        try {
-            BOT_PROPERTIES = new Properties();
-        } catch (Exception e) {
-            e.printStackTrace();
-            System.exit(1);
-        }
+        this.logger = new Logger(this.properties.logTimeZone);
+        this.isConnected = new boolean[this.properties.shards];
 
-        isConnected = new boolean[BOT_PROPERTIES.shards];
-    }
-
-    public App() {
-        this.init();
-        this.addEventListeners();
-
-        MANAGER.setActivity(Activity.playing("Bot load complete!"));
-        Logger.log(-1, "Bot load complete!");
-    }
-
-    public void run() {
-        // Run Heartbeat, etc.
-    }
-
-    private void init() {
         DefaultShardManagerBuilder builder = new DefaultShardManagerBuilder();
         SessionController sessionController = new SessionControllerAdapter();
 
-        builder.setToken(BOT_PROPERTIES.botAccessToken);
+        builder.setToken(this.properties.botAccessToken);
         builder.setSessionController(sessionController);
-        int shardsTotal = BOT_PROPERTIES.shards;
+        int shardsTotal = this.properties.shards;
         builder.setShardsTotal(shardsTotal);
         builder.setShards(0, shardsTotal - 1);
 
-        try {
-            MANAGER = builder.build();
-        } catch (LoginException e) {
-            e.printStackTrace();
-            System.exit(1);
-        }
-        MANAGER.setActivity(Activity.playing("Bot restarting..."));
+        this.manager = builder.build();
+        manager.setActivity(Activity.playing("Bot restarting..."));
 
         for (int i = 0; i < shardsTotal; i++) {
-            while (MANAGER.getStatus(i) != JDA.Status.CONNECTED) {
+            while (manager.getStatus(i) != JDA.Status.CONNECTED) {
                 try {
                     Thread.sleep(50);
                 } catch (InterruptedException e) {
@@ -84,13 +77,22 @@ public class App implements Runnable {
                 }
             }
             isConnected[i] = true;
-            Logger.log(-1, "JDA Sharding: Shard ID " + i + " is loaded!");
+            this.logger.log(-1, "JDA Sharding: Shard ID " + i + " is loaded!");
         }
-        Logger.log(-1, "JDA Sharding: All shards loaded!");
+        this.logger.log(-1, "JDA Sharding: All shards loaded!");
+
+        this.addEventListeners();
+
+        this.manager.setActivity(Activity.playing("Bot load complete!"));
+        this.logger.log(-1, "Bot load complete!");
+    }
+
+    public void run() {
+        // Run Heartbeat, etc.
     }
 
     private void addEventListeners() {
-        MANAGER.addEventListener(new MessageListener());
-        Logger.log(-1, "Added event listeners.");
+        manager.addEventListener(new MessageListener(this));
+        this.logger.log(-1, "Added event listeners.");
     }
 }

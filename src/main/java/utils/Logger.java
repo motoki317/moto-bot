@@ -1,24 +1,24 @@
 package utils;
 
-import app.App;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.TimeZone;
 
 public class Logger {
-    private static final DateFormat logFormat;
+    private final DateFormat logFormat;
 
-    static {
-        logFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss.SSS");
-        logFormat.setTimeZone(App.BOT_PROPERTIES.logTimeZone);
+    public Logger(TimeZone logTimeZone) {
+        this.logFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss.SSS");
+        this.logFormat.setTimeZone(logTimeZone);
     }
 
-    public static void log(int botLogCh, CharSequence message) {
+    public void log(int botLogCh, CharSequence message) {
         Date now = new Date();
-        String msg = logFormat.format(now) + " " + message;
+        String msg = this.logFormat.format(now) + " " + message;
 
         System.out.println(msg);
 
@@ -29,9 +29,9 @@ public class Logger {
      * Logs message received event to bot-log-4.
      * @param event Guild message received event.
      */
-    public static void log(MessageReceivedEvent event, boolean isSpam) {
-        String logMsg = createCommandLog(event, isSpam);
-        log(4, logMsg);
+    public void log(MessageReceivedEvent event, boolean isSpam) {
+        String logMsg = this.createCommandLog(event, isSpam);
+        this.log(4, logMsg);
     }
 
     /**
@@ -42,15 +42,15 @@ public class Logger {
      * @param event Guild message received event.
      * @return Human readable user command usage log.
      */
-    private static String createCommandLog(MessageReceivedEvent event, boolean isSpam) {
+    private String createCommandLog(MessageReceivedEvent event, boolean isSpam) {
         Date now = new Date();
 
         if (event.isFromGuild()) {
-            return logFormat.format(now) + " (" + event.getGuild().getName() + ")[" +
+            return this.logFormat.format(now) + " (" + event.getGuild().getName() + ")[" +
                     event.getChannel().getName() + "]<" + event.getAuthor().getName() + ">: `" +
                     event.getMessage().getContentRaw() + "`" + (isSpam ? " Spam detected" : "");
         } else {
-            return logFormat.format(now) + " [DM " + getFullUserName(event.getAuthor()) + "]<" +
+            return this.logFormat.format(now) + " [DM " + getFullUserName(event.getAuthor()) + "]<" +
                     event.getAuthor().getName() + ">: `" +
                     event.getMessage().getContentRaw() + "`" + (isSpam ? " Spam detected" : "");
         }
