@@ -26,8 +26,7 @@ public class Ping extends GenericCommand {
     public void process(MessageReceivedEvent event, String[] args) {
         EmbedBuilder eb = new EmbedBuilder();
 
-        eb.setThumbnail(event.getAuthor().getEffectiveAvatarUrl());
-        eb.setTitle("Pong!");
+        eb.setAuthor("Pong!", null, event.getAuthor().getEffectiveAvatarUrl());
 
         eb.setDescription("Here's some latency data. " +
                 "If discord API and/or message total ping are taking more than 250ms, they may be considered slow.");
