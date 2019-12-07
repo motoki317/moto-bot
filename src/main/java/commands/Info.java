@@ -4,6 +4,8 @@ import app.Bot;
 import app.Properties;
 import commands.base.GenericCommand;
 import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.MessageBuilder;
+import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 
@@ -23,6 +25,18 @@ public class Info extends GenericCommand {
     @Override
     public String[] names() {
         return new String[]{"info"};
+    }
+
+    @Override
+    public String shortHelp() {
+        return "Shows this bot's meta info.";
+    }
+
+    @Override
+    public Message longHelp() {
+        return new MessageBuilder(
+                "Shows this bot's meta info, such as version, bot invite link and bot support server link."
+        ).build();
     }
 
     @Override

@@ -1,6 +1,7 @@
 package listeners;
 
 import app.Bot;
+import commands.Help;
 import commands.Info;
 import commands.Ping;
 import commands.base.BotCommand;
@@ -8,38 +9,38 @@ import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 
 import javax.annotation.Nonnull;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public class MessageListener extends ListenerAdapter {
     private final Bot bot;
 
-    private final Map<String, BotCommand> commands;
-    private final Set<String> commandsList;
+    private final Set<BotCommand> commands;
+    private final Map<String, BotCommand> commandNameMap;
 
     public MessageListener(Bot bot) {
         this.bot = bot;
-        this.commands = new HashMap<>();
-        this.commandsList = new HashSet<>();
+        this.commands = new HashSet<>();
+        this.commandNameMap = new HashMap<>();
 
         addCommand(new Ping(bot));
         addCommand(new Info(bot));
+
+        // Help command must receive a full list of commands.
+        addCommand(new Help(bot, this.commands));
     }
 
     private void addCommand(BotCommand command) {
         for (String commandName : command.names()) {
             commandName = commandName.toLowerCase();
 
-            if (this.commandsList.contains(commandName)) {
+            if (this.commandNameMap.containsKey(commandName)) {
                 throw new Error("FATAL: Command name conflict: " + commandName + "\n" +
                         "Command " + command.getClass().getName() + " is not being added.");
             }
 
-            this.commandsList.add(commandName);
-            this.commands.put(commandName, command);
+            this.commandNameMap.put(commandName, command);
         }
+        this.commands.add(command);
     }
 
     @Override
@@ -61,9 +62,9 @@ public class MessageListener extends ListenerAdapter {
 
         // Process command
         if (args.length == 0) return;
-        for (String commandName : this.commandsList) {
+        for (String commandName : this.commandNameMap.keySet()) {
             if (args[0].toLowerCase().equals(commandName)) {
-                BotCommand command = this.commands.get(commandName);
+                BotCommand command = this.commandNameMap.get(commandName);
 
                 // Check guild-only command
                 if (!event.isFromGuild() && command.guildOnly()) {

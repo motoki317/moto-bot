@@ -9,6 +9,8 @@ import java.util.function.Consumer;
 public abstract class BotCommand {
     public abstract boolean guildOnly();
     public abstract String[] names();
+    public abstract String shortHelp();
+    public abstract Message longHelp();
     public abstract void process(MessageReceivedEvent event, String[] args);
 
     protected void respond(MessageReceivedEvent event, CharSequence message) {

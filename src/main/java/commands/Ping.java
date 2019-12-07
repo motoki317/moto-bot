@@ -3,6 +3,7 @@ package commands;
 import app.Bot;
 import commands.base.GenericCommand;
 import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import utils.BotUtils;
@@ -23,13 +24,26 @@ public class Ping extends GenericCommand {
     }
 
     @Override
+    public String shortHelp() {
+        return "Pong!";
+    }
+
+    @Override
+    public Message longHelp() {
+        return new MessageBuilder(
+                "Checks the bot's ping.\n" +
+                        "It is preferable that the ping takes no longer than 250 ms, and be stable."
+        ).build();
+    }
+
+    @Override
     public void process(MessageReceivedEvent event, String[] args) {
         EmbedBuilder eb = new EmbedBuilder();
 
         eb.setAuthor("Pong!", null, event.getAuthor().getEffectiveAvatarUrl());
 
         eb.setDescription("Here's some latency data. " +
-                "If discord API and/or message total ping are taking more than 250ms, they may be considered slow.");
+                "If discord API and/or message total ping are taking more than 250 ms, they may be considered slow.");
 
         eb.addField(
                 "Discord API Heartbeat",
