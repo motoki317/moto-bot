@@ -1,28 +1,8 @@
 package utils;
 
-import app.Bot;
-import net.dv8tion.jda.api.JDA;
-
-import java.util.List;
+import net.dv8tion.jda.api.entities.User;
 
 public class BotUtils {
-    /**
-     * Get shard id of the given jda instance.
-     * @param bot Bot instance.
-     * @param jda JDA instance.
-     * @return Shard id. Returns -1 if not found.
-     */
-    public static int getShardId(Bot bot, JDA jda) {
-        List<JDA> shards = bot.getManager().getShards();
-        for (int i = 0; i < shards.size(); i++) {
-            JDA shard = shards.get(i);
-            if (shard.equals(jda)) {
-                return i;
-            }
-        }
-        return -1;
-    }
-
     /**
      * Get a creation time in long (epoch, milliseconds from 1970/01/01 00:00:00.000 UTC) from discord IDs such as
      *  user / channel / guild / message IDs. <br/>
@@ -33,5 +13,14 @@ public class BotUtils {
      */
     public static long getIdCreationTime(long discordId) {
         return (discordId >> 22) + 1420070400000L;
+    }
+
+    /**
+     * Returns user name with its discriminator.
+     * @param user User object.
+     * @return Example "username#1234"
+     */
+    public static String getUserFullName(User user) {
+        return user.getName() + "#" + user.getDiscriminator();
     }
 }

@@ -2,7 +2,7 @@
 
 # Experimental bot
 echo "Loading environment variables."
-source ./experimental_env.sh
+. ./experimental_env.sh
 
 make build
 

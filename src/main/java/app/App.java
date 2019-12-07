@@ -13,6 +13,7 @@ import log.Logger;
 import javax.security.auth.login.LoginException;
 import java.io.IOException;
 import java.text.ParseException;
+import java.util.List;
 
 public class App implements Runnable, Bot {
     private final ShardManager manager;
@@ -36,6 +37,18 @@ public class App implements Runnable, Bot {
     @Override
     public Logger getLogger() {
         return this.logger;
+    }
+
+    @Override
+    public int getShardId(JDA jda) {
+        List<JDA> shards = this.manager.getShards();
+        for (int i = 0; i < shards.size(); i++) {
+            JDA shard = shards.get(i);
+            if (shard.equals(jda)) {
+                return i;
+            }
+        }
+        return -1;
     }
 
     @Override

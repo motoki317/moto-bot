@@ -1,7 +1,7 @@
 package log;
 
-import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import utils.BotUtils;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -60,14 +60,9 @@ public class DiscordLogger implements Logger {
                     event.getChannel().getName() + "]<" + event.getAuthor().getName() + ">: `" +
                     event.getMessage().getContentRaw() + "`" + (isSpam ? " Spam detected" : "");
         } else {
-            return this.logFormat.format(now) + " [DM " + getFullUserName(event.getAuthor()) + "]<" +
+            return this.logFormat.format(now) + " [DM " + BotUtils.getUserFullName(event.getAuthor()) + "]<" +
                     event.getAuthor().getName() + ">: `" +
                     event.getMessage().getContentRaw() + "`" + (isSpam ? " Spam detected" : "");
         }
     }
-
-    private static String getFullUserName(User user) {
-        return user.getName() + "#" + user.getDiscriminator();
-    }
-
 }

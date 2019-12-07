@@ -6,7 +6,6 @@ import commands.Ping;
 import commands.base.BotCommand;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
-import utils.BotUtils;
 
 import javax.annotation.Nonnull;
 import java.util.HashMap;
@@ -25,7 +24,7 @@ public class MessageListener extends ListenerAdapter {
         this.commands = new HashMap<>();
         this.commandsList = new HashSet<>();
 
-        addCommand(new Ping());
+        addCommand(new Ping(bot));
         addCommand(new Info(bot));
     }
 
@@ -46,7 +45,7 @@ public class MessageListener extends ListenerAdapter {
     @Override
     public void onMessageReceived(@Nonnull MessageReceivedEvent event) {
         // Do not process if the shard is not loaded
-        int shardId = BotUtils.getShardId(this.bot, event.getJDA());
+        int shardId = this.bot.getShardId(event.getJDA());
         if (!bot.isConnected(shardId)) return;
 
         // Do not respond to webhook/bot messages
