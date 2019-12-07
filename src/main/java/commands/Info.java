@@ -27,7 +27,7 @@ public class Info extends GenericCommand {
 
     @Override
     public void process(MessageReceivedEvent event, String[] args) {
-        event.getChannel().sendMessage(getInfo().build()).queue();
+        respond(event, getInfo().build());
     }
 
     private EmbedBuilder getInfo() {
