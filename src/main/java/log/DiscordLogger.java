@@ -53,16 +53,23 @@ public class DiscordLogger implements Logger {
      * @return Human readable user command usage log.
      */
     private String createCommandLog(MessageReceivedEvent event, boolean isSpam) {
-        Date now = new Date();
-
         if (event.isFromGuild()) {
-            return this.logFormat.format(now) + " (" + event.getGuild().getName() + ")[" +
-                    event.getChannel().getName() + "]<" + event.getAuthor().getName() + ">: `" +
-                    event.getMessage().getContentRaw() + "`" + (isSpam ? " Spam detected" : "");
+            return String.format(
+                    "(%s)[%s]<%s>: `%s`%s",
+                    event.getGuild().getName(),
+                    event.getChannel().getName(),
+                    event.getAuthor().getName(),
+                    event.getMessage().getContentRaw(),
+                    isSpam ? " Spam detected" : ""
+            );
         } else {
-            return this.logFormat.format(now) + " [DM " + BotUtils.getUserFullName(event.getAuthor()) + "]<" +
-                    event.getAuthor().getName() + ">: `" +
-                    event.getMessage().getContentRaw() + "`" + (isSpam ? " Spam detected" : "");
+            return String.format(
+                    "[DM %s]<%s>: `%s`%s",
+                    BotUtils.getUserFullName(event.getAuthor()),
+                    event.getAuthor().getName(),
+                    event.getMessage().getContentRaw(),
+                    isSpam ? " Spam detected" : ""
+            );
         }
     }
 }
