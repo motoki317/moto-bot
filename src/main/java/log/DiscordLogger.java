@@ -57,7 +57,7 @@ public class DiscordLogger implements Logger {
             return;
         }
 
-        ch.sendMessage(msgTimeAppended).queue();
+        BotUtils.sendLongMessage(msgTimeAppended, ch);
     }
 
     /**

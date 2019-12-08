@@ -1,5 +1,6 @@
 package utils;
 
+import net.dv8tion.jda.api.entities.TextChannel;
 import net.dv8tion.jda.api.entities.User;
 
 public class BotUtils {
@@ -22,5 +23,20 @@ public class BotUtils {
      */
     public static String getUserFullName(User user) {
         return user.getName() + "#" + user.getDiscriminator();
+    }
+
+    /**
+     * Sends long message (supports string longer than 2000 chars) to text channel.
+     * Splits the message into parts to send to discord.
+     * @param message Message to send.
+     * @param ch Text channel to post on.
+     */
+    public static void sendLongMessage(String message, TextChannel ch) {
+        double length = message.length();
+        for (int i = 0; i < Math.ceil(length / 2000D); i++) {
+            int start = i * 2000;
+            int end = Math.min((i + 1) * 2000, (int) length);
+            ch.sendMessage(message.substring(start, end)).queue();
+        }
     }
 }
