@@ -7,10 +7,8 @@ import utils.BotUtils;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.TimeZone;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * DiscordLogger implements Logger, discord channel logging, and checks message spams.
@@ -100,5 +98,12 @@ public class DiscordLogger implements Logger {
                     isSpam ? " Spam detected" : ""
             );
         }
+    }
+
+    @Override
+    public void logError(CharSequence message, Exception e) {
+        String formatted = message + "\n" + e.getMessage() + "\n";
+        formatted += Arrays.stream(e.getStackTrace()).map(StackTraceElement::toString).collect(Collectors.joining("\n"));
+        this.log(0, formatted);
     }
 }

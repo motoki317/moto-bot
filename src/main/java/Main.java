@@ -10,6 +10,7 @@ public class Main {
             System.exit(1);
         }
         Thread appThread = new Thread(app);
+        appThread.setName("moto-bot app");
         appThread.start();
     }
 }

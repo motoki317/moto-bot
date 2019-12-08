@@ -30,4 +30,10 @@ public class ConsoleLogger implements Logger {
     public boolean logEvent(MessageReceivedEvent event) {
         return false;
     }
+
+    @Override
+    public void logError(CharSequence message, Exception e) {
+        this.log(0, message);
+        e.printStackTrace();
+    }
 }
