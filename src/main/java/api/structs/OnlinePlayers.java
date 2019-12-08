@@ -18,6 +18,14 @@ public class OnlinePlayers {
     // player list has to be bound by hand
     private Map<String, List<String>> worlds;
 
+    public Request getRequest() {
+        return request;
+    }
+
+    public Map<String, List<String>> getWorlds() {
+        return worlds;
+    }
+
     public OnlinePlayers(String body) throws JsonProcessingException {
         JsonNode json = mapper.readTree(body);
 
@@ -34,13 +42,5 @@ public class OnlinePlayers {
             List<String> players = mapper.readValue(e.getValue().toString(), new TypeReference<List<String>>(){});
             this.worlds.put(e.getKey(), players);
         }
-    }
-
-    public Request getRequest() {
-        return request;
-    }
-
-    public Map<String, List<String>> getWorlds() {
-        return worlds;
     }
 }

@@ -2,19 +2,19 @@ package api;
 
 import api.structs.OnlinePlayers;
 import api.structs.TerritoryList;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import log.Logger;
 import utils.HttpUtils;
 
 import javax.annotation.Nullable;
+import java.util.TimeZone;
 
 public class WynnApi {
-    private static final ObjectMapper mapper = new ObjectMapper();
-
     private final Logger logger;
+    private final TimeZone wynnTimeZone;
 
-    public WynnApi(Logger logger) {
+    public WynnApi(Logger logger, TimeZone wynnTimeZone) {
         this.logger = logger;
+        this.wynnTimeZone = wynnTimeZone;
     }
 
     private static final String onlinePlayersUrl = "https://api.wynncraft.com/public_api.php?action=onlinePlayers";
@@ -45,7 +45,7 @@ public class WynnApi {
         try {
             String body = HttpUtils.get(territoryListUrl);
             if (body == null) throw new Exception("returned body was null");
-            return mapper.readValue(body, TerritoryList.class);
+            return new TerritoryList(body, this.wynnTimeZone);
         } catch (Exception e) {
             this.logger.logError("an error occurred while requesting territory list", e);
             return null;

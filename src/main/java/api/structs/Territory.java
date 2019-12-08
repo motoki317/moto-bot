@@ -1,11 +1,26 @@
 package api.structs;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.jetbrains.annotations.NotNull;
+
+import javax.annotation.Nullable;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.TimeZone;
 
 public class Territory {
+    private static final ObjectMapper mapper = new ObjectMapper();
+
+    private static final DateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+
+    private TimeZone wynnTimeZone;
+
     private String territory;
     private String guild;
-    private Date acquired;
+    private String acquired;
     private String attacker;
     private Location location;
 
@@ -17,10 +32,11 @@ public class Territory {
         return guild;
     }
 
-    public Date getAcquired() {
-        return acquired;
+    public Date getAcquired() throws ParseException {
+        return format.parse(this.acquired);
     }
 
+    @Nullable
     public String getAttacker() {
         return attacker;
     }
@@ -50,5 +66,12 @@ public class Territory {
         public int getEndY() {
             return endY;
         }
+    }
+
+    @NotNull
+    static Territory parse(String body, TimeZone wynnTimeZone) throws JsonProcessingException {
+        Territory instance = mapper.readValue(body, Territory.class);
+        instance.wynnTimeZone = wynnTimeZone;
+        return instance;
     }
 }
