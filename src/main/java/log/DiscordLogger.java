@@ -1,19 +1,37 @@
 package log;
 
+import app.Bot;
+import net.dv8tion.jda.api.entities.TextChannel;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import utils.BotUtils;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.TimeZone;
 
+/**
+ * DiscordLogger implements Logger, discord channel logging, and checks message spams.
+ */
 public class DiscordLogger implements Logger {
+    private final Bot bot;
+
+    private final Map<Integer, TextChannel> logChannel;
+
     private final DateFormat logFormat;
 
     private final DiscordSpamChecker spamChecker;
 
-    public DiscordLogger(TimeZone logTimeZone) {
+    public DiscordLogger(Bot bot, TimeZone logTimeZone) {
+        this.bot = bot;
+        this.logChannel = new HashMap<>();
+        bot.getProperties().logChannelId.forEach((i, id) -> {
+            TextChannel ch = bot.getManager().getTextChannelById(id);
+            this.logChannel.put(i, ch);
+        });
+
         this.logFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss.SSS");
         this.logFormat.setTimeZone(logTimeZone);
         this.spamChecker = new DiscordSpamChecker();
@@ -26,11 +44,22 @@ public class DiscordLogger implements Logger {
      */
     public void log(int botLogCh, CharSequence message) {
         Date now = new Date();
-        String msg = this.logFormat.format(now) + " " + message;
+        String msgTimeAppended = this.logFormat.format(now) + " " + message;
 
-        System.out.println(msg);
+        System.out.println(msgTimeAppended);
 
         // Log to discord channels
+        TextChannel ch = this.logChannel.get(botLogCh);
+        if (ch == null) {
+            return;
+        }
+
+        int shardId = this.bot.getShardId(ch.getJDA());
+        if (!this.bot.isConnected(shardId)) {
+            return;
+        }
+
+        ch.sendMessage(msgTimeAppended).queue();
     }
 
     /**

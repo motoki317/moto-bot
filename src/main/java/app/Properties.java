@@ -6,6 +6,8 @@ import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.TimeZone;
 
 public class Properties {
@@ -20,6 +22,8 @@ public class Properties {
 
     final String botAccessToken;
     public final String botDiscordId;
+
+    public final Map<Integer, Long> logChannelId;
 
     public final String prefix;
     final int shards;
@@ -52,6 +56,12 @@ public class Properties {
 
         this.botAccessToken = getEnv("DISCORD_ACCESS_TOKEN");
         this.botDiscordId = getEnv("BOT_DISCORD_ID");
+
+        int logChannelsMax = getPropertyInt("botLogChannelsMax");
+        this.logChannelId = new HashMap<>();
+        for (int i = 0; i <= logChannelsMax; i++) {
+            this.logChannelId.put(i, Long.parseLong(getEnv("BOT_LOG_CHANNEL_" + i)));
+        }
 
         this.prefix = getProperty("prefix");
         this.shards = getPropertyInt("shards");

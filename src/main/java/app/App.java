@@ -1,6 +1,7 @@
 package app;
 
 import listeners.MessageListener;
+import log.ConsoleLogger;
 import log.DiscordLogger;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Activity;
@@ -20,7 +21,7 @@ public class App implements Runnable, Bot {
 
     private final Properties properties;
 
-    private final Logger logger;
+    private Logger logger;
 
     private boolean[] isConnected;
 
@@ -66,8 +67,7 @@ public class App implements Runnable, Bot {
 
     public App() throws IOException, ParseException, LoginException {
         this.properties = new Properties();
-
-        this.logger = new DiscordLogger(this.properties.logTimeZone);
+        this.logger = new ConsoleLogger(this.properties.logTimeZone);
         this.isConnected = new boolean[this.properties.shards];
 
         DefaultShardManagerBuilder builder = new DefaultShardManagerBuilder();
@@ -99,6 +99,10 @@ public class App implements Runnable, Bot {
 
         this.manager.setActivity(Activity.playing("Bot load complete!"));
         this.logger.log(-1, "Bot load complete!");
+
+        this.logger = new DiscordLogger(this, this.properties.logTimeZone);
+
+        this.logger.log(0, "Bot is ready!");
     }
 
     public void run() {
