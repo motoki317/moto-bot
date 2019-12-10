@@ -1,12 +1,18 @@
 package model;
 
 public class TrackingChannel {
+    private TrackingType type;
     private long guildId;
     private long channelId;
 
-    public TrackingChannel(long guildId, long channelId) {
+    public TrackingChannel(TrackingType type, long guildId, long channelId) {
+        this.type = type;
         this.guildId = guildId;
         this.channelId = channelId;
+    }
+
+    TrackingType getType() {
+        return type;
     }
 
     public long getGuildId() {

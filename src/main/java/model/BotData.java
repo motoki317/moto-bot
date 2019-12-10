@@ -1,13 +1,27 @@
 package model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 public class BotData {
+    @JsonIgnore
+    private final Object trackingChannelsLock = new Object();
     private List<TrackingChannel> trackingChannels;
 
-    public List<TrackingChannel> getTrackingChannels() {
-        return trackingChannels;
+    public void addTrackingChannel(TrackingChannel trackingChannel) {
+        synchronized (this.trackingChannelsLock) {
+            this.trackingChannels.add(trackingChannel);
+        }
+    }
+
+    public Set<TrackingChannel> getTrackingChannelsByType(TrackingType type) {
+        synchronized (this.trackingChannelsLock) {
+           return this.trackingChannels.stream().filter(ch -> ch.getType() == type).collect(Collectors.toSet());
+        }
     }
 
     public BotData() {
