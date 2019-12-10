@@ -1,8 +1,10 @@
 package app;
 
+import heartbeat.HeartBeat;
 import listeners.MessageListener;
 import log.ConsoleLogger;
 import log.DiscordLogger;
+import log.Logger;
 import model.BotData;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Activity;
@@ -10,7 +12,7 @@ import net.dv8tion.jda.api.sharding.DefaultShardManagerBuilder;
 import net.dv8tion.jda.api.sharding.ShardManager;
 import net.dv8tion.jda.api.utils.SessionController;
 import net.dv8tion.jda.api.utils.SessionControllerAdapter;
-import log.Logger;
+import utils.StoppableThread;
 
 import javax.annotation.Nullable;
 import javax.security.auth.login.LoginException;
@@ -28,6 +30,8 @@ public class App implements Runnable, Bot {
     private Logger logger;
 
     private boolean[] isConnected;
+
+    private final StoppableThread heartBeat;
 
     @Override
     public ShardManager getManager() {
@@ -101,7 +105,8 @@ public class App implements Runnable, Bot {
 
         this.addEventListeners();
 
-        this.setShutDownHook();
+        this.heartBeat = new HeartBeat(this);
+        this.heartBeat.setName("moto-bot heartbeat");
 
         this.manager.setActivity(Activity.playing("Bot load complete!"));
         this.logger.log(-1, "Bot load complete!");
@@ -109,10 +114,12 @@ public class App implements Runnable, Bot {
         this.logger = new DiscordLogger(this, this.properties.logTimeZone);
 
         this.logger.log(0, "Bot is ready!");
+
+        this.setShutDownHook();
     }
 
     public void run() {
-        // Run Heartbeat, etc.
+        this.heartBeat.start();
     }
 
     /**
@@ -122,7 +129,9 @@ public class App implements Runnable, Bot {
     @Nullable
     private DataLoader loadBotData() {
         try {
-            return new DataLoader();
+            DataLoader dataLoader = new DataLoader();
+            this.logger.log(-1, "Successfully loaded bot data.");
+            return dataLoader;
         } catch (IOException e) {
             this.logger.logError("an error occurred while loading bot data", e);
             return null;
@@ -156,6 +165,9 @@ public class App implements Runnable, Bot {
         App app = this;
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             app.logger.log(0, "Bot shutting down...");
+
+            app.heartBeat.terminate();
+
             app.logger = new ConsoleLogger(app.properties.logTimeZone);
             try {
                 app.dataLoader.saveData();

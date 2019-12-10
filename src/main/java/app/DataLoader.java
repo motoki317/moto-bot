@@ -46,7 +46,7 @@ public class DataLoader {
             }
         }
 
-        String dataString = mapper.writeValueAsString(this);
+        String dataString = mapper.writeValueAsString(this.data);
         FileOutputStream writer = new FileOutputStream(dataFile, false);
         writer.write(dataString.getBytes());
         writer.close();
