@@ -3,6 +3,7 @@ package app;
 import listeners.MessageListener;
 import log.ConsoleLogger;
 import log.DiscordLogger;
+import model.BotData;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Activity;
 import net.dv8tion.jda.api.sharding.DefaultShardManagerBuilder;
@@ -11,6 +12,7 @@ import net.dv8tion.jda.api.utils.SessionController;
 import net.dv8tion.jda.api.utils.SessionControllerAdapter;
 import log.Logger;
 
+import javax.annotation.Nullable;
 import javax.security.auth.login.LoginException;
 import java.io.IOException;
 import java.text.ParseException;
@@ -20,6 +22,8 @@ public class App implements Runnable, Bot {
     private final ShardManager manager;
 
     private final Properties properties;
+
+    private final DataLoader dataLoader;
 
     private Logger logger;
 
@@ -33,6 +37,11 @@ public class App implements Runnable, Bot {
     @Override
     public Properties getProperties() {
         return this.properties;
+    }
+
+    @Override
+    public BotData getBotData() {
+        return this.dataLoader.getData();
     }
 
     @Override
@@ -82,20 +91,17 @@ public class App implements Runnable, Bot {
         this.manager = builder.build();
         manager.setActivity(Activity.playing("Bot restarting..."));
 
-        for (int i = 0; i < shardsTotal; i++) {
-            while (manager.getStatus(i) != JDA.Status.CONNECTED) {
-                try {
-                    Thread.sleep(50);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-            isConnected[i] = true;
-            this.logger.log(-1, "JDA Sharding: Shard ID " + i + " is loaded!");
+        DataLoader dataLoader = this.loadBotData();
+        if (dataLoader == null) {
+            System.exit(1);
         }
-        this.logger.log(-1, "JDA Sharding: All shards loaded!");
+        this.dataLoader = dataLoader;
+
+        this.waitJDALoading();
 
         this.addEventListeners();
+
+        this.setShutDownHook();
 
         this.manager.setActivity(Activity.playing("Bot load complete!"));
         this.logger.log(-1, "Bot load complete!");
@@ -109,8 +115,54 @@ public class App implements Runnable, Bot {
         // Run Heartbeat, etc.
     }
 
+    /**
+     * Tries to load bot data and returns data loader instance. Blocking.
+     * @return Data loader.
+     */
+    @Nullable
+    private DataLoader loadBotData() {
+        try {
+            return new DataLoader();
+        } catch (IOException e) {
+            this.logger.logError("an error occurred while loading bot data", e);
+            return null;
+        }
+    }
+
+    /**
+     * Waits and blocks this thread until all JDA shards are loaded.
+     */
+    private void waitJDALoading() {
+        for (int i = 0; i < this.properties.shards; i++) {
+            while (manager.getStatus(i) != JDA.Status.CONNECTED) {
+                try {
+                    Thread.sleep(50);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+            isConnected[i] = true;
+            this.logger.log(-1, "JDA Sharding: Shard ID " + i + " is loaded!");
+        }
+        this.logger.log(-1, "JDA Sharding: All shards loaded!");
+    }
+
     private void addEventListeners() {
         manager.addEventListener(new MessageListener(this));
         this.logger.log(-1, "Added event listeners.");
+    }
+
+    private void setShutDownHook() {
+        App app = this;
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            app.logger.log(0, "Bot shutting down...");
+            app.logger = new ConsoleLogger(app.properties.logTimeZone);
+            try {
+                app.dataLoader.saveData();
+                app.logger.log(0, "Successfully saved bot data locally.");
+            } catch (IOException e) {
+                app.logger.logError("an error occurred while saving bot data", e);
+            }
+        }));
     }
 }

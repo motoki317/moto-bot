@@ -1,5 +1,7 @@
 # For development env-vars
 experimental_env.sh
+# Bot data
+src/main/resources/data.json
 
 # ----- Java -----
 # https://github.com/github/gitignore/blob/master/Java.gitignore
