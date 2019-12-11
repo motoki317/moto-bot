@@ -1,4 +1,4 @@
-package db.repository;
+package db.repository.base;
 
 import log.Logger;
 import org.intellij.lang.annotations.Language;
@@ -28,32 +28,33 @@ public abstract class Repository<T> implements IRepository<T> {
      * @param sql any SQL statement
      */
     protected void execute(@Language("MariaDB") String sql, Object... strings) {
+        String fullSql = replaceSql(sql, strings);
         try {
             Statement statement = this.db.createStatement();
-            String fullSql = String.format(
-                    sql.replaceAll("\\?", "%s"),
-                    (Object[]) escapeStrings(strings)
-            );
             statement.execute(fullSql);
         } catch (SQLException e) {
-            this.logger.logError("an error occurred while executing sql: " + sql, e);
+            this.logger.logError("an error occurred while executing sql: " + fullSql, e);
         }
     }
 
     @Nullable
     @CheckReturnValue
     protected ResultSet executeQuery(@Language("MariaDB") String sql, Object... strings) {
+        String fullSql = replaceSql(sql, strings);
         try {
             Statement statement = this.db.createStatement();
-            String fullSql = String.format(
-                    sql.replaceAll("\\?", "%s"),
-                    (Object[]) escapeStrings(strings)
-            );
             return statement.executeQuery(fullSql);
         } catch (SQLException e) {
-            this.logger.logError("an error occurred while executing sql: " + sql, e);
+            this.logger.logError("an error occurred while executing sql: " + fullSql, e);
             return null;
         }
+    }
+
+    private static String replaceSql(String sql, Object... strings) {
+        return String.format(
+                sql.replaceAll("\\?", "\"%s\""),
+                (Object[]) escapeStrings(strings)
+        );
     }
 
     private static String[] escapeStrings(Object[] strings) {
@@ -62,5 +63,9 @@ public abstract class Repository<T> implements IRepository<T> {
                 .map(s -> Utils.escapeString(s, true))
                 .collect(Collectors.toList())
                 .toArray(new String[]{});
+    }
+
+    protected void logResponseError(SQLException e) {
+        this.logger.logError("an error occurred while reading from db response", e);
     }
 }

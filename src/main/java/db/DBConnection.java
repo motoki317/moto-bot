@@ -1,5 +1,6 @@
 package db;
 
+import db.repository.TrackingChannelRepository;
 import log.Logger;
 
 import java.sql.Connection;
@@ -31,5 +32,9 @@ public class DBConnection {
         this.logger.log(-1, "Connecting to " + url);
         this.connection = DriverManager.getConnection(url);
         this.logger.log(-1, "Successfully connected to db!");
+    }
+
+    public TrackingChannelRepository getTrackingChannelRepository() {
+        return new TrackingChannelRepository(this.connection, this.logger);
     }
 }
