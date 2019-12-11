@@ -1,0 +1,41 @@
+version: '3'
+
+services:
+  moto-bot:
+    build: ./
+    restart: always
+    environment:
+      MYSQL_HOST: mysql
+      MYSQL_PORT: 3306
+      MYSQL_DATABASE: moto-bot
+      MYSQL_USER: root
+      MYSQL_PASSWORD: password
+    env_file:
+      - ./experimental.env
+    ports:
+      - 8080:8080
+    depends_on:
+      - mysql
+    networks:
+      - internal
+    volumes:
+      - $HOME/.m2:/root/.m2
+
+  mysql:
+    image: mariadb:10.4.10
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: moto-bot
+    expose:
+      - 3306
+    ports:
+      - 3306:3306
+    networks:
+      - internal
+    volumes:
+      - ./mysql/data:/var/lib/mysql
+      - ./mysql/init:/docker-entrypoint-initdb.d
+
+networks:
+  internal:

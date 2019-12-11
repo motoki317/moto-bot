@@ -1,4 +1,4 @@
-package model;
+package db.model;
 
 public class TrackingChannel {
     private TrackingType type;
@@ -11,7 +11,7 @@ public class TrackingChannel {
         this.channelId = channelId;
     }
 
-    TrackingType getType() {
+    public TrackingType getType() {
         return type;
     }
 

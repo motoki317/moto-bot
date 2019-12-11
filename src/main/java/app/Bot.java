@@ -1,6 +1,6 @@
 package app;
 
-import model.BotData;
+import db.model.BotData;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.sharding.ShardManager;
 import log.Logger;

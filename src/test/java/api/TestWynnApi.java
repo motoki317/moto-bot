@@ -2,20 +2,16 @@ package api;
 
 import api.structs.OnlinePlayers;
 import api.structs.TerritoryList;
-import log.ConsoleLogger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.TestOnly;
 import org.junit.jupiter.api.Test;
-
-import java.util.TimeZone;
+import utils.TestUtils;
 
 class TestWynnApi {
     @NotNull
     @TestOnly
     private WynnApi getWynnApi() {
-        TimeZone log = TimeZone.getTimeZone("Asia/Tokyo");
-        TimeZone wynn = TimeZone.getTimeZone("America/New_York");
-        return new WynnApi(new ConsoleLogger(log), wynn);
+        return new WynnApi(TestUtils.getLogger(), TestUtils.getWynnTimeZone());
     }
 
     @Test

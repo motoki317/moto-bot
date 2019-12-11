@@ -1,7 +1,7 @@
 package app;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import model.BotData;
+import db.model.BotData;
 
 import java.io.File;
 import java.io.FileOutputStream;

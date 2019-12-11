@@ -1,5 +1,8 @@
 build:
-	mvn clean package
+	docker-compose up -d --build
 
-javadoc:
+run:
+	docker-compose up -d
+
+javadoc: # Downloads javadoc
 	mvn dependency:resolve -Dclassifier=javadoc

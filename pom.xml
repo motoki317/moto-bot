@@ -25,6 +25,7 @@
     </repositories>
 
     <dependencies>
+        <!-- For test -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
@@ -37,6 +38,7 @@
             <version>${junit.jupiter.version}</version>
             <scope>test</scope>
         </dependency>
+        <!-- JDA -->
         <dependency>
             <groupId>net.dv8tion</groupId>
             <artifactId>JDA</artifactId>
@@ -63,6 +65,12 @@
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpclient</artifactId>
             <version>4.5.10</version>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/org.mariadb.jdbc/mariadb-java-client -->
+        <dependency>
+            <groupId>org.mariadb.jdbc</groupId>
+            <artifactId>mariadb-java-client</artifactId>
+            <version>2.5.2</version>
         </dependency>
     </dependencies>
 
@@ -111,6 +119,16 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.0.0-M1</version>
+                <configuration>
+                    <environmentVariables>
+                        <!-- Testing -->
+                        <MYSQL_HOST>localhost</MYSQL_HOST>
+                        <MYSQL_PORT>3306</MYSQL_PORT>
+                        <MYSQL_DATABASE>moto-bot_test</MYSQL_DATABASE>
+                        <MYSQL_USER>root</MYSQL_USER>
+                        <MYSQL_PASSWORD>password</MYSQL_PASSWORD>
+                    </environmentVariables>
+                </configuration>
             </plugin>
         </plugins>
     </build>

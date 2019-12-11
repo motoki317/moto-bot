@@ -5,7 +5,7 @@ import listeners.MessageListener;
 import log.ConsoleLogger;
 import log.DiscordLogger;
 import log.Logger;
-import model.BotData;
+import db.model.BotData;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Activity;
 import net.dv8tion.jda.api.sharding.DefaultShardManagerBuilder;
