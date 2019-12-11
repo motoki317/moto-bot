@@ -2,12 +2,12 @@ import app.App;
 
 public class Main {
     public static void main(String[] args) {
-        Runnable app = null;
+        Runnable app;
         try {
             app = new App();
         } catch (Exception e) {
             e.printStackTrace();
-            System.exit(1);
+            throw new Error("Failed to initialize app");
         }
         Thread appThread = new Thread(app);
         appThread.setName("moto-bot app");

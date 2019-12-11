@@ -11,7 +11,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class TrackingChannelRepository extends Repository<TrackingChannel> {
+public class TrackingChannelRepository extends Repository<TrackingChannel, TrackingChannel> {
     public TrackingChannelRepository(Connection db, Logger logger) {
         super(db, logger);
     }
@@ -27,12 +27,12 @@ public class TrackingChannelRepository extends Repository<TrackingChannel> {
     }
 
     @Override
-    public boolean exists(TrackingChannel entity) {
+    public boolean exists(TrackingChannel id) {
         ResultSet res = this.executeQuery(
                 "SELECT COUNT(*) FROM `tracking_channel` WHERE `type` = ? AND `guild_id` = ? AND `channel_id` = ?",
-                entity.getType(),
-                entity.getGuildId(),
-                entity.getChannelId()
+                id.getType(),
+                id.getGuildId(),
+                id.getChannelId()
         );
         if (res == null) return false;
 
@@ -60,9 +60,10 @@ public class TrackingChannelRepository extends Repository<TrackingChannel> {
     }
 
     @Override
-    public TrackingChannel findOne(TrackingChannel entity) {
-        if (exists(entity))
-            return entity;
+    public TrackingChannel findOne(TrackingChannel id) {
+        // Since entity itself is exactly identification
+        if (exists(id))
+            return id;
         return null;
     }
 
@@ -90,12 +91,12 @@ public class TrackingChannelRepository extends Repository<TrackingChannel> {
     }
 
     @Override
-    public void delete(TrackingChannel entity) {
+    public void delete(TrackingChannel id) {
         this.execute(
                 "DELETE FROM tracking_channel WHERE type = ? AND guild_id = ? AND channel_id = ?",
-                entity.getType(),
-                entity.getGuildId(),
-                entity.getChannelId()
+                id.getType(),
+                id.getGuildId(),
+                id.getChannelId()
         );
     }
 

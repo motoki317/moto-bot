@@ -7,7 +7,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 
-public class DBConnection {
+public class DatabaseConnection implements Database {
     private static final String MYSQL_HOST = System.getenv("MYSQL_HOST");
     private static final String MYSQL_DATABASE = System.getenv("MYSQL_DATABASE");
     private static final String MYSQL_USER = System.getenv("MYSQL_USER");
@@ -18,7 +18,7 @@ public class DBConnection {
 
     private final Logger logger;
 
-    public DBConnection(Logger logger) throws SQLException {
+    public DatabaseConnection(Logger logger) throws SQLException {
         this.logger = logger;
 
         String url = String.format(

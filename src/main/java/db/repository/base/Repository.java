@@ -13,7 +13,7 @@ import java.sql.Statement;
 import java.util.Arrays;
 import java.util.stream.Collectors;
 
-public abstract class Repository<T> implements IRepository<T> {
+public abstract class Repository<T, ID> implements IRepository<T, ID> {
     protected final Connection db;
 
     protected final Logger logger;

@@ -9,7 +9,7 @@ import org.junit.jupiter.api.Test;
 class TestTrackingChannelRepository {
     @TestOnly
     private static TrackingChannelRepository getRepository() {
-        DBConnection db = TestDBUtils.createConnection();
+        DatabaseConnection db = TestDBUtils.createConnection();
         return db.getTrackingChannelRepository();
     }
 

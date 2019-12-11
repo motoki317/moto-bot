@@ -1,19 +1,22 @@
 package db;
 
+import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.TestOnly;
 import utils.TestUtils;
 
 import java.sql.SQLException;
 
 class TestDBUtils {
+    @NotNull
+    @Contract(" -> new")
     @TestOnly
-    static DBConnection createConnection() {
+    static DatabaseConnection createConnection() {
         try {
-            return new DBConnection(TestUtils.getLogger());
+            return new DatabaseConnection(TestUtils.getLogger());
         } catch (SQLException e) {
             e.printStackTrace();
-            System.exit(1);
-            return null;
+            throw new Error();
         }
     }
 }

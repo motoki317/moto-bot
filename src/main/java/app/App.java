@@ -1,11 +1,12 @@
 package app;
 
+import db.Database;
+import db.DatabaseConnection;
 import heartbeat.HeartBeat;
 import listeners.MessageListener;
 import log.ConsoleLogger;
 import log.DiscordLogger;
 import log.Logger;
-import db.model.BotData;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Activity;
 import net.dv8tion.jda.api.sharding.DefaultShardManagerBuilder;
@@ -17,6 +18,7 @@ import utils.StoppableThread;
 import javax.annotation.Nullable;
 import javax.security.auth.login.LoginException;
 import java.io.IOException;
+import java.sql.SQLException;
 import java.text.ParseException;
 import java.util.List;
 
@@ -25,7 +27,7 @@ public class App implements Runnable, Bot {
 
     private final Properties properties;
 
-    private final DataLoader dataLoader;
+    private final Database database;
 
     private Logger logger;
 
@@ -44,8 +46,8 @@ public class App implements Runnable, Bot {
     }
 
     @Override
-    public BotData getBotData() {
-        return this.dataLoader.getData();
+    public Database getDatabase() {
+        return this.database;
     }
 
     @Override
@@ -95,15 +97,14 @@ public class App implements Runnable, Bot {
         this.manager = builder.build();
         manager.setActivity(Activity.playing("Bot restarting..."));
 
-        DataLoader dataLoader = this.loadBotData();
-        if (dataLoader == null) {
-            System.exit(1);
+        Database database = connectDatabase(this.logger);
+        if (database == null) {
+            throw new Error("Failed to initialize database");
         }
-        this.dataLoader = dataLoader;
+        this.database = database;
+        this.logger.log(-1, "Successfully established connection to db!");
 
         this.waitJDALoading();
-
-        this.addEventListeners();
 
         this.heartBeat = new HeartBeat(this);
         this.heartBeat.setName("moto-bot heartbeat");
@@ -116,6 +117,7 @@ public class App implements Runnable, Bot {
         this.logger.log(0, "Bot is ready!");
 
         this.setShutDownHook();
+        this.addEventListeners();
     }
 
     public void run() {
@@ -123,19 +125,17 @@ public class App implements Runnable, Bot {
     }
 
     /**
-     * Tries to load bot data and returns data loader instance. Blocking.
-     * @return Data loader.
+     * Tries to establish connection to and initialize database.
+     * @return Database.
      */
     @Nullable
-    private DataLoader loadBotData() {
+    private static Database connectDatabase(Logger logger) {
         try {
-            DataLoader dataLoader = new DataLoader();
-            this.logger.log(-1, "Successfully loaded bot data.");
-            return dataLoader;
-        } catch (IOException e) {
-            this.logger.logError("an error occurred while loading bot data", e);
-            return null;
+            return new DatabaseConnection(logger);
+        } catch (SQLException e) {
+            logger.logError("an error occurred while establishing connection to db", e);
         }
+        return null;
     }
 
     /**
@@ -157,7 +157,7 @@ public class App implements Runnable, Bot {
     }
 
     private void addEventListeners() {
-        manager.addEventListener(new MessageListener(this));
+        this.manager.addEventListener(new MessageListener(this));
         this.logger.log(-1, "Added event listeners.");
     }
 
@@ -165,16 +165,8 @@ public class App implements Runnable, Bot {
         App app = this;
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             app.logger.log(0, "Bot shutting down...");
-
-            app.heartBeat.terminate();
-
             app.logger = new ConsoleLogger(app.properties.logTimeZone);
-            try {
-                app.dataLoader.saveData();
-                app.logger.log(0, "Successfully saved bot data locally.");
-            } catch (IOException e) {
-                app.logger.logError("an error occurred while saving bot data", e);
-            }
+            app.heartBeat.terminate();
         }));
     }
 }

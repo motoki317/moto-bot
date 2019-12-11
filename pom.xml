@@ -119,16 +119,6 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.0.0-M1</version>
-                <configuration>
-                    <environmentVariables>
-                        <!-- Testing -->
-                        <MYSQL_HOST>localhost</MYSQL_HOST>
-                        <MYSQL_PORT>3306</MYSQL_PORT>
-                        <MYSQL_DATABASE>moto-bot_test</MYSQL_DATABASE>
-                        <MYSQL_USER>root</MYSQL_USER>
-                        <MYSQL_PASSWORD>password</MYSQL_PASSWORD>
-                    </environmentVariables>
-                </configuration>
             </plugin>
         </plugins>
     </build>
