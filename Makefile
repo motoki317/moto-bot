@@ -4,6 +4,9 @@ build:
 run:
 	docker-compose up -d
 
+down:
+	docker-compose down
+
 test:
 	docker-compose exec moto-bot mvn test
 

@@ -7,7 +7,7 @@ COPY pom.xml /tmp/pom.xml
 RUN mvn -B -f /tmp/pom.xml -s /usr/share/maven/ref/settings-docker.xml dependency:resolve
 
 COPY . .
-RUN mvn clean package -D skipTests
+RUN mvn -B -f ./pom.xml -s /usr/share/maven/ref/settings-docker.xml clean package -D skipTests
 
 EXPOSE 8080
 
