@@ -15,6 +15,7 @@ class TestTrackChannelRepository {
         return db.getTrackingChannelRepository();
     }
 
+    @TestOnly
     private static void clearTable() {
         TrackChannelRepository repo = getRepository();
         List<TrackChannel> list = repo.findAll();

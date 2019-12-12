@@ -54,18 +54,15 @@ public abstract class Repository<T, ID> implements IRepository<T, ID> {
     }
 
     private static String replaceSql(String sql, Object... strings) {
-        return String.format(
-                sql.replaceAll("\\?", "%s"),
-                (Object[]) escapeStrings(strings)
-        );
+        String ret = sql;
+        for (Object o : strings) {
+            ret = ret.replaceFirst("\\?", escapeString(o));
+        }
+        return ret;
     }
 
-    private static String[] escapeStrings(Object[] strings) {
-        return Arrays.stream(strings)
-                .map(o -> o == null ? null : o.toString())
-                .map(s -> s == null ? "NULL" : "\"" + Utils.escapeString(s, true) + "\"")
-                .collect(Collectors.toList())
-                .toArray(new String[]{});
+    private static String escapeString(Object o) {
+        return o == null ? "NULL" : "\"" + Utils.escapeString(o.toString(), true) + "\"";
     }
 
     protected void logResponseException(SQLException e) {
