@@ -48,12 +48,22 @@ public class HeartBeat extends StoppableThread {
 
     private static Runnable runnablePlayerTracker(Bot bot) {
         PlayerTracker playerTracker = new PlayerTracker(bot);
-        return playerTracker::run;
+        return () -> {
+            long start = System.nanoTime();
+            playerTracker.run();
+            long end = System.nanoTime();
+            bot.getLogger().log(-1, String.format("Player tracker took %.6f ms to run.", ((double) (end - start)) / 1_000_000D));
+        };
     }
 
     private static Runnable runnableTerritoryTracker(Bot bot) {
         TerritoryTracker territoryTracker = new TerritoryTracker(bot);
-        return territoryTracker::run;
+        return () -> {
+            long start = System.nanoTime();
+            territoryTracker.run();
+            long end = System.nanoTime();
+            bot.getLogger().log(-1, String.format("Territory tracker took %.6f ms to run.", ((double) (end - start)) / 1_000_000D));
+        };
     }
 
     @Override
