@@ -1,7 +1,7 @@
 package db;
 
-import db.repository.TrackingChannelRepository;
+import db.repository.TrackChannelRepository;
 
 public interface Database {
-    TrackingChannelRepository getTrackingChannelRepository();
+    TrackChannelRepository getTrackingChannelRepository();
 }

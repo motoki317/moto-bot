@@ -1,13 +1,18 @@
 package db.repository.base;
 
+import org.jetbrains.annotations.NotNull;
+
+import javax.annotation.Nullable;
 import java.util.List;
 
 public interface IRepository<T, ID> {
-    <S extends T> void create(S entity);
-    boolean exists(ID id);
+    <S extends T> void create(@NotNull S entity);
+    boolean exists(@NotNull ID id);
     long count();
-    T findOne(ID id);
+    @Nullable
+    T findOne(@NotNull ID id);
+    @NotNull
     List<T> findAll();
-    void update(T entity);
-    void delete(ID id);
+    void update(@NotNull T entity);
+    void delete(@NotNull ID id);
 }

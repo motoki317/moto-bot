@@ -1,6 +1,6 @@
 package db;
 
-import db.repository.TrackingChannelRepository;
+import db.repository.TrackChannelRepository;
 import log.Logger;
 
 import java.sql.Connection;
@@ -34,7 +34,7 @@ public class DatabaseConnection implements Database {
         this.logger.log(-1, "Successfully connected to db!");
     }
 
-    public TrackingChannelRepository getTrackingChannelRepository() {
-        return new TrackingChannelRepository(this.connection, this.logger);
+    public TrackChannelRepository getTrackingChannelRepository() {
+        return new TrackChannelRepository(this.connection, this.logger);
     }
 }
