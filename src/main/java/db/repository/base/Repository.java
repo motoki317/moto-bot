@@ -12,9 +12,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public abstract class Repository<T, ID> implements IRepository<T, ID> {
     protected final Connection db;
@@ -29,14 +27,17 @@ public abstract class Repository<T, ID> implements IRepository<T, ID> {
     /**
      * Executes sql statement and handles exceptions.
      * @param sql any SQL statement
+     * @return True if succeeded.
      */
-    protected void execute(@Language("MariaDB") String sql, Object... strings) {
+    protected boolean execute(@Language("MariaDB") String sql, Object... strings) {
         String fullSql = replaceSql(sql, strings);
         try {
             Statement statement = this.db.createStatement();
             statement.execute(fullSql);
+            return true;
         } catch (SQLException e) {
             this.logger.logException("an exception occurred while executing sql: " + fullSql, e);
+            return false;
         }
     }
 

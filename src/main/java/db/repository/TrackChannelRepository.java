@@ -19,8 +19,8 @@ public class TrackChannelRepository extends Repository<TrackChannel, TrackChanne
     }
 
     @Override
-    public void create(@NotNull TrackChannel entity) {
-        this.execute(
+    public boolean create(@NotNull TrackChannel entity) {
+        return this.execute(
                 "INSERT INTO `track_channel` (`type`, `guild_id`, `channel_id`, `guild_name`, `player_name`) VALUES (?, ?, ?, ?, ?)",
                 entity.getType(),
                 entity.getGuildId(),
@@ -96,8 +96,8 @@ public class TrackChannelRepository extends Repository<TrackChannel, TrackChanne
     }
 
     @Override
-    public void update(@NotNull TrackChannel entity) {
-        this.execute(
+    public boolean update(@NotNull TrackChannel entity) {
+        return this.execute(
                 "UPDATE `track_channel` SET `guild_name` = ?, `player_name` = ? WHERE `type` = ? AND `guild_id` = ? AND `channel_id` = ?",
                 entity.getGuildName(),
                 entity.getPlayerName(),
@@ -108,8 +108,8 @@ public class TrackChannelRepository extends Repository<TrackChannel, TrackChanne
     }
 
     @Override
-    public void delete(@NotNull TrackChannelId id) {
-        this.execute(
+    public boolean delete(@NotNull TrackChannelId id) {
+        return this.execute(
                 "DELETE FROM `track_channel` WHERE `type` = ? AND `guild_id` = ? AND `channel_id` = ?",
                 id.getType(),
                 id.getGuildId(),

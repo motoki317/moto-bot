@@ -27,8 +27,8 @@ public class WorldRepository extends Repository<World, WorldId> {
     }
 
     @Override
-    public <S extends World> void create(@NotNull S entity) {
-        this.execute(
+    public <S extends World> boolean create(@NotNull S entity) {
+        return this.execute(
                 "INSERT INTO `world` (`name`, `players`) VALUES (? ,?)",
                 entity.getName(),
                 entity.getPlayers()
@@ -119,8 +119,8 @@ public class WorldRepository extends Repository<World, WorldId> {
     }
 
     @Override
-    public void update(@NotNull World entity) {
-        this.execute(
+    public boolean update(@NotNull World entity) {
+        return this.execute(
                 "UPDATE `world` SET `players` = ? WHERE `name` = ?",
                 entity.getPlayers(),
                 entity.getName()
@@ -128,8 +128,8 @@ public class WorldRepository extends Repository<World, WorldId> {
     }
 
     @Override
-    public void delete(@NotNull WorldId worldId) {
-        this.execute(
+    public boolean delete(@NotNull WorldId worldId) {
+        return this.execute(
                 "DELETE FROM `world` WHERE `name` = ?",
                 worldId.getName()
         );

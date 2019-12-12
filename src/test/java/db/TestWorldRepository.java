@@ -35,8 +35,9 @@ class TestWorldRepository {
         assert !repo.exists(wc1);
         assert !repo.exists(lobby1);
 
-        repo.create(wc1);
-        repo.create(lobby1);
+        assert repo.create(wc1);
+        assert repo.create(lobby1);
+
         assert repo.count() == 2;
         assert repo.exists(wc1);
         assert repo.exists(lobby1);
@@ -44,7 +45,8 @@ class TestWorldRepository {
         assert repo.findAllMainWorlds().size() == 1;
         assert repo.findAll().size() == 2;
 
-        repo.delete(wc1);
+        assert repo.delete(wc1);
+
         assert repo.count() == 1;
         assert repo.findAllMainWorlds().size() == 0;
     }

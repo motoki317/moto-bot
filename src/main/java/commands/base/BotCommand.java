@@ -9,7 +9,15 @@ import java.util.function.Consumer;
 public abstract class BotCommand {
     public abstract boolean guildOnly();
     public abstract String[] names();
+    /**
+     * Shows short help in help command.
+     * @return Short help.
+     */
     public abstract String shortHelp();
+    /**
+     * Shows long help in help (cmd name) command.
+     * @return Long help message.
+     */
     public abstract Message longHelp();
     public abstract void process(MessageReceivedEvent event, String[] args);
 
