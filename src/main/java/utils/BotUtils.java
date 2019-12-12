@@ -17,15 +17,6 @@ public class BotUtils {
     }
 
     /**
-     * Returns user name with its discriminator.
-     * @param user User object.
-     * @return Example "username#1234"
-     */
-    public static String getUserFullName(User user) {
-        return user.getName() + "#" + user.getDiscriminator();
-    }
-
-    /**
      * Sends long message (supports string longer than 2000 chars) to text channel.
      * Splits the message into parts to send to discord.
      * @param message Message to send.

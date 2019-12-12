@@ -29,7 +29,7 @@ public class WynnApi {
             String body = HttpUtils.get(onlinePlayersUrl);
             return new OnlinePlayers(body);
         } catch (Exception e) {
-            this.logger.logError("an error occurred while requesting online players", e);
+            this.logger.logException("an error occurred while requesting online players", e);
             return null;
         }
     }
@@ -47,7 +47,7 @@ public class WynnApi {
             if (body == null) throw new Exception("returned body was null");
             return new TerritoryList(body, this.wynnTimeZone);
         } catch (Exception e) {
-            this.logger.logError("an error occurred while requesting territory list", e);
+            this.logger.logException("an error occurred while requesting territory list", e);
             return null;
         }
     }

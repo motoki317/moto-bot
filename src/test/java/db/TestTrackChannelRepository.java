@@ -1,7 +1,7 @@
 package db;
 
-import db.model.TrackChannel;
-import db.model.TrackType;
+import db.model.track.TrackChannel;
+import db.model.track.TrackType;
 import db.repository.TrackChannelRepository;
 import org.jetbrains.annotations.TestOnly;
 import org.junit.jupiter.api.Test;

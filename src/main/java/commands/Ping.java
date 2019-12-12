@@ -7,6 +7,7 @@ import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import utils.BotUtils;
+import utils.FormatUtils;
 
 import java.time.Instant;
 import java.util.function.Consumer;
@@ -51,7 +52,7 @@ public class Ping extends GenericCommand {
                 false
         );
 
-        eb.setFooter("Requested by " + BotUtils.getUserFullName(event.getAuthor()) +
+        eb.setFooter("Requested by " + FormatUtils.getUserFullName(event.getAuthor()) +
                 ", Current Shard: " + this.bot.getShardId(event.getJDA()));
         eb.setTimestamp(Instant.now());
 

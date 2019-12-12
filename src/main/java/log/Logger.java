@@ -6,5 +6,5 @@ public interface Logger {
     void log(int botLogCh, CharSequence message);
     // Returns true if the message event is considered spam.
     boolean logEvent(MessageReceivedEvent event);
-    void logError(CharSequence message, Exception e);
+    void logException(CharSequence message, Exception e);
 }

@@ -27,7 +27,7 @@ public abstract class Repository<T, ID> implements IRepository<T, ID> {
     }
 
     /**
-     * Executes sql statement and handles error.
+     * Executes sql statement and handles exceptions.
      * @param sql any SQL statement
      */
     protected void execute(@Language("MariaDB") String sql, Object... strings) {
@@ -36,7 +36,7 @@ public abstract class Repository<T, ID> implements IRepository<T, ID> {
             Statement statement = this.db.createStatement();
             statement.execute(fullSql);
         } catch (SQLException e) {
-            this.logger.logError("an error occurred while executing sql: " + fullSql, e);
+            this.logger.logException("an exception occurred while executing sql: " + fullSql, e);
         }
     }
 
@@ -48,7 +48,7 @@ public abstract class Repository<T, ID> implements IRepository<T, ID> {
             Statement statement = this.db.createStatement();
             return statement.executeQuery(fullSql);
         } catch (SQLException e) {
-            this.logger.logError("an error occurred while executing sql: " + fullSql, e);
+            this.logger.logException("an exception occurred while executing sql: " + fullSql, e);
             return null;
         }
     }
@@ -68,15 +68,15 @@ public abstract class Repository<T, ID> implements IRepository<T, ID> {
                 .toArray(new String[]{});
     }
 
-    protected void logResponseError(SQLException e) {
-        this.logger.logError("an error occurred while reading from db response", e);
+    protected void logResponseException(SQLException e) {
+        this.logger.logException("an exception occurred while reading from db response", e);
     }
 
     /**
      * Binds result to list of instance from ResultSet of `SELECT * ...` query.
      * @param res Result set.
      * @return An instance.
-     * @throws SQLException on read error.
+     * @throws SQLException on read exception.
      */
     protected List<T> bindAll(@Nullable ResultSet res) throws SQLException {
         List<T> ret = new ArrayList<>();
@@ -93,7 +93,7 @@ public abstract class Repository<T, ID> implements IRepository<T, ID> {
      * Binds result to instance from ResultSet of `SELECT * ...` query.
      * @param res Result set.
      * @return An instance.
-     * @throws SQLException on read error.
+     * @throws SQLException on read exception.
      */
     protected abstract T bind(@NotNull ResultSet res) throws SQLException;
 }

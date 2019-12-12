@@ -1,7 +1,9 @@
 package db;
 
 import db.repository.TrackChannelRepository;
+import db.repository.WorldRepository;
 import log.Logger;
+import org.jetbrains.annotations.NotNull;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -17,6 +19,10 @@ public class DatabaseConnection implements Database {
     private final Connection connection;
 
     private final Logger logger;
+
+    // Repository instance cache
+    private TrackChannelRepository trackChannelRepository;
+    private WorldRepository worldRepository;
 
     public DatabaseConnection(Logger logger) throws SQLException {
         this.logger = logger;
@@ -34,7 +40,21 @@ public class DatabaseConnection implements Database {
         this.logger.log(-1, "Successfully connected to db!");
     }
 
+    @Override
+    @NotNull
     public TrackChannelRepository getTrackingChannelRepository() {
-        return new TrackChannelRepository(this.connection, this.logger);
+        if (this.trackChannelRepository == null) {
+            this.trackChannelRepository = new TrackChannelRepository(this.connection, this.logger);
+        }
+        return this.trackChannelRepository;
+    }
+
+    @Override
+    @NotNull
+    public WorldRepository getWorldRepository() {
+        if (this.worldRepository == null) {
+            this.worldRepository = new WorldRepository(this.connection, this.logger);
+        }
+        return this.worldRepository;
     }
 }

@@ -1,4 +1,4 @@
-package db.model;
+package db.model.track;
 
 import java.util.*;
 

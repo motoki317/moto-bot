@@ -133,7 +133,7 @@ public class App implements Runnable, Bot {
         try {
             return new DatabaseConnection(logger);
         } catch (SQLException e) {
-            logger.logError("an error occurred while establishing connection to db", e);
+            logger.logException("an exception occurred while establishing connection to db", e);
         }
         return null;
     }

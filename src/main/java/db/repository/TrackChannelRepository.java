@@ -1,8 +1,8 @@
 package db.repository;
 
-import db.model.TrackChannel;
-import db.model.TrackChannelId;
-import db.model.TrackType;
+import db.model.track.TrackChannel;
+import db.model.track.TrackChannelId;
+import db.model.track.TrackType;
 import db.repository.base.Repository;
 import log.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -44,7 +44,7 @@ public class TrackChannelRepository extends Repository<TrackChannel, TrackChanne
             if (res.next())
                 return res.getInt(1) > 0;
         } catch (SQLException e) {
-            this.logResponseError(e);
+            this.logResponseException(e);
         }
         return false;
     }
@@ -58,7 +58,7 @@ public class TrackChannelRepository extends Repository<TrackChannel, TrackChanne
             if (res.next())
                 return res.getInt(1);
         } catch (SQLException e) {
-            this.logResponseError(e);
+            this.logResponseException(e);
         }
         return 0;
     }
@@ -77,7 +77,7 @@ public class TrackChannelRepository extends Repository<TrackChannel, TrackChanne
             if (res.next())
                 return bind(res);
         } catch (SQLException e) {
-            this.logResponseError(e);
+            this.logResponseException(e);
         }
         return null;
     }
@@ -90,7 +90,7 @@ public class TrackChannelRepository extends Repository<TrackChannel, TrackChanne
         try {
             return bindAll(res);
         } catch (SQLException e) {
-            this.logResponseError(e);
+            this.logResponseException(e);
         }
         return new ArrayList<>();
     }
@@ -126,7 +126,7 @@ public class TrackChannelRepository extends Repository<TrackChannel, TrackChanne
         try {
             return bindAll(res);
         } catch (SQLException e) {
-            this.logResponseError(e);
+            this.logResponseException(e);
         }
         return new ArrayList<>();
     }

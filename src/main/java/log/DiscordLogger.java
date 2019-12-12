@@ -4,6 +4,7 @@ import app.Bot;
 import net.dv8tion.jda.api.entities.TextChannel;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import utils.BotUtils;
+import utils.FormatUtils;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -92,7 +93,7 @@ public class DiscordLogger implements Logger {
         } else {
             return String.format(
                     "[DM %s]<%s>: `%s`%s",
-                    BotUtils.getUserFullName(event.getAuthor()),
+                    FormatUtils.getUserFullName(event.getAuthor()),
                     event.getAuthor().getName(),
                     event.getMessage().getContentRaw(),
                     isSpam ? " Spam detected" : ""
@@ -101,7 +102,7 @@ public class DiscordLogger implements Logger {
     }
 
     @Override
-    public void logError(CharSequence message, Exception e) {
+    public void logException(CharSequence message, Exception e) {
         String formatted = message + "\n" + e.getMessage() + "\n";
         formatted += Arrays.stream(e.getStackTrace()).map(StackTraceElement::toString).collect(Collectors.joining("\n"));
         this.log(0, formatted);

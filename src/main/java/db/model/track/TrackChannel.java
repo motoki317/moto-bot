@@ -1,4 +1,6 @@
-package db.model;
+package db.model.track;
+
+import org.jetbrains.annotations.NotNull;
 
 public class TrackChannel implements TrackChannelId {
     // Below 3 fields identify a track channel entry
@@ -15,6 +17,7 @@ public class TrackChannel implements TrackChannelId {
         this.channelId = channelId;
     }
 
+    @NotNull
     public TrackType getType() {
         return type;
     }
