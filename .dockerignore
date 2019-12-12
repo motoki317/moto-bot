@@ -1,0 +1,12 @@
+.git
+target
+.idea
+mysql
+
+.gitignore
+docker-compose.yml
+Dockerfile
+experimental.env
+Makefile
+moto-bot.iml
+README.md
