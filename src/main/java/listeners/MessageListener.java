@@ -15,12 +15,12 @@ import java.util.*;
 public class MessageListener extends ListenerAdapter {
     private final Bot bot;
 
-    private final Set<BotCommand> commands;
+    private final List<BotCommand> commands;
     private final Map<String, BotCommand> commandNameMap;
 
     public MessageListener(Bot bot) {
         this.bot = bot;
-        this.commands = new HashSet<>();
+        this.commands = new ArrayList<>();
         this.commandNameMap = new HashMap<>();
 
         addCommand(new Ping(bot));

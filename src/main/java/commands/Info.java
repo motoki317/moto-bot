@@ -28,6 +28,11 @@ public class Info extends GenericCommand {
     }
 
     @Override
+    public String syntax() {
+        return "info";
+    }
+
+    @Override
     public String shortHelp() {
         return "Shows this bot's meta info.";
     }

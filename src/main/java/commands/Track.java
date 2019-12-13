@@ -26,6 +26,11 @@ public class Track extends GuildCommand {
     }
 
     @Override
+    public String syntax() {
+        return "track <server|war|territory>";
+    }
+
+    @Override
     public String shortHelp() {
         return "Manages server, war, and territory tracking.";
     }

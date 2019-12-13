@@ -11,12 +11,25 @@ import java.util.function.Consumer;
 
 public abstract class BotCommand {
     public abstract boolean guildOnly();
+
+    /**
+     * Command names including aliases. Used to process command inputs.
+     * @return Command names.
+     */
     public abstract String[] names();
+
+    /**
+     * Command syntax. Used in help display.
+     * @return Command syntax.
+     */
+    public abstract String syntax();
+
     /**
      * Shows short help in help command.
      * @return Short help.
      */
     public abstract String shortHelp();
+
     /**
      * Shows long help in help (cmd name) command.
      * @return Long help message.

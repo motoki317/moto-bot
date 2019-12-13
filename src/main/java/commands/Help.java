@@ -8,14 +8,14 @@ import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 
-import java.util.Set;
+import java.util.List;
 
 public class Help extends GenericCommand {
     private final Bot bot;
 
-    private final Set<BotCommand> commands;
+    private final List<BotCommand> commands;
 
-    public Help(Bot bot, Set<BotCommand> commands) {
+    public Help(Bot bot, List<BotCommand> commands) {
         this.bot = bot;
         this.commands = commands;
     }
@@ -23,6 +23,11 @@ public class Help extends GenericCommand {
     @Override
     public String[] names() {
         return new String[]{"help", "h"};
+    }
+
+    @Override
+    public String syntax() {
+        return "help [cmd name]";
     }
 
     @Override
@@ -46,7 +51,7 @@ public class Help extends GenericCommand {
             eb.setTitle("Commands List");
             for (BotCommand cmd : this.commands) {
                 eb.addField(
-                        this.bot.getProperties().prefix + cmd.names()[0],
+                        this.bot.getProperties().prefix + cmd.syntax(),
                         cmd.shortHelp(),
                         false
                 );

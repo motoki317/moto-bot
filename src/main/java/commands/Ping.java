@@ -25,6 +25,11 @@ public class Ping extends GenericCommand {
     }
 
     @Override
+    public String syntax() {
+        return "ping";
+    }
+
+    @Override
     public String shortHelp() {
         return "Pong!";
     }
