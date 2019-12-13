@@ -1,9 +1,12 @@
 package commands.base;
 
+import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import utils.MinecraftColor;
 
+import java.time.Instant;
 import java.util.function.Consumer;
 
 public abstract class BotCommand {
@@ -38,5 +41,24 @@ public abstract class BotCommand {
     }
     protected void respond(MessageReceivedEvent event, MessageEmbed message, Consumer<? super Message> onSuccess) {
         event.getChannel().sendMessage(message).queue(onSuccess);
+    }
+
+    /**
+     * Respond error message when something seriously went wrong (not because of bad user action) while processing a command.
+     * @param event Message received event.
+     * @param message Description of the error.
+     */
+    protected void respondError(MessageReceivedEvent event, CharSequence message) {
+        event.getChannel().sendMessage(
+                new EmbedBuilder()
+                .setColor(MinecraftColor.RED.getColor())
+                .setAuthor(":exclamation: Error!", null, event.getAuthor().getEffectiveAvatarUrl())
+                .setDescription(message)
+                .addField("What is this?", "An unexpected error occurred while processing your command. " +
+                        "If the error persists, please contact the bot owner.", false)
+                .setFooter("For more, visit the bot support server via info cmd.")
+                .setTimestamp(Instant.now())
+                .build()
+        ).queue();
     }
 }

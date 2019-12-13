@@ -4,7 +4,7 @@ import app.Bot;
 import commands.Help;
 import commands.Info;
 import commands.Ping;
-import commands.ServerTrack;
+import commands.Track;
 import commands.base.BotCommand;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
@@ -25,7 +25,7 @@ public class MessageListener extends ListenerAdapter {
 
         addCommand(new Ping(bot));
         addCommand(new Info(bot));
-        addCommand(new ServerTrack(bot.getDatabase()));
+        addCommand(new Track(bot.getDatabase()));
 
         // Help command must receive a full list of commands.
         addCommand(new Help(bot, this.commands));
