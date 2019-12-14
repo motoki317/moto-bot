@@ -19,7 +19,10 @@ class TestTrackChannelRepository {
     private static void clearTable() {
         TrackChannelRepository repo = getRepository();
         List<TrackChannel> list = repo.findAll();
-        list.forEach(repo::delete);
+        assert list != null;
+        list.forEach(e -> {
+            assert repo.delete(e);
+        });
         assert repo.count() == 0;
     }
 
@@ -38,8 +41,10 @@ class TestTrackChannelRepository {
         assert repo.count() == 1;
         assert repo.exists(entity);
 
-        assert repo.findAllOfType(TrackType.TERRITORY_ALL).size() == 1;
-        assert repo.findAllOfType(TrackType.WAR_ALL).size() == 0;
+        List<TrackChannel> res = repo.findAllOfType(TrackType.TERRITORY_ALL);
+        assert res != null && res.size() == 1;
+        res = repo.findAllOfType(TrackType.WAR_ALL);
+        assert res != null && res.size() == 0;
 
         assert repo.delete(entity);
 

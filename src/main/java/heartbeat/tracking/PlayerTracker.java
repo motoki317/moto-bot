@@ -49,7 +49,10 @@ public class PlayerTracker {
         }
 
         WorldRepository repo = this.bot.getDatabase().getWorldRepository();
-        Map<String, World> prevWorlds = repo.findAll().stream().collect(Collectors.toMap(World::getName, w -> w));
+        List<World> prevWorldList = repo.findAll();
+        if (prevWorldList == null) return;
+
+        Map<String, World> prevWorlds = prevWorldList.stream().collect(Collectors.toMap(World::getName, w -> w));
         Map<String, World> currentWorlds = players.getWorlds().entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, e -> new World(e.getKey(), e.getValue().size())));
 
         // Handle tracks
@@ -113,9 +116,13 @@ public class PlayerTracker {
         }
 
         List<TrackChannel> channelsToSend = repo.findAllOfType(start ? TrackType.SERVER_START_ALL : TrackType.SERVER_CLOSE_ALL);
+        if (channelsToSend == null) return;
+
         // Is a main world
         if (mainWorld.matcher(world.getName()).matches()) {
-            channelsToSend.addAll(repo.findAllOfType(start ? TrackType.SERVER_START : TrackType.SERVER_CLOSE));
+            List<TrackChannel> toAdd = repo.findAllOfType(start ? TrackType.SERVER_START : TrackType.SERVER_CLOSE);
+            if (toAdd == null) return;
+            channelsToSend.addAll(toAdd);
         }
 
         channelsToSend.forEach(ch -> {

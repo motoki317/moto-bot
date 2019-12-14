@@ -11,7 +11,6 @@ import javax.annotation.Nullable;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
@@ -90,34 +89,36 @@ public class WorldRepository extends Repository<World, WorldId> {
     }
 
     @Override
-    public @NotNull List<World> findAll() {
+    @Nullable
+    public List<World> findAll() {
         ResultSet res = this.executeQuery("SELECT * FROM `world`");
 
-        if (res == null) return new ArrayList<>();
+        if (res == null) return null;
 
         try {
             return bindAll(res);
         } catch (SQLException e) {
             this.logResponseException(e);
         }
-        return new ArrayList<>();
+        return null;
     }
 
     /**
      * Retrieves all main worlds (WC.* or EU.*).
      * @return List of all main worlds.
      */
-    public @NotNull List<World> findAllMainWorlds() {
+    @Nullable
+    public List<World> findAllMainWorlds() {
         ResultSet res = this.executeQuery("SELECT * FROM `world` WHERE `name` LIKE 'WC%' OR `name` LIKE 'EU%'");
 
-        if (res == null) return new ArrayList<>();
+        if (res == null) return null;
 
         try {
             return bindAll(res);
         } catch (SQLException e) {
             this.logResponseException(e);
         }
-        return new ArrayList<>();
+        return null;
     }
 
     @Override

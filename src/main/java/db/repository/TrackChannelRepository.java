@@ -7,10 +7,10 @@ import db.model.track.TrackType;
 import db.repository.base.Repository;
 import log.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
 
 public class TrackChannelRepository extends Repository<TrackChannel, TrackChannelId> {
@@ -88,34 +88,36 @@ public class TrackChannelRepository extends Repository<TrackChannel, TrackChanne
         return null;
     }
 
-    @NotNull
+    @Nullable
     public List<TrackChannel> findAllOf(long guildId, long channelId) {
         ResultSet res = this.executeQuery(
                 "SELECT * FROM `track_channel` WHERE `guild_id` = ? AND `channel_id` = ?",
                 guildId,
                 channelId
         );
-        if (res == null) return new ArrayList<>();
+        if (res == null) return null;
 
         try {
             return bindAll(res);
         } catch (SQLException e) {
             this.logResponseException(e);
+            return null;
         }
-        return new ArrayList<>();
     }
 
-    @NotNull
+    @Nullable
     @Override
     public List<TrackChannel> findAll() {
         ResultSet res = this.executeQuery("SELECT * FROM `track_channel`");
 
+        if (res == null) return null;
+
         try {
             return bindAll(res);
         } catch (SQLException e) {
             this.logResponseException(e);
         }
-        return new ArrayList<>();
+        return null;
     }
 
     @Override
@@ -142,18 +144,21 @@ public class TrackChannelRepository extends Repository<TrackChannel, TrackChanne
         );
     }
 
+    @Nullable
     public List<TrackChannel> findAllOfType(TrackType type) {
         ResultSet res = this.executeQuery(
                 "SELECT * FROM `track_channel` WHERE `type` = ?",
                 type
         );
 
+        if (res == null) return null;
+
         try {
             return bindAll(res);
         } catch (SQLException e) {
             this.logResponseException(e);
+            return null;
         }
-        return new ArrayList<>();
     }
 
     protected TrackChannel bind(@NotNull ResultSet res) throws SQLException {

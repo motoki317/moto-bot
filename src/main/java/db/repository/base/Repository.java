@@ -30,6 +30,7 @@ public abstract class Repository<T, ID> implements IRepository<T, ID> {
      * @param sql any SQL statement
      * @return True if succeeded.
      */
+    @CheckReturnValue
     protected boolean execute(@Language("MariaDB") String sql, Object... strings) {
         Connection connection = this.db.getConnection();
         if (connection == null) {
@@ -92,11 +93,9 @@ public abstract class Repository<T, ID> implements IRepository<T, ID> {
      * @return An instance.
      * @throws SQLException on read exception.
      */
-    protected List<T> bindAll(@Nullable ResultSet res) throws SQLException {
+    @NotNull
+    protected List<T> bindAll(@NotNull ResultSet res) throws SQLException {
         List<T> ret = new ArrayList<>();
-
-        if (res == null) return ret;
-
         while (res.next()) {
             ret.add(bind(res));
         }

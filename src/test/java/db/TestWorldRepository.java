@@ -19,7 +19,10 @@ class TestWorldRepository {
     private static void clearTable() {
         WorldRepository repo = getRepository();
         List<World> list = repo.findAll();
-        list.forEach(repo::delete);
+        assert list != null;
+        list.forEach(e -> {
+            assert repo.delete(e);
+        });
         assert repo.count() == 0;
     }
 
@@ -42,13 +45,18 @@ class TestWorldRepository {
         assert repo.exists(wc1);
         assert repo.exists(lobby1);
 
-        assert repo.findAllMainWorlds().size() == 1;
-        assert repo.findAll().size() == 2;
+        List<World> mainWorlds = repo.findAllMainWorlds();
+        assert mainWorlds != null;
+        assert mainWorlds.size() == 1;
+        List<World> all = repo.findAll();
+        assert all != null && all.size() == 2;
 
         assert repo.delete(wc1);
 
         assert repo.count() == 1;
-        assert repo.findAllMainWorlds().size() == 0;
+        mainWorlds = repo.findAllMainWorlds();
+        assert mainWorlds != null;
+        assert mainWorlds.size() == 0;
     }
 
     @Test
@@ -59,7 +67,7 @@ class TestWorldRepository {
 
         assert !repo.exists(wc5);
 
-        repo.create(wc5);
+        assert repo.create(wc5);
 
         WorldId wc5id = () -> "WC5";
 

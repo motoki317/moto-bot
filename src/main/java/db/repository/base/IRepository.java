@@ -2,6 +2,7 @@ package db.repository.base;
 
 import org.jetbrains.annotations.NotNull;
 
+import javax.annotation.CheckReturnValue;
 import javax.annotation.Nullable;
 import java.util.List;
 
@@ -11,6 +12,7 @@ public interface IRepository<T, ID> {
      * @param entity Entity
      * @return True if succeeded.
      */
+    @CheckReturnValue
     <S extends T> boolean create(@NotNull S entity);
 
     /**
@@ -18,12 +20,14 @@ public interface IRepository<T, ID> {
      * @param id Identification of an entity.
      * @return True if exists.
      */
+    @CheckReturnValue
     boolean exists(@NotNull ID id);
 
     /**
      * Counts the total number of entity in the repository.
      * @return Number of entity.
      */
+    @CheckReturnValue
     long count();
 
     /**
@@ -38,7 +42,7 @@ public interface IRepository<T, ID> {
      * Retrieves all entities in the repository.
      * @return List of all entities. Returns an empty list on failure.
      */
-    @NotNull
+    @Nullable
     List<T> findAll();
 
     /**
@@ -46,6 +50,7 @@ public interface IRepository<T, ID> {
      * @param entity Entity to update with the new data.
      * @return True if succeeded.
      */
+    @CheckReturnValue
     boolean update(@NotNull T entity);
 
     /**
@@ -53,5 +58,6 @@ public interface IRepository<T, ID> {
      * @param id Identification of an entity.
      * @return True if succeeded.
      */
+    @CheckReturnValue
     boolean delete(@NotNull ID id);
 }
