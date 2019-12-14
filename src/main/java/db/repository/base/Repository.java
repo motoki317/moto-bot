@@ -54,7 +54,7 @@ public abstract class Repository<T, ID> implements IRepository<T, ID> {
         }
     }
 
-    private static String replaceSql(String sql, Object... strings) {
+    private static String replaceSql(String sql, @NotNull Object... strings) {
         String ret = sql;
         for (Object o : strings) {
             ret = ret.replaceFirst("\\?", escapeString(o));
@@ -62,7 +62,8 @@ public abstract class Repository<T, ID> implements IRepository<T, ID> {
         return ret;
     }
 
-    private static String escapeString(Object o) {
+    @NotNull
+    private static String escapeString(@Nullable Object o) {
         return o == null ? "NULL" : "\"" + Utils.escapeString(o.toString(), true) + "\"";
     }
 

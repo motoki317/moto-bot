@@ -9,9 +9,13 @@ import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
 import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 public class Track extends GuildCommand {
     private final Database db;
@@ -99,7 +103,6 @@ public class Track extends GuildCommand {
         }
 
         TrackChannel entity = new TrackChannel(type, event.getGuild().getIdLong(), event.getChannel().getIdLong());
-        String displayName = type.getDisplayName();
 
         switch (type) {
             case WAR_SPECIFIC:
@@ -111,7 +114,6 @@ public class Track extends GuildCommand {
                 }
 
                 entity.setGuildName(guildName);
-                displayName += " (Guild: " + guildName + ")";
                 break;
             case WAR_PLAYER:
                 String playerName = getName(args);
@@ -121,7 +123,6 @@ public class Track extends GuildCommand {
                 }
 
                 entity.setPlayerName(playerName);
-                displayName += " (Player: " + playerName + ")";
                 break;
         }
 
@@ -130,18 +131,37 @@ public class Track extends GuildCommand {
         if (repo.exists(entity)) {
             // Disable tracking
             if (repo.delete(entity)) {
-                respond(event, ":mute: Successfully **disabled** " + displayName + " for this channel.");
+                respond(event, ":mute: Successfully **disabled** " + entity.getDisplayName() + " for this channel.");
             } else {
                 respondError(event, "Something went wrong while saving data.");
             }
         } else {
             // Enable tracking
+
+            // Check conflicting types
+            List<TrackChannel> conflicting = getConflictingEntities(repo, type, event);
+            if (!conflicting.isEmpty()) {
+                String message = "You have conflicting type of tracking enabled in this channel to enable the one you just specified.\n" +
+                        "Below is the list of that.\n";
+                message += conflicting.stream().map(TrackChannel::getDisplayName).collect(Collectors.joining("\n"));
+                respond(event, message);
+                return;
+            }
+
             if (repo.create(entity)) {
-                respond(event, ":loud_sound: Successfully **enabled** " + displayName + " for this channel!");
+                respond(event, ":loud_sound: Successfully **enabled** " + entity.getDisplayName() + " for this channel!");
             } else {
                 respondError(event, "Something went wrong while saving data.");
             }
         }
+    }
+
+    @NotNull
+    private static List<TrackChannel> getConflictingEntities(TrackChannelRepository repo, TrackType type, MessageReceivedEvent event) {
+        long guildId = event.getGuild().getIdLong();
+        long channelId = event.getChannel().getIdLong();
+        Set<TrackType> conflictTypes = type.getConflictTypes();
+        return repo.findAllOf(guildId, channelId).stream().filter(e -> conflictTypes.contains(e.getType())).collect(Collectors.toList());
     }
 
     @Nullable

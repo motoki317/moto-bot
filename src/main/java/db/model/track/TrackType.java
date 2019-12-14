@@ -7,7 +7,7 @@ public enum TrackType {
     WAR_SPECIFIC("War Tracking (Specific Guild)"),
     WAR_PLAYER("War Tracking (Specific Player)"),
 
-    TERRITORY_ALL("Territory Tracking (All Guilds))"),
+    TERRITORY_ALL("Territory Tracking (All Guilds)"),
     TERRITORY_SPECIFIC("Territory Tracking (Specific Guild)"),
 
     SERVER_START("Server Start Tracking (WC/EU Servers)"),

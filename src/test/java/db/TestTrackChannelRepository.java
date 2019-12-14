@@ -48,19 +48,24 @@ class TestTrackChannelRepository {
     }
 
     @Test
-    void testNonIdFields() {
+    void testNullableValues() {
         clearTable();
         TrackChannelRepository repo = getRepository();
 
-        TrackChannel entity = new TrackChannel(TrackType.WAR_SPECIFIC, 2000L, 6000L);
+        long guildId = 2000L;
+        long channelId = 6000L;
+        TrackChannel entity = new TrackChannel(TrackType.WAR_SPECIFIC, guildId, channelId);
         entity.setGuildName("Salted Test");
 
         assert repo.create(entity);
+        assert repo.exists(entity);
 
-        // reset entity field to make this entity 'id' entity
-        entity.setGuildName(null);
-        TrackChannel result = repo.findOne(entity);
-        assert result != null;
-        assert "Salted Test".equals(result.getGuildName());
+        entity.setGuildName("Different Guild");
+        assert !repo.exists(entity);
+
+        entity.setGuildName("Salted Test");
+        assert repo.count() == 1;
+        assert repo.delete(entity);
+        assert repo.count() == 0;
     }
 }

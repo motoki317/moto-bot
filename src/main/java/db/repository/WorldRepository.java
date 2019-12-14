@@ -29,7 +29,7 @@ public class WorldRepository extends Repository<World, WorldId> {
     @Override
     public <S extends World> boolean create(@NotNull S entity) {
         return this.execute(
-                "INSERT INTO `world` (`name`, `players`) VALUES (? ,?)",
+                "INSERT INTO `world` (`name`, `players`) VALUES (?, ?)",
                 entity.getName(),
                 entity.getPlayers()
         );
@@ -121,7 +121,7 @@ public class WorldRepository extends Repository<World, WorldId> {
     @Override
     public boolean update(@NotNull World entity) {
         return this.execute(
-                "UPDATE `world` SET `players` = ? WHERE `name` = ?",
+                "UPDATE `world` SET `players` = ?, `updated_at` = NOW() WHERE `name` = ?",
                 entity.getPlayers(),
                 entity.getName()
         );

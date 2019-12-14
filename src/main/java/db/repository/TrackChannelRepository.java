@@ -14,6 +14,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class TrackChannelRepository extends Repository<TrackChannel, TrackChannelId> {
+    // NOTE: guild_name, player_name columns are NULL-able
+
     public TrackChannelRepository(Connection db, Logger logger) {
         super(db, logger);
     }
@@ -33,10 +35,12 @@ public class TrackChannelRepository extends Repository<TrackChannel, TrackChanne
     @Override
     public boolean exists(@NotNull TrackChannelId id) {
         ResultSet res = this.executeQuery(
-                "SELECT COUNT(*) FROM `track_channel` WHERE `type` = ? AND `guild_id` = ? AND `channel_id` = ?",
+                "SELECT COUNT(*) FROM `track_channel` WHERE `type` = ? AND `guild_id` = ? AND `channel_id` = ? AND `guild_name` <=> ? AND `player_name` <=> ?",
                 id.getType(),
                 id.getGuildId(),
-                id.getChannelId()
+                id.getChannelId(),
+                id.getGuildName(),
+                id.getPlayerName()
         );
         if (res == null) return false;
 
@@ -66,10 +70,12 @@ public class TrackChannelRepository extends Repository<TrackChannel, TrackChanne
     @Override
     public TrackChannel findOne(@NotNull TrackChannelId id) {
         ResultSet res = this.executeQuery(
-                "SELECT * FROM `track_channel` WHERE `type` = ? AND `guild_id` = ? AND `channel_id` = ?",
+                "SELECT * FROM `track_channel` WHERE `type` = ? AND `guild_id` = ? AND `channel_id` = ? AND `guild_name` <=> ? AND `player_name` <=> ? LIMIT 1",
                 id.getType(),
                 id.getGuildId(),
-                id.getChannelId()
+                id.getChannelId(),
+                id.getGuildName(),
+                id.getPlayerName()
         );
         if (res == null) return null;
 
@@ -80,6 +86,23 @@ public class TrackChannelRepository extends Repository<TrackChannel, TrackChanne
             this.logResponseException(e);
         }
         return null;
+    }
+
+    @NotNull
+    public List<TrackChannel> findAllOf(long guildId, long channelId) {
+        ResultSet res = this.executeQuery(
+                "SELECT * FROM `track_channel` WHERE `guild_id` = ? AND `channel_id` = ?",
+                guildId,
+                channelId
+        );
+        if (res == null) return new ArrayList<>();
+
+        try {
+            return bindAll(res);
+        } catch (SQLException e) {
+            this.logResponseException(e);
+        }
+        return new ArrayList<>();
     }
 
     @NotNull
@@ -110,10 +133,12 @@ public class TrackChannelRepository extends Repository<TrackChannel, TrackChanne
     @Override
     public boolean delete(@NotNull TrackChannelId id) {
         return this.execute(
-                "DELETE FROM `track_channel` WHERE `type` = ? AND `guild_id` = ? AND `channel_id` = ?",
+                "DELETE FROM `track_channel` WHERE `type` = ? AND `guild_id` = ? AND `channel_id` = ? AND `guild_name` <=> ? AND `player_name` <=> ?",
                 id.getType(),
                 id.getGuildId(),
-                id.getChannelId()
+                id.getChannelId(),
+                id.getGuildName(),
+                id.getPlayerName()
         );
     }
 
