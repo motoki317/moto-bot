@@ -71,17 +71,8 @@ public class PlayerTracker {
         this.bot.getManager().setActivity(Activity.playing("Wynn " + countOnlinePlayers(currentWorlds.values()) + " online"));
 
         // Update DB
-        for (World currentWorld : currentWorlds.values()) {
-            if (!prevWorlds.containsKey(currentWorld.getName())) {
-                repo.create(currentWorld);
-            } else {
-                repo.update(currentWorld);
-            }
-        }
-        for (World prevWorld : prevWorlds.values()) {
-            if (!currentWorlds.containsKey(prevWorld.getName())) {
-                repo.delete(prevWorld);
-            }
+        if (!repo.updateAll(currentWorlds.values())) {
+            this.logger.log(0, "Player Tracer: Failed to update worlds in DB");
         }
     }
 

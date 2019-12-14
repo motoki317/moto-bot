@@ -37,6 +37,17 @@ public abstract class Repository<T, ID> implements IRepository<T, ID> {
             return false;
         }
 
+        return execute(connection, sql, strings);
+    }
+    /**
+     *
+     * Executes sql statement with given connection, and handles exceptions.
+     * @param sql any SQL statement
+     * @param connection Connection to use.
+     * @return True if succeeded.
+     */
+    @CheckReturnValue
+    protected boolean execute(Connection connection, @Language("MariaDB") String sql, Object... strings) {
         String fullSql = replaceSql(sql, strings);
         try {
             Statement statement = connection.createStatement();

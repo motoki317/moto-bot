@@ -7,12 +7,15 @@ import db.repository.base.Repository;
 import log.Logger;
 import org.jetbrains.annotations.NotNull;
 
+import javax.annotation.CheckReturnValue;
 import javax.annotation.Nullable;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 public class WorldRepository extends Repository<World, WorldId> {
     public WorldRepository(ConnectionPool db, Logger logger) {
@@ -135,6 +138,7 @@ public class WorldRepository extends Repository<World, WorldId> {
      * @param worlds Current list of worlds.
      * @return True if success.
      */
+    @CheckReturnValue
     public boolean updateAll(Collection<World> worlds) {
         Connection connection = this.db.getConnection();
         if (connection == null) {
@@ -144,7 +148,34 @@ public class WorldRepository extends Repository<World, WorldId> {
         try {
             connection.setAutoCommit(false);
 
-            // TODO: migrate logic from player tracker
+            Map<String, World> currentWorlds = worlds.stream().collect(Collectors.toMap(World::getName, w -> w));
+            List<World> prevWorldList = this.findAll();
+            if (prevWorldList == null) return false;
+            Map<String, World> prevWorlds = prevWorldList.stream().collect(Collectors.toMap(World::getName, w -> w));
+
+            for (World currentWorld : currentWorlds.values()) {
+                if (!prevWorlds.containsKey(currentWorld.getName())) {
+                    boolean res = this.execute(connection,
+                            "INSERT INTO `world` (`name`, `players`) VALUES (?, ?)",
+                            currentWorld.getName(),
+                            currentWorld.getPlayers());
+                    if (!res) throw new SQLException("Insert failed");
+                } else {
+                    boolean res = this.execute(connection,
+                            "UPDATE `world` SET `players` = ?, `updated_at` = NOW() WHERE `name` = ?",
+                            currentWorld.getPlayers(),
+                            currentWorld.getName());
+                    if (!res) throw new SQLException("Update failed");
+                }
+            }
+            for (World prevWorld : prevWorlds.values()) {
+                if (!currentWorlds.containsKey(prevWorld.getName())) {
+                    boolean res = this.execute(connection,
+                            "DELETE FROM `world` WHERE `name` = ?",
+                            prevWorld.getName());
+                    if (!res) throw new SQLException("Delete failed");
+                }
+            }
 
             return true;
         } catch (SQLException e) {
