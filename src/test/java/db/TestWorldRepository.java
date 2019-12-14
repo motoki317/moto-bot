@@ -11,7 +11,7 @@ import java.util.List;
 class TestWorldRepository {
     @TestOnly
     private static WorldRepository getRepository() {
-        DatabaseConnection db = TestDBUtils.createConnection();
+        Database db = TestDBUtils.createDatabase();
         return db.getWorldRepository();
     }
 

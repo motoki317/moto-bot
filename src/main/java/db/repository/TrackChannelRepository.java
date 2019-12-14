@@ -1,5 +1,6 @@
 package db.repository;
 
+import db.ConnectionPool;
 import db.model.track.TrackChannel;
 import db.model.track.TrackChannelId;
 import db.model.track.TrackType;
@@ -7,7 +8,6 @@ import db.repository.base.Repository;
 import log.Logger;
 import org.jetbrains.annotations.NotNull;
 
-import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -16,7 +16,7 @@ import java.util.List;
 public class TrackChannelRepository extends Repository<TrackChannel, TrackChannelId> {
     // NOTE: guild_name, player_name columns are NULL-able
 
-    public TrackChannelRepository(Connection db, Logger logger) {
+    public TrackChannelRepository(ConnectionPool db, Logger logger) {
         super(db, logger);
     }
 

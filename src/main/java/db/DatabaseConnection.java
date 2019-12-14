@@ -5,8 +5,6 @@ import db.repository.WorldRepository;
 import log.Logger;
 import org.jetbrains.annotations.NotNull;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.SQLException;
 
 public class DatabaseConnection implements Database {
@@ -16,9 +14,13 @@ public class DatabaseConnection implements Database {
     private static final String MYSQL_PASSWORD = System.getenv("MYSQL_PASSWORD");
     private static final int MYSQL_PORT = Integer.parseInt(System.getenv("MYSQL_PORT"));
 
-    private final Connection connection;
+    private static final String URL =  String.format(
+            "jdbc:mariadb://%s:%s/%s?user=%s&password=%s",
+            MYSQL_HOST, MYSQL_PORT, MYSQL_DATABASE, MYSQL_USER, MYSQL_PASSWORD);
 
     private final Logger logger;
+
+    private final ConnectionPool connectionPool;
 
     // Repository instance cache
     private TrackChannelRepository trackChannelRepository;
@@ -26,25 +28,14 @@ public class DatabaseConnection implements Database {
 
     public DatabaseConnection(Logger logger) throws SQLException {
         this.logger = logger;
-
-        String url = String.format(
-                "jdbc:mariadb://%s:%s/%s?user=%s&password=%s",
-                MYSQL_HOST,
-                MYSQL_PORT,
-                MYSQL_DATABASE,
-                MYSQL_USER,
-                MYSQL_PASSWORD
-        );
-        this.logger.log(-1, "Connecting to " + url);
-        this.connection = DriverManager.getConnection(url);
-        this.logger.log(-1, "Successfully connected to db!");
+        this.connectionPool = new SimpleConnectionPool(URL, logger, 5);
     }
 
     @Override
     @NotNull
     public TrackChannelRepository getTrackingChannelRepository() {
         if (this.trackChannelRepository == null) {
-            this.trackChannelRepository = new TrackChannelRepository(this.connection, this.logger);
+            this.trackChannelRepository = new TrackChannelRepository(this.connectionPool, this.logger);
         }
         return this.trackChannelRepository;
     }
@@ -53,7 +44,7 @@ public class DatabaseConnection implements Database {
     @NotNull
     public WorldRepository getWorldRepository() {
         if (this.worldRepository == null) {
-            this.worldRepository = new WorldRepository(this.connection, this.logger);
+            this.worldRepository = new WorldRepository(this.connectionPool, this.logger);
         }
         return this.worldRepository;
     }

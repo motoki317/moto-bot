@@ -11,7 +11,7 @@ import java.util.List;
 class TestTrackChannelRepository {
     @TestOnly
     private static TrackChannelRepository getRepository() {
-        DatabaseConnection db = TestDBUtils.createConnection();
+        Database db = TestDBUtils.createDatabase();
         return db.getTrackingChannelRepository();
     }
 

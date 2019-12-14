@@ -11,7 +11,7 @@ class TestDBUtils {
     @NotNull
     @Contract(" -> new")
     @TestOnly
-    static DatabaseConnection createConnection() {
+    static Database createDatabase() {
         try {
             return new DatabaseConnection(TestUtils.getLogger());
         } catch (SQLException e) {

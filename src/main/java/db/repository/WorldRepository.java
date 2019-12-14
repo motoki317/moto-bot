@@ -1,5 +1,6 @@
 package db.repository;
 
+import db.ConnectionPool;
 import db.model.world.World;
 import db.model.world.WorldId;
 import db.repository.base.Repository;
@@ -11,10 +12,11 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 public class WorldRepository extends Repository<World, WorldId> {
-    public WorldRepository(Connection db, Logger logger) {
+    public WorldRepository(ConnectionPool db, Logger logger) {
         super(db, logger);
     }
 
@@ -125,6 +127,42 @@ public class WorldRepository extends Repository<World, WorldId> {
                 entity.getPlayers(),
                 entity.getName()
         );
+    }
+
+    /**
+     * Updates all worlds to the given worlds, and removes all worlds not in the given worlds.
+     * @param worlds Current list of worlds.
+     * @return True if success.
+     */
+    public boolean updateAll(Collection<World> worlds) {
+        Connection connection = this.db.getConnection();
+        if (connection == null) {
+            return false;
+        }
+
+        try {
+            connection.setAutoCommit(false);
+
+            // TODO: migrate logic from player tracker
+
+            return true;
+        } catch (SQLException e) {
+            this.logger.logException("an exception occurred while updating worlds.", e);
+            this.logger.log(0, "Rolling back world update changes.");
+            try {
+                connection.rollback();
+            } catch (SQLException ex) {
+                this.logger.logException("an exception occurred while rolling back changes.", ex);
+            }
+            return false;
+        } finally {
+            try {
+                connection.setAutoCommit(true);
+            } catch (SQLException e) {
+                this.logger.logException("an exception occurred while setting back auto commit to on.", e);
+            }
+            this.db.releaseConnection(connection);
+        }
     }
 
     @Override
