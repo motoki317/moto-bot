@@ -3,6 +3,8 @@ package listeners;
 import app.Bot;
 import commands.*;
 import commands.base.BotCommand;
+import db.model.commandLog.CommandLog;
+import db.repository.CommandLogRepository;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 
@@ -15,10 +17,13 @@ public class MessageListener extends ListenerAdapter {
     private final List<BotCommand> commands;
     private final Map<String, BotCommand> commandNameMap;
 
+    private final CommandLogRepository repo;
+
     public MessageListener(Bot bot) {
         this.bot = bot;
         this.commands = new ArrayList<>();
         this.commandNameMap = new HashMap<>();
+        this.repo = bot.getDatabase().getCommandLogRepository();
 
         addCommand(new Help(bot, this.commands));
         addCommand(new Ping(bot));
@@ -80,8 +85,20 @@ public class MessageListener extends ListenerAdapter {
                 }
 
                 command.process(event, args);
+
+                addCommandLog(args[0], commandMessage, event.getAuthor().getIdLong(), !event.isFromGuild());
                 return;
             }
+        }
+    }
+
+    /**
+     * Adds command log to db.
+     */
+    private void addCommandLog(String kind, String full, long userId, boolean dm) {
+        CommandLog entity = new CommandLog(kind, full, userId, dm);
+        if (!this.repo.create(entity)) {
+            this.bot.getLogger().log(0, "Failed to log command to db.");
         }
     }
 }

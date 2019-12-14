@@ -21,6 +21,17 @@ CREATE TABLE IF NOT EXISTS `world` (
     PRIMARY KEY (`name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+CREATE TABLE IF NOT EXISTS `command_log` (
+    `id` INT AUTO_INCREMENT NOT NULL,
+    `kind` VARCHAR(30) NOT NULL,
+    `full` VARCHAR(2500) NOT NULL,
+    `user_id` BIGINT NOT NULL,
+    `dm` BOOLEAN NOT NULL,
+    PRIMARY KEY (`id`),
+    KEY `kind_idx` (`kind`),
+    KEY `user_id_idx` (`user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 # -- Test --
 DROP DATABASE IF EXISTS `moto-bot_test`;
 CREATE DATABASE `moto-bot_test`;
@@ -44,4 +55,15 @@ CREATE TABLE IF NOT EXISTS `world` (
     `created_at` TIMESTAMP DEFAULT NOW(),
     `updated_at` TIMESTAMP DEFAULT NOW() ON UPDATE NOW(),
     PRIMARY KEY (`name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `command_log` (
+    `id` INT AUTO_INCREMENT NOT NULL,
+    `kind` VARCHAR(30) NOT NULL,
+    `full` VARCHAR(2500) NOT NULL,
+    `user_id` BIGINT NOT NULL,
+    `dm` BOOLEAN NOT NULL,
+    PRIMARY KEY (`id`),
+    KEY `kind_idx` (`kind`),
+    KEY `user_id_idx` (`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

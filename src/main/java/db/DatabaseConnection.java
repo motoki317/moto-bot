@@ -1,5 +1,6 @@
 package db;
 
+import db.repository.CommandLogRepository;
 import db.repository.TrackChannelRepository;
 import db.repository.WorldRepository;
 import log.Logger;
@@ -25,6 +26,7 @@ public class DatabaseConnection implements Database {
     // Repository instance cache
     private TrackChannelRepository trackChannelRepository;
     private WorldRepository worldRepository;
+    private CommandLogRepository commandLogRepository;
 
     public DatabaseConnection(Logger logger) throws SQLException {
         this.logger = logger;
@@ -47,5 +49,14 @@ public class DatabaseConnection implements Database {
             this.worldRepository = new WorldRepository(this.connectionPool, this.logger);
         }
         return this.worldRepository;
+    }
+
+    @Override
+    @NotNull
+    public CommandLogRepository getCommandLogRepository() {
+        if (this.commandLogRepository == null) {
+            this.commandLogRepository = new CommandLogRepository(this.connectionPool, this.logger);
+        }
+        return this.commandLogRepository;
     }
 }
