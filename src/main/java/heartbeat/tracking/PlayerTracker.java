@@ -6,24 +6,24 @@ import app.Bot;
 import db.model.track.TrackChannel;
 import db.model.track.TrackType;
 import db.model.world.World;
-import db.model.world.WorldId;
 import db.repository.TrackChannelRepository;
 import db.repository.WorldRepository;
 import log.Logger;
+import net.dv8tion.jda.api.entities.Activity;
 import net.dv8tion.jda.api.entities.TextChannel;
 import net.dv8tion.jda.api.sharding.ShardManager;
+import org.jetbrains.annotations.NotNull;
 import utils.FormatUtils;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 public class PlayerTracker {
     private static final Pattern mainWorld = Pattern.compile("(WC|EU)\\d+");
+    private static final Pattern warWorld = Pattern.compile("WAR\\d+");
     private static final DateFormat trackFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
 
     private final Bot bot;
@@ -49,84 +49,85 @@ public class PlayerTracker {
         }
 
         WorldRepository repo = this.bot.getDatabase().getWorldRepository();
-        Map<String, World> prevWorlds = new HashMap<>();
-        repo.findAll().forEach(w -> prevWorlds.put(w.getName(), w));
+        Map<String, World> prevWorlds = repo.findAll().stream().collect(Collectors.toMap(World::getName, w -> w));
+        Map<String, World> currentWorlds = players.getWorlds().entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, e -> new World(e.getKey(), e.getValue().size())));
 
         // Handle tracks
-        for (Map.Entry<String, List<String>> world : players.getWorlds().entrySet()) {
-            String name = world.getKey();
-            if (!prevWorlds.containsKey(name)) {
-                handleServerStartTracking(world);
+        TrackChannelRepository trackChannelRepo = this.bot.getDatabase().getTrackingChannelRepository();
+        for (World currentWorld : currentWorlds.values()) {
+            if (!prevWorlds.containsKey(currentWorld.getName())) {
+                handleServerTracking(true, trackChannelRepo, this.bot.getManager(), this.logger, currentWorld);
             }
         }
-        for (Map.Entry<String, World> prevWorld : prevWorlds.entrySet()) {
-            String prevWorldName = prevWorld.getKey();
-            if (!players.getWorlds().containsKey(prevWorldName)) {
-                handleServerCloseTracking(prevWorld.getValue());
+        for (World prevWorld : prevWorlds.values()) {
+            if (!currentWorlds.containsKey(prevWorld.getName())) {
+                handleServerTracking(false, trackChannelRepo, this.bot.getManager(), this.logger, prevWorld);
             }
         }
+
+        this.bot.getManager().setActivity(Activity.playing("Wynn " + countOnlinePlayers(currentWorlds.values()) + " online"));
 
         // Update DB
-        for (Map.Entry<String, List<String>> world : players.getWorlds().entrySet()) {
-            String name = world.getKey();
-            if (!prevWorlds.containsKey(name)) {
-                World newWorld = new World(name, world.getValue().size());
-                repo.create(newWorld);
+        for (World currentWorld : currentWorlds.values()) {
+            if (!prevWorlds.containsKey(currentWorld.getName())) {
+                repo.create(currentWorld);
             } else {
-                World existingWorld = new World(name, world.getValue().size());
-                repo.update(existingWorld);
+                repo.update(currentWorld);
             }
         }
-        for (Map.Entry<String, World> prevWorld : prevWorlds.entrySet()) {
-            String prevWorldName = prevWorld.getKey();
-            if (!players.getWorlds().containsKey(prevWorldName)) {
-                WorldId closedWorld = () -> prevWorldName;
-                repo.delete(closedWorld);
+        for (World prevWorld : prevWorlds.values()) {
+            if (!currentWorlds.containsKey(prevWorld.getName())) {
+                repo.delete(prevWorld);
             }
         }
     }
 
-    private void handleServerStartTracking(Map.Entry<String, List<String>> world) {
-        TrackChannelRepository repo = this.bot.getDatabase().getTrackingChannelRepository();
-        List<TrackChannel> channels = repo.findAllOfType(TrackType.SERVER_START_ALL);
-        if (mainWorld.matcher(world.getKey()).matches()) {
-            // Is a main world
-            channels.addAll(repo.findAllOfType(TrackType.SERVER_START));
-        }
-
+    /**
+     * Handles server tracking and sends messages to channels.
+     * @param start Boolean indicating server started or closed.
+     * @param repo Track channel repository.
+     * @param manager Bot manager to send messages.
+     * @param logger Bot logger.
+     * @param world Corresponding world.
+     */
+    private static void handleServerTracking(boolean start,
+                                                  @NotNull TrackChannelRepository repo,
+                                                  ShardManager manager,
+                                                  Logger logger,
+                                                  @NotNull World world) {
         Date now = new Date();
-        String message = String.format("Server `%s` has started.", world.getKey());
+        String message;
+        if (start) {
+            message = String.format("Server `%s` has started.", world.getName());
+        } else {
+            long upSeconds = (now.getTime() - world.getCreatedAt().getTime()) / 1000L;
+            String formattedUpTime = FormatUtils.getReadableDHMSFormat(upSeconds, false);
+            message = String.format("Server `%s` has closed. Uptime: `%s`", world.getName(), formattedUpTime);
+        }
 
-        ShardManager manager = this.bot.getManager();
-        channels.forEach(ch -> {
-            TextChannel channel = manager.getTextChannelById(ch.getChannelId());
-            if (channel == null) return;
-            channel.sendMessage(
-                    trackFormat.format(now) + " " + message
-            ).queue();
-        });
-    }
+        logger.log(-1, message);
 
-    private void handleServerCloseTracking(World world) {
-        TrackChannelRepository repo = this.bot.getDatabase().getTrackingChannelRepository();
-        List<TrackChannel> channels = repo.findAllOfType(TrackType.SERVER_CLOSE_ALL);
+        // Ignore war worlds
+        if (warWorld.matcher(world.getName()).matches()) {
+            return;
+        }
+
+        List<TrackChannel> channelsToSend = repo.findAllOfType(start ? TrackType.SERVER_START_ALL : TrackType.SERVER_CLOSE_ALL);
+        // Is a main world
         if (mainWorld.matcher(world.getName()).matches()) {
-            // Is a main world
-            channels.addAll(repo.findAllOfType(TrackType.SERVER_CLOSE));
+            channelsToSend.addAll(repo.findAllOfType(start ? TrackType.SERVER_START : TrackType.SERVER_CLOSE));
         }
 
-        Date now = new Date();
-        long upSeconds = (now.getTime() - world.getCreatedAt().getTime()) / 1000L;
-        String formattedUpTime = FormatUtils.getReadableDHMSFormat(upSeconds, false);
-        String message = String.format("Server `%s` has closed. Uptime: `%s`", world.getName(), formattedUpTime);
-
-        ShardManager manager = this.bot.getManager();
-        channels.forEach(ch -> {
-            TextChannel channel = manager.getTextChannelById(ch.getChannelId());
-            if (channel == null) return;
-            channel.sendMessage(
+        channelsToSend.forEach(ch -> {
+            TextChannel channelToSend = manager.getTextChannelById(ch.getChannelId());
+            if (channelToSend == null) return;
+            channelToSend.sendMessage(
                     trackFormat.format(now) + " " + message
             ).queue();
         });
+    }
+
+    private static int countOnlinePlayers(@NotNull Collection<World> currentWorlds) {
+        return currentWorlds.stream().reduce(0, (i, w) -> i + w.getPlayers(), Integer::sum);
     }
 }
