@@ -84,6 +84,11 @@ public class ServerList extends GenericCommand {
             }
         }
 
+        if (worlds.isEmpty()) {
+            this.respond(event, "There doesn't seem to be any " + (all ? "" : "main ") + "worlds online...");
+            return;
+        }
+
         this.respond(event, format(worlds));
     }
 
