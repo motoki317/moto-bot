@@ -72,7 +72,7 @@ public class PlayerTracker {
 
         // Update DB
         if (!repo.updateAll(currentWorlds.values())) {
-            this.logger.log(0, "Player Tracer: Failed to update worlds in DB");
+            this.logger.log(0, "Player Tracker: Failed to update worlds in DB");
         }
     }
 
@@ -95,8 +95,8 @@ public class PlayerTracker {
             message = String.format("Server `%s` has started.", world.getName());
         } else {
             long upSeconds = (now.getTime() - world.getCreatedAt().getTime()) / 1000L;
-            String formattedUpTime = FormatUtils.getReadableDHMSFormat(upSeconds, false);
-            message = String.format("Server `%s` has closed. Uptime: `%s`", world.getName(), formattedUpTime);
+            String formattedUptime = FormatUtils.formatReadableTime(upSeconds, false, "s");
+            message = String.format("Server `%s` has closed. Uptime: `%s`", world.getName(), formattedUptime);
         }
 
         logger.log(-1, message);

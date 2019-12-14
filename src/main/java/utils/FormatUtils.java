@@ -1,6 +1,7 @@
 package utils;
 
 import net.dv8tion.jda.api.entities.User;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.AbstractMap;
 import java.util.ArrayList;
@@ -27,9 +28,11 @@ public class FormatUtils {
      * "1 h 1 m 13 s" (formatSpaces false) <br/>
      * @param seconds Number of seconds.
      * @param formatSpaces Right-justify spaces.
+     * @param smallestUnit Specifies smallest unit. For example if "m" was given, returns "1 h 1 m". Can be chosen from
+     *                     "d", "h", "m", and "s".
      * @return Formatted string.
      */
-    public static String getReadableDHMSFormat(long seconds, boolean formatSpaces) {
+    public static String formatReadableTime(long seconds, boolean formatSpaces, @NotNull String smallestUnit) {
         long days = seconds / TimeUnit.DAYS.toSeconds(1);
         long rem = seconds - days * TimeUnit.DAYS.toSeconds(1);
 
@@ -48,12 +51,15 @@ public class FormatUtils {
 
         boolean formatStarted = false;
         for (Map.Entry<Long, String> e : toFormat) {
-            if (e.getKey() != 0 || formatStarted) {
+            if (e.getKey() != 0 || formatStarted || e.getValue().equals(smallestUnit)) {
                 formatStarted = true;
                 if (formatSpaces) {
                     formattedStrings.add(String.format("%2s %s", e.getKey(), e.getValue()));
                 } else {
                     formattedStrings.add(e.getKey() + " " + e.getValue());
+                }
+                if (e.getValue().equals(smallestUnit)) {
+                    break;
                 }
             }
         }

@@ -9,7 +9,6 @@ import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
-import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
 import java.util.Arrays;
@@ -140,6 +139,10 @@ public class Track extends GuildCommand {
 
             // Check conflicting types
             List<TrackChannel> conflicting = getConflictingEntities(repo, type, event);
+            if (conflicting == null) {
+                respondError(event, "Something went wrong while retrieving data.");
+                return;
+            }
             if (!conflicting.isEmpty()) {
                 String message = "You have conflicting type of tracking enabled in this channel to enable the one you just specified.\n" +
                         "Below is the list of that.\n";
@@ -156,12 +159,16 @@ public class Track extends GuildCommand {
         }
     }
 
-    @NotNull
+    @Nullable
     private static List<TrackChannel> getConflictingEntities(TrackChannelRepository repo, TrackType type, MessageReceivedEvent event) {
         long guildId = event.getGuild().getIdLong();
         long channelId = event.getChannel().getIdLong();
         Set<TrackType> conflictTypes = type.getConflictTypes();
-        return repo.findAllOf(guildId, channelId).stream().filter(e -> conflictTypes.contains(e.getType())).collect(Collectors.toList());
+        List<TrackChannel> possible = repo.findAllOf(guildId, channelId);
+        if (possible == null) {
+            return null;
+        }
+        return possible.stream().filter(e -> conflictTypes.contains(e.getType())).collect(Collectors.toList());
     }
 
     @Nullable
