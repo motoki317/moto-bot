@@ -177,6 +177,7 @@ public class WorldRepository extends Repository<World, WorldId> {
                 }
             }
 
+            connection.commit();
             return true;
         } catch (SQLException e) {
             this.logger.logException("an exception occurred while updating worlds.", e);
