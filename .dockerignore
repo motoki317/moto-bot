@@ -3,10 +3,10 @@ target
 .idea
 mysql
 
+.env
 .gitignore
 docker-compose.yml
 Dockerfile
-experimental.env
 Makefile
 moto-bot.iml
 README.md
