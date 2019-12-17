@@ -8,10 +8,15 @@ services:
       MYSQL_HOST: mysql
       MYSQL_PORT: 3306
       MYSQL_DATABASE: moto-bot
-      MYSQL_USER: root
+      MYSQL_USER: moto-bot
       MYSQL_PASSWORD: password
-    env_file:
-      - ./experimental.env
+      DISCORD_ACCESS_TOKEN: ${DISCORD_ACCESS_TOKEN}
+      BOT_DISCORD_ID: ${BOT_DISCORD_ID}
+      BOT_LOG_CHANNEL_0: ${BOT_LOG_CHANNEL_0}
+      BOT_LOG_CHANNEL_1: ${BOT_LOG_CHANNEL_1}
+      BOT_LOG_CHANNEL_2: ${BOT_LOG_CHANNEL_2}
+      BOT_LOG_CHANNEL_3: ${BOT_LOG_CHANNEL_3}
+      BOT_LOG_CHANNEL_4: ${BOT_LOG_CHANNEL_4}
     ports:
       - 8080:8080
     depends_on:

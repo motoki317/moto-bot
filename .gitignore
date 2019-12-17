@@ -1,5 +1,5 @@
 # For development env-vars
-experimental.env
+.env
 # Bot data
 src/main/resources/data.json
 # DB Data
