@@ -27,6 +27,7 @@ public abstract class Repository<T, ID> implements IRepository<T, ID> {
 
     /**
      * Executes sql statement and handles exceptions.
+     * Automatically handles connections.
      * @param sql any SQL statement
      * @return True if succeeded.
      */
@@ -37,11 +38,16 @@ public abstract class Repository<T, ID> implements IRepository<T, ID> {
             return false;
         }
 
-        return execute(connection, sql, strings);
+        try {
+            return execute(connection, sql, strings);
+        } finally {
+            this.db.releaseConnection(connection);
+        }
     }
+
     /**
-     *
      * Executes sql statement with given connection, and handles exceptions.
+     * This method will NOT release the given connection.
      * @param sql any SQL statement
      * @param connection Connection to use.
      * @return True if succeeded.
@@ -56,8 +62,6 @@ public abstract class Repository<T, ID> implements IRepository<T, ID> {
         } catch (SQLException e) {
             this.logger.logException("an exception occurred while executing sql: " + fullSql, e);
             return false;
-        } finally {
-            this.db.releaseConnection(connection);
         }
     }
 
