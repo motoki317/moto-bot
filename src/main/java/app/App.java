@@ -1,7 +1,7 @@
 package app;
 
 import db.Database;
-import db.DatabaseConnection;
+import db.DatabaseImpl;
 import heartbeat.HeartBeat;
 import listeners.MessageListener;
 import log.ConsoleLogger;
@@ -15,10 +15,8 @@ import net.dv8tion.jda.api.utils.SessionController;
 import net.dv8tion.jda.api.utils.SessionControllerAdapter;
 import utils.StoppableThread;
 
-import javax.annotation.Nullable;
 import javax.security.auth.login.LoginException;
 import java.io.IOException;
-import java.sql.SQLException;
 import java.text.ParseException;
 import java.util.List;
 
@@ -97,12 +95,7 @@ public class App implements Runnable, Bot {
         this.manager = builder.build();
         manager.setActivity(Activity.playing("Bot restarting..."));
 
-        Database database = connectDatabase(this.logger);
-        if (database == null) {
-            throw new Error("Failed to initialize database");
-        }
-        this.database = database;
-        this.logger.log(-1, "Successfully established connection to db!");
+        this.database = new DatabaseImpl(logger);
 
         this.waitJDALoading();
 
@@ -122,20 +115,6 @@ public class App implements Runnable, Bot {
 
     public void run() {
         this.heartBeat.start();
-    }
-
-    /**
-     * Tries to establish connection to and initialize database.
-     * @return Database.
-     */
-    @Nullable
-    private static Database connectDatabase(Logger logger) {
-        try {
-            return new DatabaseConnection(logger);
-        } catch (SQLException e) {
-            logger.logException("an exception occurred while establishing connection to db", e);
-        }
-        return null;
     }
 
     /**

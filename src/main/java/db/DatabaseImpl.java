@@ -6,9 +6,7 @@ import db.repository.WorldRepository;
 import log.Logger;
 import org.jetbrains.annotations.NotNull;
 
-import java.sql.SQLException;
-
-public class DatabaseConnection implements Database {
+public class DatabaseImpl implements Database {
     private static final String MYSQL_HOST = System.getenv("MYSQL_HOST");
     private static final String MYSQL_DATABASE = System.getenv("MYSQL_DATABASE");
     private static final String MYSQL_USER = System.getenv("MYSQL_USER");
@@ -28,9 +26,9 @@ public class DatabaseConnection implements Database {
     private WorldRepository worldRepository;
     private CommandLogRepository commandLogRepository;
 
-    public DatabaseConnection(Logger logger) throws SQLException {
+    public DatabaseImpl(Logger logger) {
         this.logger = logger;
-        this.connectionPool = new SimpleConnectionPool(URL, logger, 5);
+        this.connectionPool = new SimpleConnectionPool(URL, logger, 10);
     }
 
     @Override

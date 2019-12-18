@@ -20,13 +20,9 @@ class TestConnection {
 
     @TestOnly
     private static ConnectionPool createConnection() {
-        try {
-            return new SimpleConnectionPool(URL, TestUtils.getLogger(), 5);
-        } catch (SQLException e) {
-            e.printStackTrace();
-            throw new Error();
-        }
+        return new SimpleConnectionPool(URL, TestUtils.getLogger(), 10);
     }
+
     @Test
     void testConnection() throws SQLException {
         ConnectionPool pool = createConnection();
