@@ -11,13 +11,10 @@ import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Activity;
 import net.dv8tion.jda.api.sharding.DefaultShardManagerBuilder;
 import net.dv8tion.jda.api.sharding.ShardManager;
-import net.dv8tion.jda.api.utils.SessionController;
 import net.dv8tion.jda.api.utils.SessionControllerAdapter;
 import utils.StoppableThread;
 
 import javax.security.auth.login.LoginException;
-import java.io.IOException;
-import java.text.ParseException;
 import java.util.List;
 
 public class App implements Runnable, Bot {
@@ -78,38 +75,35 @@ public class App implements Runnable, Bot {
         return true;
     }
 
-    public App() throws IOException, ParseException, LoginException {
-        this.properties = new Properties();
+    public App(Properties properties) throws LoginException {
+        this.properties = properties;
         this.logger = new ConsoleLogger(this.properties.logTimeZone);
         this.isConnected = new boolean[this.properties.shards];
 
-        DefaultShardManagerBuilder builder = new DefaultShardManagerBuilder();
-        SessionController sessionController = new SessionControllerAdapter();
+        this.manager = new DefaultShardManagerBuilder()
+                .setToken(this.properties.botAccessToken)
+                .setSessionController(new SessionControllerAdapter())
+                .setShardsTotal(this.properties.shards)
+                .setShards(0, this.properties.shards - 1)
+                .build();
 
-        builder.setToken(this.properties.botAccessToken);
-        builder.setSessionController(sessionController);
-        int shardsTotal = this.properties.shards;
-        builder.setShardsTotal(shardsTotal);
-        builder.setShards(0, shardsTotal - 1);
-
-        this.manager = builder.build();
         manager.setActivity(Activity.playing("Bot restarting..."));
 
-        this.database = new DatabaseImpl(logger);
-
         this.waitJDALoading();
-
-        this.heartBeat = new HeartBeat(this);
-        this.heartBeat.setName("moto-bot heartbeat");
 
         this.manager.setActivity(Activity.playing("Bot load complete!"));
         this.logger.log(-1, "Bot load complete!");
 
+        // Wait JDA to be fully loaded before instantiating discord logger
         this.logger = new DiscordLogger(this, this.properties.logTimeZone);
+
+        this.database = new DatabaseImpl(this.logger);
+
+        this.heartBeat = new HeartBeat(this);
+        this.heartBeat.setName("moto-bot heartbeat");
 
         this.logger.log(0, "Bot is ready!");
 
-        this.setShutDownHook();
         this.addEventListeners();
     }
 
@@ -140,12 +134,9 @@ public class App implements Runnable, Bot {
         this.logger.log(-1, "Added event listeners.");
     }
 
-    private void setShutDownHook() {
-        App app = this;
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            app.logger.log(0, "Bot shutting down...");
-            app.logger = new ConsoleLogger(app.properties.logTimeZone);
-            app.heartBeat.terminate();
-        }));
+    public void onShutDown() {
+        this.logger.log(0, "Bot shutting down...");
+        this.logger = new ConsoleLogger(this.properties.logTimeZone);
+        this.heartBeat.terminate();
     }
 }

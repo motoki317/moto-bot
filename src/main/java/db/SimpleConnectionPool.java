@@ -69,8 +69,6 @@ public class SimpleConnectionPool implements ConnectionPool {
                     return null;
                 }
             }
-
-            this.logger.log(-1, "Created a new db connection (remaining: " + availableConnections.size() + ")");
             usedConnectionTime.put(connection, System.currentTimeMillis());
             return connection;
         }
@@ -104,7 +102,6 @@ public class SimpleConnectionPool implements ConnectionPool {
             if (usedConnectionTime.containsKey(connection)) {
                 usedConnectionTime.remove(connection);
                 availableConnections.push(connection);
-                this.logger.log(-1, "Connection returned (remaining " + this.availableConnections.size() + ")");
             }
             // Else, this connection was discarded from pool by checkUnreleasedConnections()
             // because it was not released for a long time

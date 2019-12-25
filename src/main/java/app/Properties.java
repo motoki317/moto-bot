@@ -37,7 +37,7 @@ public class Properties {
     public final TimeZone logTimeZone;
     public final TimeZone wynnTimeZone;
 
-    Properties() throws IOException, ParseException {
+    public Properties() throws IOException, ParseException {
         this.properties = new java.util.Properties();
         this.properties.load(this.getClass().getClassLoader().getResourceAsStream("project.properties"));
 
