@@ -13,7 +13,7 @@ public class ReactionResponse implements UserResponseListener<MessageReactionAdd
     private boolean userPrivate;
     private long userId;
 
-    private final Predicate<MessageReactionAddEvent> onReaction;
+    protected Predicate<MessageReactionAddEvent> onReaction;
     // Called when this instance is discarded by manager
     private Runnable onDestroy;
 
