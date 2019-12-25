@@ -1,21 +1,20 @@
 package update.multipage;
 
 import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.entities.MessageReaction;
+import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent;
+import net.dv8tion.jda.api.exceptions.PermissionException;
 import update.reaction.ReactionResponse;
 
-import java.util.List;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
-import java.util.stream.Stream;
 
 public class MultipageHandler extends ReactionResponse {
-    private static final char ARROW_LEFT = '\u2B05';
-    private static final char ARROW_RIGHT = '\u27A1';
-    private static final char WHITE_CHECK_MARK = '\u2705';
-    private static final char X = '\u274C';
+    private static final String ARROW_LEFT = "\u2B05";
+    private static final String ARROW_RIGHT = "\u27A1";
+    private static final String WHITE_CHECK_MARK = "\u2705";
+    private static final String X = "\u274C";
 
     private final Message message;
 
@@ -31,7 +30,7 @@ public class MultipageHandler extends ReactionResponse {
         this.maxPage = maxPage;
         this.pages = pages;
         this.onReaction = customHandler();
-        this.setOnDestroy(customOnDestroy());
+        this.setOnDestroy(customOnDestroy(message.getJDA().getSelfUser()));
 
         addPagingReactions(message);
     }
@@ -42,21 +41,23 @@ public class MultipageHandler extends ReactionResponse {
         this.maxPage = maxPage;
         this.pages = pages;
         this.onReaction = customHandler();
-        this.setOnDestroy(customOnDestroy());
+        this.setOnDestroy(customOnDestroy(message.getJDA().getSelfUser()));
 
         addPagingReactions(message);
     }
 
     private Predicate<MessageReactionAddEvent> customHandler() {
         return (event) -> {
-            event.getReaction().removeReaction().queue();
-
-            String reactionName = event.getReactionEmote().getName();
-            if (reactionName.length() == 0) {
-                return false;
+            User author = event.getJDA().getUserById(event.getUserIdLong());
+            if (author != null) {
+                try {
+                    event.getReaction().removeReaction(author).queue();
+                } catch (PermissionException ignored) {
+                }
             }
 
-            switch (reactionName.charAt(0)) {
+            String reactionName = event.getReactionEmote().getName();
+            switch (reactionName) {
                 case ARROW_LEFT:
                     this.currentPage--;
                     break;
@@ -81,27 +82,23 @@ public class MultipageHandler extends ReactionResponse {
         };
     }
 
-    private Runnable customOnDestroy() {
+    private Runnable customOnDestroy(User self) {
         return () -> {
-            List<MessageReaction> reactions = this.message.getReactions();
-            for (MessageReaction reaction : reactions) {
-                if (reaction.isSelf()) {
-                    reaction.removeReaction().queue();
-                }
+            String[] reactions = {ARROW_LEFT, ARROW_RIGHT, WHITE_CHECK_MARK, X};
+            for (String reaction : reactions) {
+                this.message.removeReaction(reaction, self).queue();
             }
         };
     }
 
     /**
-     * Adds paging reactions to a message. Blocking until adding all reactions.
+     * Adds paging reactions to a message.
      * @param message Message to add reactions to.
      */
     private static void addPagingReactions(Message message) {
-        char[] reactionChars = {ARROW_LEFT, ARROW_RIGHT, WHITE_CHECK_MARK, X};
-        String[] reactions = Stream.of(reactionChars).map(String::valueOf).toArray(String[]::new);
+        String[] reactions = {ARROW_LEFT, ARROW_RIGHT, WHITE_CHECK_MARK, X};
         for (String reaction : reactions) {
-            // Adding synchronously to keep order
-            message.addReaction(reaction).complete();
+            message.addReaction(reaction).queue();
         }
     }
 }

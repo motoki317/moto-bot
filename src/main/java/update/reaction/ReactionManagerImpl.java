@@ -55,7 +55,8 @@ public class ReactionManagerImpl implements ReactionManager {
             boolean res = botResponse.handle(event);
 
             if (res) {
-                this.messageHandlers.remove(messageId).onDestroy();
+                this.messageHandlers.remove(messageId);
+                botResponse.onDestroy();
             }
         }
     }
