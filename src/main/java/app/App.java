@@ -12,6 +12,9 @@ import net.dv8tion.jda.api.entities.Activity;
 import net.dv8tion.jda.api.sharding.DefaultShardManagerBuilder;
 import net.dv8tion.jda.api.sharding.ShardManager;
 import net.dv8tion.jda.api.utils.SessionControllerAdapter;
+import update.UpdaterFactory;
+import update.reaction.ReactionManager;
+import update.response.ResponseManager;
 import utils.StoppableThread;
 
 import javax.security.auth.login.LoginException;
@@ -25,6 +28,10 @@ public class App implements Runnable, Bot {
     private final Database database;
 
     private Logger logger;
+
+    private final ReactionManager reactionManager;
+
+    private final ResponseManager responseManager;
 
     private boolean[] isConnected;
 
@@ -48,6 +55,16 @@ public class App implements Runnable, Bot {
     @Override
     public Logger getLogger() {
         return this.logger;
+    }
+
+    @Override
+    public ReactionManager getReactionManager() {
+        return this.reactionManager;
+    }
+
+    @Override
+    public ResponseManager getResponseManager() {
+        return this.responseManager;
     }
 
     @Override
@@ -75,10 +92,12 @@ public class App implements Runnable, Bot {
         return true;
     }
 
-    public App(Properties properties) throws LoginException {
+    public App(Properties properties, UpdaterFactory updaterFactory) throws LoginException {
         this.properties = properties;
         this.logger = new ConsoleLogger(this.properties.logTimeZone);
         this.isConnected = new boolean[this.properties.shards];
+        this.reactionManager = updaterFactory.getReactionManager();
+        this.responseManager = updaterFactory.getResponseManager();
 
         this.manager = new DefaultShardManagerBuilder()
                 .setToken(this.properties.botAccessToken)
