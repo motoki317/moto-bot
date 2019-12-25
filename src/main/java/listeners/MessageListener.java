@@ -28,7 +28,7 @@ public class MessageListener extends ListenerAdapter {
         addCommand(new Help(bot, this.commands));
         addCommand(new Ping(bot));
         addCommand(new Info(bot));
-        addCommand(new ServerList(bot.getDatabase().getWorldRepository()));
+        addCommand(new ServerList(bot.getDatabase().getWorldRepository(), bot.getReactionManager()));
         addCommand(new Track(bot.getDatabase()));
     }
 

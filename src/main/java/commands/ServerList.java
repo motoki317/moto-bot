@@ -8,6 +8,8 @@ import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import org.jetbrains.annotations.NotNull;
+import update.multipage.MultipageHandler;
+import update.reaction.ReactionManager;
 import utils.FormatUtils;
 
 import java.text.DateFormat;
@@ -16,16 +18,23 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class ServerList extends GenericCommand {
     private static final DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm");
 
+    private static final int WORLDS_PER_PAGE_DEFAULT = 20;
+
     @NotNull
     private final WorldRepository repo;
 
-    public ServerList(@NotNull WorldRepository repo) {
+    @NotNull
+    private final ReactionManager reactionManager;
+
+    public ServerList(@NotNull WorldRepository repo, @NotNull ReactionManager reactionManager) {
         this.repo = repo;
+        this.reactionManager = reactionManager;
     }
 
     @Override
@@ -51,9 +60,11 @@ public class ServerList extends GenericCommand {
                 .setDescription("This command returns a list of Wynncraft servers and their respective uptime.")
                 .addField("Syntax",
                         String.join("\n",
-                                "`serverlist [all]`",
+                                "`serverlist [all|<num>]`",
                                 "`[all]` optional argument will, when specified, show all worlds excluding WAR worlds: " +
-                                        "not only main WC/EU servers but also lobby, GM and other servers."),
+                                        "not only main WC/EU servers but also lobby, GM and other servers.",
+                                "`[<num>]` optional argument will, when specified, set the max number of worlds to show per page." +
+                                        " The default is " + WORLDS_PER_PAGE_DEFAULT + " worlds per page."),
                         false)
                 .build()
         ).build();
@@ -62,10 +73,21 @@ public class ServerList extends GenericCommand {
     @Override
     public void process(MessageReceivedEvent event, String[] args) {
         boolean all = false;
+        int worldsPerPage = WORLDS_PER_PAGE_DEFAULT;
         if (args.length > 1) {
-            if ("all".equals(args[1].toLowerCase())) {
-                all = true;
+            for (String arg : args) {
+                if ("all".equals(arg.toLowerCase())) {
+                    all = true;
+                } else if (arg.matches("\\d+")) {
+                    worldsPerPage = Integer.parseInt(arg);
+                }
             }
+        }
+
+        if (worldsPerPage < 1 || WORLDS_PER_PAGE_DEFAULT * 2 < worldsPerPage) {
+            respond(event, "Invalid number specified for worlds per page argument.\n" +
+                    "Please specify a number between 1 and " + (WORLDS_PER_PAGE_DEFAULT * 2) + ".");
+            return;
         }
 
         List<World> worlds;
@@ -89,11 +111,34 @@ public class ServerList extends GenericCommand {
             return;
         }
 
-        this.respond(event, format(worlds));
+        Function<Integer, Message> pages = pageSupplier(worlds, worldsPerPage);
+        int maxPage = maxPage(worlds.size(), worldsPerPage);
+
+        if (maxPage == 0) {
+            this.respond(event, pages.apply(0));
+            return;
+        }
+
+        respond(event, pages.apply(0), message -> {
+            MultipageHandler handler = new MultipageHandler(message, pages, () -> maxPage);
+            this.reactionManager.addEventListener(handler);
+        });
+    }
+
+    private static Function<Integer, Message> pageSupplier(@NotNull List<World> worlds, int worldsPerPage) {
+        return (page) -> {
+            int min = page * worldsPerPage;
+            int max = Math.min((page + 1) * worldsPerPage, worlds.size());
+            return new MessageBuilder(format(worlds, min, max)).build();
+        };
+    }
+
+    private static int maxPage(int worldsSize, int worldsPerPage) {
+        return (worldsSize - 1) / worldsPerPage;
     }
 
     @NotNull
-    private static String format(@NotNull List<World> worlds) {
+    private static String format(@NotNull List<World> worlds, int min, int max) {
         List<String> ret = new ArrayList<>();
         ret.add("```ml");
         ret.add("---- Server List ----");
@@ -118,7 +163,7 @@ public class ServerList extends GenericCommand {
         long currentTimeMillis = System.currentTimeMillis();
 
         List<WorldDisplay> displays = new ArrayList<>();
-        for (int i = 0; i < worlds.size(); i++) {
+        for (int i = min; i < max; i++) {
             World w = worlds.get(i);
             int num = i + 1;
             long uptimeSeconds = (currentTimeMillis - w.getCreatedAt().getTime()) / 1000L;
