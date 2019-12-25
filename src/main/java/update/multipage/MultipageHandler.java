@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 public class MultipageHandler extends ReactionResponse {
     private static final char ARROW_LEFT = '\u2B05';
@@ -31,6 +32,8 @@ public class MultipageHandler extends ReactionResponse {
         this.pages = pages;
         this.onReaction = customHandler();
         this.setOnDestroy(customOnDestroy());
+
+        addPagingReactions(message);
     }
 
     public MultipageHandler(Message message, long userId, Function<Integer, Message> pages, Supplier<Integer> maxPage) {
@@ -40,6 +43,8 @@ public class MultipageHandler extends ReactionResponse {
         this.pages = pages;
         this.onReaction = customHandler();
         this.setOnDestroy(customOnDestroy());
+
+        addPagingReactions(message);
     }
 
     private Predicate<MessageReactionAddEvent> customHandler() {
@@ -85,5 +90,18 @@ public class MultipageHandler extends ReactionResponse {
                 }
             }
         };
+    }
+
+    /**
+     * Adds paging reactions to a message. Blocking until adding all reactions.
+     * @param message Message to add reactions to.
+     */
+    private static void addPagingReactions(Message message) {
+        char[] reactionChars = {ARROW_LEFT, ARROW_RIGHT, WHITE_CHECK_MARK, X};
+        String[] reactions = Stream.of(reactionChars).map(String::valueOf).toArray(String[]::new);
+        for (String reaction : reactions) {
+            // Adding synchronously to keep order
+            message.addReaction(reaction).complete();
+        }
     }
 }
