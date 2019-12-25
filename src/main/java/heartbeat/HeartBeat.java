@@ -13,6 +13,7 @@ import java.util.concurrent.TimeUnit;
 
 public class HeartBeat extends StoppableThread {
     private static final long PLAYER_TERRITORY_TRACKER_DELAY = TimeUnit.SECONDS.toMillis(30);
+    private static final long UPDATERS_INTERVAL = TimeUnit.MINUTES.toMillis(10);
 
     private final Logger logger;
 
@@ -36,6 +37,16 @@ public class HeartBeat extends StoppableThread {
                 runnableTerritoryTracker(bot),
                 PLAYER_TERRITORY_TRACKER_DELAY,
                 PLAYER_TERRITORY_TRACKER_DELAY
+        ));
+
+        this.tasks.add(new Task(
+                this.timer,
+                () -> {
+                    bot.getReactionManager().clearUp();
+                    bot.getResponseManager().clearUp();
+                },
+                UPDATERS_INTERVAL,
+                UPDATERS_INTERVAL
         ));
     }
 

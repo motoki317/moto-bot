@@ -4,6 +4,7 @@ import db.Database;
 import db.DatabaseImpl;
 import heartbeat.HeartBeat;
 import listeners.MessageListener;
+import listeners.UpdaterListener;
 import log.ConsoleLogger;
 import log.DiscordLogger;
 import log.Logger;
@@ -150,6 +151,7 @@ public class App implements Runnable, Bot {
 
     private void addEventListeners() {
         this.manager.addEventListener(new MessageListener(this));
+        this.manager.addEventListener(new UpdaterListener(this.responseManager, this.reactionManager));
         this.logger.log(-1, "Added event listeners.");
     }
 
