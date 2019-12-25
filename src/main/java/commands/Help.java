@@ -7,8 +7,10 @@ import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import update.multipage.MultipageHandler;
 
 import java.util.List;
+import java.util.function.Function;
 
 public class Help extends GenericCommand {
     private final Bot bot;
@@ -45,19 +47,17 @@ public class Help extends GenericCommand {
     @Override
     public void process(MessageReceivedEvent event, String[] args) {
         if (args.length == 1) {
-            // TODO: commands list in multi-page respond
-            EmbedBuilder eb = new EmbedBuilder();
-            eb.setColor(this.bot.getProperties().getMainColor());
-            eb.setTitle("Commands List");
-            for (BotCommand cmd : this.commands) {
-                eb.addField(
-                        this.bot.getProperties().prefix + cmd.syntax(),
-                        cmd.shortHelp(),
-                        false
-                );
+            Function<Integer, Message> pages = this.pageSupplier();
+
+            if (this.maxPage() == 0) {
+                respond(event, pages.apply(0));
+                return;
             }
 
-            respond(event, eb.build());
+            respond(event, pages.apply(0), message -> {
+                MultipageHandler handler = new MultipageHandler(message, pages, this::maxPage);
+                bot.getReactionManager().addEventListener(handler);
+            });
             return;
         }
 
@@ -70,5 +70,33 @@ public class Help extends GenericCommand {
                 }
             }
         }
+    }
+
+    private static final int COMMANDS_PER_PAGE = 5;
+
+    private Function<Integer, Message> pageSupplier() {
+        return (page) -> {
+            EmbedBuilder eb = new EmbedBuilder();
+            eb.setColor(this.bot.getProperties().getMainColor());
+            eb.setTitle("Commands List");
+
+            int min = COMMANDS_PER_PAGE * page;
+            int max = Math.min(COMMANDS_PER_PAGE * (page + 1), this.commands.size());
+            for (int i = min; i < max; i++) {
+                BotCommand cmd = this.commands.get(i);
+                eb.addField(
+                        this.bot.getProperties().prefix + cmd.syntax(),
+                        cmd.shortHelp(),
+                        false
+                );
+            }
+            return new MessageBuilder(
+                    eb.build()
+            ).build();
+        };
+    }
+
+    private int maxPage() {
+        return (this.commands.size() - 1) / COMMANDS_PER_PAGE;
     }
 }
