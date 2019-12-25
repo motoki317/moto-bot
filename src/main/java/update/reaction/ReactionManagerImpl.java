@@ -17,19 +17,19 @@ public class ReactionManagerImpl implements ReactionManager {
     }
 
     @Override
-    public void addReactionHandler(long messageId, Predicate<MessageReactionAddEvent> onReaction) {
+    public void addEventListener(long messageId, Predicate<MessageReactionAddEvent> onReaction) {
         ReactionResponse botResponse = new ReactionResponse(messageId, onReaction);
-        addReactionHandler(botResponse);
+        addEventListener(botResponse);
     }
 
     @Override
-    public void addReactionHandler(long messageId, long userId, Predicate<MessageReactionAddEvent> onReaction) {
+    public void addEventListener(long messageId, long userId, Predicate<MessageReactionAddEvent> onReaction) {
         ReactionResponse botResponse = new ReactionResponse(messageId, userId, onReaction);
-        addReactionHandler(botResponse);
+        addEventListener(botResponse);
     }
 
     @Override
-    public void addReactionHandler(ReactionResponse botResponse) {
+    public void addEventListener(ReactionResponse botResponse) {
         synchronized (this.lock) {
             this.messageHandlers.put(botResponse.getMessageId(), botResponse);
         }
@@ -55,7 +55,7 @@ public class ReactionManagerImpl implements ReactionManager {
             boolean res = botResponse.handle(event);
 
             if (res) {
-                this.messageHandlers.remove(messageId);
+                this.messageHandlers.remove(messageId).onDestroy();
             }
         }
     }
@@ -63,8 +63,16 @@ public class ReactionManagerImpl implements ReactionManager {
     /**
      * Clears reaction handlers that hasn't been used for more than `maxLive` attribute of each object.
      */
+    @Override
     public void clearUp() {
         long now = System.currentTimeMillis();
-        this.messageHandlers.values().removeIf(r -> (now - r.getUpdatedAt()) > r.getMaxLive());
+        Predicate<ReactionResponse> removeIf = r -> (now - r.getUpdatedAt()) > r.getMaxLive();
+
+        synchronized (this.lock) {
+            this.messageHandlers.values().stream()
+                    .filter(removeIf)
+                    .forEach(ReactionResponse::onDestroy);
+            this.messageHandlers.values().removeIf(removeIf);
+        }
     }
 }

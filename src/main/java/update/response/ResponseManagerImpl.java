@@ -16,15 +16,15 @@ public class ResponseManagerImpl implements ResponseManager {
     }
 
     @Override
-    public void waitForUserResponse(long channelId,
+    public void addEventListener(long channelId,
                                     long userId,
                                     Predicate<MessageReceivedEvent> onResponse) {
         Response botResponse = new Response(channelId, userId, onResponse);
-        waitForUserResponse(botResponse);
+        addEventListener(botResponse);
     }
 
     @Override
-    public void waitForUserResponse(Response botResponse) {
+    public void addEventListener(Response botResponse) {
         synchronized (this.lock) {
             long userId = botResponse.getUserId();
             if (!this.waitingResponses.containsKey(userId)) {
@@ -54,6 +54,7 @@ public class ResponseManagerImpl implements ResponseManager {
                     boolean res = r.handle(event);
                     if (res) {
                         it.remove();
+                        r.onDestroy();
                     }
                     break;
                 }
@@ -62,6 +63,21 @@ public class ResponseManagerImpl implements ResponseManager {
             if (responses.isEmpty()) {
                 this.waitingResponses.remove(userId);
             }
+        }
+    }
+
+    @Override
+    public void clearUp() {
+        long now = System.currentTimeMillis();
+        Predicate<Response> removeIf = r -> (now - r.getUpdatedAt()) > r.getMaxLive();
+
+        synchronized (this.lock) {
+            this.waitingResponses.values().stream()
+                    .flatMap(Collection::stream)
+                    .filter(removeIf)
+                    .forEach(Response::onDestroy);
+            this.waitingResponses.values().forEach(l -> l.removeIf(removeIf));
+            this.waitingResponses.entrySet().removeIf(e -> e.getValue().isEmpty());
         }
     }
 }
