@@ -89,6 +89,32 @@ public class TerritoryLogRepository extends Repository<TerritoryLog, TerritoryLo
         return -1;
     }
 
+    /**
+     * Finds all territory logs with id from old id (exclusive) and new id (inclusive).
+     * @param oldId Old last id (exclusive).
+     * @param newId New last id (inclusive).
+     * @return List of logs. null if something went wrong.
+     */
+    @Nullable
+    public List<TerritoryLog> findAllInRange(int oldId, int newId) {
+        ResultSet res = this.executeQuery(
+                "SELECT * FROM `territory_log` WHERE `id` > ? AND `id` <= ?",
+                oldId,
+                newId
+        );
+
+        if (res == null) {
+            return null;
+        }
+
+        try {
+            return bindAll(res);
+        } catch (SQLException e) {
+            this.logResponseException(e);
+            return null;
+        }
+    }
+
     @Nullable
     @Override
     public TerritoryLog findOne(@NotNull TerritoryLogId territoryLogId) {

@@ -3,6 +3,8 @@ package db.model.track;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Objects;
+
 public class TrackChannel implements TrackChannelId {
     @NotNull
     private TrackType type;
@@ -64,5 +66,20 @@ public class TrackChannel implements TrackChannelId {
                 break;
         }
         return ret;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        return obj instanceof TrackChannel
+                && ((TrackChannel) obj).type == this.type
+                && ((TrackChannel) obj).guildId == this.guildId
+                && ((TrackChannel) obj).channelId == this.channelId
+                && ((((TrackChannel) obj).guildName == null && this.guildName == null) || (this.guildName != null && this.guildName.equals(((TrackChannel) obj).guildName)))
+                && ((((TrackChannel) obj).playerName == null && this.playerName == null) || (this.playerName != null && this.playerName.equals(((TrackChannel) obj).playerName)));
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(this.type, this.guildId, this.channelId, this.guildName, this.playerName);
     }
 }

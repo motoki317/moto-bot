@@ -4,28 +4,40 @@ import api.WynnApi;
 import api.structs.TerritoryList;
 import app.Bot;
 import db.model.territory.Territory;
+import db.model.territoryLog.TerritoryLog;
+import db.model.track.TrackChannel;
+import db.model.track.TrackType;
 import db.repository.TerritoryLogRepository;
 import db.repository.TerritoryRepository;
+import db.repository.TrackChannelRepository;
 import log.Logger;
+import net.dv8tion.jda.api.entities.TextChannel;
+import net.dv8tion.jda.api.sharding.ShardManager;
+import utils.FormatUtils;
 
+import java.text.DateFormat;
 import java.text.ParseException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.text.SimpleDateFormat;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class TerritoryTracker {
     private final Logger logger;
     private final Object dbLock;
+    private final ShardManager manager;
     private final WynnApi wynnApi;
     private final TerritoryRepository territoryRepository;
     private final TerritoryLogRepository territoryLogRepository;
+    private final TrackChannelRepository trackChannelRepository;
 
     public TerritoryTracker(Bot bot, Object dbLock) {
         this.logger = bot.getLogger();
         this.dbLock = dbLock;
+        this.manager = bot.getManager();
         this.wynnApi = new WynnApi(this.logger, bot.getProperties().wynnTimeZone);
         this.territoryRepository = bot.getDatabase().getTerritoryRepository();
         this.territoryLogRepository = bot.getDatabase().getTerritoryLogRepository();
+        this.trackChannelRepository = bot.getDatabase().getTrackingChannelRepository();
     }
 
     public void run() {
@@ -65,6 +77,61 @@ public class TerritoryTracker {
      * @param newLastId Current max id in territory_log table after db update.
      */
     private void handleTracking(int oldLastId, int newLastId) {
-        // TODO: territory tracking
+        List<TerritoryLog> logs = this.territoryLogRepository.findAllInRange(oldLastId, newLastId);
+
+        if (logs == null) {
+            this.logger.log(0, "Territory tracker: failed to retrieve last log list. " +
+                    "Not sending tracking this time. old id (exclusive): " + oldLastId + ", new id (inclusive): " + newLastId);
+            return;
+        }
+
+        List<TrackChannel> allTerritories = this.trackChannelRepository.findAllOfType(TrackType.TERRITORY_ALL);
+        List<TrackChannel> allSpecifics = this.trackChannelRepository.findAllOfType(TrackType.TERRITORY_SPECIFIC);
+        if (allTerritories == null || allSpecifics == null) {
+            this.logger.log(0, "Territory tracker: failed to retrieve tracking channels list. " +
+                    "Not sending tracking this time. old id (exclusive): " + oldLastId + ", new id (inclusive): " + newLastId);
+            return;
+        }
+
+        for (TerritoryLog log : logs) {
+            Set<TrackChannel> channelsToSend = new HashSet<>(allTerritories);
+            channelsToSend.addAll(
+                    allSpecifics.stream().filter(
+                            t -> t.getGuildName() != null && (t.getGuildName().equals(log.getOldGuildName()) || t.getGuildName().equals(log.getNewGuildName()))
+                    ).collect(Collectors.toList())
+            );
+            String message = format(log);
+            channelsToSend.forEach(ch -> {
+                TextChannel channel = this.manager.getTextChannelById(ch.getChannelId());
+                if (channel == null) return;
+                channel.sendMessage(message).queue();
+            });
+        }
+    }
+
+    private static final DateFormat trackFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+
+    /**
+     * Formats territory log in order to send it to tracking channels..
+     * @param log Territory log.
+     * @return Formatted string.
+     */
+    private static String format(TerritoryLog log) {
+        String heldForFormatted = FormatUtils.formatReadableTime(log.getTimeDiff() / 1000, false, "s");
+
+        // TODO: custom offset hours for each channel
+        int offsetHours = 0;
+        String offsetStr = (offsetHours >= 0 ? "+" : "") + offsetHours;
+
+        String acquiredFormatted = trackFormat.format(log.getAcquired());
+
+        return String.format(
+                "%s: *%s* (%s) → **%s** (%s)\n" +
+                        "    Territory held for %s\n" +
+                        "    Acquired: %s (%s)",
+                log.getTerritoryName(), log.getOldGuildName(), log.getOldGuildTerrAmt(), log.getNewGuildName(), log.getNewGuildTerrAmt(),
+                heldForFormatted,
+                acquiredFormatted, offsetStr
+        );
     }
 }

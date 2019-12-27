@@ -117,8 +117,9 @@ public class PlayerTracker {
             return;
         }
 
-        List<TrackChannel> channelsToSend = repo.findAllOfType(start ? TrackType.SERVER_START_ALL : TrackType.SERVER_CLOSE_ALL);
-        if (channelsToSend == null) return;
+        List<TrackChannel> allServers = repo.findAllOfType(start ? TrackType.SERVER_START_ALL : TrackType.SERVER_CLOSE_ALL);
+        if (allServers == null) return;
+        Set<TrackChannel> channelsToSend = new HashSet<>(allServers);
 
         // Is a main world
         if (mainWorld.matcher(world.getName()).matches()) {
