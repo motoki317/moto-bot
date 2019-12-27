@@ -1,6 +1,6 @@
-CREATE DATABASE IF NOT EXISTS `moto-bot`;
+CREATE DATABASE IF NOT EXISTS `moto-bot_test`;
 
-USE `moto-bot`;
+USE `moto-bot_test`;
 
 CREATE TABLE IF NOT EXISTS `track_channel` (
     `type` VARCHAR(30) NOT NULL,
@@ -134,7 +134,8 @@ DROP PROCEDURE IF EXISTS `last_unassociated_war_log_id`;
 DELIMITER //
 CREATE PROCEDURE `last_unassociated_war_log_id` (IN g_name VARCHAR(30))
     BEGIN
-        SELECT `id` FROM `war_log` WHERE `guild_name` = g_name AND (SELECT `territory_log_id` IS NULL FROM `guild_war_log` WHERE `war_log_id` = `war_log`.`id`) = 1 ORDER BY `created_at` DESC LIMIT 1;
+        @res := (SELECT `id` FROM `war_log` WHERE `guild_name` = g_name AND (SELECT `territory_log_id` IS NULL FROM `guild_war_log` WHERE `war_log_id` = `war_log`.`id`) = 1 ORDER BY `created_at` DESC LIMIT 1);
+        RETURN IF(COUNT(@res) = 0, NULL, @res);
     END; //
 DELIMITER ;
 
@@ -147,19 +148,18 @@ CREATE TRIGGER IF NOT EXISTS `guild_territory_logger`
         INSERT INTO `guild_war_log` (guild_name, war_log_id) VALUES (NEW.old_guild_name, NEW.id);
 
         # for new owner guild
-        SET @war_log_id = last_unassociated_war_log_id(NEW.new_guild_name);
+        @war_log_id := last_unassociated_war_log_id(NEW.new_guild_name);
 
         IF @war_log_id IS NOT NULL THEN
             # if the last war log for that guild is within 3 minutes
             IF ((UNIX_TIMESTAMP(NOW()) - UNIX_TIMESTAMP((SELECT `last_up` FROM `war_log` WHERE `id` = @war_log_id)))) <= 180 THEN
                 UPDATE `guild_war_log` SET `territory_log_id` = NEW.id WHERE guild_name = NEW.new_guild_name AND `war_log_id` = @war_log_id;
                 UPDATE `war_log` SET `ended` = 1 WHERE `id` = @war_log_id;
-            ELSE
-                INSERT INTO `guild_war_log` (guild_name, territory_log_id) VALUES (NEW.new_guild_name, NEW.id);
+                RETURN;
             END IF;
-        ELSE
-            INSERT INTO `guild_war_log` (guild_name, territory_log_id) VALUES (NEW.new_guild_name, NEW.id);
         END IF;
+
+        INSERT INTO `guild_war_log` (guild_name, territory_log_id) VALUES (NEW.new_guild_name, NEW.id);
     END; //
 DELIMITER ;
 
