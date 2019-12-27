@@ -4,7 +4,6 @@ import db.ConnectionPool;
 import log.Logger;
 import org.intellij.lang.annotations.Language;
 import org.jetbrains.annotations.NotNull;
-import org.mariadb.jdbc.internal.util.Utils;
 
 import javax.annotation.CheckReturnValue;
 import javax.annotation.Nullable;
@@ -88,14 +87,19 @@ public abstract class Repository<T, ID> implements IRepository<T, ID> {
     private static String replaceSql(String sql, @NotNull Object... strings) {
         String ret = sql;
         for (Object o : strings) {
-            ret = ret.replaceFirst("\\?", escapeString(o));
+            ret = ret.replaceFirst("\\?", replaceObject(o));
         }
         return ret;
     }
 
     @NotNull
-    private static String escapeString(@Nullable Object o) {
-        return o == null ? "NULL" : "\"" + Utils.escapeString(o.toString(), true) + "\"";
+    private static String replaceObject(@Nullable Object o) {
+        return o == null ? "NULL" : "\"" + escapeString(o.toString()) + "\"";
+    }
+
+    @NotNull
+    private static String escapeString(@NotNull String s) {
+        return s.replace("\\", "\\\\").replace("\"", "\\\"");
     }
 
     protected void logResponseException(SQLException e) {

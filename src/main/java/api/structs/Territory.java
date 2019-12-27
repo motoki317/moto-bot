@@ -15,7 +15,7 @@ import java.util.TimeZone;
 public class Territory {
     private static final ObjectMapper mapper = new ObjectMapper();
 
-    private static final DateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+    private static final DateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
     private TimeZone wynnTimeZone;
 

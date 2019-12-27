@@ -7,12 +7,16 @@ import db.repository.base.Repository;
 import log.Logger;
 import org.jetbrains.annotations.NotNull;
 
+import javax.annotation.CheckReturnValue;
 import javax.annotation.Nullable;
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 public class TerritoryRepository extends Repository<Territory, TerritoryId> {
     private static final DateFormat dbFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
@@ -137,6 +141,91 @@ public class TerritoryRepository extends Repository<Territory, TerritoryId> {
                 location.getEndZ(),
                 entity.getName()
         );
+    }
+
+    /**
+     * Updates the whole table to the new given territories list.
+     * @param territories New territories list retrieved from the Wynn API.
+     * @return True if succeeded.
+     */
+    @CheckReturnValue
+    public boolean updateAll(@NotNull List<Territory> territories) {
+        Connection connection = this.db.getConnection();
+        if (connection == null) {
+            return false;
+        }
+
+        try {
+            connection.setAutoCommit(false);
+
+            Map<String, Territory> newTerritories = territories.stream().collect(Collectors.toMap(Territory::getName, t -> t));
+            List<Territory> oldTerritoryList = this.findAll();
+            if (oldTerritoryList == null) return false;
+            Map<String, Territory> oldTerritories = oldTerritoryList.stream().collect(Collectors.toMap(Territory::getName, t -> t));
+
+            for (Territory t : newTerritories.values()) {
+                if (!oldTerritories.containsKey(t.getName())) {
+                    Territory.Location location = t.getLocation();
+                    this.logger.log(0, "Adding new territory: " + t.getName());
+                    boolean res = this.execute(connection,
+                            "INSERT INTO `territory` (name, guild_name, acquired, attacker, start_x, start_z, end_x, end_z) VALUES " +
+                                    "(?, ?, ?, ?, ?, ?, ?, ?)",
+                            t.getName(),
+                            t.getGuild(),
+                            dbFormat.format(t.getAcquired()),
+                            t.getAttacker(),
+                            location.getStartX(),
+                            location.getStartZ(),
+                            location.getEndX(),
+                            location.getEndZ()
+                    );
+                    if (!res) throw new SQLException("Insert failed");
+                } else {
+                    Territory.Location location = t.getLocation();
+                    boolean res = this.execute(connection,
+                            "UPDATE `territory` SET `guild_name` = ?, `acquired` = ?, `attacker` = ?, `start_x` = ?, `start_z` = ?, `end_x` = ?, `end_z` = ? WHERE `name` = ?",
+                            t.getGuild(),
+                            dbFormat.format(t.getAcquired()),
+                            t.getAttacker(),
+                            location.getStartX(),
+                            location.getStartZ(),
+                            location.getEndX(),
+                            location.getEndZ(),
+                            t.getName()
+                    );
+                    if (!res) throw new SQLException("Update failed");
+                }
+            }
+            for (Territory t : oldTerritories.values()) {
+                if (!newTerritories.containsKey(t.getName())) {
+                    this.logger.log(0, "Removing territory: " + t.getName());
+                    boolean res = this.execute(connection,
+                            "DELETE FROM `territory` WHERE `name` = ?",
+                            t.getName()
+                    );
+                    if (!res) throw new SQLException("Delete failed");
+                }
+            }
+
+            connection.commit();
+            return true;
+        } catch (SQLException e) {
+            this.logger.logException("an exception occurred while updating territories.", e);
+            this.logger.log(0, "Rolling back territory update changes.");
+            try {
+                connection.rollback();
+            } catch (SQLException ex) {
+                this.logger.logException("an exception occurred while rolling back changes.", ex);
+            }
+            return false;
+        } finally {
+            try {
+                connection.setAutoCommit(true);
+            } catch (SQLException e) {
+                this.logger.logException("an exception occurred while setting back auto commit to on.", e);
+            }
+            this.db.releaseConnection(connection);
+        }
     }
 
     @Override
