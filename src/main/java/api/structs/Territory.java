@@ -32,7 +32,7 @@ public class Territory {
         return guild;
     }
 
-    public Date getAcquired() throws ParseException {
+    private Date getAcquired() throws ParseException {
         return format.parse(this.acquired);
     }
 
@@ -45,26 +45,26 @@ public class Territory {
         return location;
     }
 
-    private static class Location {
+    public static class Location {
         private int startX;
-        private int startY;
+        private int startZ;
         private int endX;
-        private int endY;
+        private int endZ;
 
         public int getStartX() {
             return startX;
         }
 
-        public int getStartY() {
-            return startY;
+        public int getStartZ() {
+            return startZ;
         }
 
         public int getEndX() {
             return endX;
         }
 
-        public int getEndY() {
-            return endY;
+        public int getEndZ() {
+            return endZ;
         }
     }
 
@@ -74,4 +74,25 @@ public class Territory {
         instance.wynnTimeZone = wynnTimeZone;
         return instance;
     }
+
+    /**
+     * Converts this instance to db model instance.
+     * @return DB model instance.
+     * @throws ParseException if acquired parameter was in an unexpected format.
+     */
+    @NotNull
+    public db.model.territory.Territory convert() throws ParseException {
+        return new db.model.territory.Territory(
+                this.territory,
+                this.guild,
+                this.getAcquired(),
+                this.attacker,
+                convertLocation(this.location)
+        );
+    }
+
+    private static db.model.territory.Territory.Location convertLocation(Location l) {
+        return new db.model.territory.Territory.Location(l.startX, l.startZ, l.endX, l.endZ);
+    }
+
 }
