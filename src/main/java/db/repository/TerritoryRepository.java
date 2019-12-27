@@ -10,10 +10,14 @@ import org.jetbrains.annotations.NotNull;
 import javax.annotation.Nullable;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.List;
 
 public class TerritoryRepository extends Repository<Territory, TerritoryId> {
-    protected TerritoryRepository(ConnectionPool db, Logger logger) {
+    private static final DateFormat dbFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+
+    public TerritoryRepository(ConnectionPool db, Logger logger) {
         super(db, logger);
     }
 
@@ -31,7 +35,7 @@ public class TerritoryRepository extends Repository<Territory, TerritoryId> {
                         "(?, ?, ?, ?, ?, ?, ?, ?)",
                 entity.getName(),
                 entity.getGuild(),
-                entity.getAcquired(),
+                dbFormat.format(entity.getAcquired()),
                 entity.getAttacker(),
                 location.getStartX(),
                 location.getStartZ(),
@@ -125,7 +129,7 @@ public class TerritoryRepository extends Repository<Territory, TerritoryId> {
         return this.execute(
                 "UPDATE `territory` SET `guild_name` = ?, `acquired` = ?, `attacker` = ?, `start_x` = ?, `start_z` = ?, `end_x` = ?, `end_z` = ? WHERE `name` = ?",
                 entity.getGuild(),
-                entity.getAcquired(),
+                dbFormat.format(entity.getAcquired()),
                 entity.getAttacker(),
                 location.getStartX(),
                 location.getStartZ(),

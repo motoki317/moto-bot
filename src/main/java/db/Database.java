@@ -1,6 +1,7 @@
 package db;
 
 import db.repository.CommandLogRepository;
+import db.repository.TerritoryRepository;
 import db.repository.TrackChannelRepository;
 import db.repository.WorldRepository;
 import org.jetbrains.annotations.NotNull;
@@ -12,4 +13,6 @@ public interface Database {
     WorldRepository getWorldRepository();
     @NotNull
     CommandLogRepository getCommandLogRepository();
+    @NotNull
+    TerritoryRepository getTerritoryRepository();
 }

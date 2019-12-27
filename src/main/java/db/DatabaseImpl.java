@@ -1,6 +1,7 @@
 package db;
 
 import db.repository.CommandLogRepository;
+import db.repository.TerritoryRepository;
 import db.repository.TrackChannelRepository;
 import db.repository.WorldRepository;
 import log.Logger;
@@ -25,6 +26,7 @@ public class DatabaseImpl implements Database {
     private TrackChannelRepository trackChannelRepository;
     private WorldRepository worldRepository;
     private CommandLogRepository commandLogRepository;
+    private TerritoryRepository territoryRepository;
 
     public DatabaseImpl(Logger logger) {
         this.logger = logger;
@@ -56,5 +58,13 @@ public class DatabaseImpl implements Database {
             this.commandLogRepository = new CommandLogRepository(this.connectionPool, this.logger);
         }
         return this.commandLogRepository;
+    }
+
+    @Override
+    public @NotNull TerritoryRepository getTerritoryRepository() {
+        if (this.territoryRepository == null) {
+            this.territoryRepository = new TerritoryRepository(this.connectionPool, this.logger);
+        }
+        return this.territoryRepository;
     }
 }

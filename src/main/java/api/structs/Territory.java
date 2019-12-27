@@ -1,5 +1,6 @@
 package api.structs;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.jetbrains.annotations.NotNull;
@@ -14,7 +15,7 @@ import java.util.TimeZone;
 public class Territory {
     private static final ObjectMapper mapper = new ObjectMapper();
 
-    private static final DateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+    private static final DateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
 
     private TimeZone wynnTimeZone;
 
@@ -32,7 +33,11 @@ public class Territory {
         return guild;
     }
 
-    private Date getAcquired() throws ParseException {
+    public String getAcquired() {
+        return this.acquired;
+    }
+
+    private Date getAcquiredDate() throws ParseException {
         return format.parse(this.acquired);
     }
 
@@ -55,6 +60,8 @@ public class Territory {
             return startX;
         }
 
+        // 'y' should be 'z' here but wynn's api faults
+        @JsonProperty("startY")
         public int getStartZ() {
             return startZ;
         }
@@ -63,6 +70,7 @@ public class Territory {
             return endX;
         }
 
+        @JsonProperty("endY")
         public int getEndZ() {
             return endZ;
         }
@@ -85,7 +93,7 @@ public class Territory {
         return new db.model.territory.Territory(
                 this.territory,
                 this.guild,
-                this.getAcquired(),
+                this.getAcquiredDate(),
                 this.attacker,
                 convertLocation(this.location)
         );
@@ -94,5 +102,4 @@ public class Territory {
     private static db.model.territory.Territory.Location convertLocation(Location l) {
         return new db.model.territory.Territory.Location(l.startX, l.startZ, l.endX, l.endZ);
     }
-
 }
