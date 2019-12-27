@@ -26,15 +26,16 @@ public class HeartBeat extends StoppableThread {
         this.timer = new Timer();
         this.tasks = new ArrayList<>();
 
+        final Object dbLock = new Object();
         this.tasks.add(new Task(
                 this.timer,
-                runnablePlayerTracker(bot),
+                runnablePlayerTracker(bot, dbLock),
                 PLAYER_TERRITORY_TRACKER_DELAY,
                 PLAYER_TERRITORY_TRACKER_DELAY
         ));
         this.tasks.add(new Task(
                 this.timer,
-                runnableTerritoryTracker(bot),
+                runnableTerritoryTracker(bot, dbLock),
                 PLAYER_TERRITORY_TRACKER_DELAY,
                 PLAYER_TERRITORY_TRACKER_DELAY
         ));
@@ -57,8 +58,8 @@ public class HeartBeat extends StoppableThread {
         this.tasks.forEach(Task::start);
     }
 
-    private static Runnable runnablePlayerTracker(Bot bot) {
-        PlayerTracker playerTracker = new PlayerTracker(bot);
+    private static Runnable runnablePlayerTracker(Bot bot, Object dbLock) {
+        PlayerTracker playerTracker = new PlayerTracker(bot, dbLock);
         return () -> {
             long start = System.nanoTime();
             playerTracker.run();
@@ -67,8 +68,8 @@ public class HeartBeat extends StoppableThread {
         };
     }
 
-    private static Runnable runnableTerritoryTracker(Bot bot) {
-        TerritoryTracker territoryTracker = new TerritoryTracker(bot);
+    private static Runnable runnableTerritoryTracker(Bot bot, Object dbLock) {
+        TerritoryTracker territoryTracker = new TerritoryTracker(bot, dbLock);
         return () -> {
             long start = System.nanoTime();
             territoryTracker.run();

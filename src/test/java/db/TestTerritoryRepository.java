@@ -55,8 +55,6 @@ class TestTerritoryRepository {
         assert e1.getLocation().getEndX() == 100;
         assert e2.getLocation().getStartX() == 500;
         assert e1.getGuild().equals("Salted Test");
-        System.out.println(e1.getAcquired().getTime());
-        System.out.println(now.getTime());
         assert e1.getAcquired().getTime() == now.getTime();
 
         assert repo.delete(e1);

@@ -1,9 +1,6 @@
 package db;
 
-import db.repository.CommandLogRepository;
-import db.repository.TerritoryRepository;
-import db.repository.TrackChannelRepository;
-import db.repository.WorldRepository;
+import db.repository.*;
 import log.Logger;
 import org.jetbrains.annotations.NotNull;
 
@@ -27,6 +24,7 @@ public class DatabaseImpl implements Database {
     private WorldRepository worldRepository;
     private CommandLogRepository commandLogRepository;
     private TerritoryRepository territoryRepository;
+    private TerritoryLogRepository territoryLogRepository;
 
     public DatabaseImpl(Logger logger) {
         this.logger = logger;
@@ -66,5 +64,13 @@ public class DatabaseImpl implements Database {
             this.territoryRepository = new TerritoryRepository(this.connectionPool, this.logger);
         }
         return this.territoryRepository;
+    }
+
+    @Override
+    public @NotNull TerritoryLogRepository getTerritoryLogRepository() {
+        if (this.territoryLogRepository == null) {
+            this.territoryLogRepository = new TerritoryLogRepository(this.connectionPool, this.logger);
+        }
+        return this.territoryLogRepository;
     }
 }

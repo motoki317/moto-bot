@@ -26,58 +26,69 @@ public class PlayerTracker {
     private static final Pattern warWorld = Pattern.compile("WAR\\d+");
     private static final DateFormat trackFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
 
-    private final Bot bot;
     private final Logger logger;
+    private final Object dbLock;
+    private final ShardManager manager;
+    private final WynnApi api;
+    private final WorldRepository worldRepository;
+    private final TrackChannelRepository trackChannelRepository;
 
-    // cache
-    private WynnApi api;
-
-    public PlayerTracker(Bot bot) {
-        this.bot = bot;
+    public PlayerTracker(Bot bot, Object dbLock) {
         this.logger = bot.getLogger();
+        this.dbLock = dbLock;
+        this.manager = bot.getManager();
+        this.api = new WynnApi(this.logger, bot.getProperties().wynnTimeZone);
+        this.worldRepository = bot.getDatabase().getWorldRepository();
+        this.trackChannelRepository = bot.getDatabase().getTrackingChannelRepository();
     }
 
     public void run() {
-        if (this.api == null) {
-            this.api = new WynnApi(this.logger, this.bot.getProperties().wynnTimeZone);
-        }
-
         OnlinePlayers players = this.api.getOnlinePlayers();
         if (players == null) {
             this.logger.log(0, "Player Tracker: Failed to retrieve online players list");
             return;
         }
 
-        WorldRepository repo = this.bot.getDatabase().getWorldRepository();
-        List<World> prevWorldList = repo.findAll();
-        if (prevWorldList == null) return;
+        List<World> prevWorldList;
+        Map<String, World> currentWorlds = players.getWorlds().entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, e -> new World(e.getKey(), e.getValue().size())));
+        synchronized (this.dbLock) {
+            prevWorldList = this.worldRepository.findAll();
+            if (prevWorldList == null) return;
+
+            // Update DB
+            if (!this.worldRepository.updateAll(currentWorlds.values())) {
+                this.logger.log(0, "Player Tracker: Failed to update worlds in DB");
+            }
+        }
 
         Map<String, World> prevWorlds = prevWorldList.stream().collect(Collectors.toMap(World::getName, w -> w));
-        Map<String, World> currentWorlds = players.getWorlds().entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, e -> new World(e.getKey(), e.getValue().size())));
+        this.handleTracking(currentWorlds, prevWorlds);
+    }
 
+    /**
+     * Do war & server tracking.
+     * @param currentWorlds Current worlds retrieved from Wynn API.
+     * @param prevWorlds Previous worlds (stored in the db).
+     */
+    private void handleTracking(Map<String, World> currentWorlds, Map<String, World> prevWorlds) {
         // Handle tracks
-        TrackChannelRepository trackChannelRepo = this.bot.getDatabase().getTrackingChannelRepository();
+        // TODO: war trackers
         for (World currentWorld : currentWorlds.values()) {
             if (!prevWorlds.containsKey(currentWorld.getName())) {
-                handleServerTracking(true, trackChannelRepo, this.bot.getManager(), this.logger, currentWorld);
+                handleServerTracking(true, this.trackChannelRepository, this.manager, this.logger, currentWorld);
             }
         }
         for (World prevWorld : prevWorlds.values()) {
             if (!currentWorlds.containsKey(prevWorld.getName())) {
-                handleServerTracking(false, trackChannelRepo, this.bot.getManager(), this.logger, prevWorld);
+                handleServerTracking(false, this.trackChannelRepository, this.manager, this.logger, prevWorld);
             }
         }
 
-        this.bot.getManager().setActivity(Activity.playing("Wynn " + countOnlinePlayers(currentWorlds.values()) + " online"));
-
-        // Update DB
-        if (!repo.updateAll(currentWorlds.values())) {
-            this.logger.log(0, "Player Tracker: Failed to update worlds in DB");
-        }
+        this.manager.setActivity(Activity.playing("Wynn " + countOnlinePlayers(currentWorlds.values()) + " online"));
     }
 
     /**
-     * Handles server tracking and sends messages to channels.
+     * Called when a server starts or closes.
      * @param start Boolean indicating server started or closed.
      * @param repo Track channel repository.
      * @param manager Bot manager to send messages.
