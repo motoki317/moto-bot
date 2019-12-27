@@ -60,14 +60,19 @@ public class SimpleConnectionPool implements ConnectionPool {
             }
 
             Connection connection = availableConnections.pop();
-            if (connection == null) {
-                try {
-                    connection = createConnection(url);
-                } catch (SQLException e) {
-                    availableConnections.push(null);
-                    this.logger.logException("failed to establish a new db connection", e);
-                    return null;
+            try {
+                if (connection == null || !connection.isValid((int) MAX_GET_WAIT / 1000)) {
+                    try {
+                        connection = createConnection(url);
+                    } catch (SQLException e) {
+                        availableConnections.push(null);
+                        this.logger.logException("failed to establish a new db connection", e);
+                        return null;
+                    }
                 }
+            } catch (SQLException e) {
+                this.logger.logException("Something went wrong while checking the validity of a connection", e);
+                return null;
             }
             usedConnectionTime.put(connection, System.currentTimeMillis());
             return connection;
