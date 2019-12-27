@@ -88,7 +88,8 @@ CREATE TABLE IF NOT EXISTS `war_players_log` (
         ON UPDATE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-# A table that aggregates `war_log` / `territory_log` for a guild
+# A table that aggregates `war_log` / `territory_log` for a guild.
+# Records all wars (<-> associated if possible), acquire territory, lost territory (never associated with a war log)
 CREATE TABLE IF NOT EXISTS `guild_war_log` (
     `id` INT AUTO_INCREMENT PRIMARY KEY NOT NULL,
     `guild_name` VARCHAR(30) NOT NULL,
@@ -96,7 +97,7 @@ CREATE TABLE IF NOT EXISTS `guild_war_log` (
     `territory_log_id` INT NULL,
     UNIQUE KEY `guild_idx` (`guild_name`, `id` DESC),
     UNIQUE KEY `war_log_idx` (`war_log_id`),
-    UNIQUE KEY `territory_log_idx` (`territory_log_id`),
+    UNIQUE KEY `territory_log_idx` (`territory_log_id`, `guild_name`),
     CONSTRAINT `fk_guild_war_log_id` FOREIGN KEY (`war_log_id`) REFERENCES `war_log` (`id`)
         ON DELETE CASCADE
         ON UPDATE RESTRICT,
@@ -105,11 +106,11 @@ CREATE TABLE IF NOT EXISTS `guild_war_log` (
         ON UPDATE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-DROP PROCEDURE IF EXISTS `count_guild_territories`;
+DROP FUNCTION IF EXISTS `count_guild_territories`;
 DELIMITER //
-CREATE PROCEDURE `count_guild_territories` (IN g_name VARCHAR(30))
+CREATE FUNCTION `count_guild_territories` (g_name VARCHAR(30)) RETURNS INT
     BEGIN
-        SELECT COUNT(*) FROM `territory` WHERE `guild_name` = g_name;
+        RETURN (SELECT COUNT(*) FROM `territory` WHERE `guild_name` = g_name);
     END; //
 DELIMITER ;
 
@@ -130,12 +131,11 @@ CREATE TRIGGER IF NOT EXISTS `territory_logger`
 DELIMITER ;
 
 # Selects id of the last war log for guild that is not yet associated to an territory log
-DROP PROCEDURE IF EXISTS `last_unassociated_war_log_id`;
+DROP FUNCTION IF EXISTS `last_unassociated_war_log_id`;
 DELIMITER //
-CREATE PROCEDURE `last_unassociated_war_log_id` (IN g_name VARCHAR(30))
+CREATE FUNCTION `last_unassociated_war_log_id` (g_name VARCHAR(30)) RETURNS INT
     BEGIN
-        @res := (SELECT `id` FROM `war_log` WHERE `guild_name` = g_name AND (SELECT `territory_log_id` IS NULL FROM `guild_war_log` WHERE `war_log_id` = `war_log`.`id`) = 1 ORDER BY `created_at` DESC LIMIT 1);
-        RETURN IF(COUNT(@res) = 0, NULL, @res);
+        RETURN (SELECT `id` FROM `war_log` WHERE `guild_name` = g_name AND (SELECT `territory_log_id` IS NULL FROM `guild_war_log` WHERE `war_log_id` = `war_log`.`id`) = 1 ORDER BY `created_at` DESC LIMIT 1);
     END; //
 DELIMITER ;
 
@@ -145,21 +145,22 @@ CREATE TRIGGER IF NOT EXISTS `guild_territory_logger`
     AFTER INSERT ON `territory_log` FOR EACH ROW
     BEGIN
         # for old owner guild
-        INSERT INTO `guild_war_log` (guild_name, war_log_id) VALUES (NEW.old_guild_name, NEW.id);
+        INSERT INTO `guild_war_log` (guild_name, territory_log_id) VALUES (NEW.old_guild_name, NEW.id);
 
         # for new owner guild
-        @war_log_id := last_unassociated_war_log_id(NEW.new_guild_name);
+        SET @war_log_id = last_unassociated_war_log_id(NEW.new_guild_name);
 
         IF @war_log_id IS NOT NULL THEN
             # if the last war log for that guild is within 3 minutes
             IF ((UNIX_TIMESTAMP(NOW()) - UNIX_TIMESTAMP((SELECT `last_up` FROM `war_log` WHERE `id` = @war_log_id)))) <= 180 THEN
                 UPDATE `guild_war_log` SET `territory_log_id` = NEW.id WHERE guild_name = NEW.new_guild_name AND `war_log_id` = @war_log_id;
                 UPDATE `war_log` SET `ended` = 1 WHERE `id` = @war_log_id;
-                RETURN;
+            ELSE
+                INSERT INTO `guild_war_log` (guild_name, territory_log_id) VALUES (NEW.new_guild_name, NEW.id);
             END IF;
+        ELSE
+            INSERT INTO `guild_war_log` (guild_name, territory_log_id) VALUES (NEW.new_guild_name, NEW.id);
         END IF;
-
-        INSERT INTO `guild_war_log` (guild_name, territory_log_id) VALUES (NEW.new_guild_name, NEW.id);
     END; //
 DELIMITER ;
 

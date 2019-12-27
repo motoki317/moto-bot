@@ -16,8 +16,7 @@ public class Territory {
     private static final ObjectMapper mapper = new ObjectMapper();
 
     private static final DateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-
-    private TimeZone wynnTimeZone;
+    private static boolean timezoneSet = false;
 
     private String territory;
     private String guild;
@@ -78,9 +77,11 @@ public class Territory {
 
     @NotNull
     static Territory parse(String body, TimeZone wynnTimeZone) throws JsonProcessingException {
-        Territory instance = mapper.readValue(body, Territory.class);
-        instance.wynnTimeZone = wynnTimeZone;
-        return instance;
+        if (!timezoneSet) {
+            format.setTimeZone(wynnTimeZone);
+            timezoneSet = true;
+        }
+        return mapper.readValue(body, Territory.class);
     }
 
     /**
