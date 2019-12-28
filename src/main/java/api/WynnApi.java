@@ -148,7 +148,7 @@ public class WynnApi {
             ));
             return player;
         } catch (Exception e) {
-            this.logger.logException("an error occurred while requesting / parsing player statistics", e);
+            this.logger.logException("an error occurred while requesting / parsing player statistics for " + playerName, e);
             return null;
         }
     }
