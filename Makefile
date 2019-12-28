@@ -1,20 +1,20 @@
 build:
-	docker-compose up -d --build
+	docker-compose -f ./development/docker-compose.yml up -d --build
 
 up:
-	docker-compose up -d
+	docker-compose -f ./development/docker-compose.yml up -d
 
 down:
-	docker-compose down
+	docker-compose -f ./development/docker-compose.yml down
 
 test:
-	docker-compose exec moto-bot mvn test
+	docker-compose -f ./development/docker-compose.yml exec moto-bot mvn test
 
 db-up:
-	docker-compose up -d mysql
+	docker-compose -f ./development/docker-compose.yml up -d mysql
 
 db:
-	docker-compose exec mysql mysql -u root -p
+	docker-compose -f ./development/docker-compose.yml exec mysql mysql -u root -p
 
 javadoc: # Downloads javadoc
 	mvn dependency:resolve -Dclassifier=javadoc
