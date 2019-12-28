@@ -106,7 +106,7 @@ CREATE TABLE IF NOT EXISTS `war_track` (
     CONSTRAINT `fk_war_track_log_id` FOREIGN KEY (`war_log_id`) REFERENCES `war_log` (`id`)
         ON DELETE CASCADE
         ON UPDATE RESTRICT
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 # A table that aggregates `war_log` / `territory_log` for a guild.
 # Records all wars (<-> associated if possible), acquire territory, lost territory (never associated with a war log)
