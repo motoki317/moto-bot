@@ -1,6 +1,7 @@
 package api;
 
 import api.structs.OnlinePlayers;
+import api.structs.Player;
 import api.structs.TerritoryList;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.TestOnly;
@@ -26,5 +27,12 @@ class TestWynnApi {
         TerritoryList territoryList = getWynnApi().getTerritoryList();
         assert territoryList != null;
         assert territoryList.getTerritories().entrySet().size() > 300;
+    }
+
+    @Test
+    void testGetPlayerStatistics() {
+        Player player = getWynnApi().getPlayerStatistics("Salted", false, true);
+        assert player != null;
+        assert player.getUuid().equals("1ed075fc-5aa9-42e0-a29f-640326c1d80c");
     }
 }

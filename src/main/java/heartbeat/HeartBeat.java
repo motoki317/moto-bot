@@ -1,5 +1,6 @@
 package heartbeat;
 
+import api.WynnApi;
 import app.Bot;
 import heartbeat.tracking.PlayerTracker;
 import heartbeat.tracking.TerritoryTracker;
@@ -48,6 +49,13 @@ public class HeartBeat extends StoppableThread {
                 },
                 UPDATERS_INTERVAL,
                 UPDATERS_INTERVAL
+        ));
+
+        this.tasks.add(new Task(
+                this.timer,
+                WynnApi::updateCache,
+                TimeUnit.MINUTES.toMillis(10),
+                TimeUnit.MINUTES.toMillis(10)
         ));
     }
 
