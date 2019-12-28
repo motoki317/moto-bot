@@ -59,6 +59,10 @@ public class WarLog implements WarLogId {
         return serverName;
     }
 
+    public void setGuildName(@NotNull String guildName) {
+        this.guildName = guildName;
+    }
+
     @Nullable
     public String getGuildName() {
         return guildName;

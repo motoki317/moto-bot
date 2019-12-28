@@ -72,7 +72,7 @@ public class HeartBeat extends StoppableThread {
             long start = System.nanoTime();
             playerTracker.run();
             long end = System.nanoTime();
-            bot.getLogger().log(-1, String.format("Player tracker took %.6f ms to run.", ((double) (end - start)) / 1_000_000D));
+            bot.getLogger().log(-1, String.format("Heartbeat: Player tracker took %.6f ms to run.", ((double) (end - start)) / 1_000_000D));
         };
     }
 
@@ -82,7 +82,7 @@ public class HeartBeat extends StoppableThread {
             long start = System.nanoTime();
             territoryTracker.run();
             long end = System.nanoTime();
-            bot.getLogger().log(-1, String.format("Territory tracker took %.6f ms to run.", ((double) (end - start)) / 1_000_000D));
+            bot.getLogger().log(-1, String.format("Heartbeat: Territory tracker took %.6f ms to run.", ((double) (end - start)) / 1_000_000D));
         };
     }
 

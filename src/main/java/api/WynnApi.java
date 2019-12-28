@@ -8,6 +8,7 @@ import log.Logger;
 import utils.HttpUtils;
 
 import javax.annotation.Nullable;
+import java.util.AbstractMap;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.TimeZone;
@@ -31,7 +32,12 @@ public class WynnApi {
     @Nullable
     public OnlinePlayers getOnlinePlayers() {
         try {
+            long start = System.nanoTime();
             String body = HttpUtils.get(onlinePlayersUrl);
+            long end = System.nanoTime();
+            this.logger.log(-1, String.format("Wynn API: Requested online players list, took %s ms.", (double) (end - start) / 1_000_000d));
+
+            if (body == null) throw new Exception("returned body was null");
             return new OnlinePlayers(body);
         } catch (Exception e) {
             this.logger.logException("an error occurred while requesting / parsing online players", e);
@@ -48,7 +54,11 @@ public class WynnApi {
     @Nullable
     public TerritoryList getTerritoryList() {
         try {
+            long start = System.nanoTime();
             String body = HttpUtils.get(territoryListUrl);
+            long end = System.nanoTime();
+            this.logger.log(-1, String.format("Wynn API: Requested territory list, took %s ms.", (double) (end - start) / 1_000_000d));
+
             if (body == null) throw new Exception("returned body was null");
             return new TerritoryList(body, this.wynnTimeZone);
         } catch (Exception e) {
@@ -94,10 +104,12 @@ public class WynnApi {
      */
     private static void checkRequest(String resource, boolean canWait) throws RateLimitException {
         // If it is being requested too quickly
-        if (Math.abs(System.currentTimeMillis() - lastRequest.getOrDefault(resource, 0L)) < minWaitMillis.get(resource) * lastRequestStack.getOrDefault(resource, 0)) {
+        long fromLastRequest = Math.abs(System.currentTimeMillis() - lastRequest.getOrDefault(resource, 0L));
+        long hasToWait = minWaitMillis.get(resource) * lastRequestStack.getOrDefault(resource, 0);
+        if (fromLastRequest < hasToWait) {
             // If the original call can wait, and if it exceeds max stack
             if (canWait && lastRequestStack.getOrDefault(resource, 0) > maxRequestStack) {
-                long backoff = minWaitMillis.get(resource) * lastRequestStack.getOrDefault(resource, 0) - Math.abs(System.currentTimeMillis() - lastRequest.getOrDefault(resource, 0L));
+                long backoff = hasToWait - fromLastRequest;
                 throw new RateLimitException("The bot is trying to request Wynncraft API too quickly!" +
                         " Please wait `" + (double) backoff / 1000d + "` seconds before trying again.", backoff, TimeUnit.MILLISECONDS);
             } else {
@@ -123,9 +135,18 @@ public class WynnApi {
         try {
             checkRequest(RESOURCE, canWait);
 
+            long start = System.nanoTime();
             String body = HttpUtils.get(String.format(playerStatisticsUrl, playerName));
+            long end = System.nanoTime();
             if (body == null) throw new Exception("returned body was null");
-            return new Player(body);
+            this.logger.log(-1, String.format("Wynn API: Requested player stats for %s, took %s ms.", playerName, (double) (end - start) / 1_000_000d));
+
+            Player player = new Player(body);
+            playerNodes.put(playerName, new AbstractMap.SimpleEntry<>(
+                    System.currentTimeMillis(),
+                    player
+            ));
+            return player;
         } catch (Exception e) {
             this.logger.logException("an error occurred while requesting / parsing player statistics", e);
             return null;
