@@ -296,7 +296,9 @@ public class PlayerTracker {
         @NotNull
         String guildName = warLog.getGuildName() != null ? warLog.getGuildName() : "(Unknown Guild)";
         String formattedPlayerNames = warLog.getPlayers().stream()
-                .map(p -> p.hasExited() ? "~~" + p.getPlayerName().replace("_", "\\_") : p.getPlayerName().replace("_", "\\_"))
+                .map(p -> p.hasExited()
+                        ? "~~" + p.getPlayerName().replace("_", "\\_") + "~~"
+                        : p.getPlayerName().replace("_", "\\_"))
                 .collect(Collectors.joining(", "));
 
         String formattedTime = trackFormat.format(warLog.getCreatedAt());
