@@ -14,4 +14,10 @@ public interface Database {
     TerritoryRepository getTerritoryRepository();
     @NotNull
     TerritoryLogRepository getTerritoryLogRepository();
+    @NotNull
+    WarTrackRepository getWarTrackRepository();
+    @NotNull
+    WarLogRepository getWarLogRepository();
+    @NotNull
+    WarPlayerRepository getWarPlayerRepository();
 }

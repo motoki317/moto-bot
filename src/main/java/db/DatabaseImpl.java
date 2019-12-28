@@ -25,6 +25,9 @@ public class DatabaseImpl implements Database {
     private CommandLogRepository commandLogRepository;
     private TerritoryRepository territoryRepository;
     private TerritoryLogRepository territoryLogRepository;
+    private WarTrackRepository warTrackRepository;
+    private WarLogRepository warLogRepository;
+    private WarPlayerRepository warPlayerRepository;
 
     public DatabaseImpl(Logger logger) {
         this.logger = logger;
@@ -72,5 +75,29 @@ public class DatabaseImpl implements Database {
             this.territoryLogRepository = new TerritoryLogRepository(this.connectionPool, this.logger);
         }
         return this.territoryLogRepository;
+    }
+
+    @Override
+    public @NotNull WarTrackRepository getWarTrackRepository() {
+        if (this.warTrackRepository == null) {
+            this.warTrackRepository = new WarTrackRepository(this.connectionPool, this.logger);
+        }
+        return this.warTrackRepository;
+    }
+
+    @Override
+    public @NotNull WarLogRepository getWarLogRepository() {
+        if (this.warLogRepository == null) {
+            this.warLogRepository = new WarLogRepository(this.connectionPool, this.logger, this.getWarPlayerRepository());
+        }
+        return this.warLogRepository;
+    }
+
+    @Override
+    public @NotNull WarPlayerRepository getWarPlayerRepository() {
+        if (this.warPlayerRepository == null) {
+            this.warPlayerRepository = new WarPlayerRepository(this.connectionPool, this.logger);
+        }
+        return this.warPlayerRepository;
     }
 }

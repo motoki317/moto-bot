@@ -51,6 +51,7 @@ CREATE TABLE IF NOT EXISTS `territory` (
     KEY `guild_idx` (`guild_name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+# Territory log is to be automatically updated by triggers, on `territory` table update
 CREATE TABLE IF NOT EXISTS `territory_log` (
     `id` INT AUTO_INCREMENT PRIMARY KEY NOT NULL,
     `territory_name` VARCHAR(100) NOT NULL,
@@ -66,27 +67,46 @@ CREATE TABLE IF NOT EXISTS `territory_log` (
     KEY `new_guild_idx` (`new_guild_name`, `acquired` DESC)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+# War log table is to be updated in the code
 CREATE TABLE IF NOT EXISTS `war_log` (
     `id` INT AUTO_INCREMENT PRIMARY KEY NOT NULL,
-    `server` VARCHAR(10) NOT NULL,
+    `server_name` VARCHAR(10) NOT NULL,
     `guild_name` VARCHAR(30) NULL,
     `created_at` DATETIME NOT NULL DEFAULT NOW(),
     `last_up` DATETIME NOT NULL DEFAULT NOW() ON UPDATE NOW(),
     `ended` BOOLEAN NOT NULL,
-    KEY `guild_idx` (`guild_name`, `created_at` DESC)
+    # boolean indicating if the player tracker has sent log of this log
+    `log_ended` BOOLEAN NOT NULL,
+    KEY `guild_idx` (`guild_name`, `created_at` DESC),
+    KEY `ended_idx` (`ended`),
+    KEY `log_ended_idx` (`log_ended`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE TABLE IF NOT EXISTS `war_players_log` (
+# Associates with war_log table to keep track of players that joined a war server
+CREATE TABLE IF NOT EXISTS `war_player` (
     `war_log_id` INT NOT NULL,
-    `player` VARCHAR(30) NOT NULL,
+    `player_name` VARCHAR(30) NOT NULL,
+    # player mc uuid with hyphens
+    `player_uuid` CHAR(36) NULL,
     # A flag indicating player left war server before the war server itself ends,
     # or that guild acquired a territory (= `ended` flag in `war_log` table)
     `exited` BOOLEAN NOT NULL,
-    PRIMARY KEY (`war_log_id`, `player`),
+    PRIMARY KEY (`war_log_id`, `player_name`),
     CONSTRAINT `fk_war_log_id` FOREIGN KEY (`war_log_id`) REFERENCES `war_log` (`id`)
         ON DELETE CASCADE
         ON UPDATE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+# Keep track of messages sent to discord for war tracking
+CREATE TABLE IF NOT EXISTS `war_track` (
+    `war_log_id` INT NOT NULL,
+    `discord_channel_id` BIGINT NOT NULL,
+    `discord_message_id` BIGINT NOT NULL,
+    PRIMARY KEY (`war_log_id`, `discord_channel_id`),
+    CONSTRAINT `fk_war_track_log_id` FOREIGN KEY (`war_log_id`) REFERENCES `war_log` (`id`)
+        ON DELETE CASCADE
+        ON UPDATE RESTRICT
+);
 
 # A table that aggregates `war_log` / `territory_log` for a guild.
 # Records all wars (<-> associated if possible), acquire territory, lost territory (never associated with a war log)
@@ -168,6 +188,18 @@ DELIMITER //
 CREATE TRIGGER IF NOT EXISTS `guild_war_logger`
     AFTER INSERT ON `war_log` FOR EACH ROW
     BEGIN
-        INSERT INTO `guild_war_log` (guild_name, war_log_id) VALUES (NEW.guild_name, NEW.id);
+        IF NEW.guild_name IS NOT NULL THEN
+            INSERT INTO `guild_war_log` (guild_name, war_log_id) VALUES (NEW.guild_name, NEW.id);
+        END IF;
+    END; //
+DELIMITER ;
+
+DELIMITER //
+CREATE TRIGGER IF NOT EXISTS `guild_war_logger_2`
+    AFTER UPDATE ON `war_log` FOR EACH ROW
+    BEGIN
+        IF NEW.guild_name IS NOT NULL AND OLD.guild_name IS NULL THEN
+            INSERT INTO `guild_war_log` (guild_name, war_log_id) VALUES (NEW.guild_name, NEW.id);
+        END IF;
     END; //
 DELIMITER ;

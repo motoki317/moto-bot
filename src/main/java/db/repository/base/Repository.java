@@ -64,36 +64,73 @@ public abstract class Repository<T, ID> implements IRepository<T, ID> {
         }
     }
 
+    /**
+     * Executes sql statement and handles exceptions.
+     * Automatically handles connections.
+     * @param sql any SQL statement
+     * @param objects objects to replace "?" in the query
+     * @return True if succeeded.
+     */
     @Nullable
     @CheckReturnValue
-    protected ResultSet executeQuery(@Language("MariaDB") String sql, Object... strings) {
+    protected ResultSet executeQuery(@Language("MariaDB") String sql, Object... objects) {
         Connection connection = this.db.getConnection();
         if (connection == null) {
             return null;
         }
 
-        String fullSql = replaceSql(sql, strings);
+        try {
+            return executeQuery(connection, sql, objects);
+        } finally {
+            this.db.releaseConnection(connection);
+        }
+    }
+
+    /**
+     * Executes sql statement with given connection, and handles exceptions.
+     * This method will NOT release the given connection.
+     * @param sql any SQL statement
+     * @param connection Connection to use.
+     * @param objects objects to replace "?" in the query
+     * @return True if succeeded.
+     */
+    @Nullable
+    @CheckReturnValue
+    protected ResultSet executeQuery(Connection connection, @Language("MariaDB") String sql, Object... objects) {
+        String fullSql = replaceSql(sql, objects);
         try {
             Statement statement = connection.createStatement();
             return statement.executeQuery(fullSql);
         } catch (SQLException e) {
             this.logger.logException("an exception occurred while executing sql: " + fullSql, e);
             return null;
-        } finally {
-            this.db.releaseConnection(connection);
         }
     }
 
-    private static String replaceSql(String sql, @NotNull Object... strings) {
+    private static String replaceSql(String sql, @NotNull Object... objects) {
+        if (numQuestionChars(sql) != objects.length) {
+            throw new Error(String.format("Number of replacements (\"?\", %s) and number of given objects (%s) do not match.\n" +
+                    "SQL before replacement: %s", numQuestionChars(sql), objects.length, sql));
+        }
+
         String ret = sql;
-        for (Object o : strings) {
-            ret = ret.replaceFirst("\\?", replaceObject(o));
+        for (Object o : objects) {
+            ret = ret.replaceFirst("\\?", objectToString(o));
+        }
+        return ret;
+    }
+
+    private static int numQuestionChars(String sql) {
+        int ret = 0;
+        for (char c : sql.toCharArray()) {
+            if (c == '?')
+                ret++;
         }
         return ret;
     }
 
     @NotNull
-    private static String replaceObject(@Nullable Object o) {
+    private static String objectToString(@Nullable Object o) {
         return o == null ? "NULL" : "\"" + escapeString(o.toString()) + "\"";
     }
 

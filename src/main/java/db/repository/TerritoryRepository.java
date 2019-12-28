@@ -163,10 +163,13 @@ public class TerritoryRepository extends Repository<Territory, TerritoryId> {
             if (oldTerritoryList == null) return false;
             Map<String, Territory> oldTerritories = oldTerritoryList.stream().collect(Collectors.toMap(Territory::getName, t -> t));
 
+            int added = 0;
+            int removed = 0;
             for (Territory t : newTerritories.values()) {
                 if (!oldTerritories.containsKey(t.getName())) {
                     Territory.Location location = t.getLocation();
-                    this.logger.log(0, "Adding new territory: " + t.getName());
+                    this.logger.log(-1, "Adding new territory: " + t.getName());
+                    added++;
                     boolean res = this.execute(connection,
                             "INSERT INTO `territory` (name, guild_name, acquired, attacker, start_x, start_z, end_x, end_z) VALUES " +
                                     "(?, ?, ?, ?, ?, ?, ?, ?)",
@@ -198,7 +201,8 @@ public class TerritoryRepository extends Repository<Territory, TerritoryId> {
             }
             for (Territory t : oldTerritories.values()) {
                 if (!newTerritories.containsKey(t.getName())) {
-                    this.logger.log(0, "Removing territory: " + t.getName());
+                    this.logger.log(-1, "Removing territory: " + t.getName());
+                    removed++;
                     boolean res = this.execute(connection,
                             "DELETE FROM `territory` WHERE `name` = ?",
                             t.getName()
@@ -208,6 +212,11 @@ public class TerritoryRepository extends Repository<Territory, TerritoryId> {
             }
 
             connection.commit();
+
+            if (added != 0 || removed != 0) {
+                this.logger.log(0, String.format("Added %s, and removed %s territories.", added, removed));
+            }
+
             return true;
         } catch (SQLException e) {
             this.logger.logException("an exception occurred while updating territories.", e);
