@@ -43,6 +43,10 @@ public class WarPlayer implements WarPlayerId {
         return playerUUID;
     }
 
+    public void setPlayerUUID(@NotNull String playerUUID) {
+        this.playerUUID = playerUUID;
+    }
+
     public boolean hasExited() {
         return exited;
     }

@@ -153,12 +153,15 @@ public class PlayerTracker {
                 .map(p -> new WarPlayer(p, null, false)).collect(Collectors.toList());
         // retrieve guild name
         String guildName = null;
-        for (String player : players) {
-            Player stats = this.api.getPlayerStatistics(player, false, false);
-            if (stats != null && stats.getGuildInfo().getName() != null) {
-                guildName = stats.getGuildInfo().getName();
-                break;
+        for (WarPlayer warPlayer : warPlayers) {
+            Player stats = this.api.getPlayerStatistics(warPlayer.getPlayerName(), false, false);
+            if (stats == null) {
+                continue;
             }
+            if (guildName == null && stats.getGuildInfo().getName() != null) {
+                guildName = stats.getGuildInfo().getName();
+            }
+            warPlayer.setPlayerUUID(stats.getUuid());
         }
 
         WarLog warLog = new WarLog(serverName, guildName, now, now, false, false, warPlayers);
@@ -189,13 +192,15 @@ public class PlayerTracker {
                 WarPlayer warPlayer = new WarPlayer(prevWarLog.getId(), currentPlayer, null, false);
                 warPlayers.add(warPlayer);
 
-                // if guild name is null, try to retrieve guild name
-                if (prevWarLog.getGuildName() == null) {
-                    Player stats = this.api.getPlayerStatistics(currentPlayer, false, false);
-                    if (stats != null && stats.getGuildInfo().getName() != null) {
-                        prevWarLog.setGuildName(stats.getGuildInfo().getName());
-                    }
+                // get player uuid, and if guild name is null try to retrieve it as wel
+                Player stats = this.api.getPlayerStatistics(currentPlayer, false, false);
+                if (stats == null) {
+                    continue;
                 }
+                if (prevWarLog.getGuildName() == null && stats.getGuildInfo().getName() != null) {
+                    prevWarLog.setGuildName(stats.getGuildInfo().getName());
+                }
+                warPlayer.setPlayerUUID(stats.getUuid());
             }
         }
 
