@@ -61,7 +61,7 @@ public class HeartBeat extends StoppableThread {
 
     @Override
     public void run() {
-        this.logger.log(-1, "Starting heartbeat... (Thread id " + this.getId() + ")");
+        this.logger.debug("Starting heartbeat... (Thread id " + this.getId() + ")");
 
         this.tasks.forEach(Task::start);
     }

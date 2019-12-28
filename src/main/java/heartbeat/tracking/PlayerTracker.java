@@ -340,7 +340,7 @@ public class PlayerTracker {
             message = String.format("Server `%s` has closed. Uptime: `%s`", world.getName(), formattedUptime);
         }
 
-        logger.log(-1, message);
+        logger.debug(message);
 
         // Ignore war worlds
         if (warWorld.matcher(world.getName()).matches()) {

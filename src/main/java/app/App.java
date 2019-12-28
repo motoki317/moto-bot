@@ -144,7 +144,7 @@ public class App implements Runnable, Bot {
                 }
             }
             isConnected[i] = true;
-            this.logger.log(-1, "JDA Sharding: Shard ID " + i + " is loaded!");
+            this.logger.debug("JDA Sharding: Shard ID " + i + " is loaded!");
         }
         this.logger.log(-1, "JDA Sharding: All shards loaded!");
     }
@@ -152,7 +152,7 @@ public class App implements Runnable, Bot {
     private void addEventListeners() {
         this.manager.addEventListener(new MessageListener(this));
         this.manager.addEventListener(new UpdaterListener(this.responseManager, this.reactionManager));
-        this.logger.log(-1, "Added event listeners.");
+        this.logger.debug("Added event listeners.");
     }
 
     public void onShutDown() {

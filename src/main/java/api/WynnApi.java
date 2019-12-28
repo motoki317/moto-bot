@@ -35,7 +35,7 @@ public class WynnApi {
             long start = System.nanoTime();
             String body = HttpUtils.get(onlinePlayersUrl);
             long end = System.nanoTime();
-            this.logger.log(-1, String.format("Wynn API: Requested online players list, took %s ms.", (double) (end - start) / 1_000_000d));
+            this.logger.debug(String.format("Wynn API: Requested online players list, took %s ms.", (double) (end - start) / 1_000_000d));
 
             if (body == null) throw new Exception("returned body was null");
             return new OnlinePlayers(body);
@@ -57,7 +57,7 @@ public class WynnApi {
             long start = System.nanoTime();
             String body = HttpUtils.get(territoryListUrl);
             long end = System.nanoTime();
-            this.logger.log(-1, String.format("Wynn API: Requested territory list, took %s ms.", (double) (end - start) / 1_000_000d));
+            this.logger.debug(String.format("Wynn API: Requested territory list, took %s ms.", (double) (end - start) / 1_000_000d));
 
             if (body == null) throw new Exception("returned body was null");
             return new TerritoryList(body, this.wynnTimeZone);
@@ -139,7 +139,7 @@ public class WynnApi {
             String body = HttpUtils.get(String.format(playerStatisticsUrl, playerName));
             long end = System.nanoTime();
             if (body == null) throw new Exception("returned body was null");
-            this.logger.log(-1, String.format("Wynn API: Requested player stats for %s, took %s ms.", playerName, (double) (end - start) / 1_000_000d));
+            this.logger.debug(String.format("Wynn API: Requested player stats for %s, took %s ms.", playerName, (double) (end - start) / 1_000_000d));
 
             Player player = new Player(body);
             playerNodes.put(playerName, new AbstractMap.SimpleEntry<>(
