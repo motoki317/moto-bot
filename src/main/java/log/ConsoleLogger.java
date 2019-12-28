@@ -12,10 +12,12 @@ import java.util.TimeZone;
  */
 public class ConsoleLogger implements Logger {
     private final DateFormat logFormat;
+    private final boolean debug;
 
     public ConsoleLogger(TimeZone logTimeZone) {
         this.logFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss.SSS");
         this.logFormat.setTimeZone(logTimeZone);
+        this.debug = "1".equals(System.getenv("DEBUG"));
     }
 
     @Override
@@ -23,6 +25,14 @@ public class ConsoleLogger implements Logger {
         Date now = new Date();
         String msg = this.logFormat.format(now) + " " + message;
 
+        System.out.println(msg);
+    }
+
+    @Override
+    public void debug(CharSequence message) {
+        if (!debug) return;
+        Date now = new Date();
+        String msg = this.logFormat.format(now) + " " + message;
         System.out.println(msg);
     }
 

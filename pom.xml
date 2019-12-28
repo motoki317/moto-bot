@@ -122,6 +122,7 @@
                 <configuration>
                     <environmentVariables>
                         <MYSQL_DATABASE>moto-bot_test</MYSQL_DATABASE>
+                        <DEBUG>1</DEBUG>
                     </environmentVariables>
                 </configuration>
             </plugin>

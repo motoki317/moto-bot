@@ -23,6 +23,8 @@ public class DiscordLogger implements Logger {
 
     private final DiscordSpamChecker spamChecker;
 
+    private final boolean debug;
+
     public DiscordLogger(Bot bot, TimeZone logTimeZone) {
         this.bot = bot;
         this.logChannel = new HashMap<>();
@@ -34,6 +36,7 @@ public class DiscordLogger implements Logger {
         this.logFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss.SSS");
         this.logFormat.setTimeZone(logTimeZone);
         this.spamChecker = new DiscordSpamChecker();
+        this.debug = "1".equals(System.getenv("DEBUG"));
     }
 
     /**
@@ -59,6 +62,14 @@ public class DiscordLogger implements Logger {
         }
 
         BotUtils.sendLongMessage(msgTimeAppended, ch);
+    }
+
+    @Override
+    public void debug(CharSequence message) {
+        if (!debug) return;
+        Date now = new Date();
+        String msg = this.logFormat.format(now) + " " + message;
+        System.out.println(msg);
     }
 
     /**
