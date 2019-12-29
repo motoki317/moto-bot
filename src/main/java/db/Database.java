@@ -20,4 +20,6 @@ public interface Database {
     WarLogRepository getWarLogRepository();
     @NotNull
     WarPlayerRepository getWarPlayerRepository();
+    @NotNull
+    CustomTimeZoneRepository getCustomTimeZoneRepository();
 }

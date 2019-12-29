@@ -28,6 +28,7 @@ public class DatabaseImpl implements Database {
     private WarTrackRepository warTrackRepository;
     private WarLogRepository warLogRepository;
     private WarPlayerRepository warPlayerRepository;
+    private CustomTimeZoneRepository customTimeZoneRepository;
 
     public DatabaseImpl(Logger logger) {
         this.logger = logger;
@@ -99,5 +100,13 @@ public class DatabaseImpl implements Database {
             this.warPlayerRepository = new WarPlayerRepository(this.connectionPool, this.logger);
         }
         return this.warPlayerRepository;
+    }
+
+    @Override
+    public @NotNull CustomTimeZoneRepository getCustomTimeZoneRepository() {
+        if (this.customTimeZoneRepository == null) {
+            this.customTimeZoneRepository = new CustomTimeZoneRepository(this.connectionPool, this.logger);
+        }
+        return this.customTimeZoneRepository;
     }
 }

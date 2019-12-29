@@ -203,3 +203,9 @@ CREATE TRIGGER IF NOT EXISTS `guild_war_logger_2`
         END IF;
     END; //
 DELIMITER ;
+
+# User defined timezones for guild / channel / user
+CREATE TABLE IF NOT EXISTS `timezone` (
+    `discord_id` BIGINT NOT NULL,
+    `timezone` VARCHAR(50) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
