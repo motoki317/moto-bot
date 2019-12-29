@@ -99,8 +99,10 @@ public class TimeZoneCmd extends GenericCommand {
             return;
         }
 
+        String timezoneId = args[1];
+
         Matcher m1;
-        if ((m1 = custom1.matcher(args[1])).matches()) {
+        if ((m1 = custom1.matcher(timezoneId)).matches()) {
             int hours = Integer.parseInt(m1.group(1));
             if (args[1].startsWith("-")) {
                 hours *= -1;
@@ -117,7 +119,7 @@ public class TimeZoneCmd extends GenericCommand {
         }
 
         Matcher m2;
-        if ((m2 = custom2.matcher(args[2])).matches()) {
+        if ((m2 = custom2.matcher(timezoneId)).matches()) {
             String sign = m1.group(1);
             if (sign.isEmpty()) {
                 sign = "+";
@@ -137,10 +139,10 @@ public class TimeZoneCmd extends GenericCommand {
             return;
         }
 
-        if (timeZoneExists(args[2])) {
-            addSetting(event, args[2], type);
+        if (timeZoneExists(timezoneId)) {
+            addSetting(event, timezoneId, type);
         } else {
-            respond(event, String.format("Couldn't find a timezone matching your input: `%s`...", args[2]));
+            respond(event, String.format("Couldn't find a timezone matching your input: `%s`...", args[1]));
         }
     }
 
@@ -175,8 +177,8 @@ public class TimeZoneCmd extends GenericCommand {
         return false;
     }
 
-    private void addSetting(MessageReceivedEvent event, String id, Type type) {
-        CustomTimeZone customTimeZone = new CustomTimeZone(type.getDiscordId(event), id);
+    private void addSetting(MessageReceivedEvent event, String timezoneId, Type type) {
+        CustomTimeZone customTimeZone = new CustomTimeZone(type.getDiscordId(event), timezoneId);
         if (this.customTimeZoneRepository.create(customTimeZone)) {
             respond(event, ":white_check_mark: Successfully saved your settings!");
         } else {
@@ -221,10 +223,10 @@ public class TimeZoneCmd extends GenericCommand {
             dateFormat.setTimeZone(customTimeZone.getTimeZoneInstance());
         }
         eb.addField(name,
-                String.format("`%s` (%s)%s",
+                String.format("`%s` (%s) `%s`",
                         dateFormat.format(now),
                         customTimeZone != null ? customTimeZone.getFormattedTime() : "+0",
-                        customTimeZone != null ? "" : " (default)"),
+                        customTimeZone != null ? customTimeZone.getTimezone() : "default"),
                 false
         );
     }

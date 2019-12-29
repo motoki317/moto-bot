@@ -43,6 +43,7 @@ public class MessageListener extends ListenerAdapter {
         addCommand(new ServerList(bot.getDatabase().getWorldRepository(), bot.getReactionManager()));
         addCommand(new Track(bot.getDatabase()));
         addCommand(new TimeZoneCmd(bot.getDatabase().getCustomTimeZoneRepository()));
+        addCommand(new PrefixCmd(bot.getProperties().prefix, bot.getDatabase().getPrefixRepository()));
     }
 
     private void addCommand(BotCommand command) {
@@ -69,17 +70,20 @@ public class MessageListener extends ListenerAdapter {
         if (event.isWebhookMessage() || event.getAuthor().isBot()) return;
 
         // Check prefix
-        String prefix = getPrefix(event);
+        Set<String> prefixes = getPrefix(event);
         String rawMessage = event.getMessage().getContentRaw();
-        if (!rawMessage.startsWith(prefix)) return;
+        // Repeat for each prefix
+        for (String prefix : prefixes) {
+            if (!rawMessage.startsWith(prefix)) continue;
 
-        String commandMessage = rawMessage.substring(prefix.length());
-        String[] args = commandMessage.split(" ");
+            String commandMessage = rawMessage.substring(prefix.length());
+            String[] args = commandMessage.split(" ");
 
-        // Process command
-        if (args.length == 0) return;
-        for (String commandName : this.commandNameMap.keySet()) {
-            if (args[0].toLowerCase().equals(commandName)) {
+            // Process command
+            if (args.length == 0) continue;
+
+            if (this.commandNameMap.containsKey(args[0].toLowerCase())) {
+                String commandName = args[0].toLowerCase();
                 BotCommand command = this.commandNameMap.get(commandName);
 
                 // Check guild-only command
@@ -106,25 +110,26 @@ public class MessageListener extends ListenerAdapter {
     }
 
     /**
-     * Retrieves prefix for the received event. Default prefix
+     * Retrieves prefix for the received event.
      * @param event Message received event
-     * @return Resolved prefix
+     * @return Resolved set of prefixes
      */
-    private String getPrefix(@NotNull MessageReceivedEvent event) {
-        String ret = this.defaultPrefix;
+    private Set<String> getPrefix(@NotNull MessageReceivedEvent event) {
+        Set<String> ret = new HashSet<>();
+        ret.add(this.defaultPrefix);
         if (event.isFromGuild()) {
             Prefix guild = this.prefixRepository.findOne(() -> event.getGuild().getIdLong());
             if (guild != null) {
-                ret = guild.getPrefix();
+                ret.add(guild.getPrefix());
             }
         }
         Prefix channel = this.prefixRepository.findOne(() -> event.getChannel().getIdLong());
         if (channel != null) {
-            ret = channel.getPrefix();
+            ret.add(channel.getPrefix());
         }
         Prefix user = this.prefixRepository.findOne(() -> event.getAuthor().getIdLong());
         if (user != null) {
-            ret = user.getPrefix();
+            ret.add(user.getPrefix());
         }
         return ret;
     }
