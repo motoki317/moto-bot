@@ -4,26 +4,38 @@ import app.Bot;
 import commands.*;
 import commands.base.BotCommand;
 import db.model.commandLog.CommandLog;
+import db.model.prefix.Prefix;
 import db.repository.CommandLogRepository;
+import db.repository.PrefixRepository;
+import log.Logger;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
+import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nonnull;
 import java.util.*;
 
 public class MessageListener extends ListenerAdapter {
-    private final Bot bot;
-
     private final List<BotCommand> commands;
     private final Map<String, BotCommand> commandNameMap;
 
-    private final CommandLogRepository repo;
+    private final Bot bot;
+    private final Logger logger;
+    private final String defaultPrefix;
+
+    private final CommandLogRepository commandLogRepository;
+    private final PrefixRepository prefixRepository;
 
     public MessageListener(Bot bot) {
-        this.bot = bot;
         this.commands = new ArrayList<>();
         this.commandNameMap = new HashMap<>();
-        this.repo = bot.getDatabase().getCommandLogRepository();
+
+        this.bot = bot;
+        this.logger = bot.getLogger();
+        this.defaultPrefix = bot.getProperties().prefix;
+
+        this.commandLogRepository = bot.getDatabase().getCommandLogRepository();
+        this.prefixRepository = bot.getDatabase().getPrefixRepository();
 
         addCommand(new Help(bot, this.commands));
         addCommand(new Ping(bot));
@@ -57,7 +69,7 @@ public class MessageListener extends ListenerAdapter {
         if (event.isWebhookMessage() || event.getAuthor().isBot()) return;
 
         // Check prefix
-        String prefix = this.bot.getProperties().prefix;
+        String prefix = getPrefix(event);
         String rawMessage = event.getMessage().getContentRaw();
         if (!rawMessage.startsWith(prefix)) return;
 
@@ -78,7 +90,7 @@ public class MessageListener extends ListenerAdapter {
                 }
 
                 // Log and check spam
-                boolean isSpam = this.bot.getLogger().logEvent(event);
+                boolean isSpam = this.logger.logEvent(event);
                 if (isSpam) {
                     String message = "You are requesting commands too quickly! Please wait at least 1 second between each commands.";
                     event.getChannel().sendMessage(message).queue();
@@ -94,12 +106,36 @@ public class MessageListener extends ListenerAdapter {
     }
 
     /**
+     * Retrieves prefix for the received event. Default prefix
+     * @param event Message received event
+     * @return Resolved prefix
+     */
+    private String getPrefix(@NotNull MessageReceivedEvent event) {
+        String ret = this.defaultPrefix;
+        if (event.isFromGuild()) {
+            Prefix guild = this.prefixRepository.findOne(() -> event.getGuild().getIdLong());
+            if (guild != null) {
+                ret = guild.getPrefix();
+            }
+        }
+        Prefix channel = this.prefixRepository.findOne(() -> event.getChannel().getIdLong());
+        if (channel != null) {
+            ret = channel.getPrefix();
+        }
+        Prefix user = this.prefixRepository.findOne(() -> event.getAuthor().getIdLong());
+        if (user != null) {
+            ret = user.getPrefix();
+        }
+        return ret;
+    }
+
+    /**
      * Adds command log to db.
      */
     private void addCommandLog(String kind, String full, long userId, boolean dm) {
         CommandLog entity = new CommandLog(kind, full, userId, dm);
-        if (!this.repo.create(entity)) {
-            this.bot.getLogger().log(0, "Failed to log command to db.");
+        if (!this.commandLogRepository.create(entity)) {
+            this.logger.log(0, "Failed to log command to db.");
         }
     }
 }
