@@ -1,4 +1,4 @@
-package api.structs.common;
+package api.wynn.structs.common;
 
 public class Request {
     private long timestamp;

@@ -4,6 +4,9 @@ import org.apache.http.HttpEntity;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.ResponseHandler;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.ContentType;
+import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
@@ -22,6 +25,22 @@ public class HttpUtils {
     public static String get(String url) throws IOException {
         try (CloseableHttpClient client = HttpClients.createDefault()) {
             HttpGet request = new HttpGet(url);
+            return client.execute(request, defaultResponseHandler());
+        }
+    }
+
+    /**
+     * Sends POST request to specified URL.
+     * @param url URL string.
+     * @param body Post body. Used to post with header "Content-Type: application/json".
+     * @return Response body. Null if something went wrong.
+     * @throws IOException On connection issues & status code other than 2xx was returned.
+     */
+    @Nullable
+    public static String postJson(String url, String body) throws IOException {
+        try (CloseableHttpClient client = HttpClients.createDefault()) {
+            HttpPost request = new HttpPost(url);
+            request.setEntity(new StringEntity(body, ContentType.APPLICATION_JSON));
             return client.execute(request, defaultResponseHandler());
         }
     }

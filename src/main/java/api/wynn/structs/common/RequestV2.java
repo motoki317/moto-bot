@@ -1,4 +1,4 @@
-package api.structs.common;
+package api.wynn.structs.common;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;

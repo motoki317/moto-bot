@@ -1,4 +1,4 @@
-package api.structs;
+package api.wynn.structs;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;

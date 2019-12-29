@@ -1,8 +1,9 @@
 package api;
 
-import api.structs.OnlinePlayers;
-import api.structs.Player;
-import api.structs.TerritoryList;
+import api.wynn.WynnApi;
+import api.wynn.structs.OnlinePlayers;
+import api.wynn.structs.Player;
+import api.wynn.structs.TerritoryList;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.TestOnly;
 import org.junit.jupiter.api.Test;

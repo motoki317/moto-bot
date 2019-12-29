@@ -1,4 +1,4 @@
-package api.exception;
+package api.wynn.exception;
 
 import java.util.concurrent.TimeUnit;
 

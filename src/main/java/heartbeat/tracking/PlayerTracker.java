@@ -1,8 +1,8 @@
 package heartbeat.tracking;
 
-import api.WynnApi;
-import api.structs.OnlinePlayers;
-import api.structs.Player;
+import api.wynn.WynnApi;
+import api.wynn.structs.OnlinePlayers;
+import api.wynn.structs.Player;
 import app.Bot;
 import db.model.track.TrackChannel;
 import db.model.track.TrackType;

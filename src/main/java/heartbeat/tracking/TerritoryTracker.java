@@ -1,7 +1,7 @@
 package heartbeat.tracking;
 
-import api.WynnApi;
-import api.structs.TerritoryList;
+import api.wynn.WynnApi;
+import api.wynn.structs.TerritoryList;
 import app.Bot;
 import db.model.territory.Territory;
 import db.model.territoryLog.TerritoryLog;
@@ -45,7 +45,7 @@ public class TerritoryTracker {
         if (territoryList == null) return;
 
         List<Territory> territories = new ArrayList<>();
-        for (Map.Entry<String, api.structs.Territory> e : territoryList.getTerritories().entrySet()) {
+        for (Map.Entry<String, api.wynn.structs.Territory> e : territoryList.getTerritories().entrySet()) {
             try {
                 territories.add(e.getValue().convert());
             } catch (ParseException ex) {

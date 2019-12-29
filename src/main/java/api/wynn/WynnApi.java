@@ -1,17 +1,14 @@
-package api;
+package api.wynn;
 
-import api.exception.RateLimitException;
-import api.structs.OnlinePlayers;
-import api.structs.Player;
-import api.structs.TerritoryList;
+import api.wynn.exception.RateLimitException;
+import api.wynn.structs.OnlinePlayers;
+import api.wynn.structs.Player;
+import api.wynn.structs.TerritoryList;
 import log.Logger;
 import utils.HttpUtils;
 
 import javax.annotation.Nullable;
-import java.util.AbstractMap;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.TimeZone;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 public class WynnApi {
@@ -90,11 +87,20 @@ public class WynnApi {
         System.out.println("Wynn API v2: min. wait millis : " + minWaitMillis.toString());
     }
 
-    /**
-     * Checks internal cache, delete the ones that are not valid anymore.
-     * Player: if older than 10 minutes, then delete.
-     */
-    public static void updateCache() {
+    static {
+        new Timer().scheduleAtFixedRate(
+                new TimerTask() {
+                    @Override
+                    public void run() {
+                        updateCache();
+                    }
+                },
+                TimeUnit.MINUTES.toMillis(10),
+                TimeUnit.MINUTES.toMillis(10)
+        );
+    }
+
+    private static void updateCache() {
         playerNodes.entrySet().removeIf(e -> System.currentTimeMillis() - e.getValue().getKey() > TimeUnit.MINUTES.toMillis(10));
     }
 
@@ -102,18 +108,20 @@ public class WynnApi {
      * Manages rate limit. This method should always be called when requesting API.
      * @throws RateLimitException When the bot tried to request API too quickly.
      */
-    private static void checkRequest(String resource, boolean canWait) throws RateLimitException {
+    private static void checkRequest(String resource, boolean canWait, Logger logger) throws RateLimitException {
         // If it is being requested too quickly
-        long fromLastRequest = Math.abs(System.currentTimeMillis() - lastRequest.getOrDefault(resource, 0L));
+        long timeSinceLast = Math.abs(System.currentTimeMillis() - lastRequest.getOrDefault(resource, 0L));
         long hasToWait = minWaitMillis.get(resource) * lastRequestStack.getOrDefault(resource, 0);
-        if (fromLastRequest < hasToWait) {
+        if (timeSinceLast < hasToWait) {
             // If the original call can wait, and if it exceeds max stack
+            long backoff = hasToWait - timeSinceLast;
             if (canWait && lastRequestStack.getOrDefault(resource, 0) > maxRequestStack) {
-                long backoff = hasToWait - fromLastRequest;
                 throw new RateLimitException("The bot is trying to request Wynncraft API too quickly!" +
                         " Please wait `" + (double) backoff / 1000d + "` seconds before trying again.", backoff, TimeUnit.MILLISECONDS);
             } else {
                 lastRequestStack.put(resource, lastRequestStack.getOrDefault(resource, 0) + 1);
+                logger.debug(String.format("WynnAPI: Forcing too many quick requests (%s requests in series, has to wait %s more ms)",
+                        lastRequestStack.get(resource), backoff));
             }
 
         } else {
@@ -133,7 +141,7 @@ public class WynnApi {
         }
 
         try {
-            checkRequest(RESOURCE, canWait);
+            checkRequest(RESOURCE, canWait, this.logger);
 
             long start = System.nanoTime();
             String body = HttpUtils.get(String.format(playerStatisticsUrl, playerName));
