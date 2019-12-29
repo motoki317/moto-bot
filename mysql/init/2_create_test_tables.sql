@@ -209,3 +209,9 @@ CREATE TABLE IF NOT EXISTS `timezone` (
     `discord_id` BIGINT NOT NULL,
     `timezone` VARCHAR(50) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+# User defined prefixes for guild / channel / user
+CREATE TABLE IF NOT EXISTS `prefix` (
+    `discord_id` BIGINT PRIMARY KEY NOT NULL,
+    `prefix` VARCHAR(10) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

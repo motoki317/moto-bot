@@ -22,4 +22,6 @@ public interface Database {
     WarPlayerRepository getWarPlayerRepository();
     @NotNull
     CustomTimeZoneRepository getCustomTimeZoneRepository();
+    @NotNull
+    PrefixRepository getPrefixRepository();
 }

@@ -29,6 +29,7 @@ public class DatabaseImpl implements Database {
     private WarLogRepository warLogRepository;
     private WarPlayerRepository warPlayerRepository;
     private CustomTimeZoneRepository customTimeZoneRepository;
+    private PrefixRepository prefixRepository;
 
     public DatabaseImpl(Logger logger) {
         this.logger = logger;
@@ -108,5 +109,13 @@ public class DatabaseImpl implements Database {
             this.customTimeZoneRepository = new CustomTimeZoneRepository(this.connectionPool, this.logger);
         }
         return this.customTimeZoneRepository;
+    }
+
+    @Override
+    public @NotNull PrefixRepository getPrefixRepository() {
+        if (this.prefixRepository == null) {
+            this.prefixRepository = new PrefixRepository(this.connectionPool, this.logger);
+        }
+        return this.prefixRepository;
     }
 }
