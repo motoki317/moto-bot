@@ -30,6 +30,7 @@ public class MessageListener extends ListenerAdapter {
         addCommand(new Info(bot));
         addCommand(new ServerList(bot.getDatabase().getWorldRepository(), bot.getReactionManager()));
         addCommand(new Track(bot.getDatabase()));
+        addCommand(new TimeZoneCmd(bot.getDatabase().getCustomTimeZoneRepository()));
     }
 
     private void addCommand(BotCommand command) {

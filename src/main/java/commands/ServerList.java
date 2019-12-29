@@ -37,21 +37,25 @@ public class ServerList extends GenericCommand {
         this.reactionManager = reactionManager;
     }
 
+    @NotNull
     @Override
     public String[] names() {
         return new String[]{"serverlist", "servers", "up"};
     }
 
+    @NotNull
     @Override
     public String syntax() {
-        return "serverlist [all]";
+        return "serverlist [all|<num>]";
     }
 
+    @NotNull
     @Override
     public String shortHelp() {
         return "Returns a list of Wynncraft servers and their respective uptime.";
     }
 
+    @NotNull
     @Override
     public Message longHelp() {
         return new MessageBuilder(
@@ -60,7 +64,7 @@ public class ServerList extends GenericCommand {
                 .setDescription("This command returns a list of Wynncraft servers and their respective uptime.")
                 .addField("Syntax",
                         String.join("\n",
-                                "`serverlist [all|<num>]`",
+                                "`" + this.syntax() + "`",
                                 "`[all]` optional argument will, when specified, show all worlds excluding WAR worlds: " +
                                         "not only main WC/EU servers but also lobby, GM and other servers.",
                                 "`[<num>]` optional argument will, when specified, set the max number of worlds to show per page." +

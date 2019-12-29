@@ -4,6 +4,7 @@ import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import org.jetbrains.annotations.NotNull;
 import utils.MinecraftColor;
 
 import java.time.Instant;
@@ -16,24 +17,28 @@ public abstract class BotCommand {
      * Command names including aliases. Used to process command inputs.
      * @return Command names.
      */
+    @NotNull
     public abstract String[] names();
 
     /**
      * Command syntax. Used in help display.
      * @return Command syntax.
      */
+    @NotNull
     public abstract String syntax();
 
     /**
      * Shows short help in help command.
      * @return Short help.
      */
+    @NotNull
     public abstract String shortHelp();
 
     /**
      * Shows long help in help (cmd name) command.
      * @return Long help message.
      */
+    @NotNull
     public abstract Message longHelp();
     public abstract void process(MessageReceivedEvent event, String[] args);
 

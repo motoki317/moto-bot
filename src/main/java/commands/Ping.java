@@ -6,6 +6,7 @@ import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import org.jetbrains.annotations.NotNull;
 import utils.BotUtils;
 import utils.FormatUtils;
 
@@ -19,21 +20,25 @@ public class Ping extends GenericCommand {
         this.bot = bot;
     }
 
+    @NotNull
     @Override
     public String[] names() {
         return new String[]{"ping"};
     }
 
+    @NotNull
     @Override
     public String syntax() {
         return "ping";
     }
 
+    @NotNull
     @Override
     public String shortHelp() {
         return "Pong!";
     }
 
+    @NotNull
     @Override
     public Message longHelp() {
         return new MessageBuilder(

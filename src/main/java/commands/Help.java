@@ -7,6 +7,7 @@ import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import org.jetbrains.annotations.NotNull;
 import update.multipage.MultipageHandler;
 
 import java.util.List;
@@ -22,21 +23,25 @@ public class Help extends GenericCommand {
         this.commands = commands;
     }
 
+    @NotNull
     @Override
     public String[] names() {
         return new String[]{"help", "h"};
     }
 
+    @NotNull
     @Override
     public String syntax() {
         return "help [cmd name]";
     }
 
+    @NotNull
     @Override
     public String shortHelp() {
         return "Calls this help. Use with arguments to view detailed help of each command. e.g. `help ping`";
     }
 
+    @NotNull
     @Override
     public Message longHelp() {
         return new MessageBuilder(

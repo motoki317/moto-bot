@@ -8,6 +8,7 @@ import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import org.jetbrains.annotations.NotNull;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -22,21 +23,25 @@ public class Info extends GenericCommand {
         this.bot = bot;
     }
 
+    @NotNull
     @Override
     public String[] names() {
         return new String[]{"info"};
     }
 
+    @NotNull
     @Override
     public String syntax() {
         return "info";
     }
 
+    @NotNull
     @Override
     public String shortHelp() {
         return "Shows this bot's meta info.";
     }
 
+    @NotNull
     @Override
     public Message longHelp() {
         return new MessageBuilder(

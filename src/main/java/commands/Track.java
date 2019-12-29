@@ -9,6 +9,7 @@ import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
 import java.util.Arrays;
@@ -23,21 +24,25 @@ public class Track extends GuildCommand {
         this.db = db;
     }
 
+    @NotNull
     @Override
     public String[] names() {
         return new String[]{"track"};
     }
 
+    @NotNull
     @Override
     public String syntax() {
         return "track <server|war|territory>";
     }
 
+    @NotNull
     @Override
     public String shortHelp() {
         return "Manages server, war, and territory tracking.";
     }
 
+    @NotNull
     @Override
     public Message longHelp() {
         return new MessageBuilder(

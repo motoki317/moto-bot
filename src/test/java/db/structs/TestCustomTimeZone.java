@@ -35,6 +35,7 @@ class TestCustomTimeZone {
                 new TestCase("GMT-05", "-5", - HOUR * 5),
                 new TestCase("JST", "+9", HOUR * 9),
                 new TestCase("GMT-0530", "-0530", - (HOUR * 5 + MINUTE * 30)),
+                new TestCase("GMT-0905", "-0905", - (HOUR * 9 + MINUTE * 5)),
                 new TestCase("Asia/Tokyo", "+9", HOUR * 9)
         };
 
