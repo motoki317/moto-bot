@@ -5,8 +5,10 @@ import api.wynn.structs.TerritoryList;
 import app.Bot;
 import db.model.territory.Territory;
 import db.model.territoryLog.TerritoryLog;
+import db.model.timezone.CustomTimeZone;
 import db.model.track.TrackChannel;
 import db.model.track.TrackType;
+import db.repository.CustomTimeZoneRepository;
 import db.repository.TerritoryLogRepository;
 import db.repository.TerritoryRepository;
 import db.repository.TrackChannelRepository;
@@ -29,6 +31,7 @@ public class TerritoryTracker {
     private final TerritoryRepository territoryRepository;
     private final TerritoryLogRepository territoryLogRepository;
     private final TrackChannelRepository trackChannelRepository;
+    private final CustomTimeZoneRepository customTimeZoneRepository;
 
     public TerritoryTracker(Bot bot, Object dbLock) {
         this.logger = bot.getLogger();
@@ -38,6 +41,7 @@ public class TerritoryTracker {
         this.territoryRepository = bot.getDatabase().getTerritoryRepository();
         this.territoryLogRepository = bot.getDatabase().getTerritoryLogRepository();
         this.trackChannelRepository = bot.getDatabase().getTrackingChannelRepository();
+        this.customTimeZoneRepository = bot.getDatabase().getCustomTimeZoneRepository();
     }
 
     public void run() {
@@ -100,11 +104,11 @@ public class TerritoryTracker {
                             t -> t.getGuildName() != null && (t.getGuildName().equals(log.getOldGuildName()) || t.getGuildName().equals(log.getNewGuildName()))
                     ).collect(Collectors.toList())
             );
-            String message = format(log);
+            String messageBase = formatBase(log);
             channelsToSend.forEach(ch -> {
                 TextChannel channel = this.manager.getTextChannelById(ch.getChannelId());
                 if (channel == null) return;
-                channel.sendMessage(message).queue();
+                channel.sendMessage(messageBase + formatAcquiredTime(log, ch)).queue();
             });
         }
     }
@@ -112,26 +116,29 @@ public class TerritoryTracker {
     private static final DateFormat trackFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
 
     /**
-     * Formats territory log in order to send it to tracking channels..
+     * Formats territory log in order to send it to tracking channels.
      * @param log Territory log.
      * @return Formatted string.
      */
-    private static String format(TerritoryLog log) {
+    private static String formatBase(TerritoryLog log) {
         String heldForFormatted = FormatUtils.formatReadableTime(log.getTimeDiff() / 1000, false, "s");
-
-        // TODO: custom offset hours for each channel
-        int offsetHours = 0;
-        String offsetStr = (offsetHours >= 0 ? "+" : "") + offsetHours;
-
-        String acquiredFormatted = trackFormat.format(log.getAcquired());
 
         return String.format(
                 "%s: *%s* (%s) → **%s** (%s)\n" +
-                        "    Territory held for %s\n" +
-                        "    Acquired: %s (%s)",
+                        "    Territory held for %s\n",
                 log.getTerritoryName(), log.getOldGuildName(), log.getOldGuildTerrAmt(), log.getNewGuildName(), log.getNewGuildTerrAmt(),
-                heldForFormatted,
-                acquiredFormatted, offsetStr
+                heldForFormatted
+        );
+    }
+
+    private String formatAcquiredTime(TerritoryLog log, TrackChannel track) {
+        long guildId = track.getGuildId();
+        long channelId = track.getChannelId();
+        CustomTimeZone custom = this.customTimeZoneRepository.getTimeZone(guildId, channelId);
+        // TODO: custom format for each channel
+        trackFormat.setTimeZone(custom.getTimeZoneInstance());
+        return String.format(
+                "    Acquired: %s (%s)", trackFormat.format(log.getAcquired()), custom.getFormattedTime()
         );
     }
 }

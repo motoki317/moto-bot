@@ -91,6 +91,68 @@ public class CustomTimeZoneRepository extends Repository<CustomTimeZone, CustomT
         return null;
     }
 
+    /**
+     * Retrieves custom timezone.
+     * If more than one channels are set, channel is the most prioritized, then guild.
+     * @param guildId Guild id.
+     * @param channelId Channel id.
+     * @return Custom timezone. If no custom timezone is set, returns default.
+     */
+    @NotNull
+    public CustomTimeZone getTimeZone(long guildId, long channelId) {
+        CustomTimeZone ret = CustomTimeZone.getDefault();
+        if (this.exists(() -> guildId)) {
+            CustomTimeZone customTimeZone = this.findOne(() -> guildId);
+            if (customTimeZone != null) {
+                ret = customTimeZone;
+            }
+        }
+        if (this.exists(() -> channelId)) {
+            CustomTimeZone customTimeZone = this.findOne(() -> channelId);
+            if (customTimeZone != null) {
+                ret = customTimeZone;
+            }
+        }
+        return ret;
+    }
+
+    /**
+     * Retrieves custom timezone.
+     * @param userId User id.
+     * @return Custom timezone. If no custom timezone is set, returns default.
+     */
+    @NotNull
+    public CustomTimeZone getTimeZone(long userId) {
+        CustomTimeZone ret = CustomTimeZone.getDefault();
+        if (this.exists(() -> userId)) {
+            CustomTimeZone customTimeZone = this.findOne(() -> userId);
+            if (customTimeZone != null) {
+                ret = customTimeZone;
+            }
+        }
+        return ret;
+    }
+
+    /**
+     * Retrieves custom timezone.
+     * If more than one channels are set, user is the most prioritized, then channel and then guild.
+     * @param guildId Guild id.
+     * @param channelId Channel id.
+     * @param userId User id.
+     * @return Custom timezone. If no custom timezone is set, returns default.
+     */
+    @NotNull
+    public CustomTimeZone getTimeZone(long guildId, long channelId, long userId) {
+        CustomTimeZone ret = this.getTimeZone(guildId, channelId);
+        if (this.exists(() -> userId)) {
+            CustomTimeZone customTimeZone = this.findOne(() -> userId);
+            if (customTimeZone != null) {
+                ret = customTimeZone;
+            }
+        }
+        return ret;
+    }
+
     @Nullable
     @Override
     public List<CustomTimeZone> findAll() {

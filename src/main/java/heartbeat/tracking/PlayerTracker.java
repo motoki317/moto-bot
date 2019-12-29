@@ -12,10 +12,7 @@ import db.model.warLog.WarLog;
 import db.model.warPlayer.WarPlayer;
 import db.model.warTrack.WarTrack;
 import db.model.world.World;
-import db.repository.TrackChannelRepository;
-import db.repository.WarLogRepository;
-import db.repository.WarTrackRepository;
-import db.repository.WorldRepository;
+import db.repository.*;
 import log.Logger;
 import net.dv8tion.jda.api.entities.Activity;
 import net.dv8tion.jda.api.entities.TextChannel;
@@ -43,6 +40,7 @@ public class PlayerTracker {
 
     private final WorldRepository worldRepository;
     private final TrackChannelRepository trackChannelRepository;
+    private final CustomTimeZoneRepository customTimeZoneRepository;
 
     private final WarLogRepository warLogRepository;
     private final WarTrackRepository warTrackRepository;
@@ -55,6 +53,7 @@ public class PlayerTracker {
         this.mojangApi = new MojangApi(this.logger);
         this.worldRepository = bot.getDatabase().getWorldRepository();
         this.trackChannelRepository = bot.getDatabase().getTrackingChannelRepository();
+        this.customTimeZoneRepository = bot.getDatabase().getCustomTimeZoneRepository();
         this.warLogRepository = bot.getDatabase().getWarLogRepository();
         this.warTrackRepository = bot.getDatabase().getWarTrackRepository();
     }
@@ -289,8 +288,9 @@ public class PlayerTracker {
         Map<Long, WarTrack> channelsAlreadySent = currentTracks.stream().collect(Collectors.toMap(WarTrack::getChannelId, t -> t));
 
         // Send messages
-        String message = formatWarTrack(warLog);
+        String messageBase = formatWarTrackBase(warLog);
         for (TrackChannel t : channelsToSend) {
+            String message = messageBase + formatWarTrackTime(warLog, t);
             if (channelsAlreadySent.containsKey(t.getChannelId())) {
                 WarTrack track = channelsAlreadySent.get(t.getChannelId());
                 // update the message
@@ -357,7 +357,7 @@ public class PlayerTracker {
         return channelsToSend;
     }
 
-    private static String formatWarTrack(WarLog warLog) {
+    private static String formatWarTrackBase(WarLog warLog) {
         @NotNull
         String guildName = warLog.getGuildName() != null ? warLog.getGuildName() : "(Unknown Guild)";
         String formattedPlayerNames = warLog.getPlayers().stream()
@@ -366,6 +366,15 @@ public class PlayerTracker {
                         : p.getPlayerName().replace("_", "\\_"))
                 .collect(Collectors.joining(", "));
 
+        return String.format(
+                "**%s** *%s* → %s\n",
+                warLog.getServerName(), guildName, formattedPlayerNames
+        );
+    }
+
+    @NotNull
+    private String formatWarTrackTime(WarLog warLog, TrackChannel track) {
+        trackFormat.setTimeZone(this.customTimeZoneRepository.getTimeZone(track.getGuildId(), track.getChannelId()).getTimeZoneInstance());
         String formattedTime = trackFormat.format(warLog.getCreatedAt());
         if (warLog.getCreatedAt().equals(warLog.getLastUp())) {
             // war just started
@@ -375,13 +384,7 @@ public class PlayerTracker {
         } else {
             formattedTime += " ~ " + trackFormat.format(warLog.getLastUp());
         }
-
-        return String.format(
-                "**%s** *%s* → %s\n" +
-                        "    Time: %s",
-                warLog.getServerName(), guildName, formattedPlayerNames,
-                formattedTime
-        );
+        return String.format("    Time: %s", formattedTime);
     }
 
     /**
@@ -392,7 +395,7 @@ public class PlayerTracker {
      * @param logger Bot logger.
      * @param world Corresponding world.
      */
-    private static void sendServerTracking(boolean start,
+    private void sendServerTracking(boolean start,
                                            @NotNull TrackChannelRepository repo,
                                            ShardManager manager,
                                            Logger logger,
@@ -429,9 +432,16 @@ public class PlayerTracker {
             TextChannel channelToSend = manager.getTextChannelById(ch.getChannelId());
             if (channelToSend == null) return;
             channelToSend.sendMessage(
-                    trackFormat.format(now) + " " + message
+                     formatDate(now, ch.getGuildId(), ch.getChannelId()) + " " + message
             ).queue();
         });
+    }
+
+    @NotNull
+    private String formatDate(Date now, long guildId, long channelId) {
+        // TODO: custom format for each channel
+        trackFormat.setTimeZone(this.customTimeZoneRepository.getTimeZone(guildId, channelId).getTimeZoneInstance());
+        return trackFormat.format(now);
     }
 
     private static int countOnlinePlayers(@NotNull Collection<World> currentWorlds) {
