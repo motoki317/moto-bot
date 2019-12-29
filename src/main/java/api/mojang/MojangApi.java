@@ -1,6 +1,7 @@
 package api.mojang;
 
 import api.mojang.structs.NameToUUID;
+import api.mojang.structs.NullableUUID;
 import api.wynn.exception.RateLimitException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import log.Logger;
@@ -48,7 +49,7 @@ public class MojangApi {
                         " Please wait `" + (double) backoff / 1000d + "` seconds before trying again.", backoff, TimeUnit.MILLISECONDS);
             } else {
                 lastNumOfRequests++;
-                logger.debug(String.format("MojangAPI: Forcing too many quick requests (%s requests in series, has to wait %s more ms)",
+                logger.debug(String.format("Mojang API: Forcing too many quick requests (%s requests in series, has to wait %s more ms)",
                         lastNumOfRequests, backoff));
 
             }
@@ -78,7 +79,7 @@ public class MojangApi {
         nameToUUIDCache.entrySet().removeIf(e -> (now - e.getValue().getKey()) > TimeUnit.MINUTES.toMillis(10));
     }
 
-    private static final Map<String, Map.Entry<Long, UUID>> nameToUUIDCache = new HashMap<>();
+    private static final Map<String, Map.Entry<Long, NullableUUID>> nameToUUIDCache = new HashMap<>();
 
     // ----- API instance -----
 
@@ -92,7 +93,7 @@ public class MojangApi {
     private static final String NAME_TO_UUID_URL = "https://api.mojang.com/profiles/minecraft";
 
     @Nullable
-    private static UUID getUUIDUsingCache(String name) {
+    private static NullableUUID getUUIDUsingCache(String name) {
         if (nameToUUIDCache.containsKey(name)) {
             return nameToUUIDCache.get(name).getValue();
         }
@@ -100,18 +101,18 @@ public class MojangApi {
     }
 
     /**
-     * POST https://api.mojang.com/profiles/minecraft
+     * POST https://api.mojang.com/profiles/minecraft, given names are assumed to not be in cache.
      * @param names Player names (player readable form). Size has to be less than or equal to 10.
      * @return Map of player names to UUIDs.
      */
     @Nullable
-    private Map<String, UUID> getUUIDs(List<String> names) {
+    private Map<String, NullableUUID> getUUIDs(List<String> names) {
         if (names.isEmpty() || names.size() > NAME_TO_UUID_PLAYERS_PER_REQUEST) {
             throw new IllegalArgumentException("Length of list of names has to be less than or equal to " + NAME_TO_UUID_PLAYERS_PER_REQUEST);
         }
 
         try {
-            checkRequest(true, this.logger);
+            checkRequest(false, this.logger);
 
             long start = System.nanoTime();
             String postBody = String.format(
@@ -121,19 +122,31 @@ public class MojangApi {
             String data = HttpUtils.postJson(NAME_TO_UUID_URL, postBody);
             long end = System.nanoTime();
 
-            this.logger.debug(String.format("MojangAPI: Requested names -> UUID, took %s ms",
-                    (double) (end - start) / 1_000_000d));
+            this.logger.debug(String.format("Mojang API: Requested names -> UUID for %s players, took %s ms",
+                    names.size(), (double) (end - start) / 1_000_000d));
 
             if (data == null) return null;
 
-            Map<String, UUID> ret = new HashMap<>();
+            // parse data
+            Map<String, NullableUUID> ret = new HashMap<>();
             NameToUUID[] parsed = mapper.readValue(data, NameToUUID[].class);
-            for (NameToUUID uuid : parsed) {
-                ret.put(uuid.getName(), new UUID(uuid.getId()));
+            Map<String, String> returnedUUIDs = Arrays.stream(parsed).collect(Collectors.toMap(NameToUUID::getName, NameToUUID::getId));
+
+            for (String name : names) {
+                if (returnedUUIDs.containsKey(name)) {
+                    ret.put(name, new NullableUUID(new UUID(returnedUUIDs.get(name))));
+                } else {
+                    ret.put(name, new NullableUUID(null));
+                }
             }
+
+            // store cache
+            long now = System.currentTimeMillis();
+            ret.forEach((player, uuid) -> nameToUUIDCache.put(player, new AbstractMap.SimpleEntry<>(now, uuid)));
+
             return ret;
         } catch (Exception e) {
-            this.logger.logException("Something went wrong while requesting MojangAPI", e);
+            this.logger.logException("Something went wrong while requesting Mojang API", e);
             return null;
         }
     }
@@ -145,11 +158,11 @@ public class MojangApi {
      * @return Map of player names to UUIDs. null if something went wrong.
      */
     @Nullable
-    public Map<String, UUID> getUUIDsIterative(List<String> names) {
-        Map<String, UUID> ret = new HashMap<>();
+    public Map<String, NullableUUID> getUUIDsIterative(List<String> names) {
+        Map<String, NullableUUID> ret = new HashMap<>();
         List<String> namesToRequest = new ArrayList<>();
         for (String name : names) {
-            UUID uuid;
+            NullableUUID uuid;
             if ((uuid = getUUIDUsingCache(name)) != null) {
                 ret.put(name, uuid);
             } else {
@@ -166,7 +179,7 @@ public class MojangApi {
             int start = i * NAME_TO_UUID_PLAYERS_PER_REQUEST;
             int end = Math.min((i + 1) * NAME_TO_UUID_PLAYERS_PER_REQUEST, namesToRequest.size());
 
-            Map<String, UUID> res = getUUIDs(namesToRequest.subList(start, end));
+            Map<String, NullableUUID> res = getUUIDs(namesToRequest.subList(start, end));
             if (res == null) {
                 return null;
             }

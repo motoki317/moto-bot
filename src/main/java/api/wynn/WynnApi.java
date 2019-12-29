@@ -120,7 +120,7 @@ public class WynnApi {
                         " Please wait `" + (double) backoff / 1000d + "` seconds before trying again.", backoff, TimeUnit.MILLISECONDS);
             } else {
                 lastRequestStack.put(resource, lastRequestStack.getOrDefault(resource, 0) + 1);
-                logger.debug(String.format("WynnAPI: Forcing too many quick requests (%s requests in series, has to wait %s more ms)",
+                logger.debug(String.format("Wynn API: Forcing too many quick requests (%s requests in series, has to wait %s more ms)",
                         lastRequestStack.get(resource), backoff));
             }
 

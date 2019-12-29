@@ -1,5 +1,7 @@
 package heartbeat.tracking;
 
+import api.mojang.MojangApi;
+import api.mojang.structs.NullableUUID;
 import api.wynn.WynnApi;
 import api.wynn.structs.OnlinePlayers;
 import api.wynn.structs.Player;
@@ -10,12 +12,16 @@ import db.model.warLog.WarLog;
 import db.model.warPlayer.WarPlayer;
 import db.model.warTrack.WarTrack;
 import db.model.world.World;
-import db.repository.*;
+import db.repository.TrackChannelRepository;
+import db.repository.WarLogRepository;
+import db.repository.WarTrackRepository;
+import db.repository.WorldRepository;
 import log.Logger;
 import net.dv8tion.jda.api.entities.Activity;
 import net.dv8tion.jda.api.entities.TextChannel;
 import net.dv8tion.jda.api.sharding.ShardManager;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import utils.FormatUtils;
 
 import java.text.DateFormat;
@@ -32,7 +38,8 @@ public class PlayerTracker {
     private final Logger logger;
     private final Object dbLock;
     private final ShardManager manager;
-    private final WynnApi api;
+    private final WynnApi wynnApi;
+    private final MojangApi mojangApi;
 
     private final WorldRepository worldRepository;
     private final TrackChannelRepository trackChannelRepository;
@@ -44,7 +51,8 @@ public class PlayerTracker {
         this.logger = bot.getLogger();
         this.dbLock = dbLock;
         this.manager = bot.getManager();
-        this.api = new WynnApi(this.logger, bot.getProperties().wynnTimeZone);
+        this.wynnApi = new WynnApi(this.logger, bot.getProperties().wynnTimeZone);
+        this.mojangApi = new MojangApi(this.logger);
         this.worldRepository = bot.getDatabase().getWorldRepository();
         this.trackChannelRepository = bot.getDatabase().getTrackingChannelRepository();
         this.warLogRepository = bot.getDatabase().getWarLogRepository();
@@ -52,7 +60,7 @@ public class PlayerTracker {
     }
 
     public void run() {
-        OnlinePlayers players = this.api.getOnlinePlayers();
+        OnlinePlayers players = this.wynnApi.getOnlinePlayers();
         if (players == null) {
             this.logger.log(0, "Player Tracker: Failed to retrieve online players list");
             return;
@@ -148,21 +156,23 @@ public class PlayerTracker {
     }
 
     private void startWarTrack(String serverName, List<String> players, Date now) {
-        // TODO: get player uuid
         List<WarPlayer> warPlayers = players.stream()
                 .map(p -> new WarPlayer(p, null, false)).collect(Collectors.toList());
         // retrieve guild name
         String guildName = null;
         for (WarPlayer warPlayer : warPlayers) {
-            Player stats = this.api.getPlayerStatistics(warPlayer.getPlayerName(), false, false);
+            Player stats = this.wynnApi.getPlayerStatistics(warPlayer.getPlayerName(), false, false);
             if (stats == null) {
                 continue;
             }
-            if (guildName == null && stats.getGuildInfo().getName() != null) {
-                guildName = stats.getGuildInfo().getName();
-            }
             warPlayer.setPlayerUUID(stats.getUuid());
+            if (stats.getGuildInfo().getName() != null) {
+                guildName = stats.getGuildInfo().getName();
+                break;
+            }
         }
+
+        retrievePlayerUUIDs(warPlayers);
 
         WarLog warLog = new WarLog(serverName, guildName, now, now, false, false, warPlayers);
 
@@ -184,24 +194,34 @@ public class PlayerTracker {
                 warPlayer.setExited(true);
             }
         }
+
+        boolean newPlayerJoined = false;
         Set<String> prevPlayers = warPlayers.stream().map(WarPlayer::getPlayerName).collect(Collectors.toSet());
         for (String currentPlayer : currentPlayers) {
             // A player joined
             if (!prevPlayers.contains(currentPlayer)) {
-                // TODO: get player uuid
+                newPlayerJoined = true;
+
                 WarPlayer warPlayer = new WarPlayer(prevWarLog.getId(), currentPlayer, null, false);
                 warPlayers.add(warPlayer);
 
-                // get player uuid, and if guild name is null try to retrieve it as wel
-                Player stats = this.api.getPlayerStatistics(currentPlayer, false, false);
-                if (stats == null) {
-                    continue;
+                // if guild name is null try to retrieve it
+                if (prevWarLog.getGuildName() == null) {
+                    Player stats = this.wynnApi.getPlayerStatistics(currentPlayer, false, false);
+                    if (stats == null) {
+                        continue;
+                    }
+                    // set uuid as well here
+                    warPlayer.setPlayerUUID(stats.getUuid());
+                    if (stats.getGuildInfo().getName() != null) {
+                        prevWarLog.setGuildName(stats.getGuildInfo().getName());
+                    }
                 }
-                if (prevWarLog.getGuildName() == null && stats.getGuildInfo().getName() != null) {
-                    prevWarLog.setGuildName(stats.getGuildInfo().getName());
-                }
-                warPlayer.setPlayerUUID(stats.getUuid());
             }
+        }
+
+        if (newPlayerJoined) {
+            retrievePlayerUUIDs(warPlayers);
         }
 
         boolean res = this.warLogRepository.update(prevWarLog);
@@ -209,6 +229,28 @@ public class PlayerTracker {
             return;
         }
         sendWarTracking(prevWarLog);
+    }
+
+    /**
+     * Requests mojang api for list of players and try to retrieve list of UUIDs.
+     * @param warPlayers List of players joining a war server.
+     */
+    private void retrievePlayerUUIDs(List<WarPlayer> warPlayers) {
+        List<String> playerNamesUnknownUUID = warPlayers.stream().filter(p -> p.getPlayerUUID() == null)
+                .map(WarPlayer::getPlayerName).collect(Collectors.toList());
+        if (playerNamesUnknownUUID.isEmpty()) {
+            return;
+        }
+
+        Map<String, NullableUUID> res = this.mojangApi.getUUIDsIterative(playerNamesUnknownUUID);
+        if (res != null) {
+            res.entrySet().stream().filter(e -> e.getValue().getUuid() != null)
+                    .forEach(
+                    (e) -> warPlayers.stream()
+                            .filter(p -> p.getPlayerName().equals(e.getKey())).findFirst()
+                            .ifPresent(p -> p.setPlayerUUID(e.getValue().getUuid().toStringWithHyphens()))
+                    );
+        }
     }
 
     private void endWarTrack(WarLog warLog, Date now) {
@@ -234,31 +276,9 @@ public class PlayerTracker {
      */
     private void sendWarTracking(WarLog warLog) {
         // Retrieve track channels from db
-        List<TrackChannel> allTrack = this.trackChannelRepository.findAllOfType(TrackType.WAR_ALL);
-        if (allTrack == null) {
+        Set<TrackChannel> channelsToSend = getChannelsToSend(warLog);
+        if (channelsToSend == null) {
             return;
-        }
-        Set<TrackChannel> channelsToSend = new HashSet<>(allTrack);
-
-        List<TrackChannel> specificTrack = this.trackChannelRepository.findAllOfType(TrackType.WAR_SPECIFIC);
-        if (specificTrack == null) {
-            return;
-        }
-        for (TrackChannel t : specificTrack) {
-            if (t.getGuildName() != null && t.getGuildName().equals(warLog.getGuildName())) {
-                channelsToSend.add(t);
-            }
-        }
-
-        List<TrackChannel> playerTrack = this.trackChannelRepository.findAllOfType(TrackType.WAR_PLAYER);
-        if (playerTrack == null) {
-            return;
-        }
-        Set<String> players = warLog.getPlayers().stream().map(WarPlayer::getPlayerName).collect(Collectors.toSet());
-        for (TrackChannel t : playerTrack) {
-            if (t.getPlayerName() != null && players.contains(t.getPlayerName())) {
-                channelsToSend.add(t);
-            }
         }
 
         // List of channels the bot already send track messages
@@ -295,6 +315,46 @@ public class PlayerTracker {
                 });
             }
         }
+    }
+
+    /**
+     * Retrieves list of channels that the bot must send tracks to.
+     * Includes both channels that the bot didn't send a message yet / has sent a message.
+     * @param warLog War log.
+     * @return Set of track channels. null if something went wrong.
+     */
+    @Nullable
+    private Set<TrackChannel> getChannelsToSend(WarLog warLog) {
+        // all war tracking
+        List<TrackChannel> allTrack = this.trackChannelRepository.findAllOfType(TrackType.WAR_ALL);
+        if (allTrack == null) {
+            return null;
+        }
+        Set<TrackChannel> channelsToSend = new HashSet<>(allTrack);
+
+        // specific guild war tracking
+        List<TrackChannel> specificTrack = this.trackChannelRepository.findAllOfType(TrackType.WAR_SPECIFIC);
+        if (specificTrack == null) {
+            return null;
+        }
+        for (TrackChannel t : specificTrack) {
+            if (t.getGuildName() != null && t.getGuildName().equals(warLog.getGuildName())) {
+                channelsToSend.add(t);
+            }
+        }
+
+        // specific player war tracking
+        List<TrackChannel> playerTrack = this.trackChannelRepository.findAllOfType(TrackType.WAR_PLAYER);
+        if (playerTrack == null) {
+            return null;
+        }
+        Set<String> players = warLog.getPlayers().stream().map(WarPlayer::getPlayerName).collect(Collectors.toSet());
+        for (TrackChannel t : playerTrack) {
+            if (t.getPlayerName() != null && players.contains(t.getPlayerName())) {
+                channelsToSend.add(t);
+            }
+        }
+        return channelsToSend;
     }
 
     private static String formatWarTrack(WarLog warLog) {
