@@ -1,41 +1,74 @@
 package db.model.commandLog;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import java.util.Date;
+
 public class CommandLog implements CommandLogId {
     private int id;
+    @NotNull
     private String kind;
+    @NotNull
     private String full;
+    @Nullable
+    private Long guildId;
+    private long channelId;
     private long userId;
-    private boolean dm;
+    @NotNull
+    private Date createdAt;
 
-    public CommandLog(String kind, String full, long userId, boolean dm) {
+    // For select
+    public CommandLog(int id, @NotNull String kind, @NotNull String full, @Nullable Long guildId, long channelId, long userId, @NotNull Date createdAt) {
+        this.id = id;
         this.kind = kind;
         this.full = full;
+        this.guildId = guildId;
+        this.channelId = channelId;
         this.userId = userId;
-        this.dm = dm;
+        this.createdAt = createdAt;
     }
 
-    public void setId(int id) {
-        this.id = id;
+    // For insert
+    public CommandLog(@NotNull String kind, @NotNull String full, @Nullable Long guildId, long channelId, long userId, @NotNull Date createdAt) {
+        this.kind = kind;
+        this.full = full;
+        this.guildId = guildId;
+        this.channelId = channelId;
+        this.userId = userId;
+        this.createdAt = createdAt;
     }
 
     @Override
     public int getId() {
-        return this.id;
+        return id;
     }
 
+    @NotNull
     public String getKind() {
         return kind;
     }
 
+    @NotNull
     public String getFull() {
         return full;
+    }
+
+    @Nullable
+    public Long getGuildId() {
+        return guildId;
+    }
+
+    public long getChannelId() {
+        return channelId;
     }
 
     public long getUserId() {
         return userId;
     }
 
-    public boolean isDm() {
-        return dm;
+    @NotNull
+    public Date getCreatedAt() {
+        return createdAt;
     }
 }

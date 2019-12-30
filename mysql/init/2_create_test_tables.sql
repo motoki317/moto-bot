@@ -22,12 +22,13 @@ CREATE TABLE IF NOT EXISTS `world` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS `command_log` (
-    `id` INT AUTO_INCREMENT NOT NULL,
+    `id` INT AUTO_INCREMENT PRIMARY KEY NOT NULL,
     `kind` VARCHAR(30) NOT NULL,
     `full` VARCHAR(2500) NOT NULL,
+    `guild_id` BIGINT NULL,
+    `channel_id` BIGINT NOT NULL,
     `user_id` BIGINT NOT NULL,
-    `dm` BOOLEAN NOT NULL,
-    PRIMARY KEY (`id`),
+    `created_at` DATETIME NOT NULL DEFAULT NOW(),
     KEY `kind_idx` (`kind`),
     KEY `user_id_idx` (`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

@@ -10,28 +10,34 @@ import org.jetbrains.annotations.NotNull;
 import javax.annotation.Nullable;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.List;
 
 public class CommandLogRepository extends Repository<CommandLog, CommandLogId> {
+    private static final DateFormat dbFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+
     public CommandLogRepository(ConnectionPool db, Logger logger) {
         super(db, logger);
     }
 
     @Override
     protected CommandLog bind(@NotNull ResultSet res) throws SQLException {
-        CommandLog instance = new CommandLog(res.getString(2), res.getString(3), res.getLong(4), res.getBoolean(5));
-        instance.setId(res.getInt(1));
-        return instance;
+        return new CommandLog(res.getInt(1), res.getString(2), res.getString(3),
+                res.getLong(4) != 0 ? res.getLong(4) : null,
+                res.getLong(5), res.getLong(6), res.getTimestamp(7));
     }
 
     @Override
     public <S extends CommandLog> boolean create(@NotNull S entity) {
         return this.execute(
-                "INSERT INTO `command_log` (`kind`, `full`, `user_id`, `dm`) VALUES (?, ?, ?, ?)",
+                "INSERT INTO `command_log` (kind, full, guild_id, channel_id, user_id, created_at) VALUES (?, ?, ?, ?, ?, ?)",
                 entity.getKind(),
                 entity.getFull(),
+                entity.getGuildId(),
+                entity.getChannelId(),
                 entity.getUserId(),
-                entity.isDm() ? 1 : 0
+                dbFormat.format(entity.getCreatedAt())
         );
     }
 
@@ -103,11 +109,13 @@ public class CommandLogRepository extends Repository<CommandLog, CommandLogId> {
     @Override
     public boolean update(@NotNull CommandLog entity) {
         return this.execute(
-                "UPDATE `command_log` SET `kind` = ?, `full` = ?, `user_id` = ?, `dm` = ? WHERE `id` = ?",
+                "UPDATE `command_log` SET `kind` = ?, `full` = ?, `guild_id` = ?, `channel_id` = ?, `user_id` = ?, `created_at` = ? WHERE `id` = ?",
                 entity.getKind(),
                 entity.getFull(),
+                entity.getGuildId(),
+                entity.getChannelId(),
                 entity.getUserId(),
-                entity.isDm() ? 1 : 0,
+                dbFormat.format(entity.getCreatedAt()),
                 entity.getId()
         );
     }

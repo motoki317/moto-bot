@@ -11,6 +11,7 @@ import log.Logger;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import org.jetbrains.annotations.NotNull;
+import utils.BotUtils;
 
 import javax.annotation.Nonnull;
 import java.util.*;
@@ -103,7 +104,7 @@ public class MessageListener extends ListenerAdapter {
 
                 command.process(event, args);
 
-                addCommandLog(args[0], commandMessage, event.getAuthor().getIdLong(), !event.isFromGuild());
+                addCommandLog(args[0], commandMessage, event);
                 return;
             }
         }
@@ -137,8 +138,10 @@ public class MessageListener extends ListenerAdapter {
     /**
      * Adds command log to db.
      */
-    private void addCommandLog(String kind, String full, long userId, boolean dm) {
-        CommandLog entity = new CommandLog(kind, full, userId, dm);
+    private void addCommandLog(String kind, String full, MessageReceivedEvent event) {
+        long discordIdTime = BotUtils.getIdCreationTime(event.getMessageIdLong());
+        CommandLog entity = new CommandLog(kind, full, event.isFromGuild() ? event.getGuild().getIdLong() : null,
+                event.getChannel().getIdLong(), event.getAuthor().getIdLong(), new Date(discordIdTime));
         if (!this.commandLogRepository.create(entity)) {
             this.logger.log(0, "Failed to log command to db.");
         }
