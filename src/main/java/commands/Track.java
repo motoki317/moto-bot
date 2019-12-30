@@ -102,7 +102,7 @@ public class Track extends GuildCommand {
     public void process(MessageReceivedEvent event, String[] args) {
         TrackType type = getCorrespondingTrackType(args);
         if (type == null) {
-            this.respond(event, this.longHelp());
+            respond(event, this.longHelp());
             return;
         }
 
@@ -113,7 +113,7 @@ public class Track extends GuildCommand {
             case TERRITORY_SPECIFIC:
                 String guildName = getName(args);
                 if (guildName == null) {
-                    this.respond(event, "Invalid arguments: guild name was not specified.");
+                    respond(event, "Invalid arguments: guild name was not specified.");
                     return;
                 }
 
@@ -122,7 +122,7 @@ public class Track extends GuildCommand {
             case WAR_PLAYER:
                 String playerName = getName(args);
                 if (playerName == null) {
-                    this.respond(event, "Invalid arguments: player name was not specified.");
+                    respond(event, "Invalid arguments: player name was not specified.");
                     return;
                 }
 

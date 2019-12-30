@@ -42,22 +42,22 @@ public abstract class BotCommand {
     public abstract Message longHelp();
     public abstract void process(MessageReceivedEvent event, String[] args);
 
-    protected void respond(MessageReceivedEvent event, CharSequence message) {
+    protected static void respond(MessageReceivedEvent event, CharSequence message) {
         event.getChannel().sendMessage(message).queue();
     }
-    protected void respond(MessageReceivedEvent event, Message message) {
+    protected static void respond(MessageReceivedEvent event, Message message) {
         event.getChannel().sendMessage(message).queue();
     }
-    protected void respond(MessageReceivedEvent event, MessageEmbed message) {
+    protected static void respond(MessageReceivedEvent event, MessageEmbed message) {
         event.getChannel().sendMessage(message).queue();
     }
-    protected void respond(MessageReceivedEvent event, CharSequence message, Consumer<? super Message> onSuccess) {
+    protected static void respond(MessageReceivedEvent event, CharSequence message, Consumer<? super Message> onSuccess) {
         event.getChannel().sendMessage(message).queue(onSuccess);
     }
-    protected void respond(MessageReceivedEvent event, Message message, Consumer<? super Message> onSuccess) {
+    protected static void respond(MessageReceivedEvent event, Message message, Consumer<? super Message> onSuccess) {
         event.getChannel().sendMessage(message).queue(onSuccess);
     }
-    protected void respond(MessageReceivedEvent event, MessageEmbed message, Consumer<? super Message> onSuccess) {
+    protected static void respond(MessageReceivedEvent event, MessageEmbed message, Consumer<? super Message> onSuccess) {
         event.getChannel().sendMessage(message).queue(onSuccess);
     }
 
@@ -66,7 +66,7 @@ public abstract class BotCommand {
      * @param event Message received event.
      * @param message Description of the error.
      */
-    protected void respondError(MessageReceivedEvent event, CharSequence message) {
+    public static void respondError(MessageReceivedEvent event, CharSequence message) {
         event.getChannel().sendMessage(
                 new EmbedBuilder()
                 .setColor(MinecraftColor.RED.getColor())

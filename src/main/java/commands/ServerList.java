@@ -98,20 +98,20 @@ public class ServerList extends GenericCommand {
         if (all) {
             List<World> allWorlds = repo.findAll();
             if (allWorlds == null) {
-                this.respondError(event, "Something went wrong while retrieving data.");
+                respondError(event, "Something went wrong while retrieving data.");
                 return;
             }
             worlds = allWorlds.stream().filter(w -> !w.getName().startsWith("WAR")).collect(Collectors.toList());
         } else {
             worlds = repo.findAllMainWorlds();
             if (worlds == null) {
-                this.respondError(event, "Something went wrong while retrieving data.");
+                respondError(event, "Something went wrong while retrieving data.");
                 return;
             }
         }
 
         if (worlds.isEmpty()) {
-            this.respond(event, "There doesn't seem to be any " + (all ? "" : "main ") + "worlds online...");
+            respond(event, "There doesn't seem to be any " + (all ? "" : "main ") + "worlds online...");
             return;
         }
 
@@ -119,7 +119,7 @@ public class ServerList extends GenericCommand {
         int maxPage = maxPage(worlds.size(), worldsPerPage);
 
         if (maxPage == 0) {
-            this.respond(event, pages.apply(0));
+            respond(event, pages.apply(0));
             return;
         }
 

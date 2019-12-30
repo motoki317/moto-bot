@@ -102,7 +102,12 @@ public class MessageListener extends ListenerAdapter {
                     return;
                 }
 
-                command.process(event, args);
+                try {
+                    command.process(event, args);
+                } catch (Exception e) {
+                    BotCommand.respondError(event, "Something went wrong while processing your command...");
+                    this.logger.logException("Something went wrong while processing a user command", e);
+                }
 
                 addCommandLog(args[0], commandMessage, event);
                 return;
