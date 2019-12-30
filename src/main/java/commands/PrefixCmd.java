@@ -2,6 +2,7 @@ package commands;
 
 import commands.base.GenericCommand;
 import db.model.prefix.Prefix;
+import db.model.prefix.PrefixId;
 import db.repository.PrefixRepository;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.MessageBuilder;
@@ -48,8 +49,9 @@ public class PrefixCmd extends GenericCommand {
                                 String.join("\n",
                                         "`" + this.syntax() + "`",
                                         "Use without arguments to check the current settings for guild/channel/user.",
-                                        "`<new prefix>` argument specifies the new prefix. " +
+                                        "`<new prefix|reset>` argument specifies the new prefix. " +
                                                 "Prefix should be as short as possible and no longer than " + PREFIX_MAX_LENGTH + " characters.",
+                                        "Specify \"reset\" to reset the setting.",
                                         "`[guild|channel|user]` optional argument will set the prefix for guild, channel, or user (yourself). " +
                                                 "Default is channel."
                                 ),
@@ -93,6 +95,11 @@ public class PrefixCmd extends GenericCommand {
         }
 
         String newPrefix = args[1];
+        if ("reset".equals(newPrefix.toLowerCase())) {
+            resetSetting(event, type);
+            return;
+        }
+
         if (newPrefix.length() <= PREFIX_MAX_LENGTH) {
             addSetting(event, newPrefix, type);
         } else {
@@ -119,9 +126,22 @@ public class PrefixCmd extends GenericCommand {
         }
     }
 
+    private void resetSetting(MessageReceivedEvent event, Type type) {
+        PrefixId id = () -> type.getDiscordId(event);
+        boolean success = !this.prefixRepository.exists(id) || this.prefixRepository.delete(id);
+        if (success) {
+            respond(event, ":white_check_mark: Successfully reset the setting!");
+        } else {
+            respondError(event, "Something went wrong while saving your settings...");
+        }
+    }
+
     private void addSetting(MessageReceivedEvent event, String prefix, Type type) {
         Prefix p = new Prefix(type.getDiscordId(event), prefix);
-        if (this.prefixRepository.create(p)) {
+        boolean success = this.prefixRepository.exists(p)
+                ? this.prefixRepository.update(p)
+                : this.prefixRepository.create(p);
+        if (success) {
             respond(event, ":white_check_mark: Successfully saved your settings!");
         } else {
             respondError(event, "Something went wrong while saving your settings...");
