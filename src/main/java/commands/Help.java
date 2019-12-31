@@ -10,6 +10,7 @@ import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import org.jetbrains.annotations.NotNull;
 import update.multipage.MultipageHandler;
 
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -94,7 +95,8 @@ public class Help extends GenericCommand {
             EmbedBuilder eb = new EmbedBuilder()
                     .setColor(this.bot.getProperties().getMainColor())
                     .setTitle("Commands List")
-                    .setFooter("`<text>` means required, `[text]` means optional arguments.");
+                    .setFooter("`<text>` means required, `[text]` means optional arguments.")
+                    .setTimestamp(Instant.now());
 
             int min = COMMANDS_PER_PAGE * page;
             int max = Math.min(COMMANDS_PER_PAGE * (page + 1), this.commands.size());

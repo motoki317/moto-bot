@@ -72,9 +72,8 @@ public class MultipageHandler extends ReactionResponse {
                     return false;
             }
 
-            int max = this.maxPage.get();
-            this.currentPage = (this.currentPage + max) % max;
-
+            int mod = this.maxPage.get() + 1;
+            this.currentPage = (this.currentPage + mod) % mod;
             this.message.editMessage(
                     this.pages.apply(this.currentPage)
             ).queue();
