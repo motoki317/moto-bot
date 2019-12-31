@@ -168,7 +168,7 @@ public class GuildWarStats extends GenericCommand {
 
         ret.add("");
 
-        logs.sort(Comparator.comparingInt(GuildWarLog::getId));
+        logs.sort((l1, l2) -> l2.getId() - l1.getId());
         int seq = LOGS_PER_PAGE * page;
         for (GuildWarLog log : logs) {
             seq++;
