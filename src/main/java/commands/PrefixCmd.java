@@ -24,8 +24,8 @@ public class PrefixCmd extends GenericCommand {
 
     @NotNull
     @Override
-    public String[] names() {
-        return new String[]{"prefix"};
+    public String[][] names() {
+        return new String[][]{{"prefix"}};
     }
 
     @Override
@@ -64,7 +64,7 @@ public class PrefixCmd extends GenericCommand {
 
 
     @Override
-    public void process(MessageReceivedEvent event, String[] args) {
+    public void process(@NotNull MessageReceivedEvent event, @NotNull String[] args) {
         if (args.length <= 1) {
             respond(event, getStatus(event));
             return;

@@ -28,8 +28,8 @@ public class TimeZoneCmd extends GenericCommand {
 
     @NotNull
     @Override
-    public String[] names() {
-        return new String[]{"timezone"};
+    public String[][] names() {
+        return new String[][]{{"timezone"}};
     }
 
     @NotNull
@@ -71,7 +71,7 @@ public class TimeZoneCmd extends GenericCommand {
     }
 
     @Override
-    public void process(MessageReceivedEvent event, String[] args) {
+    public void process(@NotNull MessageReceivedEvent event, @NotNull String[] args) {
         if (args.length <= 1) {
             respond(event, getStatus(event));
             return;

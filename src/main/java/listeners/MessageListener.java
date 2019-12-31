@@ -15,10 +15,12 @@ import utils.BotUtils;
 
 import javax.annotation.Nonnull;
 import java.util.*;
+import java.util.function.Consumer;
 
 public class MessageListener extends ListenerAdapter {
     private final List<BotCommand> commands;
     private final Map<String, BotCommand> commandNameMap;
+    private int maxArgumentsLength;
 
     private final Bot bot;
     private final Logger logger;
@@ -30,6 +32,7 @@ public class MessageListener extends ListenerAdapter {
     public MessageListener(Bot bot) {
         this.commands = new ArrayList<>();
         this.commandNameMap = new HashMap<>();
+        this.maxArgumentsLength = 1;
 
         this.bot = bot;
         this.logger = bot.getLogger();
@@ -38,27 +41,28 @@ public class MessageListener extends ListenerAdapter {
         this.commandLogRepository = bot.getDatabase().getCommandLogRepository();
         this.prefixRepository = bot.getDatabase().getPrefixRepository();
 
-        addCommand(new Help(bot, this.commands));
-        addCommand(new Ping(bot));
-        addCommand(new Info(bot));
-        addCommand(new ServerList(bot.getDatabase().getWorldRepository(), bot.getReactionManager()));
-        addCommand(new Track(bot.getDatabase()));
-        addCommand(new TimeZoneCmd(bot.getDatabase().getCustomTimeZoneRepository()));
-        addCommand(new PrefixCmd(bot.getProperties().prefix, bot.getDatabase().getPrefixRepository()));
-    }
+        Consumer<BotCommand> addCommand = (command) -> {
+            for (String commandName : command.getNames()) {
+                commandName = commandName.toLowerCase();
 
-    private void addCommand(BotCommand command) {
-        for (String commandName : command.names()) {
-            commandName = commandName.toLowerCase();
+                if (this.commandNameMap.containsKey(commandName)) {
+                    throw new Error("FATAL: Command name conflict: " + commandName + "\n" +
+                            "Command " + command.getClass().getName() + " is not being added.");
+                }
 
-            if (this.commandNameMap.containsKey(commandName)) {
-                throw new Error("FATAL: Command name conflict: " + commandName + "\n" +
-                        "Command " + command.getClass().getName() + " is not being added.");
+                this.commandNameMap.put(commandName, command);
             }
+            this.commands.add(command);
+            this.maxArgumentsLength = Math.max(this.maxArgumentsLength, command.getArgumentsLength());
+        };
 
-            this.commandNameMap.put(commandName, command);
-        }
-        this.commands.add(command);
+        addCommand.accept(new Help(bot, this.commands, this.commandNameMap, () -> this.maxArgumentsLength));
+        addCommand.accept(new Ping(bot));
+        addCommand.accept(new Info(bot));
+        addCommand.accept(new ServerList(bot.getDatabase().getWorldRepository(), bot.getReactionManager()));
+        addCommand.accept(new Track(bot.getDatabase()));
+        addCommand.accept(new TimeZoneCmd(bot.getDatabase().getCustomTimeZoneRepository()));
+        addCommand.accept(new PrefixCmd(bot.getProperties().prefix, bot.getDatabase().getPrefixRepository()));
     }
 
     @Override
@@ -81,36 +85,45 @@ public class MessageListener extends ListenerAdapter {
             String[] args = commandMessage.split(" ");
 
             // Process command
-            if (args.length == 0) continue;
+            for (int argLength = 1; argLength <= this.maxArgumentsLength; argLength++) {
+                if (args.length < argLength) return;
 
-            if (this.commandNameMap.containsKey(args[0].toLowerCase())) {
-                String commandName = args[0].toLowerCase();
-                BotCommand command = this.commandNameMap.get(commandName);
+                String cmdBase = String.join(" ", Arrays.copyOfRange(args, 0, argLength));
+                if (this.commandNameMap.containsKey(cmdBase.toLowerCase())) {
+                    BotCommand command = this.commandNameMap.get(cmdBase.toLowerCase());
 
-                // Check guild-only command
-                if (!event.isFromGuild() && command.guildOnly()) {
-                    String message = String.format("This command (%s) cannot be executed in direct messages.", commandName);
-                    event.getChannel().sendMessage(message).queue();
+                    // Check guild-only command
+                    if (!event.isFromGuild() && command.guildOnly()) {
+                        String message = String.format("This command (%s) cannot be executed in direct messages.", cmdBase);
+                        event.getChannel().sendMessage(message).queue();
+                        return;
+                    }
+
+                    // Log and check spam
+                    boolean isSpam = this.logger.logEvent(event);
+                    if (isSpam) {
+                        String message = "You are requesting commands too quickly! Please wait at least 1 second between each commands.";
+                        event.getChannel().sendMessage(message).queue();
+                        return;
+                    }
+
+                    // If the first argument is "help", then send full help of the command
+                    // e.g. "track help"
+                    if (argLength < args.length && args[argLength].equalsIgnoreCase("help")) {
+                        event.getChannel().sendMessage(command.longHelp()).queue();
+                        return;
+                    }
+
+                    try {
+                        command.process(event, args);
+                    } catch (Exception e) {
+                        BotCommand.respondError(event, "Something went wrong while processing your command...");
+                        this.logger.logException("Something went wrong while processing a user command", e);
+                    }
+
+                    addCommandLog(cmdBase, commandMessage, event);
                     return;
                 }
-
-                // Log and check spam
-                boolean isSpam = this.logger.logEvent(event);
-                if (isSpam) {
-                    String message = "You are requesting commands too quickly! Please wait at least 1 second between each commands.";
-                    event.getChannel().sendMessage(message).queue();
-                    return;
-                }
-
-                try {
-                    command.process(event, args);
-                } catch (Exception e) {
-                    BotCommand.respondError(event, "Something went wrong while processing your command...");
-                    this.logger.logException("Something went wrong while processing a user command", e);
-                }
-
-                addCommandLog(args[0], commandMessage, event);
-                return;
             }
         }
     }

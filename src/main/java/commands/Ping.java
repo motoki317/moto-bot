@@ -22,8 +22,8 @@ public class Ping extends GenericCommand {
 
     @NotNull
     @Override
-    public String[] names() {
-        return new String[]{"ping"};
+    public String[][] names() {
+        return new String[][]{{"ping"}};
     }
 
     @NotNull
@@ -48,7 +48,7 @@ public class Ping extends GenericCommand {
     }
 
     @Override
-    public void process(MessageReceivedEvent event, String[] args) {
+    public void process(@NotNull MessageReceivedEvent event, @NotNull String[] args) {
         EmbedBuilder eb = new EmbedBuilder();
 
         eb.setAuthor("Pong!", null, event.getAuthor().getEffectiveAvatarUrl());

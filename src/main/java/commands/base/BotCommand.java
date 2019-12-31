@@ -8,6 +8,7 @@ import org.jetbrains.annotations.NotNull;
 import utils.MinecraftColor;
 
 import java.time.Instant;
+import java.util.*;
 import java.util.function.Consumer;
 
 public abstract class BotCommand {
@@ -15,13 +16,54 @@ public abstract class BotCommand {
 
     /**
      * Command names including aliases. Used to process command inputs.
+     * Examples:
+     * {{"help", "h"}} for 1-argument command.
+     * {{"guild", "g"}, {"levelRank", "lRank"}} for 2-arguments command.
      * @return Command names.
      */
     @NotNull
-    public abstract String[] names();
+    protected abstract String[][] names();
+
+    /**
+     * Get names for this command including aliases.
+     * Examples:
+     * {"help", "h"} for 1-argument command.
+     * {"guild levelRank", "guild lRank", "g levelRank", "g lRank"} for 2-arguments command.
+     * @return Names. Values possibly includes spaces.
+     */
+    public Set<String> getNames() {
+        return getNamesRec(this.names(), 0);
+    }
+
+    private static Set<String> getNamesRec(String[][] base, int i) {
+        if (base.length - 1 == i) {
+            return new HashSet<>(Arrays.asList(base[i]));
+        }
+
+        Set<String> ret = new HashSet<>();
+        for (String latter : getNamesRec(base, i + 1)) {
+            for (String current : base[i]) {
+                ret.add(current + " " + latter);
+            }
+        }
+        return ret;
+    }
+
+    /**
+     * Get base arguments length of this command.
+     * Examples:
+     * "help" command: 1,
+     * "g levelrank" command: 2
+     * @return Length of base arguments.
+     */
+    public int getArgumentsLength() {
+        return this.names().length;
+    }
 
     /**
      * Command syntax. Used in help display.
+     * Example:
+     * "help [command name]"
      * @return Command syntax.
      */
     @NotNull
@@ -40,7 +82,13 @@ public abstract class BotCommand {
      */
     @NotNull
     public abstract Message longHelp();
-    public abstract void process(MessageReceivedEvent event, String[] args);
+
+    /**
+     * Process a command.
+     * @param event Discord message received event.
+     * @param args Argument array, separated by space characters.
+     */
+    public abstract void process(@NotNull MessageReceivedEvent event, @NotNull String[] args);
 
     protected static void respond(MessageReceivedEvent event, CharSequence message) {
         event.getChannel().sendMessage(message).queue();

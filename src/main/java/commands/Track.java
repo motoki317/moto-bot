@@ -26,8 +26,8 @@ public class Track extends GuildCommand {
 
     @NotNull
     @Override
-    public String[] names() {
-        return new String[]{"track"};
+    public String[][] names() {
+        return new String[][]{{"track"}};
     }
 
     @NotNull
@@ -99,7 +99,7 @@ public class Track extends GuildCommand {
     }
 
     @Override
-    public void process(MessageReceivedEvent event, String[] args) {
+    public void process(@NotNull MessageReceivedEvent event, @NotNull String[] args) {
         TrackType type = getCorrespondingTrackType(args);
         if (type == null) {
             respond(event, this.longHelp());

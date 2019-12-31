@@ -10,23 +10,30 @@ import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import org.jetbrains.annotations.NotNull;
 import update.multipage.MultipageHandler;
 
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 public class Help extends GenericCommand {
     private final Bot bot;
 
     private final List<BotCommand> commands;
+    private final Map<String, BotCommand> commandNameMap;
+    private final Supplier<Integer> maxArgumentsLength;
 
-    public Help(Bot bot, List<BotCommand> commands) {
+    public Help(Bot bot, List<BotCommand> commands, Map<String, BotCommand> commandNameMap, Supplier<Integer> maxArgumentsLength) {
         this.bot = bot;
         this.commands = commands;
+        this.commandNameMap = commandNameMap;
+        this.maxArgumentsLength = maxArgumentsLength;
     }
 
     @NotNull
     @Override
-    public String[] names() {
-        return new String[]{"help", "h"};
+    public String[][] names() {
+        return new String[][]{{"help", "h"}};
     }
 
     @NotNull
@@ -50,7 +57,7 @@ public class Help extends GenericCommand {
     }
 
     @Override
-    public void process(MessageReceivedEvent event, String[] args) {
+    public void process(@NotNull MessageReceivedEvent event, @NotNull String[] args) {
         if (args.length == 1) {
             Function<Integer, Message> pages = this.pageSupplier();
 
@@ -66,13 +73,16 @@ public class Help extends GenericCommand {
             return;
         }
 
-        // TODO: nested command (e.g. `>g stats`) help
-        String specifiedCmd = args[1];
-        for (BotCommand cmd : this.commands) {
-            for (String cmdName : cmd.names()) {
-                if (cmdName.equals(specifiedCmd)) {
-                    respond(event, cmd.longHelp());
-                }
+        // Supports nested command help (e.g. ">help guild levelRank")
+        args = Arrays.copyOfRange(args, 1, args.length);
+        for (int argLength = 1; argLength <= this.maxArgumentsLength.get(); argLength++) {
+            if (args.length < argLength) return;
+
+            String cmdBase = String.join(" ", Arrays.copyOfRange(args, 0, argLength));
+            if (this.commandNameMap.containsKey(cmdBase.toLowerCase())) {
+                BotCommand cmd = this.commandNameMap.get(cmdBase.toLowerCase());
+                respond(event, cmd.longHelp());
+                return;
             }
         }
     }
@@ -81,9 +91,10 @@ public class Help extends GenericCommand {
 
     private Function<Integer, Message> pageSupplier() {
         return (page) -> {
-            EmbedBuilder eb = new EmbedBuilder();
-            eb.setColor(this.bot.getProperties().getMainColor());
-            eb.setTitle("Commands List");
+            EmbedBuilder eb = new EmbedBuilder()
+                    .setColor(this.bot.getProperties().getMainColor())
+                    .setTitle("Commands List")
+                    .setFooter("`<text>` means required, `[text]` means optional arguments.");
 
             int min = COMMANDS_PER_PAGE * page;
             int max = Math.min(COMMANDS_PER_PAGE * (page + 1), this.commands.size());

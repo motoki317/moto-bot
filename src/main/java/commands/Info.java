@@ -25,8 +25,8 @@ public class Info extends GenericCommand {
 
     @NotNull
     @Override
-    public String[] names() {
-        return new String[]{"info"};
+    public String[][] names() {
+        return new String[][]{{"info"}};
     }
 
     @NotNull
@@ -50,7 +50,7 @@ public class Info extends GenericCommand {
     }
 
     @Override
-    public void process(MessageReceivedEvent event, String[] args) {
+    public void process(@NotNull MessageReceivedEvent event, @NotNull String[] args) {
         respond(event, getInfo().build());
     }
 

@@ -39,14 +39,14 @@ public class ServerList extends GenericCommand {
 
     @NotNull
     @Override
-    public String[] names() {
-        return new String[]{"serverlist", "servers", "up"};
+    public String[][] names() {
+        return new String[][]{{"serverlist", "servers", "up"}};
     }
 
     @NotNull
     @Override
     public String syntax() {
-        return "serverlist [all|<num>]";
+        return "serverlist [all] [<num>]";
     }
 
     @NotNull
@@ -67,7 +67,7 @@ public class ServerList extends GenericCommand {
                                 "`" + this.syntax() + "`",
                                 "`[all]` optional argument will, when specified, show all worlds excluding WAR worlds: " +
                                         "not only main WC/EU servers but also lobby, GM and other servers.",
-                                "`[<num>]` optional argument will, when specified, set the max number of worlds to show per page." +
+                                "`[num]` optional argument will, when specified, set the max number of worlds to show per page." +
                                         " The default is " + WORLDS_PER_PAGE_DEFAULT + " worlds per page."),
                         false)
                 .build()
@@ -75,7 +75,7 @@ public class ServerList extends GenericCommand {
     }
 
     @Override
-    public void process(MessageReceivedEvent event, String[] args) {
+    public void process(@NotNull MessageReceivedEvent event, @NotNull String[] args) {
         boolean all = false;
         int worldsPerPage = WORLDS_PER_PAGE_DEFAULT;
         if (args.length > 1) {
