@@ -30,6 +30,7 @@ public class DatabaseImpl implements Database {
     private WarPlayerRepository warPlayerRepository;
     private CustomTimeZoneRepository customTimeZoneRepository;
     private PrefixRepository prefixRepository;
+    private GuildWarLogRepository guildWarLogRepository;
 
     public DatabaseImpl(Logger logger) {
         this.logger = logger;
@@ -117,5 +118,13 @@ public class DatabaseImpl implements Database {
             this.prefixRepository = new PrefixRepository(this.connectionPool, this.logger);
         }
         return this.prefixRepository;
+    }
+
+    @Override
+    public @NotNull GuildWarLogRepository getGuildWarLogRepository() {
+        if (this.guildWarLogRepository == null) {
+            this.guildWarLogRepository = new GuildWarLogRepository(this.connectionPool, this.logger);
+        }
+        return this.guildWarLogRepository;
     }
 }

@@ -24,4 +24,6 @@ public interface Database {
     CustomTimeZoneRepository getCustomTimeZoneRepository();
     @NotNull
     PrefixRepository getPrefixRepository();
+    @NotNull
+    GuildWarLogRepository getGuildWarLogRepository();
 }
