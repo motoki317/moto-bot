@@ -117,6 +117,8 @@ CREATE TABLE IF NOT EXISTS `guild_war_log` (
     `war_log_id` INT NULL,
     `territory_log_id` INT NULL,
     UNIQUE KEY `guild_idx` (`guild_name`, `id` DESC),
+    UNIQUE KEY `guild_war_log_idx` (`guild_name`, `war_log_id`),
+    UNIQUE KEY `guild_war_territory_log_idx` (`guild_name`, `war_log_id`, `territory_log_id`),
     UNIQUE KEY `war_log_idx` (`war_log_id`),
     UNIQUE KEY `territory_log_idx` (`territory_log_id`, `guild_name`),
     CONSTRAINT `fk_guild_war_log_id` FOREIGN KEY (`war_log_id`) REFERENCES `war_log` (`id`)

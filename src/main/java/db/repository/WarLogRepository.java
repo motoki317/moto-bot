@@ -16,6 +16,7 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class WarLogRepository extends Repository<WarLog, WarLogId> {
     private static final DateFormat dbFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
@@ -179,6 +180,46 @@ public class WarLogRepository extends Repository<WarLog, WarLogId> {
         try {
             if (res.next())
                 return bind(res, players);
+        } catch (SQLException e) {
+            this.logResponseException(e);
+        }
+        return null;
+    }
+
+    /**
+     * Finds all logs that is contained in the given list of IDs.
+     * @param ids List of IDs.
+     * @return List of logs.
+     */
+    @Nullable
+    public List<WarLog> findAllIn(List<Integer> ids) {
+        if (ids.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        String placeHolder = String.format("(%s)",
+                ids.stream().map(i -> "?").collect(Collectors.joining(", "))
+        );
+        ResultSet res = this.executeQuery(
+                "SELECT * FROM `war_log` WHERE `id` IN " + placeHolder,
+                ids.toArray()
+        );
+
+        if (res == null) {
+            return null;
+        }
+
+        List<WarLog> ret = new ArrayList<>();
+
+        try {
+            while (res.next()) {
+                List<WarPlayer> players = this.warPlayerRepository.findAllOfWarLogId(res.getInt(1));
+                if (players == null) {
+                    return null;
+                }
+                ret.add(bind(res, players));
+            }
+            return ret;
         } catch (SQLException e) {
             this.logResponseException(e);
         }

@@ -122,10 +122,8 @@ public class GuildWarLogRepository extends Repository<GuildWarLog, GuildWarLogId
     @Nullable
     public List<GuildWarLog> findGuildLogs(String guildName, int limit, int offset) {
         ResultSet res = this.executeQuery(
-                "SELECT * FROM `guild_war_log` WHERE `guild_name` = ? ORDER BY `id` DESC LIMIT ? OFFSET ?",
-                guildName,
-                limit,
-                offset
+                "SELECT * FROM `guild_war_log` WHERE `guild_name` = ? ORDER BY `id` DESC LIMIT " + limit + " OFFSET " + offset,
+                guildName
         );
 
         if (res == null) {
@@ -138,6 +136,55 @@ public class GuildWarLogRepository extends Repository<GuildWarLog, GuildWarLogId
             this.logResponseException(e);
         }
         return null;
+    }
+
+    /**
+     * Counts success wars by a guild.
+     * Wars are deemed as "success" if both territory_log_id and war_log_id are logged.
+     * @param guildName Guild name.
+     * @return Number of success wars. -1 if something went wrong.
+     */
+    public int countSuccessWars(String guildName) {
+        ResultSet res = this.executeQuery(
+                "SELECT COUNT(*) FROM `guild_war_log` WHERE `guild_name` = ? AND `war_log_id` IS NOT NULL AND `territory_log_id` IS NOT NULL",
+                guildName
+        );
+
+        if (res == null) {
+            return -1;
+        }
+
+        try {
+            if (res.next())
+                return res.getInt(1);
+        } catch (SQLException e) {
+            this.logResponseException(e);
+        }
+        return -1;
+    }
+
+    /**
+     * Counts total wars done by a guild.
+     * @param guildName Guild name.
+     * @return Number of total wars. -1 if something went wrong.
+     */
+    public int countTotalWars(String guildName) {
+        ResultSet res = this.executeQuery(
+                "SELECT COUNT(*) FROM `guild_war_log` WHERE `guild_name` = ? AND `war_log_id` IS NOT NULL",
+                guildName
+        );
+
+        if (res == null) {
+            return -1;
+        }
+
+        try {
+            if (res.next())
+                return res.getInt(1);
+        } catch (SQLException e) {
+            this.logResponseException(e);
+        }
+        return -1;
     }
 
     @Nullable

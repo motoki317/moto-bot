@@ -5,6 +5,7 @@ import db.model.timezone.CustomTimeZone;
 import db.model.timezone.CustomTimeZoneId;
 import db.repository.base.Repository;
 import log.Logger;
+import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
@@ -93,22 +94,15 @@ public class CustomTimeZoneRepository extends Repository<CustomTimeZone, CustomT
 
     /**
      * Retrieves custom timezone.
-     * If more than one channels are set, channel is the most prioritized, then guild.
-     * @param guildId Guild id.
-     * @param channelId Channel id.
+     * If more than one IDs are given, later ones are more prioritized.
+     * @param ids List of ids.
      * @return Custom timezone. If no custom timezone is set, returns default.
      */
     @NotNull
-    public CustomTimeZone getTimeZone(long guildId, long channelId) {
+    public CustomTimeZone getTimeZone(long... ids) {
         CustomTimeZone ret = CustomTimeZone.getDefault();
-        if (this.exists(() -> guildId)) {
-            CustomTimeZone customTimeZone = this.findOne(() -> guildId);
-            if (customTimeZone != null) {
-                ret = customTimeZone;
-            }
-        }
-        if (this.exists(() -> channelId)) {
-            CustomTimeZone customTimeZone = this.findOne(() -> channelId);
+        for (long id : ids) {
+            CustomTimeZone customTimeZone = this.findOne(() -> id);
             if (customTimeZone != null) {
                 ret = customTimeZone;
             }
@@ -116,41 +110,20 @@ public class CustomTimeZoneRepository extends Repository<CustomTimeZone, CustomT
         return ret;
     }
 
-    /**
-     * Retrieves custom timezone.
-     * @param userId User id.
-     * @return Custom timezone. If no custom timezone is set, returns default.
-     */
     @NotNull
-    public CustomTimeZone getTimeZone(long userId) {
-        CustomTimeZone ret = CustomTimeZone.getDefault();
-        if (this.exists(() -> userId)) {
-            CustomTimeZone customTimeZone = this.findOne(() -> userId);
-            if (customTimeZone != null) {
-                ret = customTimeZone;
-            }
+    public CustomTimeZone getTimeZone(MessageReceivedEvent event) {
+        if (event.isFromGuild()) {
+            return this.getTimeZone(
+                    event.getGuild().getIdLong(),
+                    event.getChannel().getIdLong(),
+                    event.getAuthor().getIdLong()
+            );
+        } else {
+            return this.getTimeZone(
+                    event.getChannel().getIdLong(),
+                    event.getAuthor().getIdLong()
+            );
         }
-        return ret;
-    }
-
-    /**
-     * Retrieves custom timezone.
-     * If more than one channels are set, user is the most prioritized, then channel and then guild.
-     * @param guildId Guild id.
-     * @param channelId Channel id.
-     * @param userId User id.
-     * @return Custom timezone. If no custom timezone is set, returns default.
-     */
-    @NotNull
-    public CustomTimeZone getTimeZone(long guildId, long channelId, long userId) {
-        CustomTimeZone ret = this.getTimeZone(guildId, channelId);
-        if (this.exists(() -> userId)) {
-            CustomTimeZone customTimeZone = this.findOne(() -> userId);
-            if (customTimeZone != null) {
-                ret = customTimeZone;
-            }
-        }
-        return ret;
     }
 
     @Nullable

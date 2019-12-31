@@ -3,6 +3,7 @@ package listeners;
 import app.Bot;
 import commands.*;
 import commands.base.BotCommand;
+import commands.guild.GuildWarStats;
 import db.model.commandLog.CommandLog;
 import db.model.prefix.Prefix;
 import db.repository.CommandLogRepository;
@@ -63,6 +64,7 @@ public class MessageListener extends ListenerAdapter {
         addCommand.accept(new Track(bot.getDatabase()));
         addCommand.accept(new TimeZoneCmd(bot.getDatabase().getCustomTimeZoneRepository()));
         addCommand.accept(new PrefixCmd(bot.getProperties().prefix, bot.getDatabase().getPrefixRepository()));
+        addCommand.accept(new GuildWarStats(bot));
     }
 
     @Override

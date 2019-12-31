@@ -7,7 +7,7 @@ import java.util.concurrent.TimeUnit;
 
 public class CustomTimeZone implements CustomTimeZoneId {
     public static CustomTimeZone getDefault() {
-        return new CustomTimeZone(0, "+0");
+        return new CustomTimeZone(0, "GMT+0");
     }
 
     private long discordId;

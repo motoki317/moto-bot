@@ -10,7 +10,9 @@ import org.jetbrains.annotations.NotNull;
 import javax.annotation.Nullable;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class TerritoryLogRepository extends Repository<TerritoryLog, TerritoryLogId> {
     public TerritoryLogRepository(ConnectionPool db, Logger logger) {
@@ -130,6 +132,37 @@ public class TerritoryLogRepository extends Repository<TerritoryLog, TerritoryLo
         try {
             if (res.next())
                 return bind(res);
+        } catch (SQLException e) {
+            this.logResponseException(e);
+        }
+        return null;
+    }
+
+        /**
+     * Finds all logs that is contained in the given list of IDs.
+     * @param ids List of IDs.
+     * @return List of logs.
+     */
+    @Nullable
+    public List<TerritoryLog> findAllIn(List<Integer> ids) {
+        if (ids.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        String placeHolder = String.format("(%s)",
+                ids.stream().map(i -> "?").collect(Collectors.joining(", "))
+        );
+        ResultSet res = this.executeQuery(
+                "SELECT * FROM `territory_log` WHERE `id` IN " + placeHolder,
+                ids.toArray()
+        );
+
+        if (res == null) {
+            return null;
+        }
+
+        try {
+            return bindAll(res);
         } catch (SQLException e) {
             this.logResponseException(e);
         }
