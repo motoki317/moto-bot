@@ -28,9 +28,10 @@ public class DatabaseImpl implements Database {
     private WarTrackRepository warTrackRepository;
     private WarLogRepository warLogRepository;
     private WarPlayerRepository warPlayerRepository;
-    private CustomTimeZoneRepository customTimeZoneRepository;
+    private TimeZoneRepository timeZoneRepository;
     private PrefixRepository prefixRepository;
     private GuildWarLogRepository guildWarLogRepository;
+    private DateFormatRepository dateFormatRepository;
 
     public DatabaseImpl(Logger logger) {
         this.logger = logger;
@@ -105,11 +106,11 @@ public class DatabaseImpl implements Database {
     }
 
     @Override
-    public @NotNull CustomTimeZoneRepository getCustomTimeZoneRepository() {
-        if (this.customTimeZoneRepository == null) {
-            this.customTimeZoneRepository = new CustomTimeZoneRepository(this.connectionPool, this.logger);
+    public @NotNull TimeZoneRepository getTimeZoneRepository() {
+        if (this.timeZoneRepository == null) {
+            this.timeZoneRepository = new TimeZoneRepository(this.connectionPool, this.logger);
         }
-        return this.customTimeZoneRepository;
+        return this.timeZoneRepository;
     }
 
     @Override
@@ -126,5 +127,13 @@ public class DatabaseImpl implements Database {
             this.guildWarLogRepository = new GuildWarLogRepository(this.connectionPool, this.logger);
         }
         return this.guildWarLogRepository;
+    }
+
+    @Override
+    public @NotNull DateFormatRepository getDateFormatRepository() {
+        if (this.dateFormatRepository == null) {
+            this.dateFormatRepository = new DateFormatRepository(this.connectionPool, this.logger);
+        }
+        return this.dateFormatRepository;
     }
 }

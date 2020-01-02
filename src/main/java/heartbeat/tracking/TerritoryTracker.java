@@ -8,7 +8,7 @@ import db.model.territoryLog.TerritoryLog;
 import db.model.timezone.CustomTimeZone;
 import db.model.track.TrackChannel;
 import db.model.track.TrackType;
-import db.repository.CustomTimeZoneRepository;
+import db.repository.TimeZoneRepository;
 import db.repository.TerritoryLogRepository;
 import db.repository.TerritoryRepository;
 import db.repository.TrackChannelRepository;
@@ -31,7 +31,7 @@ public class TerritoryTracker {
     private final TerritoryRepository territoryRepository;
     private final TerritoryLogRepository territoryLogRepository;
     private final TrackChannelRepository trackChannelRepository;
-    private final CustomTimeZoneRepository customTimeZoneRepository;
+    private final TimeZoneRepository timeZoneRepository;
 
     public TerritoryTracker(Bot bot, Object dbLock) {
         this.logger = bot.getLogger();
@@ -41,7 +41,7 @@ public class TerritoryTracker {
         this.territoryRepository = bot.getDatabase().getTerritoryRepository();
         this.territoryLogRepository = bot.getDatabase().getTerritoryLogRepository();
         this.trackChannelRepository = bot.getDatabase().getTrackingChannelRepository();
-        this.customTimeZoneRepository = bot.getDatabase().getCustomTimeZoneRepository();
+        this.timeZoneRepository = bot.getDatabase().getTimeZoneRepository();
     }
 
     public void run() {
@@ -134,7 +134,7 @@ public class TerritoryTracker {
     private String formatAcquiredTime(TerritoryLog log, TrackChannel track) {
         long guildId = track.getGuildId();
         long channelId = track.getChannelId();
-        CustomTimeZone custom = this.customTimeZoneRepository.getTimeZone(guildId, channelId);
+        CustomTimeZone custom = this.timeZoneRepository.getTimeZone(guildId, channelId);
         // TODO: custom format for each channel
         trackFormat.setTimeZone(custom.getTimeZoneInstance());
         return String.format(

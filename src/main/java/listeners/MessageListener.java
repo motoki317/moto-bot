@@ -62,7 +62,7 @@ public class MessageListener extends ListenerAdapter {
         addCommand.accept(new Info(bot));
         addCommand.accept(new ServerList(bot.getDatabase().getWorldRepository(), bot.getReactionManager()));
         addCommand.accept(new Track(bot.getDatabase()));
-        addCommand.accept(new TimeZoneCmd(bot.getDatabase().getCustomTimeZoneRepository()));
+        addCommand.accept(new TimeZoneCmd(bot.getDatabase().getTimeZoneRepository()));
         addCommand.accept(new PrefixCmd(bot.getProperties().prefix, bot.getDatabase().getPrefixRepository()));
         addCommand.accept(new GuildWarStats(bot));
     }

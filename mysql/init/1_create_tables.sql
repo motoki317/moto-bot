@@ -218,3 +218,9 @@ CREATE TABLE IF NOT EXISTS `prefix` (
     `discord_id` BIGINT PRIMARY KEY NOT NULL,
     `prefix` VARCHAR(10) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+# User defined date formats for guild / channel / user
+CREATE TABLE IF NOT EXISTS `date_format` (
+    `discord_id` BIGINT PRIMARY KEY NOT NULL,
+    `date_format` VARCHAR(30) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

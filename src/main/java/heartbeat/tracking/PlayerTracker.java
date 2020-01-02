@@ -40,7 +40,7 @@ public class PlayerTracker {
 
     private final WorldRepository worldRepository;
     private final TrackChannelRepository trackChannelRepository;
-    private final CustomTimeZoneRepository customTimeZoneRepository;
+    private final TimeZoneRepository timeZoneRepository;
 
     private final WarLogRepository warLogRepository;
     private final WarTrackRepository warTrackRepository;
@@ -53,7 +53,7 @@ public class PlayerTracker {
         this.mojangApi = new MojangApi(this.logger);
         this.worldRepository = bot.getDatabase().getWorldRepository();
         this.trackChannelRepository = bot.getDatabase().getTrackingChannelRepository();
-        this.customTimeZoneRepository = bot.getDatabase().getCustomTimeZoneRepository();
+        this.timeZoneRepository = bot.getDatabase().getTimeZoneRepository();
         this.warLogRepository = bot.getDatabase().getWarLogRepository();
         this.warTrackRepository = bot.getDatabase().getWarTrackRepository();
     }
@@ -374,7 +374,7 @@ public class PlayerTracker {
 
     @NotNull
     private String formatWarTrackTime(WarLog warLog, TrackChannel track) {
-        trackFormat.setTimeZone(this.customTimeZoneRepository.getTimeZone(track.getGuildId(), track.getChannelId()).getTimeZoneInstance());
+        trackFormat.setTimeZone(this.timeZoneRepository.getTimeZone(track.getGuildId(), track.getChannelId()).getTimeZoneInstance());
         String formattedTime = trackFormat.format(warLog.getCreatedAt());
         if (warLog.getCreatedAt().equals(warLog.getLastUp())) {
             // war just started
@@ -440,7 +440,7 @@ public class PlayerTracker {
     @NotNull
     private String formatDate(Date now, long guildId, long channelId) {
         // TODO: custom format for each channel
-        trackFormat.setTimeZone(this.customTimeZoneRepository.getTimeZone(guildId, channelId).getTimeZoneInstance());
+        trackFormat.setTimeZone(this.timeZoneRepository.getTimeZone(guildId, channelId).getTimeZoneInstance());
         return trackFormat.format(now);
     }
 

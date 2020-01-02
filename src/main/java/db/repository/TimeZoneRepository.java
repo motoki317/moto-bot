@@ -13,8 +13,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 
-public class CustomTimeZoneRepository extends Repository<CustomTimeZone, CustomTimeZoneId> {
-    public CustomTimeZoneRepository(ConnectionPool db, Logger logger) {
+public class TimeZoneRepository extends Repository<CustomTimeZone, CustomTimeZoneId> {
+    public TimeZoneRepository(ConnectionPool db, Logger logger) {
         super(db, logger);
     }
 

@@ -21,9 +21,11 @@ public interface Database {
     @NotNull
     WarPlayerRepository getWarPlayerRepository();
     @NotNull
-    CustomTimeZoneRepository getCustomTimeZoneRepository();
+    TimeZoneRepository getTimeZoneRepository();
     @NotNull
     PrefixRepository getPrefixRepository();
     @NotNull
     GuildWarLogRepository getGuildWarLogRepository();
+    @NotNull
+    DateFormatRepository getDateFormatRepository();
 }

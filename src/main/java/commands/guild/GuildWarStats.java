@@ -7,7 +7,7 @@ import db.model.territoryLog.TerritoryLog;
 import db.model.timezone.CustomTimeZone;
 import db.model.warLog.WarLog;
 import db.model.warPlayer.WarPlayer;
-import db.repository.CustomTimeZoneRepository;
+import db.repository.TimeZoneRepository;
 import db.repository.GuildWarLogRepository;
 import db.repository.TerritoryLogRepository;
 import db.repository.WarLogRepository;
@@ -31,14 +31,14 @@ import java.util.stream.Collectors;
 
 public class GuildWarStats extends GenericCommand {
     private final ReactionManager reactionManager;
-    private final CustomTimeZoneRepository customTimeZoneRepository;
+    private final TimeZoneRepository timeZoneRepository;
     private final GuildWarLogRepository guildWarLogRepository;
     private final WarLogRepository warLogRepository;
     private final TerritoryLogRepository territoryLogRepository;
 
     public GuildWarStats(Bot bot) {
         this.reactionManager = bot.getReactionManager();
-        this.customTimeZoneRepository = bot.getDatabase().getCustomTimeZoneRepository();
+        this.timeZoneRepository = bot.getDatabase().getTimeZoneRepository();
         this.guildWarLogRepository = bot.getDatabase().getGuildWarLogRepository();
         this.warLogRepository = bot.getDatabase().getWarLogRepository();
         this.territoryLogRepository = bot.getDatabase().getTerritoryLogRepository();
@@ -94,7 +94,7 @@ public class GuildWarStats extends GenericCommand {
             return;
         }
 
-        CustomTimeZone timeZone = this.customTimeZoneRepository.getTimeZone(event);
+        CustomTimeZone timeZone = this.timeZoneRepository.getTimeZone(event);
 
         if (count <= LOGS_PER_PAGE) {
             respond(event, format(guildName, 0, timeZone));

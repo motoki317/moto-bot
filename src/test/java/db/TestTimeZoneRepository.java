@@ -2,22 +2,22 @@ package db;
 
 import db.model.timezone.CustomTimeZone;
 import db.model.timezone.CustomTimeZoneId;
-import db.repository.CustomTimeZoneRepository;
+import db.repository.TimeZoneRepository;
 import org.jetbrains.annotations.TestOnly;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
-class TestCustomTimeZoneRepository {
+class TestTimeZoneRepository {
     @TestOnly
-    private static CustomTimeZoneRepository getRepository() {
+    private static TimeZoneRepository getRepository() {
         Database db = TestDBUtils.createDatabase();
-        return db.getCustomTimeZoneRepository();
+        return db.getTimeZoneRepository();
     }
 
     @TestOnly
     private static void clearTable() {
-        CustomTimeZoneRepository repo = getRepository();
+        TimeZoneRepository repo = getRepository();
         List<CustomTimeZone> list = repo.findAll();
         assert list != null;
         list.forEach(e -> {
@@ -29,7 +29,7 @@ class TestCustomTimeZoneRepository {
     @Test
     void testCRUD() {
         clearTable();
-        CustomTimeZoneRepository repo = getRepository();
+        TimeZoneRepository repo = getRepository();
 
         CustomTimeZone tz1 = new CustomTimeZone(1000L, "UTC");
         CustomTimeZone tz2 = new CustomTimeZone(5000L, "+0200");
@@ -53,7 +53,7 @@ class TestCustomTimeZoneRepository {
     @Test
     void testNonIdFields() {
         clearTable();
-        CustomTimeZoneRepository repo = getRepository();
+        TimeZoneRepository repo = getRepository();
         CustomTimeZone tz1 = new CustomTimeZone(10000L, "+0900");
         CustomTimeZone tz2 = new CustomTimeZone(50000L, "JST");
 

@@ -3,7 +3,7 @@ package commands;
 import commands.base.GenericCommand;
 import db.model.timezone.CustomTimeZone;
 import db.model.timezone.CustomTimeZoneId;
-import db.repository.CustomTimeZoneRepository;
+import db.repository.TimeZoneRepository;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.entities.Message;
@@ -20,10 +20,10 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class TimeZoneCmd extends GenericCommand {
-    private final CustomTimeZoneRepository customTimeZoneRepository;
+    private final TimeZoneRepository timeZoneRepository;
 
-    public TimeZoneCmd(CustomTimeZoneRepository customTimeZoneRepository) {
-        this.customTimeZoneRepository = customTimeZoneRepository;
+    public TimeZoneCmd(TimeZoneRepository timeZoneRepository) {
+        this.timeZoneRepository = timeZoneRepository;
     }
 
     @NotNull
@@ -186,7 +186,7 @@ public class TimeZoneCmd extends GenericCommand {
 
     private void resetSetting(MessageReceivedEvent event, Type type) {
         CustomTimeZoneId id = () -> type.getDiscordId(event);
-        boolean success = !this.customTimeZoneRepository.exists(id) || this.customTimeZoneRepository.delete(id);
+        boolean success = !this.timeZoneRepository.exists(id) || this.timeZoneRepository.delete(id);
         if (success) {
             respond(event, ":white_check_mark: Successfully reset the setting!");
         } else {
@@ -196,9 +196,9 @@ public class TimeZoneCmd extends GenericCommand {
 
     private void addSetting(MessageReceivedEvent event, String timezoneId, Type type) {
         CustomTimeZone customTimeZone = new CustomTimeZone(type.getDiscordId(event), timezoneId);
-        boolean success = this.customTimeZoneRepository.exists(customTimeZone)
-                ? this.customTimeZoneRepository.update(customTimeZone)
-                : this.customTimeZoneRepository.create(customTimeZone);
+        boolean success = this.timeZoneRepository.exists(customTimeZone)
+                ? this.timeZoneRepository.update(customTimeZone)
+                : this.timeZoneRepository.create(customTimeZone);
         if (success) {
             respond(event, ":white_check_mark: Successfully saved your settings!");
         } else {
@@ -238,7 +238,7 @@ public class TimeZoneCmd extends GenericCommand {
     }
 
     private void addField(EmbedBuilder eb, String name, long id, Date now) {
-        CustomTimeZone customTimeZone = this.customTimeZoneRepository.findOne(() -> id);
+        CustomTimeZone customTimeZone = this.timeZoneRepository.findOne(() -> id);
         if (customTimeZone != null) {
             dateFormat.setTimeZone(customTimeZone.getTimeZoneInstance());
         }
