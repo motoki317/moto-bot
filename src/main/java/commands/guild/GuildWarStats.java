@@ -2,15 +2,13 @@ package commands.guild;
 
 import app.Bot;
 import commands.base.GenericCommand;
+import db.model.dateFormat.CustomDateFormat;
 import db.model.guildWarLog.GuildWarLog;
 import db.model.territoryLog.TerritoryLog;
 import db.model.timezone.CustomTimeZone;
 import db.model.warLog.WarLog;
 import db.model.warPlayer.WarPlayer;
-import db.repository.TimeZoneRepository;
-import db.repository.GuildWarLogRepository;
-import db.repository.TerritoryLogRepository;
-import db.repository.WarLogRepository;
+import db.repository.*;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.entities.Message;
@@ -23,7 +21,6 @@ import utils.FormatUtils;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
@@ -32,6 +29,7 @@ import java.util.stream.Collectors;
 public class GuildWarStats extends GenericCommand {
     private final ReactionManager reactionManager;
     private final TimeZoneRepository timeZoneRepository;
+    private final DateFormatRepository dateFormatRepository;
     private final GuildWarLogRepository guildWarLogRepository;
     private final WarLogRepository warLogRepository;
     private final TerritoryLogRepository territoryLogRepository;
@@ -39,6 +37,7 @@ public class GuildWarStats extends GenericCommand {
     public GuildWarStats(Bot bot) {
         this.reactionManager = bot.getReactionManager();
         this.timeZoneRepository = bot.getDatabase().getTimeZoneRepository();
+        this.dateFormatRepository = bot.getDatabase().getDateFormatRepository();
         this.guildWarLogRepository = bot.getDatabase().getGuildWarLogRepository();
         this.warLogRepository = bot.getDatabase().getWarLogRepository();
         this.territoryLogRepository = bot.getDatabase().getTerritoryLogRepository();
@@ -95,14 +94,19 @@ public class GuildWarStats extends GenericCommand {
         }
 
         CustomTimeZone timeZone = this.timeZoneRepository.getTimeZone(event);
+        CustomDateFormat dateFormat = this.dateFormatRepository.getDateFormat(event);
 
         if (count <= LOGS_PER_PAGE) {
-            respond(event, format(guildName, 0, timeZone));
+            respond(event, format(guildName, 0, timeZone, dateFormat));
             return;
         }
 
-        respond(event, format(guildName, 0, timeZone), success -> {
-            MultipageHandler handler = new MultipageHandler(success, pageSupplier(guildName, timeZone), () -> maxPage(guildName));
+        respond(event, format(guildName, 0, timeZone, dateFormat), success -> {
+            MultipageHandler handler = new MultipageHandler(
+                    success,
+                    pageSupplier(guildName, timeZone, dateFormat),
+                    () -> maxPage(guildName)
+            );
             this.reactionManager.addEventListener(handler);
         });
     }
@@ -112,11 +116,11 @@ public class GuildWarStats extends GenericCommand {
         return count > 0 ? (count - 1) / LOGS_PER_PAGE : -1;
     }
 
-    private Function<Integer, Message> pageSupplier(String guildName, CustomTimeZone timeZone) {
-        return page -> new MessageBuilder(format(guildName, page, timeZone)).build();
+    private Function<Integer, Message> pageSupplier(String guildName, CustomTimeZone timeZone, CustomDateFormat dateFormat) {
+        return page -> new MessageBuilder(format(guildName, page, timeZone, dateFormat)).build();
     }
 
-    private String format(String guildName, int page, CustomTimeZone timeZone) {
+    private String format(String guildName, int page, CustomTimeZone timeZone, CustomDateFormat dateFormat) {
         // Retrieve data
         List<GuildWarLog> logs = this.guildWarLogRepository.findGuildLogs(guildName, LOGS_PER_PAGE, page * LOGS_PER_PAGE);
         int maxPage = this.maxPage(guildName);
@@ -172,7 +176,7 @@ public class GuildWarStats extends GenericCommand {
         int seq = LOGS_PER_PAGE * page;
         for (GuildWarLog log : logs) {
             seq++;
-            ret.add(formatSingleLog(timeZone.getTimeZoneInstance(), seq, guildName, log, warLogs, territoryLogs));
+            ret.add(formatSingleLog(seq, guildName, log, warLogs, territoryLogs, timeZone, dateFormat));
             ret.add("");
         }
 
@@ -180,8 +184,7 @@ public class GuildWarStats extends GenericCommand {
         ret.add("");
 
         Date now = new Date();
-        // TODO: format for each channel
-        DateFormat formatter = defaultFormat;
+        DateFormat formatter = dateFormat.getDateFormat().getSecondFormat();
         formatter.setTimeZone(timeZone.getTimeZoneInstance());
         ret.add(String.format("Current Time: %s", formatter.format(now)));
         ret.add(String.format("Timezone Offset: %s", timeZone.getTimezone()));
@@ -195,13 +198,16 @@ public class GuildWarStats extends GenericCommand {
         return String.join("", Collections.nCopies(n, s));
     }
 
-    private static final DateFormat defaultFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
-
     @NotNull
-    private String formatSingleLog(TimeZone timeZone, int seq, String guildName, GuildWarLog log, Map<Integer, WarLog> warLogs, Map<Integer, TerritoryLog> territoryLogs) {
-        // TODO: format for each channel
-        DateFormat formatter = defaultFormat;
-        formatter.setTimeZone(timeZone);
+    private String formatSingleLog(int seq,
+                                   String guildName,
+                                   GuildWarLog log,
+                                   Map<Integer, WarLog> warLogs,
+                                   Map<Integer, TerritoryLog> territoryLogs,
+                                   CustomTimeZone timeZone,
+                                   CustomDateFormat dateFormat) {
+        DateFormat formatter = dateFormat.getDateFormat().getSecondFormat();
+        formatter.setTimeZone(timeZone.getTimeZoneInstance());
 
         if (log.getWarLogId() == null) {
             if (log.getTerritoryLogId() == null) {
@@ -250,7 +256,6 @@ public class GuildWarStats extends GenericCommand {
                                 "   War Time: %s ~ %s\n" +
                                 "   Players: %s",
                         seq, warLog.getServerName(), event,
-                        // TODO: format for each channel
                         formatter.format(warLog.getCreatedAt()), formatter.format(warLog.getLastUp()),
                         formatPlayers(warLog.getPlayers())
                 );

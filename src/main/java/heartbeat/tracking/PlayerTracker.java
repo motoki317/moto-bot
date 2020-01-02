@@ -22,7 +22,6 @@ import org.jetbrains.annotations.Nullable;
 import utils.FormatUtils;
 
 import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -30,7 +29,6 @@ import java.util.stream.Collectors;
 public class PlayerTracker {
     private static final Pattern mainWorld = Pattern.compile("(WC|EU)\\d+");
     private static final Pattern warWorld = Pattern.compile("WAR\\d+");
-    private static final DateFormat trackFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
 
     private final Logger logger;
     private final Object dbLock;
@@ -41,6 +39,7 @@ public class PlayerTracker {
     private final WorldRepository worldRepository;
     private final TrackChannelRepository trackChannelRepository;
     private final TimeZoneRepository timeZoneRepository;
+    private final DateFormatRepository dateFormatRepository;
 
     private final WarLogRepository warLogRepository;
     private final WarTrackRepository warTrackRepository;
@@ -54,6 +53,7 @@ public class PlayerTracker {
         this.worldRepository = bot.getDatabase().getWorldRepository();
         this.trackChannelRepository = bot.getDatabase().getTrackingChannelRepository();
         this.timeZoneRepository = bot.getDatabase().getTimeZoneRepository();
+        this.dateFormatRepository = bot.getDatabase().getDateFormatRepository();
         this.warLogRepository = bot.getDatabase().getWarLogRepository();
         this.warTrackRepository = bot.getDatabase().getWarTrackRepository();
     }
@@ -373,8 +373,25 @@ public class PlayerTracker {
     }
 
     @NotNull
+    private TimeZone getTimeZone(TrackChannel track) {
+        return this.timeZoneRepository.getTimeZone(
+                track.getGuildId(),
+                track.getChannelId()
+        ).getTimeZoneInstance();
+    }
+
+    @NotNull
+    private DateFormat getDateFormat(TrackChannel track) {
+        return this.dateFormatRepository.getDateFormat(
+                track.getGuildId(),
+                track.getChannelId()
+        ).getDateFormat().getSecondFormat();
+    }
+
+    @NotNull
     private String formatWarTrackTime(WarLog warLog, TrackChannel track) {
-        trackFormat.setTimeZone(this.timeZoneRepository.getTimeZone(track.getGuildId(), track.getChannelId()).getTimeZoneInstance());
+        DateFormat trackFormat = getDateFormat(track);
+        trackFormat.setTimeZone(getTimeZone(track));
         String formattedTime = trackFormat.format(warLog.getCreatedAt());
         if (warLog.getCreatedAt().equals(warLog.getLastUp())) {
             // war just started
@@ -432,15 +449,15 @@ public class PlayerTracker {
             TextChannel channelToSend = manager.getTextChannelById(ch.getChannelId());
             if (channelToSend == null) return;
             channelToSend.sendMessage(
-                     formatDate(now, ch.getGuildId(), ch.getChannelId()) + " " + message
+                     formatDate(now, ch) + " " + message
             ).queue();
         });
     }
 
     @NotNull
-    private String formatDate(Date now, long guildId, long channelId) {
-        // TODO: custom format for each channel
-        trackFormat.setTimeZone(this.timeZoneRepository.getTimeZone(guildId, channelId).getTimeZoneInstance());
+    private String formatDate(Date now, TrackChannel track) {
+        DateFormat trackFormat = getDateFormat(track);
+        trackFormat.setTimeZone(getTimeZone(track));
         return trackFormat.format(now);
     }
 

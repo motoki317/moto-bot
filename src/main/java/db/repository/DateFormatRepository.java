@@ -6,6 +6,7 @@ import db.model.dateFormat.CustomDateFormatId;
 import db.model.dateFormat.CustomFormat;
 import db.repository.base.Repository;
 import log.Logger;
+import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
@@ -90,6 +91,40 @@ public class DateFormatRepository extends Repository<CustomDateFormat, CustomDat
             this.logResponseException(e);
         }
         return null;
+    }
+
+    /**
+     * Retrieves custom date format.
+     * If more than one IDs are given, the later ones are more prioritized.
+     * @param ids List of discord IDs.
+     * @return Custom date format.
+     */
+    @NotNull
+    public CustomDateFormat getDateFormat(long... ids) {
+        CustomDateFormat ret = CustomDateFormat.getDefault();
+        for (long id : ids) {
+            CustomDateFormat format = this.findOne(() -> id);
+            if (format != null) {
+                ret = format;
+            }
+        }
+        return ret;
+    }
+
+    @NotNull
+    public CustomDateFormat getDateFormat(MessageReceivedEvent event) {
+        if (event.isFromGuild()) {
+            return this.getDateFormat(
+                    event.getGuild().getIdLong(),
+                    event.getChannel().getIdLong(),
+                    event.getAuthor().getIdLong()
+            );
+        } else {
+            return this.getDateFormat(
+                    event.getChannel().getIdLong(),
+                    event.getAuthor().getIdLong()
+            );
+        }
     }
 
     @Nullable

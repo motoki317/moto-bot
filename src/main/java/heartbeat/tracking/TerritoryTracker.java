@@ -8,18 +8,15 @@ import db.model.territoryLog.TerritoryLog;
 import db.model.timezone.CustomTimeZone;
 import db.model.track.TrackChannel;
 import db.model.track.TrackType;
-import db.repository.TimeZoneRepository;
-import db.repository.TerritoryLogRepository;
-import db.repository.TerritoryRepository;
-import db.repository.TrackChannelRepository;
+import db.repository.*;
 import log.Logger;
 import net.dv8tion.jda.api.entities.TextChannel;
 import net.dv8tion.jda.api.sharding.ShardManager;
+import org.jetbrains.annotations.NotNull;
 import utils.FormatUtils;
 
 import java.text.DateFormat;
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -32,6 +29,7 @@ public class TerritoryTracker {
     private final TerritoryLogRepository territoryLogRepository;
     private final TrackChannelRepository trackChannelRepository;
     private final TimeZoneRepository timeZoneRepository;
+    private final DateFormatRepository dateFormatRepository;
 
     public TerritoryTracker(Bot bot, Object dbLock) {
         this.logger = bot.getLogger();
@@ -42,6 +40,7 @@ public class TerritoryTracker {
         this.territoryLogRepository = bot.getDatabase().getTerritoryLogRepository();
         this.trackChannelRepository = bot.getDatabase().getTrackingChannelRepository();
         this.timeZoneRepository = bot.getDatabase().getTimeZoneRepository();
+        this.dateFormatRepository = bot.getDatabase().getDateFormatRepository();
     }
 
     public void run() {
@@ -113,8 +112,6 @@ public class TerritoryTracker {
         }
     }
 
-    private static final DateFormat trackFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
-
     /**
      * Formats territory log in order to send it to tracking channels.
      * @param log Territory log.
@@ -131,14 +128,30 @@ public class TerritoryTracker {
         );
     }
 
+    @NotNull
+    private CustomTimeZone getTimeZone(TrackChannel track) {
+        return this.timeZoneRepository.getTimeZone(
+                track.getGuildId(),
+                track.getChannelId()
+        );
+    }
+
+    @NotNull
+    private DateFormat getDateFormat(TrackChannel track) {
+        return this.dateFormatRepository.getDateFormat(
+                track.getGuildId(),
+                track.getChannelId()
+        ).getDateFormat().getSecondFormat();
+    }
+
     private String formatAcquiredTime(TerritoryLog log, TrackChannel track) {
         long guildId = track.getGuildId();
         long channelId = track.getChannelId();
-        CustomTimeZone custom = this.timeZoneRepository.getTimeZone(guildId, channelId);
-        // TODO: custom format for each channel
-        trackFormat.setTimeZone(custom.getTimeZoneInstance());
+        DateFormat trackFormat = getDateFormat(track);
+        CustomTimeZone timeZone = getTimeZone(track);
+        trackFormat.setTimeZone(timeZone.getTimeZoneInstance());
         return String.format(
-                "    Acquired: %s (%s)", trackFormat.format(log.getAcquired()), custom.getFormattedTime()
+                "    Acquired: %s (%s)", trackFormat.format(log.getAcquired()), timeZone.getFormattedTime()
         );
     }
 }

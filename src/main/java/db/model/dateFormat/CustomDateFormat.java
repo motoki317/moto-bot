@@ -3,6 +3,10 @@ package db.model.dateFormat;
 import org.jetbrains.annotations.NotNull;
 
 public class CustomDateFormat implements CustomDateFormatId {
+    public static CustomDateFormat getDefault() {
+        return new CustomDateFormat(0, CustomFormat.TWENTY_FOUR_HOUR);
+    }
+
     private long discordId;
     @NotNull
     private CustomFormat dateFormat;
