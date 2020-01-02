@@ -1,7 +1,11 @@
 package commands;
 
+import app.Bot;
 import commands.base.GenericCommand;
+import db.model.timezone.CustomTimeZone;
 import db.model.world.World;
+import db.repository.DateFormatRepository;
+import db.repository.TimeZoneRepository;
 import db.repository.WorldRepository;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.MessageBuilder;
@@ -13,7 +17,6 @@ import update.reaction.ReactionManager;
 import utils.FormatUtils;
 
 import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -22,19 +25,19 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class ServerList extends GenericCommand {
-    private static final DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm");
-
     private static final int WORLDS_PER_PAGE_DEFAULT = 20;
 
-    @NotNull
     private final WorldRepository repo;
-
-    @NotNull
     private final ReactionManager reactionManager;
 
-    public ServerList(@NotNull WorldRepository repo, @NotNull ReactionManager reactionManager) {
-        this.repo = repo;
-        this.reactionManager = reactionManager;
+    private final TimeZoneRepository timeZoneRepository;
+    private final DateFormatRepository dateFormatRepository;
+
+    public ServerList(Bot bot) {
+        this.repo = bot.getDatabase().getWorldRepository();
+        this.reactionManager = bot.getReactionManager();
+        this.timeZoneRepository = bot.getDatabase().getTimeZoneRepository();
+        this.dateFormatRepository = bot.getDatabase().getDateFormatRepository();
     }
 
     @NotNull
@@ -115,7 +118,11 @@ public class ServerList extends GenericCommand {
             return;
         }
 
-        Function<Integer, Message> pages = pageSupplier(worlds, worldsPerPage);
+        CustomTimeZone timeZone = this.timeZoneRepository.getTimeZone(event);
+        DateFormat dateFormat = this.dateFormatRepository.getDateFormat(event).getDateFormat().getMinuteFormat();
+        dateFormat.setTimeZone(timeZone.getTimeZoneInstance());
+
+        Function<Integer, Message> pages = pageSupplier(worlds, worldsPerPage, timeZone, dateFormat);
         int maxPage = maxPage(worlds.size(), worldsPerPage);
 
         if (maxPage == 0) {
@@ -129,11 +136,11 @@ public class ServerList extends GenericCommand {
         });
     }
 
-    private static Function<Integer, Message> pageSupplier(@NotNull List<World> worlds, int worldsPerPage) {
+    private static Function<Integer, Message> pageSupplier(@NotNull List<World> worlds, int worldsPerPage, CustomTimeZone timeZone, DateFormat dateFormat) {
         return (page) -> {
             int min = page * worldsPerPage;
             int max = Math.min((page + 1) * worldsPerPage, worlds.size());
-            return new MessageBuilder(format(worlds, min, max)).build();
+            return new MessageBuilder(format(worlds, min, max, timeZone, dateFormat)).build();
         };
     }
 
@@ -142,7 +149,7 @@ public class ServerList extends GenericCommand {
     }
 
     @NotNull
-    private static String format(@NotNull List<World> worlds, int min, int max) {
+    private static String format(@NotNull List<World> worlds, int min, int max, CustomTimeZone timeZone, DateFormat dateFormat) {
         List<String> ret = new ArrayList<>();
         ret.add("```ml");
         ret.add("---- Server List ----");
@@ -209,7 +216,7 @@ public class ServerList extends GenericCommand {
         ret.add("");
 
         Date lastUpdate = new Date(worlds.get(0).getUpdatedAt().getTime());
-        ret.add("last update: " + dateFormat.format(lastUpdate));
+        ret.add(String.format("last update: %s %s", dateFormat.format(lastUpdate), timeZone.getTimezone()));
 
         ret.add("```");
         return String.join("\n", ret);

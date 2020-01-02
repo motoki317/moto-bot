@@ -60,11 +60,12 @@ public class MessageListener extends ListenerAdapter {
         addCommand.accept(new Help(bot, this.commands, this.commandNameMap, () -> this.maxArgumentsLength));
         addCommand.accept(new Ping(bot));
         addCommand.accept(new Info(bot));
-        addCommand.accept(new ServerList(bot.getDatabase().getWorldRepository(), bot.getReactionManager()));
+        addCommand.accept(new ServerList(bot));
         addCommand.accept(new Track(bot.getDatabase()));
-        addCommand.accept(new TimeZoneCmd(bot.getDatabase().getTimeZoneRepository()));
+        addCommand.accept(new TimeZoneCmd(bot.getDatabase().getTimeZoneRepository(), bot.getDatabase().getDateFormatRepository()));
         addCommand.accept(new PrefixCmd(bot.getProperties().prefix, bot.getDatabase().getPrefixRepository()));
         addCommand.accept(new GuildWarStats(bot));
+        addCommand.accept(new DateFormatCmd(bot.getDatabase().getDateFormatRepository(), bot.getDatabase().getTimeZoneRepository()));
     }
 
     @Override

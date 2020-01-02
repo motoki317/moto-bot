@@ -3,6 +3,7 @@ package commands;
 import commands.base.GenericCommand;
 import db.model.timezone.CustomTimeZone;
 import db.model.timezone.CustomTimeZoneId;
+import db.repository.DateFormatRepository;
 import db.repository.TimeZoneRepository;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.MessageBuilder;
@@ -12,7 +13,6 @@ import org.jetbrains.annotations.NotNull;
 import utils.MinecraftColor;
 
 import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.util.Date;
 import java.util.TimeZone;
@@ -21,9 +21,11 @@ import java.util.regex.Pattern;
 
 public class TimeZoneCmd extends GenericCommand {
     private final TimeZoneRepository timeZoneRepository;
+    private final DateFormatRepository dateFormatRepository;
 
-    public TimeZoneCmd(TimeZoneRepository timeZoneRepository) {
+    public TimeZoneCmd(TimeZoneRepository timeZoneRepository, DateFormatRepository dateFormatRepository) {
         this.timeZoneRepository = timeZoneRepository;
+        this.dateFormatRepository = dateFormatRepository;
     }
 
     @NotNull
@@ -41,7 +43,7 @@ public class TimeZoneCmd extends GenericCommand {
     @NotNull
     @Override
     public String shortHelp() {
-        return "Sets local timezone for a guild, a channel, or an user, for easier view of time stamps.";
+        return "Sets local timezone for a guild, a channel or an user, for easier view of time stamps.";
     }
 
     @NotNull
@@ -51,11 +53,10 @@ public class TimeZoneCmd extends GenericCommand {
                 new EmbedBuilder()
                         .setColor(MinecraftColor.DARK_GREEN.getColor())
                         .setAuthor("TimeZone Command Help")
-                        .setDescription(this.shortHelp())
+                        .setDescription(this.shortHelp() + " Use without arguments to view current settings.")
                         .addField("Syntax",
                                 String.join("\n",
                                         "`" + this.syntax() + "`",
-                                        "Use without arguments to check the current settings for guild/channel/user.",
                                         "`<num|timezone|reset>` argument specifies the timezone.",
                                         "Specify a number between -23 ~ +23 to set offset in hours.",
                                                 "Specify a 4-digit number (e.g. \"+0930\") to set a custom minute-wise offset. " +
@@ -206,8 +207,6 @@ public class TimeZoneCmd extends GenericCommand {
         }
     }
 
-    private static final DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
-
     private Message getStatus(MessageReceivedEvent event) {
         EmbedBuilder eb = new EmbedBuilder()
                 .setColor(MinecraftColor.DARK_GREEN.getColor())
@@ -216,6 +215,7 @@ public class TimeZoneCmd extends GenericCommand {
                 .setDescription("Settings are prioritized in the order of: User (most prioritized) > Channel > Guild > Default (least prioritized).");
 
         Date now = new Date();
+        DateFormat dateFormat = this.dateFormatRepository.getDateFormat(event).getDateFormat().getSecondFormat();
         dateFormat.setTimeZone(TimeZone.getDefault());
         eb.addField(
                 "Default",
@@ -224,11 +224,11 @@ public class TimeZoneCmd extends GenericCommand {
         );
 
         if (event.isFromGuild()) {
-            addField(eb, "Guild", event.getGuild().getIdLong(), now);
+            addField(eb, "Guild", event.getGuild().getIdLong(), now, dateFormat);
         }
 
-        addField(eb, "Channel", event.getChannel().getIdLong(), now);
-        addField(eb, "User", event.getAuthor().getIdLong(), now);
+        addField(eb, "Channel", event.getChannel().getIdLong(), now, dateFormat);
+        addField(eb, "User", event.getAuthor().getIdLong(), now, dateFormat);
 
         eb.setTimestamp(Instant.ofEpochMilli(now.getTime()));
 
@@ -237,7 +237,7 @@ public class TimeZoneCmd extends GenericCommand {
         ).build();
     }
 
-    private void addField(EmbedBuilder eb, String name, long id, Date now) {
+    private void addField(EmbedBuilder eb, String name, long id, Date now, DateFormat dateFormat) {
         CustomTimeZone customTimeZone = this.timeZoneRepository.findOne(() -> id);
         if (customTimeZone != null) {
             dateFormat.setTimeZone(customTimeZone.getTimeZoneInstance());
