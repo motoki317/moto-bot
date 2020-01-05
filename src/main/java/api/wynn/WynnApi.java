@@ -37,7 +37,7 @@ public class WynnApi {
             if (body == null) throw new Exception("returned body was null");
             return new OnlinePlayers(body);
         } catch (Exception e) {
-            this.logger.logException("an error occurred while requesting / parsing online players", e);
+            this.logger.logException("an exception occurred while requesting / parsing online players", e);
             return null;
         }
     }
@@ -59,7 +59,7 @@ public class WynnApi {
             if (body == null) throw new Exception("returned body was null");
             return new TerritoryList(body, this.wynnTimeZone);
         } catch (Exception e) {
-            this.logger.logException("an error occurred while requesting / parsing territory list", e);
+            this.logger.logException("an exception occurred while requesting / parsing territory list", e);
             return null;
         }
     }
@@ -156,7 +156,7 @@ public class WynnApi {
             ));
             return player;
         } catch (Exception e) {
-            this.logger.logException("an error occurred while requesting / parsing player statistics for " + playerName, e);
+            this.logger.logException("an exception occurred while requesting / parsing player statistics for " + playerName, e);
             return null;
         }
     }

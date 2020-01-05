@@ -118,7 +118,8 @@ public abstract class BotCommand {
         event.getChannel().sendMessage(
                 new EmbedBuilder()
                 .setColor(MinecraftColor.RED.getColor())
-                .setAuthor(":exclamation: Error!", null, event.getAuthor().getEffectiveAvatarUrl())
+                // Heavy exclamation mark :exclamation: ❗
+                .setAuthor("\u2757 Error!", null, event.getAuthor().getEffectiveAvatarUrl())
                 .setDescription(message)
                 .addField("What is this?", "An unexpected error occurred while processing your command. " +
                         "If the error persists, please contact the bot owner.", false)

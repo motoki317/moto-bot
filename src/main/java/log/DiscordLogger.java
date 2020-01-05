@@ -114,8 +114,13 @@ public class DiscordLogger implements Logger {
 
     @Override
     public void logException(CharSequence message, Exception e) {
-        String formatted = message + "\n" + e.getMessage() + "\n";
-        formatted += Arrays.stream(e.getStackTrace()).map(elt -> "    " + elt.toString()).collect(Collectors.joining("\n"));
+        e.printStackTrace();
+        String formatted = message + "\n" + e.getMessage();
+        // Print short version
         this.log(0, formatted);
+        String fullStackTrace = formatted;
+        fullStackTrace += Arrays.stream(e.getStackTrace()).map(elt -> "    " + elt.toString()).collect(Collectors.joining("\n"));
+        // Full stack trace to another channel
+        this.log(2, fullStackTrace);
     }
 }

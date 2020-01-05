@@ -52,7 +52,7 @@ public class TerritoryTracker {
             try {
                 territories.add(e.getValue().convert());
             } catch (ParseException ex) {
-                this.logger.logException("an error occurred in territory tracker", ex);
+                this.logger.logException("an exception occurred in territory tracker", ex);
                 return;
             }
         }
