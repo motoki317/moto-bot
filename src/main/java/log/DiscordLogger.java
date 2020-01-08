@@ -17,7 +17,7 @@ import java.util.stream.Collectors;
 public class DiscordLogger implements Logger {
     private final Bot bot;
 
-    private final Map<Integer, TextChannel> logChannel;
+    private final Map<Integer, Long> logChannels;
 
     private final DateFormat logFormat;
 
@@ -27,11 +27,9 @@ public class DiscordLogger implements Logger {
 
     public DiscordLogger(Bot bot, TimeZone logTimeZone) {
         this.bot = bot;
-        this.logChannel = new HashMap<>();
-        bot.getProperties().logChannelId.forEach((i, id) -> {
-            TextChannel ch = bot.getManager().getTextChannelById(id);
-            this.logChannel.put(i, ch);
-        });
+        // deep copy
+        this.logChannels = bot.getProperties().logChannelId
+                .entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
         this.logFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss.SSS");
         this.logFormat.setTimeZone(logTimeZone);
@@ -51,7 +49,11 @@ public class DiscordLogger implements Logger {
         System.out.println(msgTimeAppended);
 
         // Log to discord channels
-        TextChannel ch = this.logChannel.get(botLogCh);
+        if (!this.logChannels.containsKey(botLogCh)) {
+            return;
+        }
+        long logChannelId = this.logChannels.get(botLogCh);
+        TextChannel ch = this.bot.getManager().getTextChannelById(logChannelId);
         if (ch == null) {
             return;
         }
