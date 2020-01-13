@@ -32,6 +32,7 @@ public class DatabaseImpl implements Database {
     private PrefixRepository prefixRepository;
     private GuildWarLogRepository guildWarLogRepository;
     private DateFormatRepository dateFormatRepository;
+    private GuildRepository guildRepository;
 
     public DatabaseImpl(Logger logger) {
         this.logger = logger;
@@ -135,5 +136,13 @@ public class DatabaseImpl implements Database {
             this.dateFormatRepository = new DateFormatRepository(this.connectionPool, this.logger);
         }
         return this.dateFormatRepository;
+    }
+
+    @Override
+    public @NotNull GuildRepository getGuildRepository() {
+        if (this.guildRepository == null) {
+            this.guildRepository = new GuildRepository(this.connectionPool, this.logger);
+        }
+        return this.guildRepository;
     }
 }

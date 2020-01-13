@@ -28,4 +28,6 @@ public interface Database {
     GuildWarLogRepository getGuildWarLogRepository();
     @NotNull
     DateFormatRepository getDateFormatRepository();
+    @NotNull
+    GuildRepository getGuildRepository();
 }
