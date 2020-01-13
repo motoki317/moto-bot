@@ -46,7 +46,7 @@ public class GuildTracker implements TaskBase {
 
     @Override
     public long getFirstDelay() {
-        return GUILD_TRACKER_DELAY;
+        return TimeUnit.MINUTES.toMillis(1);
     }
 
     @Override
