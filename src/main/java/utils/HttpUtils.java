@@ -10,9 +10,13 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
+import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 
 public class HttpUtils {
     /**
@@ -55,5 +59,21 @@ public class HttpUtils {
                 throw new ClientProtocolException("Unexpected response status: " + status);
             }
         };
+    }
+
+    // ----------
+
+    /**
+     * Encodes a value into URL-valid format in UTF-8.
+     * @param value Value to encode.
+     * @return Encoded value.
+     */
+    @NotNull
+    public static String encodeValue(String value) {
+        try {
+            return URLEncoder.encode(value, StandardCharsets.UTF_8.toString());
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException(e.getCause());
+        }
     }
 }

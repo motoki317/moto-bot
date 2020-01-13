@@ -1,9 +1,7 @@
 package api;
 
 import api.wynn.WynnApi;
-import api.wynn.structs.OnlinePlayers;
-import api.wynn.structs.Player;
-import api.wynn.structs.TerritoryList;
+import api.wynn.structs.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.TestOnly;
 import org.junit.jupiter.api.Test;
@@ -35,5 +33,19 @@ class TestWynnApi {
         Player player = getWynnApi().getPlayerStatistics("Salted", false, true);
         assert player != null;
         assert player.getUuid().equals("1ed075fc-5aa9-42e0-a29f-640326c1d80c");
+    }
+
+    @Test
+    void testGuildList() {
+        GuildList guildList = getWynnApi().getGuildList();
+        assert guildList != null;
+        assert guildList.getGuilds().size() > 1000;
+    }
+
+    @Test
+    void testGuildStats() {
+        WynnGuild guild = getWynnApi().getGuildStats("HackForums");
+        assert guild != null;
+        assert "Hax".equals(guild.getPrefix());
     }
 }

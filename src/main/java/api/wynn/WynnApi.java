@@ -1,9 +1,8 @@
 package api.wynn;
 
 import api.wynn.exception.RateLimitException;
-import api.wynn.structs.OnlinePlayers;
-import api.wynn.structs.Player;
-import api.wynn.structs.TerritoryList;
+import api.wynn.structs.*;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import log.Logger;
 import utils.HttpUtils;
 
@@ -12,6 +11,8 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 public class WynnApi {
+    private static final ObjectMapper mapper = new ObjectMapper();
+
     private final Logger logger;
     private final TimeZone wynnTimeZone;
 
@@ -60,6 +61,57 @@ public class WynnApi {
             return new TerritoryList(body, this.wynnTimeZone);
         } catch (Exception e) {
             this.logger.logException("an exception occurred while requesting / parsing territory list", e);
+            return null;
+        }
+    }
+
+    private static final String guildListUrl = "https://api.wynncraft.com/public_api.php?action=guildList";
+
+    /**
+     * GET https://api.wynncraft.com/public_api.php?action=guildList
+     * @return Guild list.
+     */
+    @Nullable
+    public GuildList getGuildList() {
+        try {
+            long start = System.nanoTime();
+            String body = HttpUtils.get(guildListUrl);
+            long end = System.nanoTime();
+            this.logger.debug(String.format("Wynn API: Requested guild list, took %s ms.", (double) (end - start) / 1_000_000d));
+
+            if (body == null) throw new Exception("returned body was null");
+
+            return mapper.readValue(body, GuildList.class);
+        } catch (Exception e) {
+            this.logger.logException("an exception occurred while requesting / parsing guild list", e);
+            return null;
+        }
+    }
+
+    private static final String guildStatsUrl = "https://api.wynncraft.com/public_api.php?action=guildStats&command=%s";
+
+    /**
+     * GET https://api.wynncraft.com/public_api.php?action=guildStats&command={guild name}
+     * @param guildName Guild name.
+     * @return Guild stats.
+     */
+    @Nullable
+    public WynnGuild getGuildStats(String guildName) {
+        try {
+            long start = System.nanoTime();
+            String body = HttpUtils.get(
+                    String.format(guildStatsUrl, HttpUtils.encodeValue(guildName))
+            );
+            long end = System.nanoTime();
+            this.logger.debug(String.format("Wynn API: Requested guild stats for %s, took %s ms.", guildName, (double) (end - start) / 1_000_000d));
+
+            if (body == null) throw new Exception("returned body was null");
+
+            return mapper.readValue(body, WynnGuild.class);
+        } catch (Exception e) {
+            this.logger.logException(String.format("an exception occurred while requesting / parsing guild stats for %s",
+                    guildName
+            ), e);
             return null;
         }
     }
