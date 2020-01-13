@@ -34,13 +34,11 @@ public enum TrackType {
         Set<TrackType> territory = new HashSet<>(Arrays.asList(TERRITORY_ALL, TERRITORY_SPECIFIC));
         Set<TrackType> serverStart = new HashSet<>(Arrays.asList(SERVER_START, SERVER_START_ALL));
         Set<TrackType> serverClose = new HashSet<>(Arrays.asList(SERVER_CLOSE, SERVER_CLOSE_ALL));
-        Set<TrackType> guild = new HashSet<>(Arrays.asList(GUILD_CREATE, GUILD_DELETE));
 
         conflictGroups.add(war);
         conflictGroups.add(territory);
         conflictGroups.add(serverStart);
         conflictGroups.add(serverClose);
-        conflictGroups.add(guild);
     }
 
     public String getDisplayName() {
