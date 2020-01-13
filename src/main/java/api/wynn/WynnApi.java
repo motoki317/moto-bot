@@ -98,6 +98,9 @@ public class WynnApi {
     @Nullable
     public WynnGuild getGuildStats(String guildName) {
         try {
+            // TODO: guild stats cache (and auto deletion when the size gets too big)
+            // might want to create a custom cache system where it deletes from oldest if certain time passes or
+            // the cache gets bigger
             long start = System.nanoTime();
             String body = HttpUtils.get(
                     String.format(guildStatsUrl, HttpUtils.encodeValue(guildName))
