@@ -1,6 +1,8 @@
 package heartbeat;
 
 import app.Bot;
+import heartbeat.base.TaskBase;
+import heartbeat.tracking.GuildTracker;
 import heartbeat.tracking.PlayerTracker;
 import heartbeat.tracking.TerritoryTracker;
 import log.Logger;
@@ -9,12 +11,9 @@ import utils.StoppableThread;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Timer;
-import java.util.concurrent.TimeUnit;
+import java.util.function.BiConsumer;
 
 public class HeartBeat extends StoppableThread {
-    private static final long PLAYER_TERRITORY_TRACKER_DELAY = TimeUnit.SECONDS.toMillis(30);
-    private static final long UPDATERS_INTERVAL = TimeUnit.MINUTES.toMillis(10);
-
     private final Logger logger;
 
     private final Timer timer;
@@ -26,29 +25,26 @@ public class HeartBeat extends StoppableThread {
         this.timer = new Timer();
         this.tasks = new ArrayList<>();
 
-        final Object dbLock = new Object();
-        this.tasks.add(new Task(
-                this.timer,
-                runnablePlayerTracker(bot, dbLock),
-                PLAYER_TERRITORY_TRACKER_DELAY,
-                PLAYER_TERRITORY_TRACKER_DELAY
-        ));
-        this.tasks.add(new Task(
-                this.timer,
-                runnableTerritoryTracker(bot, dbLock),
-                PLAYER_TERRITORY_TRACKER_DELAY,
-                PLAYER_TERRITORY_TRACKER_DELAY
-        ));
-
-        this.tasks.add(new Task(
+        BiConsumer<TaskBase, String> addTask = (task, name) -> this.tasks.add(new Task(
                 this.timer,
                 () -> {
-                    bot.getReactionManager().clearUp();
-                    bot.getResponseManager().clearUp();
+                    long start = System.nanoTime();
+                    task.run();
+                    long end = System.nanoTime();
+                    bot.getLogger().log(-1, String.format("HeartBeat: %s took %.6f ms to run.",
+                            name,
+                            ((double) (end - start)) / 1_000_000D)
+                    );
                 },
-                UPDATERS_INTERVAL,
-                UPDATERS_INTERVAL
+                task.getFirstDelay(),
+                task.getInterval()
         ));
+
+        final Object dbLock = new Object();
+
+        addTask.accept(new PlayerTracker(bot, dbLock), "Player Tracker");
+        addTask.accept(new TerritoryTracker(bot, dbLock), "Territory Tracker");
+        addTask.accept(new GuildTracker(dbLock, bot.getDatabase().getGuildRepository()), "Guild Tracker");
     }
 
     @Override
@@ -56,26 +52,6 @@ public class HeartBeat extends StoppableThread {
         this.logger.debug("Starting heartbeat... (Thread id " + this.getId() + ")");
 
         this.tasks.forEach(Task::start);
-    }
-
-    private static Runnable runnablePlayerTracker(Bot bot, Object dbLock) {
-        PlayerTracker playerTracker = new PlayerTracker(bot, dbLock);
-        return () -> {
-            long start = System.nanoTime();
-            playerTracker.run();
-            long end = System.nanoTime();
-            bot.getLogger().log(-1, String.format("Heartbeat: Player tracker took %.6f ms to run.", ((double) (end - start)) / 1_000_000D));
-        };
-    }
-
-    private static Runnable runnableTerritoryTracker(Bot bot, Object dbLock) {
-        TerritoryTracker territoryTracker = new TerritoryTracker(bot, dbLock);
-        return () -> {
-            long start = System.nanoTime();
-            territoryTracker.run();
-            long end = System.nanoTime();
-            bot.getLogger().log(-1, String.format("Heartbeat: Territory tracker took %.6f ms to run.", ((double) (end - start)) / 1_000_000D));
-        };
     }
 
     @Override

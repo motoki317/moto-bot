@@ -4,6 +4,9 @@ import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 
 public class ReactionManagerImpl implements ReactionManager {
@@ -14,6 +17,19 @@ public class ReactionManagerImpl implements ReactionManager {
     public ReactionManagerImpl() {
         this.messageHandlers = new HashMap<>();
         this.lock = new Object();
+
+        long delay = TimeUnit.MINUTES.toMillis(10);
+        ReactionManagerImpl manager = this;
+        new Timer().scheduleAtFixedRate(
+                new TimerTask() {
+                    @Override
+                    public void run() {
+                        manager.clearUp();
+                    }
+                },
+                delay,
+                delay
+        );
     }
 
     @Override
@@ -64,8 +80,7 @@ public class ReactionManagerImpl implements ReactionManager {
     /**
      * Clears reaction handlers that hasn't been used for more than `maxLive` attribute of each object.
      */
-    @Override
-    public void clearUp() {
+    private void clearUp() {
         long now = System.currentTimeMillis();
         Predicate<ReactionResponse> removeIf = r -> (now - r.getUpdatedAt()) > r.getMaxLive();
 

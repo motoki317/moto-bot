@@ -33,7 +33,7 @@ public class Track extends GuildCommand {
     @NotNull
     @Override
     public String syntax() {
-        return "track <server|war|territory>";
+        return "track <server|guild|war|territory>";
     }
 
     @NotNull
@@ -52,7 +52,7 @@ public class Track extends GuildCommand {
                         "Type the same command to enable/disable tracking.")
                 .addField("Syntax",
                         String.join("\n",
-                                "`track <server|war|territory>`",
+                                "`" + this.syntax() + "`",
                                 "First argument specifies the type of tracking."
                                 ),
                         false)
@@ -66,6 +66,14 @@ public class Track extends GuildCommand {
                                 "Without all argument, the bot sends messages only when main servers (WC and EU) start/close.",
                                 "With all argument, the bot sends messages when every server, but excluding WAR servers, starts/closes."
                                 ),
+                        false)
+                .addField("Guild Tracking Syntax",
+                        String.join("\n",
+                                "`track guild <create|delete>",
+                                "Guild tracking will send a message to channel when the bot detects new guild creation, " +
+                                        "or deletion.",
+                                "`<create|delete>` specifies when to send message."
+                        ),
                         false)
                 .addField("War Tracking Syntax",
                         String.join("\n",
@@ -102,7 +110,7 @@ public class Track extends GuildCommand {
     public void process(@NotNull MessageReceivedEvent event, @NotNull String[] args) {
         TrackType type = getCorrespondingTrackType(args);
         if (type == null) {
-            respond(event, this.longHelp());
+            respond(event, "Invalid arguments. Please refer to help.");
             return;
         }
 
@@ -195,6 +203,15 @@ public class Track extends GuildCommand {
                         return all ? TrackType.SERVER_START_ALL : TrackType.SERVER_START;
                     case "close":
                         return all ? TrackType.SERVER_CLOSE_ALL : TrackType.SERVER_CLOSE;
+                    default:
+                        return null;
+                }
+            case "guild":
+                switch (args[2].toLowerCase()) {
+                    case "create":
+                        return TrackType.GUILD_CREATE;
+                    case "delete":
+                        return TrackType.GUILD_DELETE;
                     default:
                         return null;
                 }

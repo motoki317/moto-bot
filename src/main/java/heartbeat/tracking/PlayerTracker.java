@@ -13,6 +13,7 @@ import db.model.warPlayer.WarPlayer;
 import db.model.warTrack.WarTrack;
 import db.model.world.World;
 import db.repository.*;
+import heartbeat.base.TaskBase;
 import log.Logger;
 import net.dv8tion.jda.api.entities.Activity;
 import net.dv8tion.jda.api.entities.TextChannel;
@@ -23,10 +24,11 @@ import utils.FormatUtils;
 
 import java.text.DateFormat;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-public class PlayerTracker {
+public class PlayerTracker implements TaskBase {
     private static final Pattern mainWorld = Pattern.compile("(WC|EU)\\d+");
     private static final Pattern warWorld = Pattern.compile("WAR\\d+");
 
@@ -58,6 +60,7 @@ public class PlayerTracker {
         this.warTrackRepository = bot.getDatabase().getWarTrackRepository();
     }
 
+    @Override
     public void run() {
         OnlinePlayers players = this.wynnApi.getOnlinePlayers();
         if (players == null) {
@@ -85,6 +88,18 @@ public class PlayerTracker {
         synchronized (this.dbLock) {
             this.handleWarTracking(players);
         }
+    }
+
+    private static final long PLAYER_TRACKER_DELAY = TimeUnit.SECONDS.toMillis(30);
+
+    @Override
+    public long getFirstDelay() {
+        return PLAYER_TRACKER_DELAY;
+    }
+
+    @Override
+    public long getInterval() {
+        return PLAYER_TRACKER_DELAY;
     }
 
     /**

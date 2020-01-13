@@ -9,6 +9,7 @@ import db.model.timezone.CustomTimeZone;
 import db.model.track.TrackChannel;
 import db.model.track.TrackType;
 import db.repository.*;
+import heartbeat.base.TaskBase;
 import log.Logger;
 import net.dv8tion.jda.api.entities.TextChannel;
 import net.dv8tion.jda.api.sharding.ShardManager;
@@ -18,9 +19,10 @@ import utils.FormatUtils;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-public class TerritoryTracker {
+public class TerritoryTracker implements TaskBase {
     private final Logger logger;
     private final Object dbLock;
     private final ShardManager manager;
@@ -43,6 +45,19 @@ public class TerritoryTracker {
         this.dateFormatRepository = bot.getDatabase().getDateFormatRepository();
     }
 
+    private static final long TERRITORY_TRACKER_DELAY = TimeUnit.SECONDS.toMillis(30);
+
+    @Override
+    public long getFirstDelay() {
+        return TERRITORY_TRACKER_DELAY;
+    }
+
+    @Override
+    public long getInterval() {
+        return TERRITORY_TRACKER_DELAY;
+    }
+
+    @Override
     public void run() {
         TerritoryList territoryList = this.wynnApi.getTerritoryList();
         if (territoryList == null) return;
@@ -145,8 +160,6 @@ public class TerritoryTracker {
     }
 
     private String formatAcquiredTime(TerritoryLog log, TrackChannel track) {
-        long guildId = track.getGuildId();
-        long channelId = track.getChannelId();
         DateFormat trackFormat = getDateFormat(track);
         CustomTimeZone timeZone = getTimeZone(track);
         trackFormat.setTimeZone(timeZone.getTimeZoneInstance());

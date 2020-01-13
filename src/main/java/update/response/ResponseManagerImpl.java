@@ -3,6 +3,7 @@ package update.response;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 
 public class ResponseManagerImpl implements ResponseManager {
@@ -13,6 +14,19 @@ public class ResponseManagerImpl implements ResponseManager {
     public ResponseManagerImpl() {
         this.waitingResponses = new HashMap<>();
         this.lock = new Object();
+
+        long delay = TimeUnit.MINUTES.toMillis(10);
+        ResponseManagerImpl manager = this;
+        new Timer().scheduleAtFixedRate(
+                new TimerTask() {
+                    @Override
+                    public void run() {
+                        manager.clearUp();
+                    }
+                },
+                delay,
+                delay
+        );
     }
 
     @Override
@@ -66,8 +80,7 @@ public class ResponseManagerImpl implements ResponseManager {
         }
     }
 
-    @Override
-    public void clearUp() {
+    private void clearUp() {
         long now = System.currentTimeMillis();
         Predicate<Response> removeIf = r -> (now - r.getUpdatedAt()) > r.getMaxLive();
 
