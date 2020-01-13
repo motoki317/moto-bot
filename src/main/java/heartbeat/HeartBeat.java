@@ -44,7 +44,7 @@ public class HeartBeat extends StoppableThread {
 
         addTask.accept(new PlayerTracker(bot, dbLock), "Player Tracker");
         addTask.accept(new TerritoryTracker(bot, dbLock), "Territory Tracker");
-        addTask.accept(new GuildTracker(dbLock, bot.getDatabase().getGuildRepository()), "Guild Tracker");
+        addTask.accept(new GuildTracker(bot), "Guild Tracker");
     }
 
     @Override

@@ -4,6 +4,7 @@ import api.wynn.structs.common.Request;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import javax.annotation.Nullable;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -66,6 +67,12 @@ public class WynnGuild {
 
     public Request getRequest() {
         return request;
+    }
+
+    @Nullable
+    public String getOwnerName() {
+        return this.members.stream().filter(m -> "OWNER".equals(m.rank))
+                .map(m -> m.name).findFirst().orElse(null);
     }
 
     private static class Member {
