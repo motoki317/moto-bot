@@ -34,7 +34,9 @@ CREATE TABLE IF NOT EXISTS `command_log` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS `guild` (
-    `name` VARCHAR(30) PRIMARY KEY NOT NULL,
+    # Guild name case sensitive by default
+    `name` VARCHAR(30) PRIMARY KEY NOT NULL
+        COLLATE `utf8mb4_bin`,
     `prefix` CHAR(3) NOT NULL,
     `created_at` DATETIME NOT NULL,
     KEY `prefix_idx` (`prefix`)
