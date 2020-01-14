@@ -51,7 +51,7 @@ public class GuildRepository extends Repository<Guild, GuildId> {
             if (res.next())
                 return res.getInt(1) > 0;
         } catch (SQLException e) {
-            e.printStackTrace();
+            this.logResponseException(e);
         }
         return false;
     }
@@ -70,7 +70,7 @@ public class GuildRepository extends Repository<Guild, GuildId> {
             if (res.next())
                 return res.getLong(1);
         } catch (SQLException e) {
-            e.printStackTrace();
+            this.logResponseException(e);
         }
         return -1;
     }
@@ -91,9 +91,34 @@ public class GuildRepository extends Repository<Guild, GuildId> {
             if (res.next())
                 return bind(res);
         } catch (SQLException e) {
-            e.printStackTrace();
+            this.logResponseException(e);
         }
         return null;
+    }
+
+    /**
+     * Find all matches with case insensitive and ignoring trailing spaces search.
+     * Should probably want to call {@link #findOne(GuildId)} first.
+     * @param guildName Guild name.
+     * @return List of guilds.
+     */
+    @Nullable
+    public List<Guild> findAllByCaseInsensitive(@NotNull String guildName) {
+        ResultSet res = this.executeQuery(
+                "SELECT * FROM `guild` WHERE `varchar_name` = ?",
+                guildName
+        );
+
+        if (res == null) {
+            return null;
+        }
+
+        try {
+            return bindAll(res);
+        } catch (SQLException e) {
+            this.logResponseException(e);
+            return null;
+        }
     }
 
     @Nullable
@@ -110,7 +135,7 @@ public class GuildRepository extends Repository<Guild, GuildId> {
         try {
             return bindAll(res);
         } catch (SQLException e) {
-            e.printStackTrace();
+            this.logResponseException(e);
             return null;
         }
     }

@@ -34,11 +34,13 @@ CREATE TABLE IF NOT EXISTS `command_log` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS `guild` (
-    # Guild name case sensitive by default
-    `name` VARCHAR(30) PRIMARY KEY NOT NULL
-        COLLATE `utf8mb4_bin`,
-    `prefix` CHAR(3) NOT NULL,
+    # Guild name case sensitive and distinguishes trailing spaces
+    `name` VARBINARY(30) PRIMARY KEY NOT NULL,
+    `prefix` VARCHAR(5) NOT NULL,
     `created_at` DATETIME NOT NULL,
+    # For case insensitive & ignoring trailing space search
+    `varchar_name` VARCHAR(30) AS (`name`) PERSISTENT,
+    KEY `varchar_name_idx` (`varchar_name`),
     KEY `prefix_idx` (`prefix`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
