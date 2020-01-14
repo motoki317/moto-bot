@@ -116,8 +116,8 @@ public class GuildTracker implements TaskBase {
             return;
         }
 
-        String messageBase1 = String.format("Guild `%s` created.",
-                guildName
+        String messageBase1 = String.format("Guild `%s` `[%s]` created.",
+                guildName, guild.getPrefix()
         );
         String ownerName = guild.getOwnerName();
         String messageBase2 = String.format("    Owner `%s`, `%s` members",
