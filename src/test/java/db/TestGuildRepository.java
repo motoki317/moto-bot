@@ -72,4 +72,52 @@ class TestGuildRepository {
         assert retrieved != null;
         assert "Fox".equals(retrieved.getPrefix());
     }
+
+    @Test
+    void testCaseSensitivity() {
+        clearTable();
+        GuildRepository repo = getRepository();
+        Guild g1 = new Guild("Kingdom Foxes", "Fox", new Date());
+        Guild g2 = new Guild("Kingdom foxes", "fox", new Date());
+
+        assert !repo.exists(g1);
+
+        assert repo.create(g1);
+        assert repo.create(g2);
+
+        assert repo.exists(g1);
+        assert repo.exists(g2);
+
+        assert repo.count() == 2;
+
+        Guild csSearch = repo.findOne(() -> "Kingdom foxes");
+        assert csSearch != null && "fox".equals(csSearch.getPrefix());
+
+        List<Guild> ciSearch = repo.findAllByCaseInsensitive("Kingdom Foxes");
+        assert ciSearch != null && ciSearch.size() == 2;
+    }
+
+    @Test
+    void testTrailingSpaces() {
+        clearTable();
+        GuildRepository repo = getRepository();
+        Guild g1 = new Guild("Kingdom Foxes", "Fox", new Date());
+        Guild g2 = new Guild("Kingdom Foxes ", "fox", new Date());
+
+        assert !repo.exists(g1);
+
+        assert repo.create(g1);
+        assert repo.create(g2);
+
+        assert repo.exists(g1);
+        assert repo.exists(g2);
+
+        assert repo.count() == 2;
+
+        Guild csSearch = repo.findOne(() -> "Kingdom Foxes ");
+        assert csSearch != null && "fox".equals(csSearch.getPrefix());
+
+        List<Guild> ciSearch = repo.findAllByCaseInsensitive("Kingdom Foxes");
+        assert ciSearch != null && ciSearch.size() == 2;
+    }
 }
