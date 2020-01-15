@@ -69,7 +69,11 @@ public class Properties {
         this.mainColor = getProperty("mainColor");
         this.githubImagesUrl = getProperty("githubImagesUrl");
         this.botServerInviteUrl = getProperty("botServerInviteUrl");
-        this.botInviteUrl = getProperty("botInviteUrl");
+        this.botInviteUrl = String.format(
+                "https://discordapp.com/oauth2/authorize?client_id=%s&scope=bot&permissions=93248",
+                // bot discord id is the same as bot client id
+                this.botDiscordId
+        );
         this.wynnIconUrl = getProperty("wynnIconUrl");
 
         this.logTimeZone = TimeZone.getTimeZone(getProperty("logTimeZone"));
