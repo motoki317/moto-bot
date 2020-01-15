@@ -151,10 +151,9 @@ public class WarTrackRepository extends Repository<WarTrack, WarTrackId> {
         );
     }
 
-    public boolean deleteAllOfWarLogId(int id) {
+    public boolean deleteAllOfLogEnded() {
         return this.execute(
-                "DELETE FROM `war_track` WHERE `war_log_id` = ?",
-                id
+                "DELETE `war_track` FROM `war_track` JOIN `war_log` ON `war_log`.`id` = `war_track`.`war_log_id` WHERE `war_log`.`log_ended` = 1"
         );
     }
 }

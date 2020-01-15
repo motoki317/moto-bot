@@ -167,6 +167,8 @@ public class PlayerTracker implements TaskBase {
                 endWarTrack(entry.getValue(), now);
             }
         }
+
+        this.warTrackRepository.deleteAllOfLogEnded();
     }
 
     private void startWarTrack(String serverName, List<String> players, Date now) {
@@ -276,12 +278,6 @@ public class PlayerTracker implements TaskBase {
             return;
         }
         sendWarTracking(warLog);
-        // Remove ended war tracking records from db
-        removeEndedWarTrack(warLog);
-    }
-
-    private void removeEndedWarTrack(WarLog warLog) {
-        this.warTrackRepository.deleteAllOfWarLogId(warLog.getId());
     }
 
     /**
