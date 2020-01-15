@@ -214,7 +214,8 @@ public class WynnApi {
             return player;
         } catch (StatusCodeException e) {
             if (e.getCode() == PLAYER_NOT_FOUND) {
-                // Player not found, do not log this exception
+                // Player not found, do not log this exception to discord
+                this.logger.debug(String.format("Wynn API: Player stats for %s returned 400 (expected not found)", playerName));
                 return null;
             }
             this.logger.logException("an exception occurred while requesting / parsing player statistics for " + playerName, e);
