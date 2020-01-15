@@ -5,6 +5,7 @@ import api.wynn.structs.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import log.Logger;
 import utils.HttpUtils;
+import utils.StatusCodeException;
 
 import javax.annotation.Nullable;
 import java.util.*;
@@ -186,6 +187,7 @@ public class WynnApi {
     }
 
     private static final String playerStatisticsUrl = "https://api.wynncraft.com/v2/player/%s/stats";
+    private static final int PLAYER_NOT_FOUND = 400;
 
     @Nullable
     public Player getPlayerStatistics(String playerName, boolean canWait, boolean forceReload) {
@@ -199,7 +201,7 @@ public class WynnApi {
             checkRequest(RESOURCE, canWait, this.logger);
 
             long start = System.nanoTime();
-            String body = HttpUtils.get(String.format(playerStatisticsUrl, playerName));
+            String body = HttpUtils.get(String.format(playerStatisticsUrl, playerName), PLAYER_NOT_FOUND);
             long end = System.nanoTime();
             if (body == null) throw new Exception("returned body was null");
             this.logger.debug(String.format("Wynn API: Requested player stats for %s, took %s ms.", playerName, (double) (end - start) / 1_000_000d));
@@ -210,6 +212,13 @@ public class WynnApi {
                     player
             ));
             return player;
+        } catch (StatusCodeException e) {
+            if (e.getCode() == PLAYER_NOT_FOUND) {
+                // Player not found, do not log this exception
+                return null;
+            }
+            this.logger.logException("an exception occurred while requesting / parsing player statistics for " + playerName, e);
+            return null;
         } catch (Exception e) {
             this.logger.logException("an exception occurred while requesting / parsing player statistics for " + playerName, e);
             return null;

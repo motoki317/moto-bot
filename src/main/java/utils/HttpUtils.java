@@ -22,14 +22,16 @@ public class HttpUtils {
     /**
      * Sends GET request to specified URL.
      * @param url URL string.
+     * @param expectedStatusCodes Status codes other than 2xx to expect the resource to return.
+     *                            In case one of these codes was returned, throws an {@link StatusCodeException}.
      * @return Response body. Null if something went wrong.
      * @throws IOException On connection issues & status code other than 2xx was returned.
      */
     @Nullable
-    public static String get(String url) throws IOException {
+    public static String get(String url, int... expectedStatusCodes) throws IOException {
         try (CloseableHttpClient client = HttpClients.createDefault()) {
             HttpGet request = new HttpGet(url);
-            return client.execute(request, defaultResponseHandler());
+            return client.execute(request, responseHandler(expectedStatusCodes));
         }
     }
 
@@ -47,6 +49,25 @@ public class HttpUtils {
             request.setEntity(new StringEntity(body, ContentType.APPLICATION_JSON));
             return client.execute(request, defaultResponseHandler());
         }
+    }
+
+    /**
+     * Returns a default response handler handling custom expected status codes.
+     * @param expectedStatusCodes Status codes other than 2xx to expect the resource to return.
+     * @return Body string.
+     */
+    private static ResponseHandler<String> responseHandler(int[] expectedStatusCodes) {
+        return response -> {
+            int status = response.getStatusLine().getStatusCode();
+            if (status >= 200 && status < 300) {
+                HttpEntity entity = response.getEntity();
+                return entity != null ? EntityUtils.toString(entity) : null;
+            } else if (contains(expectedStatusCodes, status)) {
+                throw new StatusCodeException("Received status code: " + status, status);
+            } else {
+                throw new ClientProtocolException("Unexpected response status: " + status);
+            }
+        };
     }
 
     private static ResponseHandler<String> defaultResponseHandler() {
@@ -75,5 +96,12 @@ public class HttpUtils {
         } catch (UnsupportedEncodingException e) {
             throw new RuntimeException(e.getCause());
         }
+    }
+
+    private static boolean contains(@NotNull int[] list, int target) {
+        for (int i : list) {
+            if (i == target) return true;
+        }
+        return false;
     }
 }
