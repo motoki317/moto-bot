@@ -1,6 +1,5 @@
 package api.wynn;
 
-import api.wynn.exception.RateLimitException;
 import api.wynn.structs.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import log.Logger;
@@ -8,13 +7,32 @@ import utils.HttpUtils;
 import utils.StatusCodeException;
 import utils.cache.DataCache;
 import utils.cache.HashMapDataCache;
+import utils.rateLimit.RateLimiter;
+import utils.rateLimit.WaitableRateLimiter;
 
 import javax.annotation.Nullable;
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
 
 public class WynnApi {
     private static final ObjectMapper mapper = new ObjectMapper();
+
+    // ----- Legacy (v1) Rate Limiter -----
+
+    // As of Jan 15th, 2020, rate limit for legacy (all routes) is 1200 requests / 20 minutes.
+    private static final int requestsPer20Minutes = 1200;
+    private static final RateLimiter rateLimiterLegacy;
+    private static final int maxRequestStack = 5;
+
+    static {
+        long waitBetweenRequests = TimeUnit.MINUTES.toMillis(20) / requestsPer20Minutes;
+        rateLimiterLegacy = new WaitableRateLimiter(
+                "Wynn Legacy", waitBetweenRequests, maxRequestStack
+        );
+    }
+
 
     private final Logger logger;
     private final TimeZone wynnTimeZone;
@@ -32,6 +50,8 @@ public class WynnApi {
      */
     @Nullable
     public OnlinePlayers getOnlinePlayers() {
+        rateLimiterLegacy.stackUpRequest();
+
         try {
             long start = System.nanoTime();
             String body = HttpUtils.get(onlinePlayersUrl);
@@ -54,6 +74,8 @@ public class WynnApi {
      */
     @Nullable
     public TerritoryList getTerritoryList() {
+        rateLimiterLegacy.stackUpRequest();
+
         try {
             long start = System.nanoTime();
             String body = HttpUtils.get(territoryListUrl);
@@ -76,6 +98,8 @@ public class WynnApi {
      */
     @Nullable
     public GuildList getGuildList() {
+        rateLimiterLegacy.stackUpRequest();
+
         try {
             long start = System.nanoTime();
             String body = HttpUtils.get(guildListUrl);
@@ -108,6 +132,8 @@ public class WynnApi {
             return guild;
         }
 
+        rateLimiterLegacy.stackUpRequest();
+
         try {
             long start = System.nanoTime();
             String body = HttpUtils.get(
@@ -138,44 +164,23 @@ public class WynnApi {
     // Known limits:
     // Player (wynncraft/player) : 750 per 30 minutes
 
-    private static final Map<String, Integer[]> rateLimits = new HashMap<>();
-    private static final Map<String, Long> minWaitMillis = new HashMap<>();
-    private static Map<String, Long> lastRequest = new HashMap<>();
-    private static Map<String, Integer> lastRequestStack = new HashMap<>();
-    private static final int maxRequestStack = 5;
+    private static final Map<String, RateLimiter> rateLimitersV2 = new HashMap<>();
 
     static {
+        Map<String, Integer[]> rateLimits = new HashMap<>();
         rateLimits.put("player", new Integer[]{750, 30});
 
-        for (Map.Entry<String, Integer[]> e : rateLimits.entrySet())
-            minWaitMillis.put(e.getKey(), TimeUnit.MINUTES.toMillis(e.getValue()[1]) / e.getValue()[0]);
+        for (Map.Entry<String, Integer[]> e : rateLimits.entrySet()) {
+            long waitBetweenRequests = TimeUnit.MINUTES.toMillis(e.getValue()[1]) / e.getValue()[0];
+            rateLimitersV2.put(e.getKey(), new WaitableRateLimiter(
+                    e.getKey() + " API", waitBetweenRequests, maxRequestStack
+            ));
 
-        System.out.println("Wynn API v2: min. wait millis : " + minWaitMillis.toString());
-    }
-
-    /**
-     * Manages rate limit. This method should always be called when requesting API.
-     * @throws RateLimitException When the bot tried to request API too quickly.
-     */
-    private static void checkRequest(String resource, boolean canWait, Logger logger) throws RateLimitException {
-        // If it is being requested too quickly
-        long timeSinceLast = Math.abs(System.currentTimeMillis() - lastRequest.getOrDefault(resource, 0L));
-        long hasToWait = minWaitMillis.get(resource) * lastRequestStack.getOrDefault(resource, 0);
-        if (timeSinceLast < hasToWait) {
-            // If the original call can wait, and if it exceeds max stack
-            long backoff = hasToWait - timeSinceLast;
-            if (canWait && lastRequestStack.getOrDefault(resource, 0) > maxRequestStack) {
-                throw new RateLimitException("The bot is trying to request Wynncraft API too quickly!" +
-                        " Please wait `" + (double) backoff / 1000d + "` seconds before trying again.", backoff, TimeUnit.MILLISECONDS);
-            } else {
-                lastRequestStack.put(resource, lastRequestStack.getOrDefault(resource, 0) + 1);
-                logger.debug(String.format("Wynn API: Forcing too many quick requests (%s requests in series, has to wait %s more ms)",
-                        lastRequestStack.get(resource), backoff));
-            }
-
-        } else {
-            lastRequest.put(resource, System.currentTimeMillis());
-            lastRequestStack.put(resource, 1);
+            System.out.println(
+                    String.format("Wynn API v2: for resource %s setting wait between requests to %s ms",
+                            e.getKey(), waitBetweenRequests
+                    )
+            );
         }
     }
 
@@ -195,7 +200,16 @@ public class WynnApi {
         }
 
         try {
-            checkRequest(RESOURCE, canWait, this.logger);
+            RateLimiter rateLimiter = rateLimitersV2.get(RESOURCE);
+            if (rateLimiter != null) {
+                if (canWait) {
+                    rateLimiter.checkRequest();
+                } else {
+                    rateLimiter.stackUpRequest();
+                }
+            } else {
+                return null;
+            }
 
             long start = System.nanoTime();
             String body = HttpUtils.get(String.format(playerStatisticsUrl, playerName), PLAYER_NOT_FOUND);

@@ -1,11 +1,11 @@
-package api.wynn.exception;
+package utils.rateLimit;
 
 import java.util.concurrent.TimeUnit;
 
 public class RateLimitException extends Exception {
     private long backoffMillis;
 
-    public RateLimitException(String message, long backoff, TimeUnit unit) {
+    RateLimitException(String message, long backoff, TimeUnit unit) {
         super(message);
         this.backoffMillis = unit.toMillis(backoff);
     }

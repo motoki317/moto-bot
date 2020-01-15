@@ -2,11 +2,14 @@ package api.mojang;
 
 import api.mojang.structs.NameToUUID;
 import api.mojang.structs.NullableUUID;
-import api.wynn.exception.RateLimitException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import log.Logger;
 import utils.HttpUtils;
 import utils.UUID;
+import utils.cache.DataCache;
+import utils.cache.HashMapDataCache;
+import utils.rateLimit.RateLimiter;
+import utils.rateLimit.WaitableRateLimiter;
 
 import javax.annotation.Nullable;
 import java.util.*;
@@ -22,64 +25,21 @@ public class MojangApi {
     // So 1 req / s at max
     private static final int rateLimitPerTenMinutes = 600;
     private static final int maxRequestStacks = 5;
-    private static final long minWaitMillis;
-
-    // Avoid requesting more than 600 reqs / 10 minutes by handling last request time?
-    private static long lastRequest;
-    private static int lastNumOfRequests;
+    private static final RateLimiter rateLimiter;
 
     static {
-        minWaitMillis = TimeUnit.MINUTES.toMillis(10) / rateLimitPerTenMinutes;
-        System.out.println("Setting Mojang API minimum request wait time to " + minWaitMillis + " ms. " +
+        long waitBetweenRequests = TimeUnit.MINUTES.toMillis(10) / rateLimitPerTenMinutes;
+        System.out.println("Setting Mojang API minimum request wait time to " + waitBetweenRequests + " ms. " +
                 "(i.e. " + rateLimitPerTenMinutes + " requests per 10 minutes)");
-    }
 
-    /**
-     * Manages rate limit. This method should always be called when requesting API.
-     * @throws RateLimitException When the bot tried to request API too quickly.
-     */
-    private static void checkRequest(boolean canWait, Logger logger) throws RateLimitException {
-        long timeSinceLast = Math.abs(System.currentTimeMillis() - lastRequest);
-        long hasToWait = minWaitMillis * lastNumOfRequests;
-
-        if (timeSinceLast < hasToWait) {
-            long backoff = hasToWait - timeSinceLast;
-            if (canWait && lastNumOfRequests > maxRequestStacks) {
-                throw new RateLimitException("The bot is trying to request Mojang API too quickly!" +
-                        " Please wait `" + (double) backoff / 1000d + "` seconds before trying again.", backoff, TimeUnit.MILLISECONDS);
-            } else {
-                lastNumOfRequests++;
-                logger.debug(String.format("Mojang API: Forcing too many quick requests (%s requests in series, has to wait %s more ms)",
-                        lastNumOfRequests, backoff));
-
-            }
-        } else {
-            lastRequest = System.currentTimeMillis();
-            lastNumOfRequests = 1;
-        }
+        rateLimiter = new WaitableRateLimiter("Mojang", waitBetweenRequests, maxRequestStacks);
     }
 
     // ----- Cache system -----
 
-    static {
-        new Timer().scheduleAtFixedRate(
-                new TimerTask() {
-                    @Override
-                    public void run() {
-                        updateCache();
-                    }
-                },
-                TimeUnit.MINUTES.toMillis(10),
-                TimeUnit.MINUTES.toMillis(10)
-        );
-    }
-
-    private static void updateCache() {
-        long now = System.currentTimeMillis();
-        nameToUUIDCache.entrySet().removeIf(e -> (now - e.getValue().getKey()) > TimeUnit.MINUTES.toMillis(10));
-    }
-
-    private static final Map<String, Map.Entry<Long, NullableUUID>> nameToUUIDCache = new HashMap<>();
+    private static final DataCache<String, NullableUUID> nameToUUIDCache = new HashMapDataCache<>(
+            100, TimeUnit.MINUTES.toMillis(10), TimeUnit.MINUTES.toMillis(10)
+    );
 
     // ----- API instance -----
 
@@ -94,8 +54,9 @@ public class MojangApi {
 
     @Nullable
     private static NullableUUID getUUIDUsingCache(String name) {
-        if (nameToUUIDCache.containsKey(name)) {
-            return nameToUUIDCache.get(name).getValue();
+        NullableUUID uuid;
+        if ((uuid = nameToUUIDCache.get(name)) != null) {
+            return uuid;
         }
         return null;
     }
@@ -112,7 +73,7 @@ public class MojangApi {
         }
 
         try {
-            checkRequest(false, this.logger);
+            rateLimiter.checkRequest();
 
             long start = System.nanoTime();
             String postBody = String.format(
@@ -141,8 +102,7 @@ public class MojangApi {
             }
 
             // store cache
-            long now = System.currentTimeMillis();
-            ret.forEach((player, uuid) -> nameToUUIDCache.put(player, new AbstractMap.SimpleEntry<>(now, uuid)));
+            ret.forEach(nameToUUIDCache::add);
 
             return ret;
         } catch (Exception e) {

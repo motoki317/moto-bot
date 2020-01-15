@@ -32,6 +32,7 @@ class TestHashMapDataCache {
             Thread.sleep(75);
         } catch (InterruptedException e) {
             e.printStackTrace();
+            assert false;
         }
 
         assert cache.get("k1") == null;
