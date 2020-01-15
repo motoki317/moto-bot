@@ -1,5 +1,7 @@
 package utils.cache;
 
+import org.jetbrains.annotations.NotNull;
+
 import javax.annotation.Nullable;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -43,7 +45,7 @@ public class HashMapDataCache<K, T> implements DataCache<K, T> {
         }, clearInterval, clearInterval);
     }
 
-    public void add(K key, T value) {
+    public void add(K key, @NotNull T value) {
         boolean clearUp = false;
 
         synchronized (this.dataLock) {
