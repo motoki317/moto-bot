@@ -179,7 +179,7 @@ CREATE TRIGGER IF NOT EXISTS `guild_territory_logger`
 
         IF @war_log_id IS NOT NULL THEN
             # if the last war log for that guild is within 3 minutes
-            IF ((UNIX_TIMESTAMP(NOW()) - UNIX_TIMESTAMP((SELECT `last_up` FROM `war_log` WHERE `id` = @war_log_id)))) <= 180 THEN
+            IF ((UNIX_TIMESTAMP(NEW.acquired) - UNIX_TIMESTAMP((SELECT `last_up` FROM `war_log` WHERE `id` = @war_log_id)))) <= 180 THEN
                 UPDATE `guild_war_log` SET `territory_log_id` = NEW.id WHERE guild_name = NEW.new_guild_name AND `war_log_id` = @war_log_id;
                 UPDATE `war_log` SET `ended` = 1 WHERE `id` = @war_log_id;
             ELSE

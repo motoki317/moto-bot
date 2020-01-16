@@ -7,6 +7,7 @@ import db.repository.base.Repository;
 import log.Logger;
 import org.jetbrains.annotations.NotNull;
 
+import javax.annotation.CheckReturnValue;
 import javax.annotation.Nullable;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -113,6 +114,7 @@ public class WarTrackRepository extends Repository<WarTrack, WarTrackId> {
         return null;
     }
 
+    @CheckReturnValue
     @Nullable
     public List<WarTrack> findAllOfWarLogId(int id) {
         ResultSet res = this.executeQuery(
@@ -151,6 +153,7 @@ public class WarTrackRepository extends Repository<WarTrack, WarTrackId> {
         );
     }
 
+    @CheckReturnValue
     public boolean deleteAllOfLogEnded() {
         return this.execute(
                 "DELETE `war_track` FROM `war_track` JOIN `war_log` ON `war_log`.`id` = `war_track`.`war_log_id` WHERE `war_log`.`log_ended` = 1"

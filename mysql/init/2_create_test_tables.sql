@@ -34,9 +34,13 @@ CREATE TABLE IF NOT EXISTS `command_log` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS `guild` (
-    `name` VARCHAR(30) PRIMARY KEY NOT NULL,
-    `prefix` CHAR(3) NOT NULL,
+    # Guild name case sensitive and distinguishes trailing spaces
+    `name` VARBINARY(30) PRIMARY KEY NOT NULL,
+    `prefix` VARCHAR(5) NOT NULL,
     `created_at` DATETIME NOT NULL,
+    # For case insensitive & ignoring trailing space search
+    `varchar_name` VARCHAR(30) AS (`name`) PERSISTENT,
+    KEY `varchar_name_idx` (`varchar_name`),
     KEY `prefix_idx` (`prefix`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
@@ -117,6 +121,8 @@ CREATE TABLE IF NOT EXISTS `guild_war_log` (
     `war_log_id` INT NULL,
     `territory_log_id` INT NULL,
     UNIQUE KEY `guild_idx` (`guild_name`, `id` DESC),
+    UNIQUE KEY `guild_war_log_idx` (`guild_name`, `war_log_id`),
+    UNIQUE KEY `guild_war_territory_log_idx` (`guild_name`, `war_log_id`, `territory_log_id`),
     UNIQUE KEY `war_log_idx` (`war_log_id`),
     UNIQUE KEY `territory_log_idx` (`territory_log_id`, `guild_name`),
     CONSTRAINT `fk_guild_war_log_id` FOREIGN KEY (`war_log_id`) REFERENCES `war_log` (`id`)
@@ -173,7 +179,7 @@ CREATE TRIGGER IF NOT EXISTS `guild_territory_logger`
 
         IF @war_log_id IS NOT NULL THEN
             # if the last war log for that guild is within 3 minutes
-            IF ((UNIX_TIMESTAMP(NOW()) - UNIX_TIMESTAMP((SELECT `last_up` FROM `war_log` WHERE `id` = @war_log_id)))) <= 180 THEN
+            IF ((UNIX_TIMESTAMP(NEW.acquired) - UNIX_TIMESTAMP((SELECT `last_up` FROM `war_log` WHERE `id` = @war_log_id)))) <= 180 THEN
                 UPDATE `guild_war_log` SET `territory_log_id` = NEW.id WHERE guild_name = NEW.new_guild_name AND `war_log_id` = @war_log_id;
                 UPDATE `war_log` SET `ended` = 1 WHERE `id` = @war_log_id;
             ELSE
@@ -207,7 +213,7 @@ DELIMITER ;
 
 # User defined timezones for guild / channel / user
 CREATE TABLE IF NOT EXISTS `timezone` (
-    `discord_id` BIGINT NOT NULL,
+    `discord_id` BIGINT PRIMARY KEY NOT NULL,
     `timezone` VARCHAR(50) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 

@@ -168,7 +168,10 @@ public class PlayerTracker implements TaskBase {
             }
         }
 
-        this.warTrackRepository.deleteAllOfLogEnded();
+        boolean res = this.warTrackRepository.deleteAllOfLogEnded();
+        if (!res) {
+            this.logger.log(0, "Player Tracker: failed to delete all war_track records of log ended");
+        }
     }
 
     private void startWarTrack(String serverName, List<String> players, Date now) {
@@ -193,7 +196,7 @@ public class PlayerTracker implements TaskBase {
         WarLog warLog = new WarLog(serverName, guildName, now, now, false, false, warPlayers);
 
         int id = this.warLogRepository.createAndGetLastInsertId(warLog);
-        if (id != 0) {
+        if (id == 0) {
             return;
         }
         warLog.setId(id);

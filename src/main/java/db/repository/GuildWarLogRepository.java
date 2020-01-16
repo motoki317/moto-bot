@@ -114,6 +114,7 @@ public class GuildWarLogRepository extends Repository<GuildWarLog, GuildWarLogId
 
     /**
      * Finds war logs for a guild, with limit and offset.
+     * Ordered by descending id.
      * @param guildName Guild name.
      * @param limit Select records limit.
      * @param offset Select records offset.

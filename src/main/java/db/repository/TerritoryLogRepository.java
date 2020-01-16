@@ -121,7 +121,7 @@ public class TerritoryLogRepository extends Repository<TerritoryLog, TerritoryLo
     @Override
     public TerritoryLog findOne(@NotNull TerritoryLogId territoryLogId) {
         ResultSet res = this.executeQuery(
-                "SELECT COUNT(*) FROM `territory_log` WHERE `id` = ?",
+                "SELECT * FROM `territory_log` WHERE `id` = ?",
                 territoryLogId.getId()
         );
 
