@@ -49,7 +49,7 @@ public class TerritoryTracker implements TaskBase {
 
     @Override
     public long getFirstDelay() {
-        return TERRITORY_TRACKER_DELAY;
+        return TimeUnit.SECONDS.toMillis(1);
     }
 
     @Override

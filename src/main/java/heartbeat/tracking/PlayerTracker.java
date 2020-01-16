@@ -94,7 +94,7 @@ public class PlayerTracker implements TaskBase {
 
     @Override
     public long getFirstDelay() {
-        return PLAYER_TRACKER_DELAY;
+        return TimeUnit.SECONDS.toMillis(1);
     }
 
     @Override

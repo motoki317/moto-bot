@@ -2,6 +2,7 @@ package app;
 
 import db.Database;
 import db.DatabaseImpl;
+import db.model.world.World;
 import heartbeat.HeartBeat;
 import listeners.MessageListener;
 import listeners.UpdaterListener;
@@ -16,9 +17,11 @@ import net.dv8tion.jda.api.utils.SessionControllerAdapter;
 import update.UpdaterFactory;
 import update.reaction.ReactionManager;
 import update.response.ResponseManager;
+import utils.FormatUtils;
 import utils.StoppableThread;
 
 import javax.security.auth.login.LoginException;
+import java.util.Date;
 import java.util.List;
 
 public class App implements Runnable, Bot {
@@ -122,7 +125,7 @@ public class App implements Runnable, Bot {
         this.heartBeat = new HeartBeat(this);
         this.heartBeat.setName("moto-bot heartbeat");
 
-        this.logger.log(0, "Bot is ready!");
+        this.sendReadyMessage();
 
         this.addEventListeners();
     }
@@ -147,6 +150,23 @@ public class App implements Runnable, Bot {
             this.logger.debug("JDA Sharding: Shard ID " + i + " is loaded!");
         }
         this.logger.log(-1, "JDA Sharding: All shards loaded!");
+    }
+
+    private void sendReadyMessage() {
+        List<World> worlds = this.database.getWorldRepository().findAll();
+        String downtime;
+        if (worlds == null || worlds.size() == 0) {
+            downtime = "(Failed to retrieve downtime)";
+        } else {
+            Date lastPlayerTracker = worlds.get(0).getUpdatedAt();
+            long seconds = (new Date().getTime() - lastPlayerTracker.getTime()) / 1000L;
+            downtime = FormatUtils.formatReadableTime(seconds, false, "s");
+        }
+        this.logger.log(0, String.format(
+                "Bot is ready!\n" +
+                        "Downtime: %s",
+                downtime
+        ));
     }
 
     private void addEventListeners() {
