@@ -13,6 +13,7 @@ import db.repository.GuildRepository;
 import db.repository.TimeZoneRepository;
 import db.repository.TrackChannelRepository;
 import heartbeat.base.TaskBase;
+import log.Logger;
 import net.dv8tion.jda.api.entities.TextChannel;
 import net.dv8tion.jda.api.sharding.ShardManager;
 
@@ -25,6 +26,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 public class GuildTracker implements TaskBase {
+    private final Logger logger;
     private final ShardManager manager;
     private final WynnApi wynnApi;
     private final GuildRepository guildRepository;
@@ -33,6 +35,7 @@ public class GuildTracker implements TaskBase {
     private final TimeZoneRepository timeZoneRepository;
 
     public GuildTracker(Bot bot) {
+        this.logger = bot.getLogger();
         this.manager = bot.getManager();
         this.wynnApi = new WynnApi(bot.getLogger(), bot.getProperties().wynnTimeZone);
         this.guildRepository = bot.getDatabase().getGuildRepository();
@@ -158,7 +161,12 @@ public class GuildTracker implements TaskBase {
      * @param guildName Guild name.
      */
     private void handleGuildDeletion(String guildName) {
-        boolean res = this.guildRepository.delete(() -> guildName);
+        Guild guild = this.guildRepository.findOne(() -> guildName);
+        if (guild == null) {
+            this.logger.log(0, "Guild Tracker: Failed to retrieve guild from db");
+            return;
+        }
+        boolean res = this.guildRepository.delete(guild);
         if (!res) {
             return;
         }
@@ -168,7 +176,7 @@ public class GuildTracker implements TaskBase {
             return;
         }
 
-        String message = String.format("Guild `%s` deleted.", guildName);
+        String message = String.format("Guild `%s` `[%s]` deleted.", guildName, guild.getPrefix());
         for (TrackChannel trackChannel : trackChannels) {
             TextChannel channel = this.manager.getTextChannelById(trackChannel.getChannelId());
             if (channel == null) {
