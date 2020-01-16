@@ -7,7 +7,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 
 // Represents bot's response to user's response (input).
-class Response implements UserResponseListener<MessageReceivedEvent> {
+public class Response implements UserResponseListener<MessageReceivedEvent> {
     private final long channelId;
     private final long userId;
 
@@ -18,7 +18,7 @@ class Response implements UserResponseListener<MessageReceivedEvent> {
     private long updatedAt;
     private long maxLive;
 
-    Response(long channelId,
+    public Response(long channelId,
                     long userId,
                     Predicate<MessageReceivedEvent> onResponse) {
         this.channelId = channelId;

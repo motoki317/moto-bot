@@ -3,6 +3,7 @@ package commands.guild;
 import app.Bot;
 import commands.base.GenericCommand;
 import db.model.dateFormat.CustomDateFormat;
+import db.model.guild.Guild;
 import db.model.guildWarLog.GuildWarLog;
 import db.model.territoryLog.TerritoryLog;
 import db.model.timezone.CustomTimeZone;
@@ -14,8 +15,11 @@ import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import update.multipage.MultipageHandler;
 import update.reaction.ReactionManager;
+import update.response.ResponseManager;
+import update.selection.SelectionHandler;
 import utils.FormatUtils;
 
 import java.math.BigDecimal;
@@ -27,20 +31,24 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class GuildWarStats extends GenericCommand {
+    private final ResponseManager responseManager;
     private final ReactionManager reactionManager;
     private final TimeZoneRepository timeZoneRepository;
     private final DateFormatRepository dateFormatRepository;
     private final GuildWarLogRepository guildWarLogRepository;
     private final WarLogRepository warLogRepository;
     private final TerritoryLogRepository territoryLogRepository;
+    private final GuildRepository guildRepository;
 
     public GuildWarStats(Bot bot) {
+        this.responseManager = bot.getResponseManager();
         this.reactionManager = bot.getReactionManager();
         this.timeZoneRepository = bot.getDatabase().getTimeZoneRepository();
         this.dateFormatRepository = bot.getDatabase().getDateFormatRepository();
         this.guildWarLogRepository = bot.getDatabase().getGuildWarLogRepository();
         this.warLogRepository = bot.getDatabase().getWarLogRepository();
         this.territoryLogRepository = bot.getDatabase().getTerritoryLogRepository();
+        this.guildRepository = bot.getDatabase().getGuildRepository();
     }
 
     @NotNull
@@ -81,15 +89,95 @@ public class GuildWarStats extends GenericCommand {
             return;
         }
 
-        String guildName = String.join(" ", Arrays.copyOfRange(args, 2, args.length));
-        // TODO: from guild prefix (e.g. "Fox")
+        String specifiedGuildName = String.join(" ", Arrays.copyOfRange(args, 2, args.length));
+        List<Guild> guilds = findGuilds(specifiedGuildName);
+        if (guilds == null) {
+            respondError(event, "Something went wrong while retrieving guilds...");
+            return;
+        }
+
+        String guildName;
+        String guildPrefix;
+        if (guilds.size() == 0) {
+            // Unknown guild, but pass it on as prefix unknown in case the bot haven't loaded the guild data yet
+            guildName = specifiedGuildName;
+            guildPrefix = null;
+        } else if (guilds.size() == 1) {
+            guildName = guilds.get(0).getName();
+            guildPrefix = guilds.get(0).getPrefix();
+        } else {
+            // Choose a guild
+            List<String> guildNames = guilds.stream().map(Guild::getName).collect(Collectors.toList());
+            Map<String, String> guildPrefixes = guilds.stream().collect(Collectors.toMap(Guild::getName, Guild::getPrefix));
+            SelectionHandler handler = new SelectionHandler(
+                    event.getChannel().getIdLong(),
+                    event.getAuthor().getIdLong(),
+                    guildNames,
+                    name -> handleChosenGuild(event, name, guildPrefixes.get(name))
+            );
+            handler.sendMessage(event.getTextChannel(), event.getAuthor(), () -> this.responseManager.addEventListener(handler));
+            return;
+        }
+
+        handleChosenGuild(event, guildName, guildPrefix);
+    }
+
+    /**
+     * Finds guild with specified name (both full name or prefix was possibly specified).
+     * @param specified Specified name.
+     * @return List of found guilds. null if something went wrong.
+     */
+    @Nullable
+    private List<Guild> findGuilds(@NotNull String specified) {
+        // Case sensitive full name search
+        List<Guild> ret;
+        Guild guild = this.guildRepository.findOne(() -> specified);
+        if (guild != null) {
+            ret = new ArrayList<>();
+            ret.add(guild);
+            return ret;
+        }
+
+        // Case insensitive full name search
+        ret = this.guildRepository.findAllCaseInsensitive(specified);
+        if (ret == null) {
+            return null;
+        }
+        if (ret.size() > 0) {
+            return ret;
+        }
+
+        // Prefix search
+        if (specified.length() == 3) {
+            // Case sensitive prefix search
+            ret = this.guildRepository.findAllByPrefix(specified);
+            if (ret == null) {
+                return null;
+            }
+            if (ret.size() > 0) {
+                return ret;
+            }
+
+            // Case insensitive prefix search
+            ret = this.guildRepository.findAllByPrefixCaseInsensitive(specified);
+            if (ret == null) {
+                return null;
+            }
+            if (ret.size() > 0) {
+                return ret;
+            }
+        }
+
+        return ret;
+    }
+
+    private void handleChosenGuild(MessageReceivedEvent event, @NotNull String guildName, @Nullable String guildPrefix) {
         int count = this.guildWarLogRepository.countGuildLogs(guildName);
-        // as in if (count == -1)
         if (count < 0) {
             respondError(event, "Something went wrong while retrieving data...");
             return;
         } else if (count == 0) {
-            respond(event, String.format("Specified guild (%s) does not seem to have any logged war activities...", guildName));
+            respond(event, String.format("Specified guild `%s` does not seem to have any logged war activities...", guildName));
             return;
         }
 
@@ -97,14 +185,14 @@ public class GuildWarStats extends GenericCommand {
         CustomDateFormat dateFormat = this.dateFormatRepository.getDateFormat(event);
 
         if (count <= LOGS_PER_PAGE) {
-            respond(event, format(guildName, 0, timeZone, dateFormat));
+            respond(event, format(guildName, guildPrefix, 0, timeZone, dateFormat));
             return;
         }
 
-        respond(event, format(guildName, 0, timeZone, dateFormat), success -> {
+        respond(event, format(guildName, guildPrefix, 0, timeZone, dateFormat), success -> {
             MultipageHandler handler = new MultipageHandler(
                     success,
-                    pageSupplier(guildName, timeZone, dateFormat),
+                    pageSupplier(guildName, guildPrefix, timeZone, dateFormat),
                     () -> maxPage(guildName)
             );
             this.reactionManager.addEventListener(handler);
@@ -116,11 +204,11 @@ public class GuildWarStats extends GenericCommand {
         return count > 0 ? (count - 1) / LOGS_PER_PAGE : -1;
     }
 
-    private Function<Integer, Message> pageSupplier(String guildName, CustomTimeZone timeZone, CustomDateFormat dateFormat) {
-        return page -> new MessageBuilder(format(guildName, page, timeZone, dateFormat)).build();
+    private Function<Integer, Message> pageSupplier(String guildName, @Nullable String guildPrefix, CustomTimeZone timeZone, CustomDateFormat dateFormat) {
+        return page -> new MessageBuilder(format(guildName, guildPrefix, page, timeZone, dateFormat)).build();
     }
 
-    private String format(String guildName, int page, CustomTimeZone timeZone, CustomDateFormat dateFormat) {
+    private String format(String guildName, @Nullable String guildPrefix, int page, CustomTimeZone timeZone, CustomDateFormat dateFormat) {
         // Retrieve data
         List<GuildWarLog> logs = this.guildWarLogRepository.findGuildLogs(guildName, LOGS_PER_PAGE, page * LOGS_PER_PAGE);
         int maxPage = this.maxPage(guildName);
@@ -156,7 +244,7 @@ public class GuildWarStats extends GenericCommand {
         ret.add("```ml");
         ret.add("---- War History ----");
         ret.add("");
-        ret.add(guildName);
+        ret.add(guildName + (guildPrefix != null ? String.format(" [%s]", guildPrefix) : ""));
         ret.add("");
 
         // e.g. "95.0"
