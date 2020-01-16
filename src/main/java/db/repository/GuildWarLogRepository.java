@@ -10,7 +10,9 @@ import org.jetbrains.annotations.NotNull;
 import javax.annotation.Nullable;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class GuildWarLogRepository extends Repository<GuildWarLog, GuildWarLogId> {
     public GuildWarLogRepository(ConnectionPool db, Logger logger) {
@@ -186,6 +188,38 @@ public class GuildWarLogRepository extends Repository<GuildWarLog, GuildWarLogId
             this.logResponseException(e);
         }
         return -1;
+    }
+
+    /**
+     * Finds all logs of the war log ID list.
+     * @param warLogIds List of war_log_id.
+     * @return List of logs. null if something went wrong.
+     */
+    @Nullable
+    public List<GuildWarLog> findAllOfWarLogIdIn(List<Integer> warLogIds) {
+        if (warLogIds.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        String placeHolder = String.format("(%s)",
+                warLogIds.stream().map(i -> "?").collect(Collectors.joining(", "))
+        );
+
+        ResultSet res = this.executeQuery(
+                "SELECT * FROM `guild_war_log` WHERE `war_log_id` IN " + placeHolder,
+                warLogIds.toArray()
+        );
+
+        if (res == null) {
+            return null;
+        }
+
+        try {
+            return bindAll(res);
+        } catch (SQLException e) {
+            this.logResponseException(e);
+            return null;
+        }
     }
 
     @Nullable

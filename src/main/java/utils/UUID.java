@@ -74,7 +74,7 @@ public class UUID {
      * @param possibleUUID Possible UUID string. Can be either with hyphens or not.
      * @return True if it was a valid UUID.
      */
-    private static boolean isUUID(@NotNull String possibleUUID) {
+    public static boolean isUUID(@NotNull String possibleUUID) {
         return isTrimmedUUID(possibleUUID) || isUUIDWithHyphens(possibleUUID);
     }
 

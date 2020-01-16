@@ -97,9 +97,12 @@ CREATE TABLE IF NOT EXISTS `war_player` (
     # or that guild acquired a territory (= `ended` flag in `war_log` table)
     `exited` BOOLEAN NOT NULL,
     PRIMARY KEY (`war_log_id`, `player_name`),
+    KEY `name_id_idx` (`player_name`, `war_log_id`),
+    KEY `uuid_id_idx` (`player_uuid`, `war_log_id`),
+    KEY `uuid_exited_id_idx` (`player_uuid`, `exited`, `war_log_id`),
     CONSTRAINT `fk_war_log_id` FOREIGN KEY (`war_log_id`) REFERENCES `war_log` (`id`)
         ON DELETE CASCADE
-        ON UPDATE RESTRICT
+        ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 # Keep track of messages sent to discord for war tracking
@@ -110,7 +113,7 @@ CREATE TABLE IF NOT EXISTS `war_track` (
     PRIMARY KEY (`war_log_id`, `discord_channel_id`),
     CONSTRAINT `fk_war_track_log_id` FOREIGN KEY (`war_log_id`) REFERENCES `war_log` (`id`)
         ON DELETE CASCADE
-        ON UPDATE RESTRICT
+        ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 # A table that aggregates `war_log` / `territory_log` for a guild.
@@ -121,16 +124,15 @@ CREATE TABLE IF NOT EXISTS `guild_war_log` (
     `war_log_id` INT NULL,
     `territory_log_id` INT NULL,
     UNIQUE KEY `guild_idx` (`guild_name`, `id` DESC),
-    UNIQUE KEY `guild_war_log_idx` (`guild_name`, `war_log_id`),
     UNIQUE KEY `guild_war_territory_log_idx` (`guild_name`, `war_log_id`, `territory_log_id`),
-    UNIQUE KEY `war_log_idx` (`war_log_id`),
+    UNIQUE KEY `war_territory_log_idx` (`war_log_id`, `territory_log_id`),
     UNIQUE KEY `territory_log_idx` (`territory_log_id`, `guild_name`),
     CONSTRAINT `fk_guild_war_log_id` FOREIGN KEY (`war_log_id`) REFERENCES `war_log` (`id`)
         ON DELETE CASCADE
-        ON UPDATE RESTRICT,
+        ON UPDATE CASCADE,
     CONSTRAINT `fk_guild_territory_log_id` FOREIGN KEY (`territory_log_id`) REFERENCES `territory_log` (`id`)
         ON DELETE CASCADE
-        ON UPDATE RESTRICT
+        ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 DROP FUNCTION IF EXISTS `count_guild_territories`;

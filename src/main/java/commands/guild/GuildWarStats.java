@@ -369,6 +369,7 @@ public class GuildWarStats extends GenericCommand {
     }
 
     private static String formatPlayers(List<WarPlayer> players) {
-        return players.stream().map(WarPlayer::getPlayerName).collect(Collectors.joining(", "));
+        return players.stream().map(p -> p.hasExited() ? "(" + p.getPlayerName() + ")" : p.getPlayerName()).
+                collect(Collectors.joining(", "));
     }
 }

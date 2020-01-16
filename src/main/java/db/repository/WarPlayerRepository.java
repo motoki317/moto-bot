@@ -6,6 +6,7 @@ import db.model.warPlayer.WarPlayerId;
 import db.repository.base.Repository;
 import log.Logger;
 import org.jetbrains.annotations.NotNull;
+import utils.UUID;
 
 import javax.annotation.Nullable;
 import java.sql.Connection;
@@ -129,6 +130,101 @@ public class WarPlayerRepository extends Repository<WarPlayer, WarPlayerId> {
             this.logResponseException(e);
         }
         return null;
+    }
+
+    /**
+     * Returns the count this player has participated in the war.
+     * @param playerUUID UUID to search with.
+     * @return Count. -1 if something went wrong.
+     */
+    public int countOfPlayer(UUID playerUUID) {
+        ResultSet res = this.executeQuery(
+                "SELECT COUNT(*) FROM `war_player` WHERE `player_uuid` = ?",
+                playerUUID.toStringWithHyphens()
+        );
+
+        if (res == null) {
+            return -1;
+        }
+
+        try {
+            if (res.next())
+                return res.getInt(1);
+        } catch (SQLException e) {
+            this.logResponseException(e);
+        }
+        return -1;
+    }
+
+    /**
+     * Gets count of success wars by this player.
+     * @param playerUUID Player UUID.
+     * @return Count of success wars. -1 if something went wrong.
+     */
+    public int countSuccessWars(UUID playerUUID) {
+        ResultSet res = this.executeQuery(
+                "SELECT COUNT(*) FROM `war_player` p JOIN `guild_war_log` gwl ON p.player_uuid = ?" +
+                        " AND p.war_log_id = gwl.war_log_id WHERE gwl.territory_log_id IS NOT NULL",
+                playerUUID.toStringWithHyphens()
+        );
+
+        if (res == null) {
+            return -1;
+        }
+
+        try {
+            if (res.next())
+                return res.getInt(1);
+        } catch (SQLException e) {
+            this.logResponseException(e);
+        }
+        return -1;
+    }
+
+    public int countSurvivedWars(UUID playerUUID) {
+        ResultSet res = this.executeQuery(
+                "SELECT COUNT(*) FROM `war_player` p JOIN `guild_war_log` gwl ON p.player_uuid = ?" +
+                        " AND p.exited = 0 AND p.war_log_id = gwl.war_log_id WHERE gwl.territory_log_id IS NOT NULL",
+                playerUUID.toStringWithHyphens()
+        );
+
+        if (res == null) {
+            return -1;
+        }
+
+        try {
+            if (res.next())
+                return res.getInt(1);
+        } catch (SQLException e) {
+            this.logResponseException(e);
+        }
+        return -1;
+    }
+
+    /**
+     * Retrieves player logs in this table by descending order of war_log_id.
+     * @param playerUUID Player UUID.
+     * @param limit Retrieval limit.
+     * @param offset Retrieval offset.
+     * @return List of logs. null if something went wrong.
+     */
+    @Nullable
+    public List<WarPlayer> getLogsOfPlayer(UUID playerUUID, int limit, int offset) {
+        ResultSet res = this.executeQuery(
+                "SELECT * FROM `war_player` WHERE `player_uuid` = ? ORDER BY `war_log_id` DESC LIMIT " + limit + " OFFSET " + offset,
+                playerUUID.toStringWithHyphens()
+        );
+
+        if (res == null) {
+            return null;
+        }
+
+        try {
+            return bindAll(res);
+        } catch (SQLException e) {
+            this.logResponseException(e);
+            return null;
+        }
     }
 
     @Override
