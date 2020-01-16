@@ -13,6 +13,7 @@ import java.sql.SQLException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class GuildRepository extends Repository<Guild, GuildId> {
     private static final DateFormat dbFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
@@ -103,10 +104,47 @@ public class GuildRepository extends Repository<Guild, GuildId> {
      * @return List of guilds.
      */
     @Nullable
-    public List<Guild> findAllByCaseInsensitive(@NotNull String guildName) {
+    public List<Guild> findAllCaseInsensitive(@NotNull String guildName) {
         ResultSet res = this.executeQuery(
                 "SELECT * FROM `guild` WHERE `varchar_name` = ?",
                 guildName
+        );
+
+        if (res == null) {
+            return null;
+        }
+
+        try {
+            return bindAll(res);
+        } catch (SQLException e) {
+            this.logResponseException(e);
+            return null;
+        }
+    }
+
+    /**
+     * Find all guilds having the specified prefix. Case sensitive.
+     * @param prefix Prefix.
+     * @return List of guilds.
+     */
+    @Nullable
+    public List<Guild> findAllByPrefix(@NotNull String prefix) {
+        List<Guild> ciSearch = findAllByPrefixCaseInsensitive(prefix);
+        if (ciSearch == null) {
+            return null;
+        }
+        return ciSearch.stream().filter(g -> prefix.equals(g.getPrefix())).collect(Collectors.toList());
+    }
+
+    /**
+     * Find all guilds having the specified prefix. Case <b>insensitive</b>.
+     * @param prefix Prefix.
+     * @return List of guilds.
+     */
+    public List<Guild> findAllByPrefixCaseInsensitive(@NotNull String prefix) {
+        ResultSet res = this.executeQuery(
+                "SELECT * FROM `guild` WHERE `prefix` = ?",
+                prefix
         );
 
         if (res == null) {
