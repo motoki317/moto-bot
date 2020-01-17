@@ -8,6 +8,7 @@ import utils.HttpUtils;
 import utils.StatusCodeException;
 import utils.cache.DataCache;
 import utils.cache.HashMapDataCache;
+import utils.rateLimit.RateLimitException;
 import utils.rateLimit.RateLimiter;
 import utils.rateLimit.WaitableRateLimiter;
 
@@ -163,6 +164,7 @@ public class WynnApi {
 
     /**
      * GET https://api.wynncraft.com/public_api.php?action=guildStats&command={guild name}
+     * Only callers that cannot handle {@link RateLimitException} should call this method.
      * @param guildName Guild name.
      * @return Guild stats.
      */
@@ -174,7 +176,27 @@ public class WynnApi {
         }
 
         rateLimiterLegacy.stackUpRequest();
+        return requestGuildStats(guildName);
+    }
 
+    /**
+     * GET https://api.wynncraft.com/public_api.php?action=guildStats&command={guild name}
+     * @param guildName Guild name.
+     * @return Guild stats.
+     */
+    @Nullable
+    public WynnGuild getGuildStatsWaitable(String guildName) throws RateLimitException {
+        WynnGuild guild;
+        if ((guild = guildStatsCache.get(guildName)) != null) {
+            return guild;
+        }
+
+        rateLimiterLegacy.checkRequest();
+        return requestGuildStats(guildName);
+    }
+
+    @Nullable
+    private WynnGuild requestGuildStats(String guildName) {
         try {
             long start = System.nanoTime();
             String body = HttpUtils.get(
@@ -185,7 +207,7 @@ public class WynnApi {
 
             if (body == null) throw new Exception("returned body was null");
 
-            guild = mapper.readValue(body, WynnGuild.class);
+            WynnGuild guild = mapper.readValue(body, WynnGuild.class);
             if (guild == null) {
                 return null;
             }
@@ -194,6 +216,50 @@ public class WynnApi {
         } catch (Exception e) {
             this.logger.logException(String.format("an exception occurred while requesting / parsing guild stats for %s",
                     guildName
+            ), e);
+            return null;
+        }
+    }
+
+    private static final String forumIdUrl = "https://api.wynncraft.com/forums/getForumId/%s";
+    private static final DataCache<String, ForumId> forumIdCache = new HashMapDataCache<>(
+            100, TimeUnit.MINUTES.toMillis(10), TimeUnit.MINUTES.toMillis(10)
+    );
+
+
+    /**
+     * GET https://api.wynncraft.com/forums/getForumId/:playerName
+     * @param playerName Player name
+     * @return Forum id.
+     */
+    @Nullable
+    public ForumId getForumId(String playerName) throws RateLimitException {
+        ForumId forumId;
+        if ((forumId = forumIdCache.get(playerName)) != null) {
+            return forumId;
+        }
+
+        rateLimiterLegacy.checkRequest();
+
+        try {
+            long start = System.nanoTime();
+            String body = HttpUtils.get(
+                    String.format(forumIdUrl, playerName)
+            );
+            long end = System.nanoTime();
+            this.logger.debug(String.format("Wynn API: Requested forum id for %s, took %s ms.", playerName, (double) (end - start) / 1_000_000d));
+
+            if (body == null) throw new Exception("returned body was null");
+
+            forumId = mapper.readValue(body, ForumId.class);
+            if (forumId == null) {
+                return null;
+            }
+            forumIdCache.add(playerName, forumId);
+            return forumId;
+        } catch (Exception e) {
+            this.logger.logException(String.format("an exception occurred while requesting / parsing forum id for %s",
+                    playerName
             ), e);
             return null;
         }
@@ -231,8 +297,45 @@ public class WynnApi {
     );
     private static final int PLAYER_NOT_FOUND = 400;
 
+    private void checkRequest(String resource, boolean canWait) throws RateLimitException {
+        RateLimiter rateLimiter = rateLimitersV2.get(resource);
+        if (rateLimiter != null) {
+            if (canWait) {
+                rateLimiter.checkRequest();
+            } else {
+                rateLimiter.stackUpRequest();
+            }
+        }
+    }
+
+    /**
+     * Get player statistics.
+     * @param playerName Player name.
+     * @param forceReload Force reload.
+     * @throws RateLimitException If the requests are coming in too quickly and exceeded max request stack.
+     * @return Player stats.
+     */
     @Nullable
-    public Player getPlayerStatistics(String playerName, boolean canWait, boolean forceReload) {
+    public Player getPlayerStatisticsWaitable(String playerName, boolean forceReload) throws RateLimitException {
+        final String RESOURCE = "player";
+
+        Player player;
+        if ((player = playerStatsCache.get(playerName)) != null && !forceReload) {
+            return player;
+        }
+
+        checkRequest(RESOURCE, true);
+        return requestPlayerStatistics(playerName);
+    }
+
+    /**
+     * Get player statistics. This method should only be called if the caller cannot handle {@link RateLimitException}.
+     * @param playerName Player name.
+     * @param forceReload Force reload.
+     * @return Player stats.
+     */
+    @Nullable
+    public Player getPlayerStatistics(String playerName, boolean forceReload) {
         final String RESOURCE = "player";
 
         Player player;
@@ -241,24 +344,22 @@ public class WynnApi {
         }
 
         try {
-            RateLimiter rateLimiter = rateLimitersV2.get(RESOURCE);
-            if (rateLimiter != null) {
-                if (canWait) {
-                    rateLimiter.checkRequest();
-                } else {
-                    rateLimiter.stackUpRequest();
-                }
-            } else {
-                return null;
-            }
+            checkRequest(RESOURCE, false);
+        } catch (RateLimitException ignored) {
+        }
+        return requestPlayerStatistics(playerName);
+    }
 
+    @Nullable
+    private Player requestPlayerStatistics(String playerName) {
+        try {
             long start = System.nanoTime();
             String body = HttpUtils.get(String.format(playerStatisticsUrl, playerName), PLAYER_NOT_FOUND);
             long end = System.nanoTime();
             if (body == null) throw new Exception("returned body was null");
             this.logger.debug(String.format("Wynn API: Requested player stats for %s, took %s ms.", playerName, (double) (end - start) / 1_000_000d));
 
-            player = new Player(body);
+            Player player = new Player(body);
             playerStatsCache.add(playerName, player);
             return player;
         } catch (StatusCodeException e) {

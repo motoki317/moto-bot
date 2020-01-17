@@ -30,7 +30,7 @@ class TestWynnApi {
 
     @Test
     void testGetPlayerStatistics() {
-        Player player = getWynnApi().getPlayerStatistics("Salted", false, true);
+        Player player = getWynnApi().getPlayerStatistics("Salted", true);
         assert player != null;
         assert player.getUuid().equals("1ed075fc-5aa9-42e0-a29f-640326c1d80c");
     }

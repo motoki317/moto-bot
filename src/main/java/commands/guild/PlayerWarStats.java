@@ -115,7 +115,7 @@ public class PlayerWarStats extends GenericCommand {
             }
         }
 
-        Player player = this.wynnApi.getPlayerStatistics(uuid.toStringWithHyphens(), true, false);
+        Player player = this.wynnApi.getPlayerStatistics(uuid.toStringWithHyphens(),  false);
         String guildPrefix;
         if (player != null && player.getGuildInfo().getName() != null) {
             Guild guild = this.guildRepository.findOne(() -> player.getGuildInfo().getName());

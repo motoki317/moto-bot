@@ -71,6 +71,7 @@ public class MessageListener extends ListenerAdapter {
         addCommand.accept(new DateFormatCmd(bot.getDatabase().getDateFormatRepository(), bot.getDatabase().getTimeZoneRepository()));
         addCommand.accept(new Ignore(bot.getDatabase().getIgnoreChannelRepository()));
         addCommand.accept(new Find(bot));
+        addCommand.accept(new PlayerStats(bot));
 
         addCommand.accept(new GuildWarStats(bot));
         addCommand.accept(new PlayerWarStats(bot));

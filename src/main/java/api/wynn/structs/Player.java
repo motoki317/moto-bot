@@ -115,6 +115,10 @@ public class Player {
             return isVeteran;
         }
 
+        public int getPlaytime() {
+            return playtime;
+        }
+
         public boolean isTagDisplayed() {
             return tagDisplay;
         }
@@ -138,6 +142,8 @@ public class Player {
         private String server;
         private boolean isVeteran;
 
+        private int playtime;
+
         private boolean tagDisplay;
         @Nullable
         private String tag;
@@ -153,7 +159,7 @@ public class Player {
             }
             server = meta.get("location").get("online").asBoolean() ? meta.get("location").get("server").asText() : null;
             isVeteran = meta.get("veteran").asBoolean();
-
+            playtime = meta.get("playtime").asInt();
             tagDisplay = meta.get("tag").get("display").asBoolean();
             tag = JsonUtils.getNullableString(meta.get("tag"), "value");
         }

@@ -180,7 +180,7 @@ public class PlayerTracker implements TaskBase {
         // retrieve guild name
         String guildName = null;
         for (WarPlayer warPlayer : warPlayers) {
-            Player stats = this.wynnApi.getPlayerStatistics(warPlayer.getPlayerName(), false, false);
+            Player stats = this.wynnApi.getPlayerStatistics(warPlayer.getPlayerName(), false);
             if (stats == null) {
                 continue;
             }
@@ -226,7 +226,7 @@ public class PlayerTracker implements TaskBase {
 
                 // if guild name is null try to retrieve it
                 if (prevWarLog.getGuildName() == null) {
-                    Player stats = this.wynnApi.getPlayerStatistics(currentPlayer, false, false);
+                    Player stats = this.wynnApi.getPlayerStatistics(currentPlayer, false);
                     if (stats == null) {
                         continue;
                     }
