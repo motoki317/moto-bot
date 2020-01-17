@@ -230,3 +230,9 @@ CREATE TABLE IF NOT EXISTS `date_format` (
     `discord_id` BIGINT PRIMARY KEY NOT NULL,
     `date_format` VARCHAR(30) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+# Ignored channels that the bot should not respond to,
+# unless the message itself was ignore command to un-ignore.
+CREATE TABLE IF NOT EXISTS `ignore_channel` (
+    `channel_id` BIGINT PRIMARY KEY NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

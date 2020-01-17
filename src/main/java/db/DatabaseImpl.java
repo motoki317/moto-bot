@@ -33,6 +33,7 @@ public class DatabaseImpl implements Database {
     private GuildWarLogRepository guildWarLogRepository;
     private DateFormatRepository dateFormatRepository;
     private GuildRepository guildRepository;
+    private IgnoreChannelRepository ignoreChannelRepository;
 
     public DatabaseImpl(Logger logger) {
         this.logger = logger;
@@ -144,5 +145,13 @@ public class DatabaseImpl implements Database {
             this.guildRepository = new GuildRepository(this.connectionPool, this.logger);
         }
         return this.guildRepository;
+    }
+
+    @Override
+    public @NotNull IgnoreChannelRepository getIgnoreChannelRepository() {
+        if (this.ignoreChannelRepository == null) {
+            this.ignoreChannelRepository = new IgnoreChannelRepository(this.connectionPool, this.logger);
+        }
+        return this.ignoreChannelRepository;
     }
 }

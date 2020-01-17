@@ -95,6 +95,7 @@ public class MessageListener extends ListenerAdapter {
                 if (args.length < argLength) return;
 
                 String cmdBase = String.join(" ", Arrays.copyOfRange(args, 0, argLength));
+                // Command name match
                 if (this.commandNameMap.containsKey(cmdBase.toLowerCase())) {
                     BotCommand command = this.commandNameMap.get(cmdBase.toLowerCase());
 

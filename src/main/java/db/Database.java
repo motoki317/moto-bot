@@ -30,4 +30,6 @@ public interface Database {
     DateFormatRepository getDateFormatRepository();
     @NotNull
     GuildRepository getGuildRepository();
+    @NotNull
+    IgnoreChannelRepository getIgnoreChannelRepository();
 }
