@@ -3,6 +3,7 @@ package api.wynn;
 import api.wynn.structs.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import log.Logger;
+import org.jetbrains.annotations.NotNull;
 import utils.HttpUtils;
 import utils.StatusCodeException;
 import utils.cache.DataCache;
@@ -12,6 +13,7 @@ import utils.rateLimit.WaitableRateLimiter;
 
 import javax.annotation.Nullable;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
@@ -43,13 +45,50 @@ public class WynnApi {
     }
 
     private static final String onlinePlayersUrl = "https://api.wynncraft.com/public_api.php?action=onlinePlayers";
+    private static final Object onlinePlayersCacheLock = new Object();
+    @Nullable
+    private static OnlinePlayers onlinePlayersCache;
+    @Nullable
+    private static Map<String, String> onlinePlayersMap;
+
+    private static void cacheOnlinePlayers(@NotNull OnlinePlayers onlinePlayers) {
+        synchronized (onlinePlayersCacheLock) {
+            onlinePlayersCache = onlinePlayers;
+            onlinePlayersMap = null;
+        }
+    }
+
+    /**
+     * Finds the world player is currently on.
+     * @param playerName Player name.
+     * @return World name. null if the player was not online.
+     */
+    @Nullable
+    public String findPlayer(@NotNull String playerName) {
+        if (onlinePlayersCache == null) {
+            getOnlinePlayers();
+        }
+        synchronized (onlinePlayersCacheLock) {
+            if (onlinePlayersMap == null) {
+                onlinePlayersMap = new HashMap<>();
+                for (Map.Entry<String, List<String>> entry : onlinePlayersCache.getWorlds().entrySet()) {
+                    String world = entry.getKey();
+                    for (String player : entry.getValue()) {
+                        onlinePlayersMap.put(player, world);
+                    }
+                }
+            }
+
+            return onlinePlayersMap.getOrDefault(playerName, null);
+        }
+    }
 
     /**
      * GET https://api.wynncraft.com/public_api.php?action=onlinePlayers
      * @return Online players struct.
      */
     @Nullable
-    public OnlinePlayers getOnlinePlayers() {
+    public synchronized OnlinePlayers getOnlinePlayers() {
         rateLimiterLegacy.stackUpRequest();
 
         try {
@@ -59,7 +98,9 @@ public class WynnApi {
             this.logger.debug(String.format("Wynn API: Requested online players list, took %s ms.", (double) (end - start) / 1_000_000d));
 
             if (body == null) throw new Exception("returned body was null");
-            return new OnlinePlayers(body);
+            OnlinePlayers onlinePlayers = new OnlinePlayers(body);
+            cacheOnlinePlayers(onlinePlayers);
+            return onlinePlayers;
         } catch (Exception e) {
             this.logger.logException("an exception occurred while requesting / parsing online players", e);
             return null;
