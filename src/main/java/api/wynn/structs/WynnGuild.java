@@ -75,7 +75,7 @@ public class WynnGuild {
                 .map(m -> m.name).findFirst().orElse(null);
     }
 
-    private static class Member {
+    public static class Member {
         private static final DateFormat apiFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
 
         private String name;

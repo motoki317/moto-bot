@@ -275,7 +275,7 @@ public class PlayerWarStats extends GenericCommand {
 
         int bars = BigDecimal.valueOf(rate).divide(BigDecimal.valueOf(5), 0, RoundingMode.HALF_DOWN).intValue();
         bars = Math.min(Math.max(bars, 0), 20);
-        ret.add(String.format("[%s%s]", nCopies("=", bars), nCopies(" ", 20 - bars)));
+        ret.add(String.format("[%s%s]", nCopies("=", bars), nCopies("-", 20 - bars)));
 
         return String.join("\n", ret);
     }

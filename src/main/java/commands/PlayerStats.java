@@ -16,6 +16,7 @@ import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import utils.FormatUtils;
+import utils.InputChecker;
 import utils.MinecraftColor;
 import utils.rateLimit.RateLimitException;
 
@@ -78,6 +79,17 @@ public class PlayerStats extends GenericCommand {
         }
 
         String specified = args[1];
+        if (!InputChecker.isValidMinecraftUsername(specified)) {
+            respond(event,
+                    new EmbedBuilder()
+                            .setColor(MinecraftColor.RED.getColor())
+                            .setDescription(String.format("Given player name `%s` doesn't seem to be a valid minecraft username...",
+                                    specified))
+                            .build()
+            );
+            return;
+        }
+
         Player player;
         try {
             player = this.wynnApi.getPlayerStatisticsWaitable(specified, false);

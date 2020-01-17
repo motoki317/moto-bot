@@ -8,6 +8,7 @@ import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import org.jetbrains.annotations.NotNull;
+import utils.InputChecker;
 import utils.MinecraftColor;
 
 public class Find extends GenericCommand {
@@ -46,11 +47,11 @@ public class Find extends GenericCommand {
         }
 
         String playerName = args[1];
-        if (!playerName.matches("[a-zA-Z0-9_]+")) {
+        if (!InputChecker.isValidMinecraftUsername(playerName)) {
             respond(event,
                     new EmbedBuilder()
                     .setColor(MinecraftColor.RED.getColor())
-                    .setDescription(String.format("Given player name `%s` does not seem to be a valid minecraft username...",
+                    .setDescription(String.format("Given player name `%s` doesn't seem to be a valid minecraft username...",
                             playerName))
                     .build()
             );

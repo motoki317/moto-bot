@@ -3,6 +3,8 @@ package listeners;
 import app.Bot;
 import commands.*;
 import commands.base.BotCommand;
+import commands.guild.GuildCmd;
+import commands.guild.GuildStats;
 import commands.guild.GuildWarStats;
 import commands.guild.PlayerWarStats;
 import db.model.commandLog.CommandLog;
@@ -73,6 +75,8 @@ public class MessageListener extends ListenerAdapter {
         addCommand.accept(new Find(bot));
         addCommand.accept(new PlayerStats(bot));
 
+        addCommand.accept(new GuildCmd(bot));
+        addCommand.accept(new GuildStats(bot));
         addCommand.accept(new GuildWarStats(bot));
         addCommand.accept(new PlayerWarStats(bot));
     }
@@ -106,9 +110,9 @@ public class MessageListener extends ListenerAdapter {
                 continue;
             }
 
-            // Process command
-            for (int argLength = 1; argLength <= this.maxArgumentsLength; argLength++) {
-                if (args.length < argLength) return;
+            // Process command from the most 'specific' (e.g. g pws) to most 'generic' (e.g. guild)
+            for (int argLength = this.maxArgumentsLength; argLength > 0; argLength--) {
+                if (args.length < argLength) continue;
 
                 String cmdBase = String.join(" ", Arrays.copyOfRange(args, 0, argLength));
                 // Command name match

@@ -3,7 +3,6 @@ package commands.guild;
 import app.Bot;
 import commands.base.GenericCommand;
 import db.model.dateFormat.CustomDateFormat;
-import db.model.guild.Guild;
 import db.model.guildWarLog.GuildWarLog;
 import db.model.territoryLog.TerritoryLog;
 import db.model.timezone.CustomTimeZone;
@@ -18,8 +17,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import update.multipage.MultipageHandler;
 import update.reaction.ReactionManager;
-import update.response.ResponseManager;
-import update.selection.SelectionHandler;
 import utils.FormatUtils;
 
 import java.math.BigDecimal;
@@ -31,24 +28,27 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class GuildWarStats extends GenericCommand {
-    private final ResponseManager responseManager;
     private final ReactionManager reactionManager;
     private final TimeZoneRepository timeZoneRepository;
     private final DateFormatRepository dateFormatRepository;
     private final GuildWarLogRepository guildWarLogRepository;
     private final WarLogRepository warLogRepository;
     private final TerritoryLogRepository territoryLogRepository;
-    private final GuildRepository guildRepository;
+
+    private final GuildNameResolver guildNameResolver;
 
     public GuildWarStats(Bot bot) {
-        this.responseManager = bot.getResponseManager();
         this.reactionManager = bot.getReactionManager();
         this.timeZoneRepository = bot.getDatabase().getTimeZoneRepository();
         this.dateFormatRepository = bot.getDatabase().getDateFormatRepository();
         this.guildWarLogRepository = bot.getDatabase().getGuildWarLogRepository();
         this.warLogRepository = bot.getDatabase().getWarLogRepository();
         this.territoryLogRepository = bot.getDatabase().getTerritoryLogRepository();
-        this.guildRepository = bot.getDatabase().getGuildRepository();
+
+        this.guildNameResolver = new GuildNameResolver(
+                bot.getResponseManager(),
+                bot.getDatabase().getGuildRepository()
+        );
     }
 
     @NotNull
@@ -89,86 +89,14 @@ public class GuildWarStats extends GenericCommand {
             return;
         }
 
-        String specifiedGuildName = String.join(" ", Arrays.copyOfRange(args, 2, args.length));
-        List<Guild> guilds = findGuilds(specifiedGuildName);
-        if (guilds == null) {
-            respondError(event, "Something went wrong while retrieving guilds...");
-            return;
-        }
-
-        String guildName;
-        String guildPrefix;
-        if (guilds.size() == 0) {
-            // Unknown guild, but pass it on as prefix unknown in case the bot haven't loaded the guild data yet
-            guildName = specifiedGuildName;
-            guildPrefix = null;
-        } else if (guilds.size() == 1) {
-            guildName = guilds.get(0).getName();
-            guildPrefix = guilds.get(0).getPrefix();
-        } else {
-            // Choose a guild
-            List<String> guildNames = guilds.stream().map(Guild::getName).collect(Collectors.toList());
-            Map<String, String> guildPrefixes = guilds.stream().collect(Collectors.toMap(Guild::getName, Guild::getPrefix));
-            SelectionHandler handler = new SelectionHandler(
-                    event.getChannel().getIdLong(),
-                    event.getAuthor().getIdLong(),
-                    guildNames,
-                    name -> handleChosenGuild(event, name, guildPrefixes.get(name))
-            );
-            handler.sendMessage(event.getTextChannel(), event.getAuthor(), () -> this.responseManager.addEventListener(handler));
-            return;
-        }
-
-        handleChosenGuild(event, guildName, guildPrefix);
-    }
-
-    /**
-     * Finds guild with specified name (both full name or prefix was possibly specified).
-     * @param specified Specified name.
-     * @return List of found guilds. null if something went wrong.
-     */
-    @Nullable
-    private List<Guild> findGuilds(@NotNull String specified) {
-        // Case sensitive full name search
-        List<Guild> ret;
-        Guild guild = this.guildRepository.findOne(() -> specified);
-        if (guild != null) {
-            ret = new ArrayList<>();
-            ret.add(guild);
-            return ret;
-        }
-
-        // Case insensitive full name search
-        ret = this.guildRepository.findAllCaseInsensitive(specified);
-        if (ret == null) {
-            return null;
-        }
-        if (ret.size() > 0) {
-            return ret;
-        }
-
-        // Prefix search
-        if (specified.length() == 3) {
-            // Case sensitive prefix search
-            ret = this.guildRepository.findAllByPrefix(specified);
-            if (ret == null) {
-                return null;
-            }
-            if (ret.size() > 0) {
-                return ret;
-            }
-
-            // Case insensitive prefix search
-            ret = this.guildRepository.findAllByPrefixCaseInsensitive(specified);
-            if (ret == null) {
-                return null;
-            }
-            if (ret.size() > 0) {
-                return ret;
-            }
-        }
-
-        return ret;
+        String guildName = String.join(" ", Arrays.copyOfRange(args, 2, args.length));
+        this.guildNameResolver.resolve(
+                guildName,
+                event.getTextChannel(),
+                event.getAuthor(),
+                (resolvedName, prefix) -> handleChosenGuild(event, resolvedName, prefix),
+                reason -> respondError(event, reason)
+        );
     }
 
     private void handleChosenGuild(MessageReceivedEvent event, @NotNull String guildName, @Nullable String guildPrefix) {
@@ -256,7 +184,7 @@ public class GuildWarStats extends GenericCommand {
 
         int successBars = BigDecimal.valueOf(successRate).divide(BigDecimal.valueOf(5), 0, RoundingMode.HALF_DOWN).intValue();
         successBars = Math.min(Math.max(successBars, 0), 20);
-        ret.add(String.format("[%s%s]", nCopies("=", successBars), nCopies(" ", 20 - successBars)));
+        ret.add(String.format("[%s%s]", nCopies("=", successBars), nCopies("-", 20 - successBars)));
 
         ret.add("");
 

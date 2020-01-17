@@ -87,6 +87,57 @@ public class TerritoryRepository extends Repository<Territory, TerritoryId> {
         return 0;
     }
 
+    /**
+     * Counts number of guild territories a guild possesses.
+     * @param guildName Guild name.
+     * @return Territory count. -1 if something
+     */
+    public int countGuildTerritories(@NotNull String guildName) {
+        ResultSet res = this.executeQuery(
+                "SELECT count_guild_territories(?)",
+                guildName
+        );
+
+        if (res == null) {
+            return -1;
+        }
+
+        try {
+            if (res.next())
+                return res.getInt(1);
+        } catch (SQLException e) {
+            this.logResponseException(e);
+        }
+        return -1;
+    }
+
+    /**
+     * Get ranking of guild by number of territories.
+     * @param guildName Guild name.
+     * @return Ranking. -1 if something went wrong. 0 if the guild does not exist in the ranking.
+     */
+    public int getGuildTerritoryRanking(@NotNull String guildName) {
+        ResultSet res = this.executeQuery(
+                "SELECT RANK() OVER (ORDER BY `ttn`.`terr_num` DESC) FROM (SELECT `guild_name`, COUNT(*) AS `terr_num` FROM `territory` GROUP BY `guild_name`) AS ttn WHERE `guild_name` = ?",
+                guildName
+        );
+
+        if (res == null) {
+            return -1;
+        }
+
+        try {
+            if (res.next()) {
+                return res.getInt(1);
+            } else {
+                return 0;
+            }
+        } catch (SQLException e) {
+            this.logResponseException(e);
+            return -1;
+        }
+    }
+
     @Nullable
     @Override
     public Territory findOne(@NotNull TerritoryId territoryId) {
