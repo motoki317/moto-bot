@@ -158,7 +158,9 @@ public class GuildStats extends GenericCommand {
         private static final int MEMBERS_PER_CONTRIBUTE_PAGE = 30;
 
         private int maxPage(WynnGuild guild) {
-            int contributeExtraPages = (guild.getMembers().size() - 1) / MEMBERS_PER_CONTRIBUTE_PAGE;
+            int count = (int) guild.getMembers().stream()
+                    .filter(m -> m.getContributed() != 0).count();
+            int contributeExtraPages = (count - 1) / MEMBERS_PER_CONTRIBUTE_PAGE;
             // 0: main
             // 1: online players
             // 2, 3, 4, 5: chiefs, captains, recruiters, recruits
@@ -169,8 +171,6 @@ public class GuildStats extends GenericCommand {
         private Function<Integer, Message> pageSupplier(@NotNull WynnGuild guild,
                                                         @NotNull CustomDateFormat customDateFormat,
                                                         @NotNull CustomTimeZone customTimeZone) {
-            int contributeExtraPages = (guild.getMembers().size() - 1) / MEMBERS_PER_CONTRIBUTE_PAGE;
-            int maxPage = 6 + contributeExtraPages;
             DateFormat dateFormat = customDateFormat.getDateFormat().getSecondFormat();
             dateFormat.setTimeZone(customTimeZone.getTimeZoneInstance());
 
@@ -217,10 +217,6 @@ public class GuildStats extends GenericCommand {
                         ret.add(getMembers(guild, Rank.RECRUIT));
                         break;
                     default:
-                        if (page < 0 || maxPage < page) {
-                            return new MessageBuilder("Something went wrong on pagination...").build();
-                        }
-
                         int contributePageNum = page - 6;
                         ret.add(getContributePage(guild, contributePageNum));
                         break;
@@ -229,7 +225,7 @@ public class GuildStats extends GenericCommand {
                 ret.add("");
 
                 ret.add(String.format("  last guild info update: %s",
-                        dateFormat.format(new Date(guild.getRequest().getTimestamp()))
+                        dateFormat.format(new Date(guild.getRequest().getTimestamp() * 1000))
                 ));
                 ret.add(String.format("last online stats update: %s",
                         dateFormat.format(getLastOnlinePlayerUpdate())
