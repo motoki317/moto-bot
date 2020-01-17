@@ -8,6 +8,7 @@ import commands.guild.PlayerWarStats;
 import db.model.commandLog.CommandLog;
 import db.model.prefix.Prefix;
 import db.repository.CommandLogRepository;
+import db.repository.IgnoreChannelRepository;
 import db.repository.PrefixRepository;
 import log.Logger;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
@@ -30,6 +31,7 @@ public class MessageListener extends ListenerAdapter {
 
     private final CommandLogRepository commandLogRepository;
     private final PrefixRepository prefixRepository;
+    private final IgnoreChannelRepository ignoreChannelRepository;
 
     public MessageListener(Bot bot) {
         this.commands = new ArrayList<>();
@@ -42,6 +44,7 @@ public class MessageListener extends ListenerAdapter {
 
         this.commandLogRepository = bot.getDatabase().getCommandLogRepository();
         this.prefixRepository = bot.getDatabase().getPrefixRepository();
+        this.ignoreChannelRepository = bot.getDatabase().getIgnoreChannelRepository();
 
         Consumer<BotCommand> addCommand = (command) -> {
             for (String commandName : command.getNames()) {
@@ -66,6 +69,7 @@ public class MessageListener extends ListenerAdapter {
         addCommand.accept(new TimeZoneCmd(bot.getDatabase().getTimeZoneRepository(), bot.getDatabase().getDateFormatRepository()));
         addCommand.accept(new PrefixCmd(bot.getProperties().prefix, bot.getDatabase().getPrefixRepository()));
         addCommand.accept(new DateFormatCmd(bot.getDatabase().getDateFormatRepository(), bot.getDatabase().getTimeZoneRepository()));
+        addCommand.accept(new Ignore(bot.getDatabase().getIgnoreChannelRepository()));
 
         addCommand.accept(new GuildWarStats(bot));
         addCommand.accept(new PlayerWarStats(bot));
@@ -80,6 +84,11 @@ public class MessageListener extends ListenerAdapter {
         // Do not respond to webhook/bot messages
         if (event.isWebhookMessage() || event.getAuthor().isBot()) return;
 
+        // Ignored channel
+        boolean channelIsIgnored = this.ignoreChannelRepository.exists(
+                () -> event.getChannel().getIdLong()
+        );
+
         // Check prefix
         Set<String> prefixes = getPrefix(event);
         String rawMessage = event.getMessage().getContentRaw();
@@ -89,6 +98,11 @@ public class MessageListener extends ListenerAdapter {
 
             String commandMessage = rawMessage.substring(prefix.length());
             String[] args = commandMessage.split(" ");
+
+            // Do not process command for ignored channel, unless it was ignore command itself
+            if (channelIsIgnored && !commandMessage.toLowerCase().startsWith("ignore")) {
+                continue;
+            }
 
             // Process command
             for (int argLength = 1; argLength <= this.maxArgumentsLength; argLength++) {
