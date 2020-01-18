@@ -48,4 +48,11 @@ class TestWynnApi {
         assert guild != null;
         assert "Hax".equals(guild.getPrefix());
     }
+
+    @Test
+    void testGuildLeaderboard() {
+        GuildLeaderboard leaderboard = getWynnApi().getGuildLeaderboard();
+        assert leaderboard != null;
+        assert leaderboard.getData().size() == 100;
+    }
 }
