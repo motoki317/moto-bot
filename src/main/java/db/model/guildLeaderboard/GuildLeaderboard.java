@@ -1,6 +1,7 @@
 package db.model.guildLeaderboard;
 
 import java.util.Date;
+import java.util.Objects;
 
 public class GuildLeaderboard implements GuildLeaderboardId {
     private String name;
@@ -53,5 +54,25 @@ public class GuildLeaderboard implements GuildLeaderboardId {
 
     public Date getUpdatedAt() {
         return updatedAt;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        GuildLeaderboard that = (GuildLeaderboard) o;
+        return xp == that.xp &&
+                level == that.level &&
+                num == that.num &&
+                territories == that.territories &&
+                memberCount == that.memberCount &&
+                name.equals(that.name) &&
+                prefix.equals(that.prefix) &&
+                updatedAt.equals(that.updatedAt);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(name, prefix, xp, level, num, territories, memberCount, updatedAt);
     }
 }

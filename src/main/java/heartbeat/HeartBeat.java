@@ -2,6 +2,7 @@ package heartbeat;
 
 import app.Bot;
 import heartbeat.base.TaskBase;
+import heartbeat.tracking.GuildLeaderboardTracker;
 import heartbeat.tracking.GuildTracker;
 import heartbeat.tracking.PlayerTracker;
 import heartbeat.tracking.TerritoryTracker;
@@ -45,6 +46,7 @@ public class HeartBeat extends StoppableThread {
         addTask.accept(new PlayerTracker(bot, dbLock), "Player Tracker");
         addTask.accept(new TerritoryTracker(bot, dbLock), "Territory Tracker");
         addTask.accept(new GuildTracker(bot), "Guild Tracker");
+        addTask.accept(new GuildLeaderboardTracker(bot), "Guild Leaderboard Tracker");
     }
 
     @Override

@@ -12,7 +12,10 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class GuildLeaderboardRepository extends Repository<GuildLeaderboard, GuildLeaderboardId> {
     private static final DateFormat dbFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
@@ -40,6 +43,29 @@ public class GuildLeaderboardRepository extends Repository<GuildLeaderboard, Gui
                 entity.getTerritories(),
                 entity.getMemberCount(),
                 dbFormat.format(entity.getUpdatedAt())
+        );
+    }
+
+    public boolean createAll(@NotNull List<GuildLeaderboard> list) {
+        if (list.size() == 0) return true;
+
+        String singlePlaceHolder = "(?, ?, ?, ?, ?, ?, ?, ?)";
+        String placeHolders = list.stream().map(g -> singlePlaceHolder).collect(Collectors.joining(", "));
+        Object[] objects = list.stream()
+                .map(g -> new Object[]{
+                        g.getName(),
+                        g.getPrefix(),
+                        g.getXp(),
+                        g.getLevel(),
+                        g.getNum(),
+                        g.getTerritories(),
+                        g.getMemberCount(),
+                        dbFormat.format(g.getUpdatedAt())
+                })
+                .flatMap(Arrays::stream).toArray();
+        return this.execute(
+                "INSERT INTO `guild_leaderboard` (name, prefix, xp, level, num, territories, member_count, updated_at) VALUES " + placeHolders,
+                objects
         );
     }
 
@@ -127,6 +153,79 @@ public class GuildLeaderboardRepository extends Repository<GuildLeaderboard, Gui
         }
     }
 
+    /**
+     * Get the newest 'updated at' field.
+     * @return Newest date. null if something went wrong, or there are no entries.
+     */
+    @Nullable
+    public Date getNewestDate() {
+        ResultSet res = this.executeQuery(
+                "SELECT MAX(`updated_at`) FROM `guild_leaderboard`"
+        );
+
+        if (res == null) {
+            return null;
+        }
+
+        try {
+            if (res.next())
+                return res.getTimestamp(1);
+        } catch (SQLException e) {
+            this.logResponseException(e);
+        }
+        return null;
+    }
+
+    /**
+     * Get the oldest 'updated at' field.
+     * @return Oldest date. null if something went wrong, or there are no entries.
+     */
+    @Nullable
+    public Date getOldestDate() {
+        ResultSet res = this.executeQuery(
+                "SELECT MIN(`updated_at`) FROM `guild_leaderboard`"
+        );
+
+        if (res == null) {
+            return null;
+        }
+
+        try {
+            if (res.next())
+                return res.getTimestamp(1);
+        } catch (SQLException e) {
+            this.logResponseException(e);
+        }
+        return null;
+    }
+
+    /**
+     * Checks if entries exists between given two dates.
+     * @param old Old date. Exclusive.
+     * @param newer New date. Exclusive.
+     * @return Date. null if something went wrong, or the value doesn't exist.
+     */
+    @Nullable
+    public Date getNewestDateBetween(@NotNull Date old, @NotNull Date newer) {
+        ResultSet res = this.executeQuery(
+                "SELECT MAX(`updated_at`) FROM `guild_leaderboard` WHERE `updated_at` > ? AND `updated_at` < ?",
+                dbFormat.format(old),
+                dbFormat.format(newer)
+        );
+
+        if (res == null) {
+            return null;
+        }
+
+        try {
+            if (res.next())
+                return res.getTimestamp(1);
+        } catch (SQLException e) {
+            this.logResponseException(e);
+        }
+        return null;
+    }
+
     @Nullable
     @Override
     public List<GuildLeaderboard> findAll() {
@@ -167,6 +266,18 @@ public class GuildLeaderboardRepository extends Repository<GuildLeaderboard, Gui
                 "DELETE FROM `guild_leaderboard` WHERE `updated_at` = ? AND `name` = ?",
                 dbFormat.format(guildLeaderboardId.getUpdatedAt()),
                 guildLeaderboardId.getName()
+        );
+    }
+
+    /**
+     * Deletes all entries older than the given date.
+     * @param date Date. Exclusive.
+     * @return true if success.
+     */
+    public boolean deleteAllOlderThan(@NotNull Date date) {
+        return this.execute(
+                "DELETE FROM `guild_leaderboard` WHERE `updated_at` < ?",
+                dbFormat.format(date)
         );
     }
 }

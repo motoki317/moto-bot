@@ -5,6 +5,7 @@ import db.repository.GuildLeaderboardRepository;
 import org.jetbrains.annotations.TestOnly;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
@@ -37,14 +38,16 @@ class TestGuildLeaderboardRepository {
         GuildLeaderboard g = new GuildLeaderboard("Kingdom Foxes", "Fox", 30000000000L, 79, 1, 56, 77, old);
         GuildLeaderboard g1 = new GuildLeaderboard("Kingdom Foxes", "Fox", 30609497711L, 79, 1, 56, 77, now);
         GuildLeaderboard g2 = new GuildLeaderboard("Imperial", "Imp", 22008615363L, 75, 2, 51, 77, now);
+        List<GuildLeaderboard> list = new ArrayList<>();
+        list.add(g);
+        list.add(g1);
+        list.add(g2);
 
         assert repo.count() == 0;
         assert !repo.exists(g1);
         assert !repo.exists(g2);
 
-        assert repo.create(g);
-        assert repo.create(g1);
-        assert repo.create(g2);
+        assert repo.createAll(list);
 
         assert repo.count() == 3;
         assert repo.exists(g);
