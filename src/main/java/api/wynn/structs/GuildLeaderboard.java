@@ -30,6 +30,7 @@ public class GuildLeaderboard {
         private long xp;
         private int level;
         private String created;
+        @Nullable
         private Banner banner;
         private int territories;
         private int membersCount;
@@ -66,6 +67,7 @@ public class GuildLeaderboard {
             }
         }
 
+        @Nullable
         public Banner getBanner() {
             return banner;
         }

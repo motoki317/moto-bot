@@ -44,6 +44,18 @@ CREATE TABLE IF NOT EXISTS `guild` (
     KEY `prefix_idx` (`prefix`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+CREATE TABLE IF NOT EXISTS `guild_leaderboard` (
+    `name` VARBINARY(30) NOT NULL,
+    `prefix` VARCHAR(5) NOT NULL,
+    `xp` BIGINT NOT NULL,
+    `level` INT NOT NULL,
+    `num` INT NOT NULL,
+    `territories` INT NOT NULL,
+    `member_count` INT NOT NULL,
+    `updated_at` DATETIME NOT NULL,
+    UNIQUE KEY `updated_at_name_idx` (`updated_at`, `name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 CREATE TABLE IF NOT EXISTS `territory` (
     `name` VARCHAR(100) PRIMARY KEY NOT NULL,
     `guild_name` VARCHAR(30),
