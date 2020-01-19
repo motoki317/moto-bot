@@ -30,7 +30,11 @@ public class HeartBeat extends StoppableThread {
                 this.timer,
                 () -> {
                     long start = System.nanoTime();
-                    task.run();
+                    try {
+                        task.run();
+                    } catch (Exception e) {
+                        this.logger.logException(String.format("HeatBeat: %s: caught exception", name), e);
+                    }
                     long end = System.nanoTime();
                     bot.getLogger().log(-1, String.format("HeartBeat: %s took %.6f ms to run.",
                             name,
