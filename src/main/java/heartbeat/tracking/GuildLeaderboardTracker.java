@@ -180,7 +180,7 @@ public class GuildLeaderboardTracker implements TaskBase {
         Date oldest = dates.get(0);
 
         all.forEach(g -> {
-            if (guildHistory.containsKey(g.getName())) {
+            if (!guildHistory.containsKey(g.getName())) {
                 guildHistory.put(g.getName(), new Leaderboard(new ArrayList<>()));
             }
             guildHistory.get(g.getName()).data.add(g);
