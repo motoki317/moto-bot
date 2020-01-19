@@ -3,10 +3,7 @@ package listeners;
 import app.Bot;
 import commands.*;
 import commands.base.BotCommand;
-import commands.guild.GuildCmd;
-import commands.guild.GuildStats;
-import commands.guild.GuildWarStats;
-import commands.guild.PlayerWarStats;
+import commands.guild.*;
 import db.model.commandLog.CommandLog;
 import db.model.prefix.Prefix;
 import db.repository.CommandLogRepository;
@@ -79,6 +76,7 @@ public class MessageListener extends ListenerAdapter {
         addCommand.accept(new GuildStats(bot));
         addCommand.accept(new GuildWarStats(bot));
         addCommand.accept(new PlayerWarStats(bot));
+        addCommand.accept(new GainedXpRank(bot));
     }
 
     @Override

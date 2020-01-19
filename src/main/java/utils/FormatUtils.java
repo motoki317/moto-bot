@@ -3,6 +3,7 @@ package utils;
 import net.dv8tion.jda.api.entities.User;
 import org.jetbrains.annotations.NotNull;
 
+import java.math.BigDecimal;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.List;
@@ -65,5 +66,42 @@ public class FormatUtils {
         }
 
         return String.join(" ", formattedStrings);
+    }
+
+    private static final BigDecimal THOUSAND = new BigDecimal("1000");
+    private static final BigDecimal MILLION = THOUSAND.multiply(THOUSAND);
+    private static final BigDecimal BILLION = MILLION.multiply(THOUSAND);
+    private static final BigDecimal TRILLION = BILLION.multiply(THOUSAND);
+    private static final BigDecimal QUADRILLION = TRILLION.multiply(THOUSAND);
+
+    /**
+     * Truncates a number to at most 6-length string, with possible unit at last.
+     * <br>Example input: 1234567, Output: 1.235M
+     * @param number Number to format.
+     * @return Formatted string.
+     */
+    public static String truncateNumber(BigDecimal number) {
+        if (number.compareTo(THOUSAND) >= 0 && number.compareTo(MILLION) < 0) {
+            BigDecimal answer = number.divide(THOUSAND, 3, BigDecimal.ROUND_HALF_UP);
+            int scale = (answer.precision() - answer.scale());
+            return answer.setScale(4-scale, BigDecimal.ROUND_HALF_UP) + "K";
+        } else if (number.compareTo(MILLION) >= 0 && number.compareTo(BILLION) < 0) {
+            BigDecimal answer = number.divide(MILLION, 3, BigDecimal.ROUND_HALF_UP);
+            int scale = (answer.precision() - answer.scale());
+            return answer.setScale(4-scale, BigDecimal.ROUND_HALF_UP) + "M";
+        } else if (number.compareTo(BILLION) >= 0 && number.compareTo(TRILLION) < 0) {
+            BigDecimal answer = number.divide(BILLION, 3, BigDecimal.ROUND_HALF_UP);
+            int scale = (answer.precision() - answer.scale());
+            return answer.setScale(4-scale, BigDecimal.ROUND_HALF_UP) + "B";
+        } else if (number.compareTo(TRILLION) >= 0 && number.compareTo(QUADRILLION) < 0) {
+            BigDecimal answer = number.divide(TRILLION, 3, BigDecimal.ROUND_HALF_UP);
+            int scale = (answer.precision() - answer.scale());
+            return answer.setScale(4-scale, BigDecimal.ROUND_HALF_UP) + "T";
+        } else if (number.compareTo(QUADRILLION) >= 0) {
+            BigDecimal answer = number.divide(THOUSAND, 3, BigDecimal.ROUND_HALF_UP);
+            int scale = (answer.precision() - answer.scale());
+            return answer.setScale(Math.max(0,4-scale), BigDecimal.ROUND_HALF_UP) + "K";
+        }
+        return number.toString();
     }
 }
