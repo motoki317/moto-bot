@@ -44,6 +44,7 @@ CREATE TABLE IF NOT EXISTS `guild` (
     KEY `prefix_idx` (`prefix`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+# Stores data retrieved from Wynncraft API
 CREATE TABLE IF NOT EXISTS `guild_leaderboard` (
     `name` VARBINARY(30) NOT NULL,
     `prefix` VARCHAR(5) NOT NULL,
@@ -53,7 +54,20 @@ CREATE TABLE IF NOT EXISTS `guild_leaderboard` (
     `territories` INT NOT NULL,
     `member_count` INT NOT NULL,
     `updated_at` DATETIME NOT NULL,
-    UNIQUE KEY `updated_at_name_idx` (`updated_at`, `name`)
+    UNIQUE KEY `updated_at_name_idx` (`updated_at`, `name`),
+    KEY `name_idx` (`name`, `updated_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+# To be generated from `guild_leaderboard` table on update
+CREATE TABLE IF NOT EXISTS `guild_xp_leaderboard` (
+    `name` VARBINARY(30) PRIMARY KEY NOT NULL,
+    `prefix` VARCHAR(5) NOT NULL,
+    `level` INT NOT NULL,
+    `xp` BIGINT NOT NULL,
+    `xp_diff` BIGINT NOT NULL,
+    `from` DATETIME NOT NULL,
+    `to` DATETIME NOT NULL,
+    KEY `xp_diff_idx` (`xp_diff`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS `territory` (

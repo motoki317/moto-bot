@@ -34,4 +34,6 @@ public interface Database {
     IgnoreChannelRepository getIgnoreChannelRepository();
     @NotNull
     GuildLeaderboardRepository getGuildLeaderboardRepository();
+    @NotNull
+    GuildXpLeaderboardRepository getGuildXpLeaderboardRepository();
 }
