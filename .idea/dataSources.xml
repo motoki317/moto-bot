@@ -7,5 +7,11 @@
       <jdbc-driver>org.mariadb.jdbc.Driver</jdbc-driver>
       <jdbc-url>jdbc:mariadb://localhost:3306/moto-bot</jdbc-url>
     </data-source>
+    <data-source source="LOCAL" name="remote" uuid="3a31c988-56d5-4ab5-a583-e3c2e7ea4879">
+      <driver-ref>mariadb</driver-ref>
+      <synchronize>true</synchronize>
+      <jdbc-driver>org.mariadb.jdbc.Driver</jdbc-driver>
+      <jdbc-url>jdbc:mariadb://127.0.0.1:3306/moto-bot</jdbc-url>
+    </data-source>
   </component>
 </project>

@@ -36,4 +36,6 @@ public interface Database {
     GuildLeaderboardRepository getGuildLeaderboardRepository();
     @NotNull
     GuildXpLeaderboardRepository getGuildXpLeaderboardRepository();
+    @NotNull
+    PlayerWarLeaderboardRepository getPlayerWarLeaderboardRepository();
 }

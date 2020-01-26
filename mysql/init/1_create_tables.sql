@@ -161,6 +161,22 @@ CREATE TABLE IF NOT EXISTS `guild_war_log` (
         ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+# Player war leaderboard, to be updated on `war_player` update
+CREATE TABLE IF NOT EXISTS `player_war_leaderboard` (
+    `uuid` CHAR(36) PRIMARY KEY NOT NULL,
+    `last_name` VARCHAR(30) NOT NULL,
+    `total_war` INT NOT NULL,
+    `success_war` INT NOT NULL,
+    `survived_war` INT NOT NULL,
+    `success_rate` DECIMAL(5,4) UNSIGNED AS (success_war / total_war) PERSISTENT,
+    `survived_rate` DECIMAL(5,4) UNSIGNED AS (survived_war / total_war) PERSISTENT,
+    KEY `total_idx` (`total_war`),
+    KEY `success_idx` (`success_war`),
+    KEY `survived_idx` (`survived_war`),
+    KEY `success_rate_idx` (`success_rate`),
+    KEY `survived_rate_idx` (`survived_rate`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 DROP FUNCTION IF EXISTS `count_guild_territories`;
 DELIMITER //
 CREATE FUNCTION `count_guild_territories` (g_name VARCHAR(30)) RETURNS INT
@@ -235,6 +251,60 @@ CREATE TRIGGER IF NOT EXISTS `guild_war_logger_2`
     BEGIN
         IF NEW.guild_name IS NOT NULL AND OLD.guild_name IS NULL THEN
             INSERT INTO `guild_war_log` (guild_name, war_log_id) VALUES (NEW.guild_name, NEW.id);
+        END IF;
+    END; //
+DELIMITER ;
+
+DROP PROCEDURE IF EXISTS `update_player_war_leaderboard`;
+DELIMITER //
+CREATE PROCEDURE `update_player_war_leaderboard` (player_uuid CHAR(36), player_name VARCHAR(30))
+    BEGIN
+        SET @lb = (SELECT `uuid` FROM `player_war_leaderboard` WHERE `uuid` = player_uuid);
+
+        IF @lb IS NULL THEN
+            INSERT INTO `player_war_leaderboard` (uuid, last_name, total_war, success_war, survived_war) VALUES
+            (
+                player_uuid,
+                player_name,
+                (SELECT COUNT(*) FROM `war_player` p WHERE p.`player_uuid` = player_uuid),
+                (SELECT COUNT(*) FROM `war_player` p
+                    JOIN `guild_war_log` g ON p.`player_uuid` = player_uuid
+                    AND p.war_log_id = g.war_log_id AND g.territory_log_id IS NOT NULL),
+                (SELECT COUNT(*) FROM `war_player` p
+                    JOIN `guild_war_log` g ON p.`player_uuid` = player_uuid AND NOT p.exited
+                    AND p.war_log_id = g.war_log_id AND g.territory_log_id IS NOT NULL)
+            );
+        ELSE
+            UPDATE `player_war_leaderboard`
+            SET last_name = player_name,
+                total_war = (SELECT COUNT(*) FROM `war_player` g WHERE g.`player_uuid` = player_uuid),
+                success_war = (SELECT COUNT(*) FROM `war_player` p
+                    JOIN `guild_war_log` g ON p.`player_uuid` = player_uuid
+                    AND p.war_log_id = g.war_log_id AND g.territory_log_id IS NOT NULL),
+                survived_war = (SELECT COUNT(*) FROM `war_player` p
+                    JOIN `guild_war_log` g ON p.`player_uuid` = player_uuid AND NOT p.exited
+                    AND p.war_log_id = g.war_log_id AND g.territory_log_id IS NOT NULL)
+            WHERE uuid = player_uuid;
+        END IF;
+    END; //
+DELIMITER ;
+
+DELIMITER //
+CREATE TRIGGER IF NOT EXISTS `player_war_leaderboard_updater_1`
+    AFTER INSERT ON `war_player` FOR EACH ROW
+    BEGIN
+        IF NEW.player_uuid IS NOT NULL THEN
+            CALL update_player_war_leaderboard(NEW.player_uuid, NEW.player_name);
+        END IF;
+    END; //
+DELIMITER ;
+
+DELIMITER //
+CREATE TRIGGER IF NOT EXISTS `player_war_leaderboard_updater_2`
+    AFTER UPDATE ON `war_player` FOR EACH ROW
+    BEGIN
+        IF NEW.player_uuid IS NOT NULL THEN
+            CALL update_player_war_leaderboard(NEW.player_uuid, NEW.player_name);
         END IF;
     END; //
 DELIMITER ;

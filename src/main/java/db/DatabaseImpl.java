@@ -36,6 +36,7 @@ public class DatabaseImpl implements Database {
     private IgnoreChannelRepository ignoreChannelRepository;
     private GuildLeaderboardRepository guildLeaderboardRepository;
     private GuildXpLeaderboardRepository guildXpLeaderboardRepository;
+    private PlayerWarLeaderboardRepository playerWarLeaderboardRepository;
 
     public DatabaseImpl(Logger logger) {
         this.logger = logger;
@@ -171,5 +172,13 @@ public class DatabaseImpl implements Database {
             this.guildXpLeaderboardRepository = new GuildXpLeaderboardRepository(this.connectionPool, this.logger);
         }
         return this.guildXpLeaderboardRepository;
+    }
+
+    @Override
+    public @NotNull PlayerWarLeaderboardRepository getPlayerWarLeaderboardRepository() {
+        if (this.playerWarLeaderboardRepository == null) {
+            this.playerWarLeaderboardRepository = new PlayerWarLeaderboardRepository(this.connectionPool, this.logger);
+        }
+        return this.playerWarLeaderboardRepository;
     }
 }
