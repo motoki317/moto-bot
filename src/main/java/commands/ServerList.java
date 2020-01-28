@@ -49,7 +49,7 @@ public class ServerList extends GenericCommand {
     @NotNull
     @Override
     public String syntax() {
-        return "serverlist [all] [<num>]";
+        return "serverlist [all] [number]";
     }
 
     @NotNull

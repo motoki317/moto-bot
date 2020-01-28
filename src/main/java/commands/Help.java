@@ -94,8 +94,8 @@ public class Help extends GenericCommand {
         return (page) -> {
             EmbedBuilder eb = new EmbedBuilder()
                     .setColor(this.bot.getProperties().getMainColor())
-                    .setTitle("Commands List")
-                    .setFooter("`<text>` means required, `[text]` means optional arguments.")
+                    .setTitle(String.format("Commands List : Page [%s/%s]", page + 1, maxPage() + 1))
+                    .setFooter("<text> means required, and [text] means optional arguments.")
                     .setTimestamp(Instant.now());
 
             int min = COMMANDS_PER_PAGE * page;

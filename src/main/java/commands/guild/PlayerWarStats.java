@@ -70,7 +70,7 @@ public class PlayerWarStats extends GenericCommand {
 
     @Override
     public @NotNull String shortHelp() {
-        return "Shows player's war activities in their current guild.";
+        return "Shows war activities of a player.";
     }
 
     @Override

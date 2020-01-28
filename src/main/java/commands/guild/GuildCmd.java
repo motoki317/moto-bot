@@ -30,7 +30,7 @@ public class GuildCmd extends GenericCommand {
 
     @Override
     public @NotNull String shortHelp() {
-        return "Shows a guild's general information.";
+        return "Shows a guild's general information. Alias for g stats or gstats.";
     }
 
     @Override

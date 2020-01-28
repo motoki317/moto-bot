@@ -59,7 +59,7 @@ public class GuildWarStats extends GenericCommand {
 
     @Override
     public @NotNull String syntax() {
-        return "g <warstats|wstats|ws> <guild name>";
+        return "g warstats <guild name>";
     }
 
     @Override
