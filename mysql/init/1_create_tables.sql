@@ -79,7 +79,8 @@ CREATE TABLE IF NOT EXISTS `territory` (
     `start_z` INT,
     `end_x` INT,
     `end_z` INT,
-    KEY `guild_idx` (`guild_name`)
+    KEY `guild_idx` (`guild_name`),
+    KEY `acquired_idx` (`acquired`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 # Territory log is to be automatically updated by triggers, on `territory` table update

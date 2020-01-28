@@ -74,9 +74,13 @@ public class MessageListener extends ListenerAdapter {
 
         addCommand.accept(new GuildCmd(bot));
         addCommand.accept(new GuildStats(bot));
+
+        addCommand.accept(new GuildRank(bot));
+        addCommand.accept(new GainedXpRank(bot));
+
         addCommand.accept(new GuildWarStats(bot));
         addCommand.accept(new PlayerWarStats(bot));
-        addCommand.accept(new GainedXpRank(bot));
+
     }
 
     @Override

@@ -14,8 +14,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class TerritoryRepository extends Repository<Territory, TerritoryId> {
@@ -111,14 +110,70 @@ public class TerritoryRepository extends Repository<Territory, TerritoryId> {
         return -1;
     }
 
+    public static class TerritoryRank {
+        private String guildName;
+        private int count;
+        private int rank;
+
+        private TerritoryRank(String guildName, int count, int rank) {
+            this.guildName = guildName;
+            this.count = count;
+            this.rank = rank;
+        }
+
+        public String getGuildName() {
+            return guildName;
+        }
+
+        public int getCount() {
+            return count;
+        }
+
+        public int getRank() {
+            return rank;
+        }
+    }
+
+    /**
+     * Get ranking of guilds by number of territories.
+     * @return Ranking map, where keys are guild names and values are number of territories.
+     */
+    @Nullable
+    public List<TerritoryRank> getGuildTerritoryNumbers() {
+        ResultSet res = this.executeQuery(
+                "SELECT `guild_name`, COUNT(*) AS `territories`, RANK() OVER (ORDER BY COUNT(*) DESC) FROM `territory` GROUP BY `guild_name`"
+        );
+
+        if (res == null) {
+            return null;
+        }
+
+        try {
+            List<TerritoryRank> ranking = new ArrayList<>();
+            while (res.next()) {
+                String guildName = res.getString(1);
+                int territories = res.getInt(2);
+                int rank = res.getInt(3);
+                if (guildName == null) {
+                    throw new SQLException("Returned row was null");
+                }
+                ranking.add(new TerritoryRank(guildName, territories, rank));
+            }
+            return ranking;
+        } catch (SQLException e) {
+            this.logResponseException(e);
+        }
+        return null;
+    }
+
     /**
      * Get ranking of guild by number of territories.
      * @param guildName Guild name.
      * @return Ranking. -1 if something went wrong. 0 if the guild does not exist in the ranking.
      */
-    public int getGuildTerritoryRanking(@NotNull String guildName) {
+    public int getGuildTerritoryRankingSpecific(@NotNull String guildName) {
         ResultSet res = this.executeQuery(
-                "SELECT RANK() OVER (ORDER BY `ttn`.`terr_num` DESC) FROM (SELECT `guild_name`, COUNT(*) AS `terr_num` FROM `territory` GROUP BY `guild_name`) AS ttn WHERE `guild_name` = ?",
+                "SELECT `ttn`.`rank` FROM (SELECT `guild_name`, RANK() OVER (ORDER BY COUNT(*) DESC) AS `rank` FROM `territory` GROUP BY `guild_name`) AS ttn WHERE `guild_name` = ?",
                 guildName
         );
 
@@ -136,6 +191,29 @@ public class TerritoryRepository extends Repository<Territory, TerritoryId> {
             this.logResponseException(e);
             return -1;
         }
+    }
+
+    /**
+     * Retrieves the latest `acquired` time.
+     * @return Latest territory acquired time.
+     */
+    @Nullable
+    public Date getLatestAcquiredTime() {
+        ResultSet res = this.executeQuery(
+                "SELECT MAX(`acquired`) FROM `territory`"
+        );
+
+        if (res == null) {
+            return null;
+        }
+
+        try {
+            if (res.next())
+                return res.getTimestamp(1);
+        } catch (SQLException e) {
+            this.logResponseException(e);
+        }
+        return null;
     }
 
     @Nullable
