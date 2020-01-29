@@ -21,6 +21,7 @@ import net.dv8tion.jda.api.sharding.ShardManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import utils.FormatUtils;
+import utils.UUID;
 
 import java.text.DateFormat;
 import java.util.*;
@@ -177,10 +178,18 @@ public class PlayerTracker implements TaskBase {
     private void startWarTrack(String serverName, List<String> players, Date now) {
         List<WarPlayer> warPlayers = players.stream()
                 .map(p -> new WarPlayer(p, null, false)).collect(Collectors.toList());
+
+        // retrieve UUIDs
+        retrievePlayerUUIDs(warPlayers);
+
         // retrieve guild name
         String guildName = null;
         for (WarPlayer warPlayer : warPlayers) {
-            Player stats = this.wynnApi.getPlayerStatistics(warPlayer.getPlayerName(), false);
+            Player stats = this.wynnApi.getPlayerStatistics(
+                    warPlayer.getPlayerUUID() != null
+                            ? warPlayer.getPlayerUUID()
+                            : warPlayer.getPlayerName(),
+                    false);
             if (stats == null) {
                 continue;
             }
@@ -190,8 +199,6 @@ public class PlayerTracker implements TaskBase {
                 break;
             }
         }
-
-        retrievePlayerUUIDs(warPlayers);
 
         WarLog warLog = new WarLog(serverName, guildName, now, now, false, false, warPlayers);
 
@@ -214,33 +221,39 @@ public class PlayerTracker implements TaskBase {
             }
         }
 
-        boolean newPlayerJoined = false;
         Set<String> prevPlayers = warPlayers.stream().map(WarPlayer::getPlayerName).collect(Collectors.toSet());
+        List<WarPlayer> joinedPlayers = new ArrayList<>();
         for (String currentPlayer : currentPlayers) {
             // A player joined
             if (!prevPlayers.contains(currentPlayer)) {
-                newPlayerJoined = true;
-
                 WarPlayer warPlayer = new WarPlayer(prevWarLog.getId(), currentPlayer, null, false);
                 warPlayers.add(warPlayer);
-
-                // if guild name is null try to retrieve it
-                if (prevWarLog.getGuildName() == null) {
-                    Player stats = this.wynnApi.getPlayerStatistics(currentPlayer, false);
-                    if (stats == null) {
-                        continue;
-                    }
-                    // set uuid as well here
-                    warPlayer.setPlayerUUID(stats.getUuid());
-                    if (stats.getGuildInfo().getName() != null) {
-                        prevWarLog.setGuildName(stats.getGuildInfo().getName());
-                    }
-                }
+                joinedPlayers.add(warPlayer);
             }
         }
 
-        if (newPlayerJoined) {
-            retrievePlayerUUIDs(warPlayers);
+        retrievePlayerUUIDs(warPlayers);
+
+        // if guild name is null try to retrieve it
+        if (prevWarLog.getGuildName() == null) {
+            for (WarPlayer joinedPlayer : joinedPlayers) {
+                Player stats = this.wynnApi.getPlayerStatistics(
+                        joinedPlayer.getPlayerUUID() != null
+                            ? joinedPlayer.getPlayerUUID()
+                            : joinedPlayer.getPlayerName(),
+                        false);
+                if (stats == null) {
+                    continue;
+                }
+                // set uuid as well here if possible
+                if (joinedPlayer.getPlayerUUID() == null) {
+                    joinedPlayer.setPlayerUUID(new UUID(stats.getUuid()).toStringWithHyphens());
+                }
+                if (stats.getGuildInfo().getName() != null) {
+                    prevWarLog.setGuildName(stats.getGuildInfo().getName());
+                    break;
+                }
+            }
         }
 
         boolean res = this.warLogRepository.update(prevWarLog);
@@ -252,6 +265,7 @@ public class PlayerTracker implements TaskBase {
 
     /**
      * Requests mojang api for list of players and try to retrieve list of UUIDs.
+     * Filters to only players with unknown UUID, and immediately returns if the set is empty.
      * @param warPlayers List of players joining a war server.
      */
     private void retrievePlayerUUIDs(List<WarPlayer> warPlayers) {
