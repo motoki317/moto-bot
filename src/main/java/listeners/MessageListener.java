@@ -64,7 +64,7 @@ public class MessageListener extends ListenerAdapter {
         addCommand.accept(new Ping(bot));
         addCommand.accept(new Info(bot));
         addCommand.accept(new ServerList(bot));
-        addCommand.accept(new Track(bot.getDatabase()));
+        addCommand.accept(new Track(bot));
         addCommand.accept(new TimeZoneCmd(bot.getDatabase().getTimeZoneRepository(), bot.getDatabase().getDateFormatRepository()));
         addCommand.accept(new PrefixCmd(bot.getProperties().prefix, bot.getDatabase().getPrefixRepository()));
         addCommand.accept(new DateFormatCmd(bot.getDatabase().getDateFormatRepository(), bot.getDatabase().getTimeZoneRepository()));

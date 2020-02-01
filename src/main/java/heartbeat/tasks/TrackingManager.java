@@ -49,6 +49,8 @@ public class TrackingManager implements TaskBase {
                             "to refresh them before they expire.\n" +
                             String.format("**%s**", track.getDisplayName())
                     ).queue();
+
+                    this.logger.log(0, ":mute: A tracking has expired:\n" + track.toString());
                 } else {
                     this.logger.log(0, "Something went wrong while trying to remove expired track: " + track.toString());
                 }

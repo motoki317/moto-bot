@@ -1,5 +1,6 @@
 package commands;
 
+import app.Bot;
 import commands.base.GuildCommand;
 import db.Database;
 import db.model.dateFormat.CustomDateFormat;
@@ -9,6 +10,7 @@ import db.model.track.TrackType;
 import db.repository.base.DateFormatRepository;
 import db.repository.base.TimeZoneRepository;
 import db.repository.base.TrackChannelRepository;
+import log.Logger;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.entities.Message;
@@ -21,11 +23,14 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class Track extends GuildCommand {
+    private final Logger logger;
     private final TrackChannelRepository trackChannelRepository;
     private final DateFormatRepository dateFormatRepository;
     private final TimeZoneRepository timeZoneRepository;
 
-    public Track(Database db) {
+    public Track(Bot bot) {
+        this.logger = bot.getLogger();
+        Database db = bot.getDatabase();
         this.trackChannelRepository = db.getTrackingChannelRepository();
         this.dateFormatRepository = db.getDateFormatRepository();
         this.timeZoneRepository = db.getTimeZoneRepository();
@@ -175,6 +180,7 @@ public class Track extends GuildCommand {
             // Disable tracking
             if (this.trackChannelRepository.delete(entity)) {
                 respond(event, ":mute: Successfully **disabled** " + entity.getDisplayName() + " for this channel.");
+                this.logger.log(0, "mute: Tracking has been **disabled**:\n" + entity.toString());
             } else {
                 respondError(event, "Something went wrong while saving data.");
             }
@@ -197,6 +203,7 @@ public class Track extends GuildCommand {
 
             if (this.trackChannelRepository.create(entity)) {
                 respond(event, ":loud_sound: Successfully **enabled** " + entity.getDisplayName() + " for this channel!");
+                this.logger.log(0, "loud_sound: Tracking has been **enabled**:\n" + entity.toString());
             } else {
                 respondError(event, "Something went wrong while saving data.");
             }
