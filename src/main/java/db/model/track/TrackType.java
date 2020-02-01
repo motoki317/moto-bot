@@ -1,28 +1,32 @@
 package db.model.track;
 
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 public enum TrackType {
-    WAR_ALL("War Tracking (All Guilds)"),
-    WAR_SPECIFIC("War Tracking (Specific Guild)"),
-    WAR_PLAYER("War Tracking (Specific Player)"),
+    WAR_ALL("War Tracking (All Guilds)", TimeUnit.DAYS.toMillis(30)),
+    WAR_SPECIFIC("War Tracking (Specific Guild)", TimeUnit.DAYS.toMillis(90)),
+    WAR_PLAYER("War Tracking (Specific Player)", TimeUnit.DAYS.toMillis(90)),
 
-    TERRITORY_ALL("Territory Tracking (All Guilds)"),
-    TERRITORY_SPECIFIC("Territory Tracking (Specific Guild)"),
+    TERRITORY_ALL("Territory Tracking (All Guilds)", TimeUnit.DAYS.toMillis(30)),
+    TERRITORY_SPECIFIC("Territory Tracking (Specific Guild)", TimeUnit.DAYS.toMillis(90)),
 
-    SERVER_START("Server Start Tracking (WC/EU Servers)"),
-    SERVER_CLOSE("Server Close Tracking (WC/EU Servers)"),
+    SERVER_START("Server Start Tracking (WC/EU Servers)", TimeUnit.DAYS.toMillis(365)),
+    SERVER_CLOSE("Server Close Tracking (WC/EU Servers)", TimeUnit.DAYS.toMillis(365)),
 
-    SERVER_START_ALL("Server Start Tracking (All Servers)"),
-    SERVER_CLOSE_ALL("Server Close Tracking (All Servers)"),
+    SERVER_START_ALL("Server Start Tracking (All Servers)", TimeUnit.DAYS.toMillis(365)),
+    SERVER_CLOSE_ALL("Server Close Tracking (All Servers)", TimeUnit.DAYS.toMillis(365)),
 
-    GUILD_CREATE("Guild Creation"),
-    GUILD_DELETE("Guild Deletion");
+    GUILD_CREATE("Guild Creation", TimeUnit.DAYS.toMillis(365)),
+    GUILD_DELETE("Guild Deletion", TimeUnit.DAYS.toMillis(365));
 
     private String displayName;
+    // default expire time in millis
+    private long defaultExpireTime;
 
-    TrackType(String displayName) {
+    TrackType(String displayName, long defaultExpireTime) {
         this.displayName = displayName;
+        this.defaultExpireTime = defaultExpireTime;
     }
 
     private static List<Set<TrackType>> conflictGroups;
@@ -41,8 +45,20 @@ public enum TrackType {
         conflictGroups.add(serverClose);
     }
 
+    /**
+     * Get display name (e.g. "War Tracking (All Guilds)") for this track type.
+     * @return Display name.
+     */
     public String getDisplayName() {
         return displayName;
+    }
+
+    /**
+     * Get default expire time in millis for this track type.
+     * @return Time in millis.
+     */
+    public long getDefaultExpireTime() {
+        return defaultExpireTime;
     }
 
     public Set<TrackType> getConflictTypes() {

@@ -6,7 +6,9 @@ import db.repository.base.TrackChannelRepository;
 import org.jetbrains.annotations.TestOnly;
 import org.junit.jupiter.api.Test;
 
+import java.util.Date;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 class TestTrackChannelRepository {
     @TestOnly
@@ -31,7 +33,8 @@ class TestTrackChannelRepository {
         clearTable();
         TrackChannelRepository repo = getRepository();
 
-        TrackChannel entity = new TrackChannel(TrackType.TERRITORY_ALL, 1000L, 5000L);
+        Date expiresAt = new Date(((System.currentTimeMillis() / 1000) * 1000) + TimeUnit.DAYS.toMillis(30));
+        TrackChannel entity = new TrackChannel(TrackType.TERRITORY_ALL, 1000L, 5000L, 10_000L, expiresAt);
 
         assert repo.count() == 0;
         assert !repo.exists(entity);
@@ -43,6 +46,10 @@ class TestTrackChannelRepository {
 
         List<TrackChannel> res = repo.findAllOfType(TrackType.TERRITORY_ALL);
         assert res != null && res.size() == 1;
+        TrackChannel retrieved = res.get(0);
+        assert retrieved.getUserId() == 10_000L;
+        assert retrieved.getExpiresAt().getTime() == expiresAt.getTime();
+
         res = repo.findAllOfType(TrackType.WAR_ALL);
         assert res != null && res.size() == 0;
 
@@ -59,7 +66,9 @@ class TestTrackChannelRepository {
 
         long guildId = 2000L;
         long channelId = 6000L;
-        TrackChannel entity = new TrackChannel(TrackType.WAR_SPECIFIC, guildId, channelId);
+        long userId = 10_000L;
+        Date expiresAt = new Date(System.currentTimeMillis() + TimeUnit.DAYS.toMillis(30));
+        TrackChannel entity = new TrackChannel(TrackType.WAR_SPECIFIC, guildId, channelId, userId, expiresAt);
         entity.setGuildName("Salted Test");
 
         assert repo.create(entity);

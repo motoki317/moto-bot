@@ -2,8 +2,12 @@ package commands;
 
 import commands.base.GuildCommand;
 import db.Database;
+import db.model.dateFormat.CustomDateFormat;
+import db.model.timezone.CustomTimeZone;
 import db.model.track.TrackChannel;
 import db.model.track.TrackType;
+import db.repository.base.DateFormatRepository;
+import db.repository.base.TimeZoneRepository;
 import db.repository.base.TrackChannelRepository;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.MessageBuilder;
@@ -12,16 +16,19 @@ import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Set;
+import java.text.DateFormat;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class Track extends GuildCommand {
-    private final Database db;
+    private final TrackChannelRepository trackChannelRepository;
+    private final DateFormatRepository dateFormatRepository;
+    private final TimeZoneRepository timeZoneRepository;
 
     public Track(Database db) {
-        this.db = db;
+        this.trackChannelRepository = db.getTrackingChannelRepository();
+        this.dateFormatRepository = db.getDateFormatRepository();
+        this.timeZoneRepository = db.getTimeZoneRepository();
     }
 
     @NotNull
@@ -33,7 +40,7 @@ public class Track extends GuildCommand {
     @NotNull
     @Override
     public String syntax() {
-        return "track <server|guild|war|territory>";
+        return "track [server|guild|war|territory|update|refresh]";
     }
 
     @NotNull
@@ -49,11 +56,14 @@ public class Track extends GuildCommand {
                 new EmbedBuilder()
                 .setAuthor("Track Command Help")
                 .setDescription("Running this command in a guild channel will make the bot to send messages when a certain track event occurs. " +
-                        "Type the same command to enable/disable tracking.")
+                        "Type the same command to enable/disable tracking.\n" +
+                        "Each tracking option has default expiration time, so you will either have to reset the " +
+                        "tracking or use `track <update|refresh>` command to update the expiration time.")
                 .addField("Syntax",
                         String.join("\n",
                                 "`" + this.syntax() + "`",
-                                "First argument specifies the type of tracking."
+                                "First argument specifies the type of action, or type of tracking. " +
+                                        "Use without arguments to view all tracking currently enabled in this channel."
                                 ),
                         false)
                 .addField("Server Tracking Syntax",
@@ -94,6 +104,11 @@ public class Track extends GuildCommand {
                                 "`[name]` optional argument must be specified if you choose guild track type."
                                 ),
                         false)
+                .addField("Update the Expiration Time",
+                        String.join("\n",
+                        "Type `track <update|refresh>` to update expiration time for all tracking enabled in " +
+                                "this channel."),
+                        false)
                 .addField("Examples",
                         String.join("\n",
                                 "`track server close all`",
@@ -108,13 +123,31 @@ public class Track extends GuildCommand {
 
     @Override
     public void process(@NotNull MessageReceivedEvent event, @NotNull String[] args) {
+        if (args.length <= 1) {
+            sendCurrentTrackingMessage(event);
+            return;
+        }
+
+        switch (args[1].toLowerCase()) {
+            case "update":
+            case "refresh":
+                if (refreshTracking(event)) {
+                    respond(event, ":white_check_mark: Successfully refreshed expiration time!");
+                }
+                return;
+        }
+
         TrackType type = getCorrespondingTrackType(args);
         if (type == null) {
             respond(event, "Invalid arguments. Please refer to help.");
             return;
         }
 
-        TrackChannel entity = new TrackChannel(type, event.getGuild().getIdLong(), event.getChannel().getIdLong());
+        Date expiresAt = new Date(System.currentTimeMillis() + type.getDefaultExpireTime());
+        TrackChannel entity = new TrackChannel(
+                type, event.getGuild().getIdLong(), event.getChannel().getIdLong(),
+                event.getAuthor().getIdLong(), expiresAt
+        );
 
         switch (type) {
             case WAR_SPECIFIC:
@@ -138,11 +171,9 @@ public class Track extends GuildCommand {
                 break;
         }
 
-        TrackChannelRepository repo = this.db.getTrackingChannelRepository();
-
-        if (repo.exists(entity)) {
+        if (this.trackChannelRepository.exists(entity)) {
             // Disable tracking
-            if (repo.delete(entity)) {
+            if (this.trackChannelRepository.delete(entity)) {
                 respond(event, ":mute: Successfully **disabled** " + entity.getDisplayName() + " for this channel.");
             } else {
                 respondError(event, "Something went wrong while saving data.");
@@ -151,7 +182,7 @@ public class Track extends GuildCommand {
             // Enable tracking
 
             // Check conflicting types
-            List<TrackChannel> conflicting = getConflictingEntities(repo, type, event);
+            List<TrackChannel> conflicting = getConflictingEntities(type, event);
             if (conflicting == null) {
                 respondError(event, "Something went wrong while retrieving data.");
                 return;
@@ -164,7 +195,7 @@ public class Track extends GuildCommand {
                 return;
             }
 
-            if (repo.create(entity)) {
+            if (this.trackChannelRepository.create(entity)) {
                 respond(event, ":loud_sound: Successfully **enabled** " + entity.getDisplayName() + " for this channel!");
             } else {
                 respondError(event, "Something went wrong while saving data.");
@@ -172,12 +203,87 @@ public class Track extends GuildCommand {
         }
     }
 
+    /**
+     * Formats message to view all tracking enabled in the channel and sends it.
+     * @param event Guild Message received event.
+     */
+    private void sendCurrentTrackingMessage(MessageReceivedEvent event) {
+        long guildId = event.getGuild().getIdLong();
+        long channelId = event.getChannel().getIdLong();
+        List<TrackChannel> tracks = this.trackChannelRepository.findAllOf(guildId, channelId);
+        if (tracks == null) {
+            respondError(event, "Something went wrong while retrieving data...");
+            return;
+        }
+
+        if (tracks.size() == 0) {
+            respond(event, "You do not seem to have any tracking enabled in this channel yet. " +
+                    "See help with `track help` for more.");
+            return;
+        }
+
+        List<String> ret = new ArrayList<>();
+        CustomDateFormat customDateFormat = this.dateFormatRepository.getDateFormat(event);
+        CustomTimeZone customTimeZone = this.timeZoneRepository.getTimeZone(event);
+        DateFormat dateFormat = customDateFormat.getDateFormat().getSecondFormat();
+        dateFormat.setTimeZone(customTimeZone.getTimeZoneInstance());
+
+        ret.add("**List of enabled tracking for this channel**");
+        ret.add(String.format("You have %s tracking(s) enabled for this channel.", tracks.size()));
+        ret.add("");
+
+        for (TrackChannel track : tracks) {
+            ret.add(String.format("`%s` : Expires at `%s` (%s)",
+                    track.getDisplayName(),
+                    dateFormat.format(track.getExpiresAt()),
+                    customTimeZone.getFormattedTime()
+            ));
+        }
+
+        respond(event, String.join("\n", ret));
+    }
+
+    /**
+     * Refreshes tracking in the channel.
+     * @param event Discord guild message received event.
+     * @return {@code true} if success. Else, sends error message.
+     */
+    private boolean refreshTracking(MessageReceivedEvent event) {
+        long guildId = event.getGuild().getIdLong();
+        long channelId = event.getChannel().getIdLong();
+        List<TrackChannel> tracks = this.trackChannelRepository.findAllOf(guildId, channelId);
+        if (tracks == null) {
+            respondError(event, "Something went wrong while retrieving data...");
+            return false;
+        }
+
+        if (tracks.isEmpty()) {
+            respond(event, "You do not seem to have any tracking enabled in this channel yet. " +
+                    "See help with `track help` for more.");
+            return false;
+        }
+
+        long now = System.currentTimeMillis();
+        for (TrackChannel track : tracks) {
+            Date newExpirationTime = new Date(now + track.getType().getDefaultExpireTime());
+            if (track.getExpiresAt().getTime() < newExpirationTime.getTime()) {
+                track.setExpiresAt(newExpirationTime);
+            }
+            // calls update method n times here, but shouldn't be a big problem...
+            if (!this.trackChannelRepository.update(track)) {
+                respondError(event, "Something went wrong while updating data...");
+                return false;
+            }
+        }
+        return true;
+    }
+
     @Nullable
-    private static List<TrackChannel> getConflictingEntities(TrackChannelRepository repo, TrackType type, MessageReceivedEvent event) {
+    private List<TrackChannel> getConflictingEntities(TrackType type, MessageReceivedEvent event) {
         long guildId = event.getGuild().getIdLong();
         long channelId = event.getChannel().getIdLong();
         Set<TrackType> conflictTypes = type.getConflictTypes();
-        List<TrackChannel> possible = repo.findAllOf(guildId, channelId);
+        List<TrackChannel> possible = this.trackChannelRepository.findAllOf(guildId, channelId);
         if (possible == null) {
             return null;
         }

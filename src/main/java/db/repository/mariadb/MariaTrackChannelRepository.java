@@ -11,9 +11,12 @@ import org.jetbrains.annotations.Nullable;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.List;
 
 class MariaTrackChannelRepository extends TrackChannelRepository {
+    private static final DateFormat dbFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
     // NOTE: guild_name, player_name columns are NULL-able
 
     MariaTrackChannelRepository(ConnectionPool db, Logger logger) {
@@ -21,7 +24,10 @@ class MariaTrackChannelRepository extends TrackChannelRepository {
     }
 
     protected TrackChannel bind(@NotNull ResultSet res) throws SQLException {
-        TrackChannel instance = new TrackChannel(TrackType.valueOf(res.getString(1)), res.getLong(2), res.getLong(3));
+        TrackChannel instance = new TrackChannel(
+                TrackType.valueOf(res.getString(1)), res.getLong(2), res.getLong(3),
+                res.getLong(6), res.getTimestamp(7)
+        );
         instance.setGuildName(res.getString(4));
         instance.setPlayerName(res.getString(5));
         return instance;
@@ -30,12 +36,14 @@ class MariaTrackChannelRepository extends TrackChannelRepository {
     @Override
     public boolean create(@NotNull TrackChannel entity) {
         return this.execute(
-                "INSERT INTO `track_channel` (`type`, `guild_id`, `channel_id`, `guild_name`, `player_name`) VALUES (?, ?, ?, ?, ?)",
+                "INSERT INTO `track_channel` (`type`, `guild_id`, `channel_id`, `guild_name`, `player_name`, `user_id`, `expires_at`) VALUES (?, ?, ?, ?, ?, ?, ?)",
                 entity.getType(),
                 entity.getGuildId(),
                 entity.getChannelId(),
                 entity.getGuildName(),
-                entity.getPlayerName()
+                entity.getPlayerName(),
+                entity.getUserId(),
+                dbFormat.format(entity.getExpiresAt())
         );
     }
 
@@ -130,12 +138,14 @@ class MariaTrackChannelRepository extends TrackChannelRepository {
     @Override
     public boolean update(@NotNull TrackChannel entity) {
         return this.execute(
-                "UPDATE `track_channel` SET `guild_name` = ?, `player_name` = ? WHERE `type` = ? AND `guild_id` = ? AND `channel_id` = ?",
-                entity.getGuildName(),
-                entity.getPlayerName(),
+                "UPDATE `track_channel` SET `user_id` = ?, `expires_at` = ? WHERE `type` = ? AND `guild_id` = ? AND `channel_id` = ? AND `guild_name` <=> ? AND `player_name` <=> ?",
+                entity.getUserId(),
+                dbFormat.format(entity.getExpiresAt()),
                 entity.getType(),
                 entity.getGuildId(),
-                entity.getChannelId()
+                entity.getChannelId(),
+                entity.getGuildName(),
+                entity.getPlayerName()
         );
     }
 

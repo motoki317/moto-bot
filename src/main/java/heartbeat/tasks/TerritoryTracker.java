@@ -1,4 +1,4 @@
-package heartbeat.tracking;
+package heartbeat.tasks;
 
 import api.wynn.WynnApi;
 import api.wynn.structs.TerritoryList;

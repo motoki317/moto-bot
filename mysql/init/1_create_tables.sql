@@ -8,6 +8,9 @@ CREATE TABLE IF NOT EXISTS `track_channel` (
     `channel_id` BIGINT NOT NULL,
     `guild_name` VARCHAR(30) NULL,
     `player_name` VARCHAR(16) NULL,
+    # discord user id of the user who created track
+    `user_id` BIGINT NOT NULL,
+    `expires_at` DATETIME NOT NULL,
     `guild_name_v` VARCHAR(30) AS (IF(`guild_name` IS NULL, '', `guild_name`)) VIRTUAL,
     `player_name_v` VARCHAR(16) AS (IF(`player_name` IS NULL, '', `player_name`)) VIRTUAL,
     UNIQUE KEY (`type`, `guild_id`, `channel_id`, `guild_name_v`, `player_name_v`)

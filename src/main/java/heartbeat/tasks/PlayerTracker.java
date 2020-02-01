@@ -1,4 +1,4 @@
-package heartbeat.tracking;
+package heartbeat.tasks;
 
 import api.mojang.MojangApi;
 import api.mojang.structs.NullableUUID;

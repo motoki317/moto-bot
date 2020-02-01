@@ -3,6 +3,7 @@ package db.model.track;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Date;
 import java.util.Objects;
 
 public class TrackChannel implements TrackChannelId {
@@ -16,10 +17,16 @@ public class TrackChannel implements TrackChannelId {
     @Nullable
     private String playerName;
 
-    public TrackChannel(@NotNull TrackType type, long guildId, long channelId) {
+    private long userId;
+    @NotNull
+    private Date expiresAt;
+
+    public TrackChannel(@NotNull TrackType type, long guildId, long channelId, long userId, @NotNull Date expiresAt) {
         this.type = type;
         this.guildId = guildId;
         this.channelId = channelId;
+        this.userId = userId;
+        this.expiresAt = expiresAt;
     }
 
     @NotNull
@@ -53,6 +60,19 @@ public class TrackChannel implements TrackChannelId {
         this.playerName = playerName;
     }
 
+    public long getUserId() {
+        return userId;
+    }
+
+    @NotNull
+    public Date getExpiresAt() {
+        return expiresAt;
+    }
+
+    public void setExpiresAt(@NotNull Date expiresAt) {
+        this.expiresAt = expiresAt;
+    }
+
     @NotNull
     public String getDisplayName() {
         String ret = this.type.getDisplayName();
@@ -66,6 +86,11 @@ public class TrackChannel implements TrackChannelId {
                 break;
         }
         return ret;
+    }
+
+    @Override
+    public String toString() {
+        return this.getDisplayName() + " guild id: " + guildId + " channel id: " + channelId;
     }
 
     @Override
