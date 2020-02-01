@@ -1,9 +1,9 @@
-package db.repository;
+package db.repository.mariadb;
 
 import db.ConnectionPool;
 import db.model.guildXpLeaderboard.GuildXpLeaderboard;
 import db.model.guildXpLeaderboard.GuildXpLeaderboardId;
-import db.repository.base.Repository;
+import db.repository.base.GuildXpLeaderboardRepository;
 import log.Logger;
 import org.jetbrains.annotations.NotNull;
 
@@ -16,10 +16,10 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class GuildXpLeaderboardRepository extends Repository<GuildXpLeaderboard, GuildXpLeaderboardId> {
+class MariaGuildXpLeaderboardRepository extends GuildXpLeaderboardRepository {
     private static final DateFormat dbFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
-    public GuildXpLeaderboardRepository(ConnectionPool db, Logger logger) {
+    MariaGuildXpLeaderboardRepository(ConnectionPool db, Logger logger) {
         super(db, logger);
     }
 
@@ -169,10 +169,6 @@ public class GuildXpLeaderboardRepository extends Repository<GuildXpLeaderboard,
         );
     }
 
-    /**
-     * Truncates table and deletes all data.
-     * @return true if success.
-     */
     public boolean truncateTable() {
         return this.execute(
                 "TRUNCATE TABLE `guild_xp_leaderboard`"

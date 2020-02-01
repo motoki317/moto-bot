@@ -1,7 +1,7 @@
 package db;
 
 import db.model.playerWarLeaderboard.PlayerWarLeaderboard;
-import db.repository.PlayerWarLeaderboardRepository;
+import db.repository.base.PlayerWarLeaderboardRepository;
 import org.jetbrains.annotations.TestOnly;
 import org.junit.jupiter.api.Test;
 

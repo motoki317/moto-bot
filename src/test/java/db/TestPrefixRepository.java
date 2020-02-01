@@ -2,7 +2,7 @@ package db;
 
 import db.model.prefix.Prefix;
 import db.model.prefix.PrefixId;
-import db.repository.PrefixRepository;
+import db.repository.base.PrefixRepository;
 import org.jetbrains.annotations.TestOnly;
 import org.junit.jupiter.api.Test;
 

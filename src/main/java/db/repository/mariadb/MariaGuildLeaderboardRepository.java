@@ -1,9 +1,9 @@
-package db.repository;
+package db.repository.mariadb;
 
 import db.ConnectionPool;
 import db.model.guildLeaderboard.GuildLeaderboard;
 import db.model.guildLeaderboard.GuildLeaderboardId;
-import db.repository.base.Repository;
+import db.repository.base.GuildLeaderboardRepository;
 import log.Logger;
 import org.jetbrains.annotations.NotNull;
 
@@ -17,10 +17,10 @@ import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class GuildLeaderboardRepository extends Repository<GuildLeaderboard, GuildLeaderboardId> {
+class MariaGuildLeaderboardRepository extends GuildLeaderboardRepository {
     private static final DateFormat dbFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
-    public GuildLeaderboardRepository(ConnectionPool db, Logger logger) {
+    MariaGuildLeaderboardRepository(ConnectionPool db, Logger logger) {
         super(db, logger);
     }
 
@@ -131,10 +131,6 @@ public class GuildLeaderboardRepository extends Repository<GuildLeaderboard, Gui
         return null;
     }
 
-    /**
-     * Retrieves all entries where the 'updated at' field is the latest.
-     * @return List of entries.
-     */
     @Nullable
     public List<GuildLeaderboard> getLatestLeaderboard() {
         ResultSet res = this.executeQuery(
@@ -153,10 +149,6 @@ public class GuildLeaderboardRepository extends Repository<GuildLeaderboard, Gui
         }
     }
 
-    /**
-     * Get the newest 'updated at' field.
-     * @return Newest date. null if something went wrong, or there are no entries.
-     */
     @Nullable
     public Date getNewestDate() {
         ResultSet res = this.executeQuery(
@@ -176,10 +168,6 @@ public class GuildLeaderboardRepository extends Repository<GuildLeaderboard, Gui
         return null;
     }
 
-    /**
-     * Get the oldest 'updated at' field.
-     * @return Oldest date. null if something went wrong, or there are no entries.
-     */
     @Nullable
     public Date getOldestDate() {
         ResultSet res = this.executeQuery(
@@ -199,12 +187,6 @@ public class GuildLeaderboardRepository extends Repository<GuildLeaderboard, Gui
         return null;
     }
 
-    /**
-     * Checks if entries exists between given two dates.
-     * @param old Old date. Exclusive.
-     * @param newer New date. Exclusive.
-     * @return Date. null if something went wrong, or the value doesn't exist.
-     */
     @Nullable
     public Date getNewestDateBetween(@NotNull Date old, @NotNull Date newer) {
         ResultSet res = this.executeQuery(
@@ -269,11 +251,6 @@ public class GuildLeaderboardRepository extends Repository<GuildLeaderboard, Gui
         );
     }
 
-    /**
-     * Deletes all entries older than the given date.
-     * @param date Date. Exclusive.
-     * @return true if success.
-     */
     public boolean deleteAllOlderThan(@NotNull Date date) {
         return this.execute(
                 "DELETE FROM `guild_leaderboard` WHERE `updated_at` < ?",

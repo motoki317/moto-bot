@@ -1,6 +1,6 @@
 package db;
 
-import db.repository.*;
+import db.repository.base.*;
 import org.jetbrains.annotations.NotNull;
 
 public interface Database {

@@ -1,7 +1,7 @@
 package db;
 
 import db.model.commandLog.CommandLog;
-import db.repository.CommandLogRepository;
+import db.repository.base.CommandLogRepository;
 import org.jetbrains.annotations.TestOnly;
 import org.junit.jupiter.api.Test;
 

@@ -1,5 +1,6 @@
 package db;
 
+import db.repository.mariadb.DatabaseMariaImpl;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.TestOnly;
@@ -10,7 +11,7 @@ class TestDBUtils {
     @Contract(" -> new")
     @TestOnly
     static Database createDatabase() {
-        return new DatabaseImpl(TestUtils.getLogger());
+        return new DatabaseMariaImpl(TestUtils.getLogger());
     }
 
     private static final String MYSQL_HOST = System.getenv("MYSQL_HOST");

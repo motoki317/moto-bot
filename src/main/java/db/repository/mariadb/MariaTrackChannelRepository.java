@@ -1,10 +1,10 @@
-package db.repository;
+package db.repository.mariadb;
 
 import db.ConnectionPool;
 import db.model.track.TrackChannel;
 import db.model.track.TrackChannelId;
 import db.model.track.TrackType;
-import db.repository.base.Repository;
+import db.repository.base.TrackChannelRepository;
 import log.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -13,11 +13,18 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 
-public class TrackChannelRepository extends Repository<TrackChannel, TrackChannelId> {
+class MariaTrackChannelRepository extends TrackChannelRepository {
     // NOTE: guild_name, player_name columns are NULL-able
 
-    public TrackChannelRepository(ConnectionPool db, Logger logger) {
+    MariaTrackChannelRepository(ConnectionPool db, Logger logger) {
         super(db, logger);
+    }
+
+    protected TrackChannel bind(@NotNull ResultSet res) throws SQLException {
+        TrackChannel instance = new TrackChannel(TrackType.valueOf(res.getString(1)), res.getLong(2), res.getLong(3));
+        instance.setGuildName(res.getString(4));
+        instance.setPlayerName(res.getString(5));
+        return instance;
     }
 
     @Override
@@ -159,12 +166,5 @@ public class TrackChannelRepository extends Repository<TrackChannel, TrackChanne
             this.logResponseException(e);
             return null;
         }
-    }
-
-    protected TrackChannel bind(@NotNull ResultSet res) throws SQLException {
-        TrackChannel instance = new TrackChannel(TrackType.valueOf(res.getString(1)), res.getLong(2), res.getLong(3));
-        instance.setGuildName(res.getString(4));
-        instance.setPlayerName(res.getString(5));
-        return instance;
     }
 }

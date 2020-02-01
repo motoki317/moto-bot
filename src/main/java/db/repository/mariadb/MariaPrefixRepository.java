@@ -1,9 +1,9 @@
-package db.repository;
+package db.repository.mariadb;
 
 import db.ConnectionPool;
 import db.model.prefix.Prefix;
 import db.model.prefix.PrefixId;
-import db.repository.base.Repository;
+import db.repository.base.PrefixRepository;
 import log.Logger;
 import org.jetbrains.annotations.NotNull;
 
@@ -12,8 +12,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 
-public class PrefixRepository extends Repository<Prefix, PrefixId> {
-    public PrefixRepository(ConnectionPool db, Logger logger) {
+class MariaPrefixRepository extends PrefixRepository {
+    MariaPrefixRepository(ConnectionPool db, Logger logger) {
         super(db, logger);
     }
 

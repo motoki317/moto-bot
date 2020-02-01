@@ -2,7 +2,7 @@ package db;
 
 import db.model.timezone.CustomTimeZone;
 import db.model.timezone.CustomTimeZoneId;
-import db.repository.TimeZoneRepository;
+import db.repository.base.TimeZoneRepository;
 import org.jetbrains.annotations.TestOnly;
 import org.junit.jupiter.api.Test;
 

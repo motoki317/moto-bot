@@ -1,9 +1,9 @@
-package db.repository;
+package db.repository.mariadb;
 
 import db.ConnectionPool;
 import db.model.territoryLog.TerritoryLog;
 import db.model.territoryLog.TerritoryLogId;
-import db.repository.base.Repository;
+import db.repository.base.TerritoryLogRepository;
 import log.Logger;
 import org.jetbrains.annotations.NotNull;
 
@@ -14,8 +14,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class TerritoryLogRepository extends Repository<TerritoryLog, TerritoryLogId> {
-    public TerritoryLogRepository(ConnectionPool db, Logger logger) {
+public class MariaTerritoryLogRepository extends TerritoryLogRepository {
+    MariaTerritoryLogRepository(ConnectionPool db, Logger logger) {
         super(db, logger);
     }
 
@@ -69,10 +69,6 @@ public class TerritoryLogRepository extends Repository<TerritoryLog, TerritoryLo
         return 0;
     }
 
-    /**
-     * Retrieves MAX(id) of the territory_log table.
-     * @return Max(id) if successful. -1 if not.
-     */
     public int lastInsertId() {
         ResultSet res = this.executeQuery(
                 "SELECT MAX(`id`) FROM `territory_log`"
@@ -91,12 +87,6 @@ public class TerritoryLogRepository extends Repository<TerritoryLog, TerritoryLo
         return -1;
     }
 
-    /**
-     * Finds all territory logs with id from old id (exclusive) and new id (inclusive).
-     * @param oldId Old last id (exclusive).
-     * @param newId New last id (inclusive).
-     * @return List of logs. null if something went wrong.
-     */
     @Nullable
     public List<TerritoryLog> findAllInRange(int oldId, int newId) {
         ResultSet res = this.executeQuery(
@@ -138,11 +128,6 @@ public class TerritoryLogRepository extends Repository<TerritoryLog, TerritoryLo
         return null;
     }
 
-        /**
-     * Finds all logs that is contained in the given list of IDs.
-     * @param ids List of IDs.
-     * @return List of logs.
-     */
     @Nullable
     public List<TerritoryLog> findAllIn(List<Integer> ids) {
         if (ids.isEmpty()) {

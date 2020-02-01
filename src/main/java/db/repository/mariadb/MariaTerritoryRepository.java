@@ -1,9 +1,10 @@
-package db.repository;
+package db.repository.mariadb;
 
 import db.ConnectionPool;
 import db.model.territory.Territory;
 import db.model.territory.TerritoryId;
-import db.repository.base.Repository;
+import db.model.territory.TerritoryRank;
+import db.repository.base.TerritoryRepository;
 import log.Logger;
 import org.jetbrains.annotations.NotNull;
 
@@ -14,13 +15,16 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
-public class TerritoryRepository extends Repository<Territory, TerritoryId> {
+class MariaTerritoryRepository extends TerritoryRepository {
     private static final DateFormat dbFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
-    public TerritoryRepository(ConnectionPool db, Logger logger) {
+    MariaTerritoryRepository(ConnectionPool db, Logger logger) {
         super(db, logger);
     }
 
@@ -86,11 +90,6 @@ public class TerritoryRepository extends Repository<Territory, TerritoryId> {
         return 0;
     }
 
-    /**
-     * Counts number of guild territories a guild possesses.
-     * @param guildName Guild name.
-     * @return Territory count. -1 if something
-     */
     public int countGuildTerritories(@NotNull String guildName) {
         ResultSet res = this.executeQuery(
                 "SELECT count_guild_territories(?)",
@@ -110,34 +109,6 @@ public class TerritoryRepository extends Repository<Territory, TerritoryId> {
         return -1;
     }
 
-    public static class TerritoryRank {
-        private String guildName;
-        private int count;
-        private int rank;
-
-        private TerritoryRank(String guildName, int count, int rank) {
-            this.guildName = guildName;
-            this.count = count;
-            this.rank = rank;
-        }
-
-        public String getGuildName() {
-            return guildName;
-        }
-
-        public int getCount() {
-            return count;
-        }
-
-        public int getRank() {
-            return rank;
-        }
-    }
-
-    /**
-     * Get ranking of guilds by number of territories.
-     * @return Ranking map, where keys are guild names and values are number of territories.
-     */
     @Nullable
     public List<TerritoryRank> getGuildTerritoryNumbers() {
         ResultSet res = this.executeQuery(
@@ -166,11 +137,6 @@ public class TerritoryRepository extends Repository<Territory, TerritoryId> {
         return null;
     }
 
-    /**
-     * Get ranking of guild by number of territories.
-     * @param guildName Guild name.
-     * @return Ranking. -1 if something went wrong. 0 if the guild does not exist in the ranking.
-     */
     public int getGuildTerritoryRankingSpecific(@NotNull String guildName) {
         ResultSet res = this.executeQuery(
                 "SELECT `ttn`.`rank` FROM (SELECT `guild_name`, RANK() OVER (ORDER BY COUNT(*) DESC) AS `rank` FROM `territory` GROUP BY `guild_name`) AS ttn WHERE `guild_name` = ?",
@@ -193,10 +159,6 @@ public class TerritoryRepository extends Repository<Territory, TerritoryId> {
         }
     }
 
-    /**
-     * Retrieves the latest `acquired` time.
-     * @return Latest territory acquired time.
-     */
     @Nullable
     public Date getLatestAcquiredTime() {
         ResultSet res = this.executeQuery(
@@ -272,11 +234,6 @@ public class TerritoryRepository extends Repository<Territory, TerritoryId> {
         );
     }
 
-    /**
-     * Updates the whole table to the new given territories list.
-     * @param territories New territories list retrieved from the Wynn API.
-     * @return True if succeeded.
-     */
     @CheckReturnValue
     public boolean updateAll(@NotNull List<Territory> territories) {
         Connection connection = this.db.getConnection();

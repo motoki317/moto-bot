@@ -8,7 +8,7 @@ import db.model.territoryLog.TerritoryLog;
 import db.model.timezone.CustomTimeZone;
 import db.model.track.TrackChannel;
 import db.model.track.TrackType;
-import db.repository.*;
+import db.repository.base.*;
 import heartbeat.base.TaskBase;
 import log.Logger;
 import net.dv8tion.jda.api.entities.TextChannel;

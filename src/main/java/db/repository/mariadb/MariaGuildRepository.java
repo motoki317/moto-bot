@@ -1,9 +1,9 @@
-package db.repository;
+package db.repository.mariadb;
 
 import db.ConnectionPool;
 import db.model.guild.Guild;
 import db.model.guild.GuildId;
-import db.repository.base.Repository;
+import db.repository.base.GuildRepository;
 import log.Logger;
 import org.jetbrains.annotations.NotNull;
 
@@ -15,10 +15,10 @@ import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class GuildRepository extends Repository<Guild, GuildId> {
+class MariaGuildRepository extends GuildRepository {
     private static final DateFormat dbFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
-    public GuildRepository(ConnectionPool db, Logger logger) {
+    MariaGuildRepository(ConnectionPool db, Logger logger) {
         super(db, logger);
     }
 
@@ -97,12 +97,6 @@ public class GuildRepository extends Repository<Guild, GuildId> {
         return null;
     }
 
-    /**
-     * Find all matches with case insensitive and ignoring trailing spaces search.
-     * Should probably want to call {@link #findOne(GuildId)} first.
-     * @param guildName Guild name.
-     * @return List of guilds.
-     */
     @Nullable
     public List<Guild> findAllCaseInsensitive(@NotNull String guildName) {
         ResultSet res = this.executeQuery(
@@ -122,11 +116,6 @@ public class GuildRepository extends Repository<Guild, GuildId> {
         }
     }
 
-    /**
-     * Find all guilds having the specified prefix. Case sensitive.
-     * @param prefix Prefix.
-     * @return List of guilds.
-     */
     @Nullable
     public List<Guild> findAllByPrefix(@NotNull String prefix) {
         List<Guild> ciSearch = findAllByPrefixCaseInsensitive(prefix);
@@ -136,11 +125,7 @@ public class GuildRepository extends Repository<Guild, GuildId> {
         return ciSearch.stream().filter(g -> prefix.equals(g.getPrefix())).collect(Collectors.toList());
     }
 
-    /**
-     * Find all guilds having the specified prefix. Case <b>insensitive</b>.
-     * @param prefix Prefix.
-     * @return List of guilds.
-     */
+    @Nullable
     public List<Guild> findAllByPrefixCaseInsensitive(@NotNull String prefix) {
         ResultSet res = this.executeQuery(
                 "SELECT * FROM `guild` WHERE `prefix` = ?",

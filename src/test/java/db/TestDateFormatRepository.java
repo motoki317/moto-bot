@@ -3,7 +3,7 @@ package db;
 import db.model.dateFormat.CustomDateFormat;
 import db.model.dateFormat.CustomDateFormatId;
 import db.model.dateFormat.CustomFormat;
-import db.repository.DateFormatRepository;
+import db.repository.base.DateFormatRepository;
 import org.jetbrains.annotations.TestOnly;
 import org.junit.jupiter.api.Test;
 

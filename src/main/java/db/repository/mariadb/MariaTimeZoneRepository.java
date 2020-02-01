@@ -1,10 +1,9 @@
-package db.repository;
+package db.repository.mariadb;
 
 import db.ConnectionPool;
-import db.model.dateFormat.CustomDateFormat;
-import db.model.dateFormat.CustomDateFormatId;
-import db.model.dateFormat.CustomFormat;
-import db.repository.base.Repository;
+import db.model.timezone.CustomTimeZone;
+import db.model.timezone.CustomTimeZoneId;
+import db.repository.base.TimeZoneRepository;
 import log.Logger;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import org.jetbrains.annotations.NotNull;
@@ -14,30 +13,30 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 
-public class DateFormatRepository extends Repository<CustomDateFormat, CustomDateFormatId> {
-    public DateFormatRepository(ConnectionPool db, Logger logger) {
+class MariaTimeZoneRepository extends TimeZoneRepository {
+    MariaTimeZoneRepository(ConnectionPool db, Logger logger) {
         super(db, logger);
     }
 
     @Override
-    protected CustomDateFormat bind(@NotNull ResultSet res) throws SQLException {
-        return new CustomDateFormat(res.getLong(1), CustomFormat.valueOf(res.getString(2)));
+    protected CustomTimeZone bind(@NotNull ResultSet res) throws SQLException {
+        return new CustomTimeZone(res.getLong(1), res.getString(2));
     }
 
     @Override
-    public <S extends CustomDateFormat> boolean create(@NotNull S entity) {
+    public <S extends CustomTimeZone> boolean create(@NotNull S entity) {
         return this.execute(
-                "INSERT INTO `date_format` (discord_id, date_format) VALUES (?, ?)",
+                "INSERT INTO `timezone` (discord_id, timezone) VALUES (?, ?)",
                 entity.getDiscordId(),
-                entity.getDateFormat()
+                entity.getTimezone()
         );
     }
 
     @Override
-    public boolean exists(@NotNull CustomDateFormatId customDateFormatId) {
+    public boolean exists(@NotNull CustomTimeZoneId customTimeZoneId) {
         ResultSet res = this.executeQuery(
-                "SELECT COUNT(*) FROM `date_format` WHERE `discord_id` = ?",
-                customDateFormatId.getDiscordId()
+                "SELECT COUNT(*) FROM `timezone` WHERE `discord_id` = ?",
+                customTimeZoneId.getDiscordId()
         );
 
         if (res == null) {
@@ -56,7 +55,7 @@ public class DateFormatRepository extends Repository<CustomDateFormat, CustomDat
     @Override
     public long count() {
         ResultSet res = this.executeQuery(
-                "SELECT COUNT(*) FROM `date_format`"
+                "SELECT COUNT(*) FROM `timezone`"
         );
 
         if (res == null) {
@@ -74,10 +73,10 @@ public class DateFormatRepository extends Repository<CustomDateFormat, CustomDat
 
     @Nullable
     @Override
-    public CustomDateFormat findOne(@NotNull CustomDateFormatId customDateFormatId) {
+    public CustomTimeZone findOne(@NotNull CustomTimeZoneId customTimeZoneId) {
         ResultSet res = this.executeQuery(
-                "SELECT * FROM `date_format` WHERE `discord_id` = ?",
-                customDateFormatId.getDiscordId()
+                "SELECT * FROM `timezone` WHERE `discord_id` = ?",
+                customTimeZoneId.getDiscordId()
         );
 
         if (res == null) {
@@ -93,34 +92,28 @@ public class DateFormatRepository extends Repository<CustomDateFormat, CustomDat
         return null;
     }
 
-    /**
-     * Retrieves custom date format.
-     * If more than one IDs are given, the later ones are more prioritized.
-     * @param ids List of discord IDs.
-     * @return Custom date format.
-     */
     @NotNull
-    public CustomDateFormat getDateFormat(long... ids) {
-        CustomDateFormat ret = CustomDateFormat.getDefault();
+    public CustomTimeZone getTimeZone(long... ids) {
+        CustomTimeZone ret = CustomTimeZone.getDefault();
         for (long id : ids) {
-            CustomDateFormat format = this.findOne(() -> id);
-            if (format != null) {
-                ret = format;
+            CustomTimeZone customTimeZone = this.findOne(() -> id);
+            if (customTimeZone != null) {
+                ret = customTimeZone;
             }
         }
         return ret;
     }
 
     @NotNull
-    public CustomDateFormat getDateFormat(MessageReceivedEvent event) {
+    public CustomTimeZone getTimeZone(MessageReceivedEvent event) {
         if (event.isFromGuild()) {
-            return this.getDateFormat(
+            return this.getTimeZone(
                     event.getGuild().getIdLong(),
                     event.getChannel().getIdLong(),
                     event.getAuthor().getIdLong()
             );
         } else {
-            return this.getDateFormat(
+            return this.getTimeZone(
                     event.getChannel().getIdLong(),
                     event.getAuthor().getIdLong()
             );
@@ -129,9 +122,9 @@ public class DateFormatRepository extends Repository<CustomDateFormat, CustomDat
 
     @Nullable
     @Override
-    public List<CustomDateFormat> findAll() {
+    public List<CustomTimeZone> findAll() {
         ResultSet res = this.executeQuery(
-                "SELECT * FROM `date_format`"
+                "SELECT * FROM `timezone`"
         );
 
         if (res == null) {
@@ -147,19 +140,19 @@ public class DateFormatRepository extends Repository<CustomDateFormat, CustomDat
     }
 
     @Override
-    public boolean update(@NotNull CustomDateFormat entity) {
+    public boolean update(@NotNull CustomTimeZone entity) {
         return this.execute(
-                "UPDATE `date_format` SET `date_format` = ? WHERE `discord_id` = ?",
-                entity.getDateFormat(),
+                "UPDATE `timezone` SET `timezone` = ? WHERE `discord_id` = ?",
+                entity.getTimezone(),
                 entity.getDiscordId()
         );
     }
 
     @Override
-    public boolean delete(@NotNull CustomDateFormatId customDateFormatId) {
+    public boolean delete(@NotNull CustomTimeZoneId customTimeZoneId) {
         return this.execute(
-                "DELETE FROM `date_format` WHERE `discord_id` = ?",
-                customDateFormatId.getDiscordId()
+                "DELETE FROM `timezone` WHERE `discord_id` = ?",
+                customTimeZoneId.getDiscordId()
         );
     }
 }

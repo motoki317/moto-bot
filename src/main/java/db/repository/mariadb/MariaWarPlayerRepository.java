@@ -1,9 +1,9 @@
-package db.repository;
+package db.repository.mariadb;
 
 import db.ConnectionPool;
 import db.model.warPlayer.WarPlayer;
 import db.model.warPlayer.WarPlayerId;
-import db.repository.base.Repository;
+import db.repository.base.WarPlayerRepository;
 import log.Logger;
 import org.jetbrains.annotations.NotNull;
 import utils.UUID;
@@ -14,8 +14,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 
-public class WarPlayerRepository extends Repository<WarPlayer, WarPlayerId> {
-    public WarPlayerRepository(ConnectionPool db, Logger logger) {
+class MariaWarPlayerRepository extends WarPlayerRepository {
+    MariaWarPlayerRepository(ConnectionPool db, Logger logger) {
         super(db, logger);
     }
 
@@ -35,7 +35,11 @@ public class WarPlayerRepository extends Repository<WarPlayer, WarPlayerId> {
         );
     }
 
-    public <S extends WarPlayer> boolean create(@NotNull Connection connection, @NotNull S entity) {
+    /**
+     * Creates entity using the given connection.
+     * @return {@code true} if success.
+     */
+    <S extends WarPlayer> boolean create(@NotNull Connection connection, @NotNull S entity) {
         return this.execute(connection,
                 "INSERT INTO `war_player` (war_log_id, player_name, player_uuid, exited) VALUES (?, ?, ?, ?)",
                 entity.getWarLogId(),
@@ -114,7 +118,7 @@ public class WarPlayerRepository extends Repository<WarPlayer, WarPlayerId> {
     }
 
     @Nullable
-    List<WarPlayer> findAllOfWarLogId(int warLogId) {
+    public List<WarPlayer> findAllOfWarLogId(int warLogId) {
         ResultSet res = this.executeQuery(
                 "SELECT * FROM `war_player` WHERE `war_log_id` = ?",
                 warLogId
@@ -132,11 +136,6 @@ public class WarPlayerRepository extends Repository<WarPlayer, WarPlayerId> {
         return null;
     }
 
-    /**
-     * Returns the count this player has participated in the war.
-     * @param playerUUID UUID to search with.
-     * @return Count. -1 if something went wrong.
-     */
     public int countOfPlayer(UUID playerUUID) {
         ResultSet res = this.executeQuery(
                 "SELECT COUNT(*) FROM `war_player` WHERE `player_uuid` = ?",
@@ -156,11 +155,6 @@ public class WarPlayerRepository extends Repository<WarPlayer, WarPlayerId> {
         return -1;
     }
 
-    /**
-     * Gets count of success wars by this player.
-     * @param playerUUID Player UUID.
-     * @return Count of success wars. -1 if something went wrong.
-     */
     public int countSuccessWars(UUID playerUUID) {
         ResultSet res = this.executeQuery(
                 "SELECT COUNT(*) FROM `war_player` p JOIN `guild_war_log` gwl ON p.player_uuid = ?" +
@@ -201,13 +195,6 @@ public class WarPlayerRepository extends Repository<WarPlayer, WarPlayerId> {
         return -1;
     }
 
-    /**
-     * Retrieves player logs in this table by descending order of war_log_id.
-     * @param playerUUID Player UUID.
-     * @param limit Retrieval limit.
-     * @param offset Retrieval offset.
-     * @return List of logs. null if something went wrong.
-     */
     @Nullable
     public List<WarPlayer> getLogsOfPlayer(UUID playerUUID, int limit, int offset) {
         ResultSet res = this.executeQuery(
@@ -238,7 +225,11 @@ public class WarPlayerRepository extends Repository<WarPlayer, WarPlayerId> {
         );
     }
 
-    public boolean update(@NotNull Connection connection, @NotNull WarPlayer entity) {
+    /**
+     * Updates entity using the given connection.
+     * @return {@code true} if success.
+     */
+    boolean update(@NotNull Connection connection, @NotNull WarPlayer entity) {
         return this.execute(connection,
                 "UPDATE `war_player` SET `player_uuid` = ?, `exited` = ? WHERE `war_log_id` = ? AND `player_name` = ?",
                 entity.getPlayerUUID(),

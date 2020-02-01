@@ -3,7 +3,7 @@ package commands;
 import commands.base.GenericCommand;
 import db.model.prefix.Prefix;
 import db.model.prefix.PrefixId;
-import db.repository.PrefixRepository;
+import db.repository.base.PrefixRepository;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.entities.Message;

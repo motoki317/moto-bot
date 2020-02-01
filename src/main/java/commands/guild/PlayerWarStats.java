@@ -13,7 +13,7 @@ import db.model.territoryLog.TerritoryLog;
 import db.model.timezone.CustomTimeZone;
 import db.model.warLog.WarLog;
 import db.model.warPlayer.WarPlayer;
-import db.repository.*;
+import db.repository.base.*;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.entities.Message;

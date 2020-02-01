@@ -1,9 +1,9 @@
-package db.repository;
+package db.repository.mariadb;
 
 import db.ConnectionPool;
 import db.model.ignoreChannel.IgnoreChannel;
 import db.model.ignoreChannel.IgnoreChannelId;
-import db.repository.base.Repository;
+import db.repository.base.IgnoreChannelRepository;
 import log.Logger;
 import org.jetbrains.annotations.NotNull;
 
@@ -12,8 +12,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 
-public class IgnoreChannelRepository extends Repository<IgnoreChannel, IgnoreChannelId> {
-    public IgnoreChannelRepository(ConnectionPool db, Logger logger) {
+class MariaIgnoreChannelRepository extends IgnoreChannelRepository {
+    MariaIgnoreChannelRepository(ConnectionPool db, Logger logger) {
         super(db, logger);
     }
 

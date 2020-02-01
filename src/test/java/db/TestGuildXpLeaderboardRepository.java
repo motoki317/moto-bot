@@ -2,7 +2,7 @@ package db;
 
 import db.model.guildXpLeaderboard.GuildXpLeaderboard;
 import db.model.guildXpLeaderboard.GuildXpLeaderboardId;
-import db.repository.GuildXpLeaderboardRepository;
+import db.repository.base.GuildXpLeaderboardRepository;
 import org.jetbrains.annotations.TestOnly;
 import org.junit.jupiter.api.Test;
 

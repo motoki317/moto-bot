@@ -1,7 +1,7 @@
 package db;
 
 import db.model.guildLeaderboard.GuildLeaderboard;
-import db.repository.GuildLeaderboardRepository;
+import db.repository.base.GuildLeaderboardRepository;
 import org.jetbrains.annotations.TestOnly;
 import org.junit.jupiter.api.Test;
 

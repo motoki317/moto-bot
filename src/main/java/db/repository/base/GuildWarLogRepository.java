@@ -1,0 +1,56 @@
+package db.repository.base;
+
+import db.ConnectionPool;
+import db.model.guildWarLog.GuildWarLog;
+import db.model.guildWarLog.GuildWarLogId;
+import log.Logger;
+
+import javax.annotation.Nullable;
+import java.util.List;
+
+public abstract class GuildWarLogRepository extends Repository<GuildWarLog, GuildWarLogId> {
+    protected GuildWarLogRepository(ConnectionPool db, Logger logger) {
+        super(db, logger);
+    }
+
+    /**
+     * Counts number of war logs for guild.
+     * @param guildName Guild name.
+     * @return Number of logs. -1 if something went wrong.
+     */
+    public abstract int countGuildLogs(String guildName);
+
+    /**
+     * Finds war logs for a guild, with limit and offset.
+     * Ordered by descending id.
+     * @param guildName Guild name.
+     * @param limit Select records limit.
+     * @param offset Select records offset.
+     * @return List of records.
+     */
+    @Nullable
+    public abstract List<GuildWarLog> findGuildLogs(String guildName, int limit, int offset);
+
+    /**
+     * Counts success wars by a guild.
+     * Wars are deemed as "success" if both territory_log_id and war_log_id are logged.
+     * @param guildName Guild name.
+     * @return Number of success wars. -1 if something went wrong.
+     */
+    public abstract int countSuccessWars(String guildName);
+
+    /**
+     * Counts total wars done by a guild.
+     * @param guildName Guild name.
+     * @return Number of total wars. -1 if something went wrong.
+     */
+    public abstract int countTotalWars(String guildName);
+
+    /**
+     * Finds all logs of the war log ID list.
+     * @param warLogIds List of war_log_id.
+     * @return List of logs. null if something went wrong.
+     */
+    @Nullable
+    public abstract List<GuildWarLog> findAllOfWarLogIdIn(List<Integer> warLogIds);
+}

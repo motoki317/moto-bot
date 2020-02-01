@@ -3,10 +3,11 @@ package commands.guild;
 import app.Bot;
 import commands.base.GenericCommand;
 import db.model.dateFormat.CustomDateFormat;
+import db.model.territory.TerritoryRank;
 import db.model.timezone.CustomTimeZone;
-import db.repository.DateFormatRepository;
-import db.repository.TerritoryRepository;
-import db.repository.TimeZoneRepository;
+import db.repository.base.DateFormatRepository;
+import db.repository.base.TerritoryRepository;
+import db.repository.base.TimeZoneRepository;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.entities.Message;
@@ -82,7 +83,7 @@ public class GuildRank extends GenericCommand {
     private Function<Integer, Message> pageSupplier(@NotNull CustomDateFormat customDateFormat,
                                                     @NotNull CustomTimeZone customTimeZone) {
         return page -> {
-            List<TerritoryRepository.TerritoryRank> ranking = this.territoryRepository.getGuildTerritoryNumbers();
+            List<TerritoryRank> ranking = this.territoryRepository.getGuildTerritoryNumbers();
             Date lastAcquired = this.territoryRepository.getLatestAcquiredTime();
             if (ranking == null || lastAcquired == null) {
                 return new MessageBuilder("Something went wrong while retrieving data...").build();
@@ -95,7 +96,7 @@ public class GuildRank extends GenericCommand {
             int justifyRank = ranking.stream().mapToInt(g -> String.valueOf(g.getRank()).length()).max().getAsInt();
             int justifyGuildName = ranking.stream().mapToInt(g -> g.getGuildName().length()).max().orElse(5);
 
-            int totalTerritories = ranking.stream().mapToInt(TerritoryRepository.TerritoryRank::getCount).sum();
+            int totalTerritories = ranking.stream().mapToInt(TerritoryRank::getCount).sum();
 
             int min = page * GUILDS_PER_PAGE;
             int max = Math.min((page + 1) * GUILDS_PER_PAGE, ranking.size());
@@ -108,7 +109,7 @@ public class GuildRank extends GenericCommand {
             ret.add("");
 
             for (int i = min; i < max; i++) {
-                TerritoryRepository.TerritoryRank rank = ranking.get(i);
+                TerritoryRank rank = ranking.get(i);
                 ret.add(String.format(
                         "%s.%s %s%s - %s",
                         rank.getRank(), nSpaces(justifyRank - String.valueOf(rank.getRank()).length()),
@@ -137,7 +138,7 @@ public class GuildRank extends GenericCommand {
     }
 
     private int maxPage() {
-        List<TerritoryRepository.TerritoryRank> ranking = this.territoryRepository.getGuildTerritoryNumbers();
+        List<TerritoryRank> ranking = this.territoryRepository.getGuildTerritoryNumbers();
         return ranking != null ? (ranking.size() - 1) / GUILDS_PER_PAGE : 0;
     }
 }

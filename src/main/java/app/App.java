@@ -1,8 +1,8 @@
 package app;
 
 import db.Database;
-import db.DatabaseImpl;
 import db.model.world.World;
+import db.repository.mariadb.DatabaseMariaImpl;
 import heartbeat.HeartBeat;
 import listeners.MessageListener;
 import listeners.UpdaterListener;
@@ -120,7 +120,7 @@ public class App implements Runnable, Bot {
         // Wait JDA to be fully loaded before instantiating discord logger
         this.logger = new DiscordLogger(this, this.properties.logTimeZone);
 
-        this.database = new DatabaseImpl(this.logger);
+        this.database = new DatabaseMariaImpl(this.logger);
 
         this.heartBeat = new HeartBeat(this);
         this.heartBeat.setName("moto-bot heartbeat");

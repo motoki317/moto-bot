@@ -1,9 +1,9 @@
-package db.repository;
+package db.repository.mariadb;
 
 import db.ConnectionPool;
 import db.model.commandLog.CommandLog;
 import db.model.commandLog.CommandLogId;
-import db.repository.base.Repository;
+import db.repository.base.CommandLogRepository;
 import log.Logger;
 import org.jetbrains.annotations.NotNull;
 
@@ -14,10 +14,10 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.List;
 
-public class CommandLogRepository extends Repository<CommandLog, CommandLogId> {
+class MariaCommandLogRepository extends CommandLogRepository {
     private static final DateFormat dbFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
-    public CommandLogRepository(ConnectionPool db, Logger logger) {
+    MariaCommandLogRepository(ConnectionPool db, Logger logger) {
         super(db, logger);
     }
 

@@ -1,7 +1,7 @@
 package db;
 
 import db.model.ignoreChannel.IgnoreChannel;
-import db.repository.IgnoreChannelRepository;
+import db.repository.base.IgnoreChannelRepository;
 import org.jetbrains.annotations.TestOnly;
 import org.junit.jupiter.api.Test;
 

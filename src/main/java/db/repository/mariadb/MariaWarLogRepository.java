@@ -1,10 +1,10 @@
-package db.repository;
+package db.repository.mariadb;
 
 import db.ConnectionPool;
 import db.model.warLog.WarLog;
 import db.model.warLog.WarLogId;
 import db.model.warPlayer.WarPlayer;
-import db.repository.base.Repository;
+import db.repository.base.WarLogRepository;
 import log.Logger;
 import org.jetbrains.annotations.NotNull;
 
@@ -18,12 +18,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class WarLogRepository extends Repository<WarLog, WarLogId> {
+class MariaWarLogRepository extends WarLogRepository {
     private static final DateFormat dbFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
-    private final WarPlayerRepository warPlayerRepository;
+    private final MariaWarPlayerRepository warPlayerRepository;
 
-    public WarLogRepository(ConnectionPool db, Logger logger, WarPlayerRepository warPlayerRepository) {
+    MariaWarLogRepository(ConnectionPool db, Logger logger, MariaWarPlayerRepository warPlayerRepository) {
         super(db, logger);
         this.warPlayerRepository = warPlayerRepository;
     }
@@ -186,11 +186,6 @@ public class WarLogRepository extends Repository<WarLog, WarLogId> {
         return null;
     }
 
-    /**
-     * Finds all logs that is contained in the given list of IDs.
-     * @param ids List of IDs.
-     * @return List of logs.
-     */
     @Nullable
     public List<WarLog> findAllIn(List<Integer> ids) {
         if (ids.isEmpty()) {
@@ -232,10 +227,6 @@ public class WarLogRepository extends Repository<WarLog, WarLogId> {
         throw new Error("Find all not implemented: number of records could be huge. Use limit, offset, where clauses instead.");
     }
 
-    /**
-     * Finds all records that is NOT marked as `ended`.
-     * @return List of records.
-     */
     @Nullable
     public List<WarLog> findAllLogNotEnded() {
         ResultSet res = this.executeQuery(

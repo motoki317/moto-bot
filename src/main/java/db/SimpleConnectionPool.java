@@ -22,7 +22,7 @@ public class SimpleConnectionPool implements ConnectionPool {
     private final Stack<Connection> availableConnections;
     private final Map<Connection, Long> usedConnectionTime;
 
-    SimpleConnectionPool(String url, Logger logger, int maxConnections) {
+    public SimpleConnectionPool(String url, Logger logger, int maxConnections) {
         this.url = url;
         this.logger = logger;
 

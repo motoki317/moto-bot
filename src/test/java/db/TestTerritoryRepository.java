@@ -1,7 +1,7 @@
 package db;
 
 import db.model.territory.Territory;
-import db.repository.TerritoryRepository;
+import db.repository.base.TerritoryRepository;
 import org.jetbrains.annotations.TestOnly;
 import org.junit.jupiter.api.Test;
 

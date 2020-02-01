@@ -2,7 +2,7 @@ package db;
 
 import db.model.world.World;
 import db.model.world.WorldId;
-import db.repository.WorldRepository;
+import db.repository.base.WorldRepository;
 import org.jetbrains.annotations.TestOnly;
 import org.junit.jupiter.api.Test;
 

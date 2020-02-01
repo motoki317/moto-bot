@@ -1,9 +1,9 @@
-package db.repository;
+package db.repository.mariadb;
 
 import db.ConnectionPool;
 import db.model.warTrack.WarTrack;
 import db.model.warTrack.WarTrackId;
-import db.repository.base.Repository;
+import db.repository.base.WarTrackRepository;
 import log.Logger;
 import org.jetbrains.annotations.NotNull;
 
@@ -13,8 +13,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 
-public class WarTrackRepository extends Repository<WarTrack, WarTrackId> {
-    public WarTrackRepository(ConnectionPool db, Logger logger) {
+class MariaWarTrackRepository extends WarTrackRepository {
+    MariaWarTrackRepository(ConnectionPool db, Logger logger) {
         super(db, logger);
     }
 

@@ -1,7 +1,7 @@
 package commands.guild;
 
 import db.model.guild.Guild;
-import db.repository.GuildRepository;
+import db.repository.base.GuildRepository;
 import net.dv8tion.jda.api.entities.TextChannel;
 import net.dv8tion.jda.api.entities.User;
 import org.jetbrains.annotations.NotNull;

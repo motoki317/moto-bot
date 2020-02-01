@@ -2,7 +2,7 @@ package db;
 
 import db.model.guild.Guild;
 import db.model.guild.GuildId;
-import db.repository.GuildRepository;
+import db.repository.base.GuildRepository;
 import org.jetbrains.annotations.TestOnly;
 import org.junit.jupiter.api.Test;
 

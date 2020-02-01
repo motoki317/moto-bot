@@ -2,7 +2,7 @@ package commands;
 
 import commands.base.GenericCommand;
 import db.model.ignoreChannel.IgnoreChannel;
-import db.repository.IgnoreChannelRepository;
+import db.repository.base.IgnoreChannelRepository;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;

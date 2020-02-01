@@ -4,9 +4,9 @@ import app.Bot;
 import commands.base.GenericCommand;
 import db.model.timezone.CustomTimeZone;
 import db.model.world.World;
-import db.repository.DateFormatRepository;
-import db.repository.TimeZoneRepository;
-import db.repository.WorldRepository;
+import db.repository.base.DateFormatRepository;
+import db.repository.base.TimeZoneRepository;
+import db.repository.base.WorldRepository;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.entities.Message;
@@ -197,9 +197,9 @@ public class ServerList extends GenericCommand {
         ret.add(nSpaces(numLongest + 2) + "Server" + nSpaces(serverNameLongest - 6) +
                 " | " + "Players" + nSpaces(playersLongest - 7) +
                 " | " + "Uptime");
-        ret.add(nCopies("-", numLongest + 2 + serverNameLongest) +
-                "-+-" + nCopies("-", playersLongest) +
-                "-+-" + nCopies("-", uptimeLongest + 1));
+        ret.add(nHyphens(numLongest + 2 + serverNameLongest) +
+                "-+-" + nHyphens(playersLongest) +
+                "-+-" + nHyphens(uptimeLongest + 1));
 
         for (WorldDisplay display : displays) {
             String toAdd = String.format("%-" + (numLongest + 1) + "s", display.num + ".");
@@ -226,7 +226,7 @@ public class ServerList extends GenericCommand {
         return String.join("", Collections.nCopies(n, " "));
     }
 
-    private static String nCopies(String s, int n) {
-        return String.join("", Collections.nCopies(n, s));
+    private static String nHyphens(int n) {
+        return String.join("", Collections.nCopies(n, "-"));
     }
 }

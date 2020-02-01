@@ -1,9 +1,9 @@
-package db.repository;
+package db.repository.mariadb;
 
 import db.ConnectionPool;
 import db.model.playerWarLeaderboard.PlayerWarLeaderboard;
 import db.model.playerWarLeaderboard.PlayerWarLeaderboardId;
-import db.repository.base.Repository;
+import db.repository.base.PlayerWarLeaderboardRepository;
 import log.Logger;
 import org.jetbrains.annotations.NotNull;
 
@@ -12,8 +12,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 
-public class PlayerWarLeaderboardRepository extends Repository<PlayerWarLeaderboard, PlayerWarLeaderboardId> {
-    public PlayerWarLeaderboardRepository(ConnectionPool db, Logger logger) {
+class MariaPlayerWarLeaderboardRepository extends PlayerWarLeaderboardRepository {
+    MariaPlayerWarLeaderboardRepository(ConnectionPool db, Logger logger) {
         super(db, logger);
     }
 

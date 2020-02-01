@@ -1,9 +1,9 @@
-package db.repository;
+package db.repository.mariadb;
 
 import db.ConnectionPool;
 import db.model.world.World;
 import db.model.world.WorldId;
-import db.repository.base.Repository;
+import db.repository.base.WorldRepository;
 import log.Logger;
 import org.jetbrains.annotations.NotNull;
 
@@ -17,8 +17,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-public class WorldRepository extends Repository<World, WorldId> {
-    public WorldRepository(ConnectionPool db, Logger logger) {
+class MariaWorldRepository extends WorldRepository {
+    MariaWorldRepository(ConnectionPool db, Logger logger) {
         super(db, logger);
     }
 
@@ -106,10 +106,6 @@ public class WorldRepository extends Repository<World, WorldId> {
         return null;
     }
 
-    /**
-     * Retrieves all main worlds (WC.* or EU.*).
-     * @return List of all main worlds.
-     */
     @Nullable
     public List<World> findAllMainWorlds() {
         ResultSet res = this.executeQuery("SELECT * FROM `world` WHERE `name` LIKE 'WC%' OR `name` LIKE 'EU%'");
@@ -133,11 +129,6 @@ public class WorldRepository extends Repository<World, WorldId> {
         );
     }
 
-    /**
-     * Updates all worlds to the given worlds, and removes all worlds not in the given worlds.
-     * @param worlds Current list of worlds.
-     * @return True if success.
-     */
     @CheckReturnValue
     public boolean updateAll(Collection<World> worlds) {
         Connection connection = this.db.getConnection();

@@ -5,10 +5,10 @@ import db.model.territory.Territory;
 import db.model.territoryLog.TerritoryLog;
 import db.model.warLog.WarLog;
 import db.model.warPlayer.WarPlayer;
-import db.repository.GuildWarLogRepository;
-import db.repository.TerritoryLogRepository;
-import db.repository.TerritoryRepository;
-import db.repository.WarLogRepository;
+import db.repository.base.GuildWarLogRepository;
+import db.repository.base.TerritoryLogRepository;
+import db.repository.base.TerritoryRepository;
+import db.repository.base.WarLogRepository;
 import org.jetbrains.annotations.TestOnly;
 import org.junit.jupiter.api.Test;
 
@@ -66,8 +66,8 @@ class TestWarTerritoryDataIntegrity {
             statement.executeQuery("TRUNCATE TABLE `territory`");
             statement.executeQuery("TRUNCATE TABLE `guild_war_log`");
             // to avoid foreign key constraint
-            statement.executeQuery("DELETE FROM `war_log`");
-            statement.executeQuery("DELETE FROM `territory_log`");
+            statement.executeQuery("DELETE FROM `war_log` WHERE 1 = 1");
+            statement.executeQuery("DELETE FROM `territory_log` WHERE 1 = 1");
         } catch (SQLException e) {
             e.printStackTrace();
             assert false;

@@ -1,10 +1,14 @@
-package db;
+package db.repository.mariadb;
 
-import db.repository.*;
+
+import db.ConnectionPool;
+import db.Database;
+import db.SimpleConnectionPool;
+import db.repository.base.*;
 import log.Logger;
 import org.jetbrains.annotations.NotNull;
 
-public class DatabaseImpl implements Database {
+public class DatabaseMariaImpl implements Database {
     private static final String MYSQL_HOST = System.getenv("MYSQL_HOST");
     private static final String MYSQL_DATABASE = System.getenv("MYSQL_DATABASE");
     private static final String MYSQL_USER = System.getenv("MYSQL_USER");
@@ -27,7 +31,7 @@ public class DatabaseImpl implements Database {
     private TerritoryLogRepository territoryLogRepository;
     private WarTrackRepository warTrackRepository;
     private WarLogRepository warLogRepository;
-    private WarPlayerRepository warPlayerRepository;
+    private MariaWarPlayerRepository warPlayerRepository;
     private TimeZoneRepository timeZoneRepository;
     private PrefixRepository prefixRepository;
     private GuildWarLogRepository guildWarLogRepository;
@@ -38,7 +42,7 @@ public class DatabaseImpl implements Database {
     private GuildXpLeaderboardRepository guildXpLeaderboardRepository;
     private PlayerWarLeaderboardRepository playerWarLeaderboardRepository;
 
-    public DatabaseImpl(Logger logger) {
+    public DatabaseMariaImpl(Logger logger) {
         this.logger = logger;
         this.connectionPool = new SimpleConnectionPool(URL, logger, 10);
     }
@@ -47,7 +51,7 @@ public class DatabaseImpl implements Database {
     @NotNull
     public TrackChannelRepository getTrackingChannelRepository() {
         if (this.trackChannelRepository == null) {
-            this.trackChannelRepository = new TrackChannelRepository(this.connectionPool, this.logger);
+            this.trackChannelRepository = new MariaTrackChannelRepository(this.connectionPool, this.logger);
         }
         return this.trackChannelRepository;
     }
@@ -56,7 +60,7 @@ public class DatabaseImpl implements Database {
     @NotNull
     public WorldRepository getWorldRepository() {
         if (this.worldRepository == null) {
-            this.worldRepository = new WorldRepository(this.connectionPool, this.logger);
+            this.worldRepository = new MariaWorldRepository(this.connectionPool, this.logger);
         }
         return this.worldRepository;
     }
@@ -65,7 +69,7 @@ public class DatabaseImpl implements Database {
     @NotNull
     public CommandLogRepository getCommandLogRepository() {
         if (this.commandLogRepository == null) {
-            this.commandLogRepository = new CommandLogRepository(this.connectionPool, this.logger);
+            this.commandLogRepository = new MariaCommandLogRepository(this.connectionPool, this.logger);
         }
         return this.commandLogRepository;
     }
@@ -73,7 +77,7 @@ public class DatabaseImpl implements Database {
     @Override
     public @NotNull TerritoryRepository getTerritoryRepository() {
         if (this.territoryRepository == null) {
-            this.territoryRepository = new TerritoryRepository(this.connectionPool, this.logger);
+            this.territoryRepository = new MariaTerritoryRepository(this.connectionPool, this.logger);
         }
         return this.territoryRepository;
     }
@@ -81,7 +85,7 @@ public class DatabaseImpl implements Database {
     @Override
     public @NotNull TerritoryLogRepository getTerritoryLogRepository() {
         if (this.territoryLogRepository == null) {
-            this.territoryLogRepository = new TerritoryLogRepository(this.connectionPool, this.logger);
+            this.territoryLogRepository = new MariaTerritoryLogRepository(this.connectionPool, this.logger);
         }
         return this.territoryLogRepository;
     }
@@ -89,7 +93,7 @@ public class DatabaseImpl implements Database {
     @Override
     public @NotNull WarTrackRepository getWarTrackRepository() {
         if (this.warTrackRepository == null) {
-            this.warTrackRepository = new WarTrackRepository(this.connectionPool, this.logger);
+            this.warTrackRepository = new MariaWarTrackRepository(this.connectionPool, this.logger);
         }
         return this.warTrackRepository;
     }
@@ -97,15 +101,15 @@ public class DatabaseImpl implements Database {
     @Override
     public @NotNull WarLogRepository getWarLogRepository() {
         if (this.warLogRepository == null) {
-            this.warLogRepository = new WarLogRepository(this.connectionPool, this.logger, this.getWarPlayerRepository());
+            this.warLogRepository = new MariaWarLogRepository(this.connectionPool, this.logger, this.getWarPlayerRepository());
         }
         return this.warLogRepository;
     }
 
     @Override
-    public @NotNull WarPlayerRepository getWarPlayerRepository() {
+    public @NotNull MariaWarPlayerRepository getWarPlayerRepository() {
         if (this.warPlayerRepository == null) {
-            this.warPlayerRepository = new WarPlayerRepository(this.connectionPool, this.logger);
+            this.warPlayerRepository = new MariaWarPlayerRepository(this.connectionPool, this.logger);
         }
         return this.warPlayerRepository;
     }
@@ -113,7 +117,7 @@ public class DatabaseImpl implements Database {
     @Override
     public @NotNull TimeZoneRepository getTimeZoneRepository() {
         if (this.timeZoneRepository == null) {
-            this.timeZoneRepository = new TimeZoneRepository(this.connectionPool, this.logger);
+            this.timeZoneRepository = new MariaTimeZoneRepository(this.connectionPool, this.logger);
         }
         return this.timeZoneRepository;
     }
@@ -121,7 +125,7 @@ public class DatabaseImpl implements Database {
     @Override
     public @NotNull PrefixRepository getPrefixRepository() {
         if (this.prefixRepository == null) {
-            this.prefixRepository = new PrefixRepository(this.connectionPool, this.logger);
+            this.prefixRepository = new MariaPrefixRepository(this.connectionPool, this.logger);
         }
         return this.prefixRepository;
     }
@@ -129,7 +133,7 @@ public class DatabaseImpl implements Database {
     @Override
     public @NotNull GuildWarLogRepository getGuildWarLogRepository() {
         if (this.guildWarLogRepository == null) {
-            this.guildWarLogRepository = new GuildWarLogRepository(this.connectionPool, this.logger);
+            this.guildWarLogRepository = new MariaGuildWarLogRepository(this.connectionPool, this.logger);
         }
         return this.guildWarLogRepository;
     }
@@ -137,7 +141,7 @@ public class DatabaseImpl implements Database {
     @Override
     public @NotNull DateFormatRepository getDateFormatRepository() {
         if (this.dateFormatRepository == null) {
-            this.dateFormatRepository = new DateFormatRepository(this.connectionPool, this.logger);
+            this.dateFormatRepository = new MariaDateFormatRepository(this.connectionPool, this.logger);
         }
         return this.dateFormatRepository;
     }
@@ -145,7 +149,7 @@ public class DatabaseImpl implements Database {
     @Override
     public @NotNull GuildRepository getGuildRepository() {
         if (this.guildRepository == null) {
-            this.guildRepository = new GuildRepository(this.connectionPool, this.logger);
+            this.guildRepository = new MariaGuildRepository(this.connectionPool, this.logger);
         }
         return this.guildRepository;
     }
@@ -153,7 +157,7 @@ public class DatabaseImpl implements Database {
     @Override
     public @NotNull IgnoreChannelRepository getIgnoreChannelRepository() {
         if (this.ignoreChannelRepository == null) {
-            this.ignoreChannelRepository = new IgnoreChannelRepository(this.connectionPool, this.logger);
+            this.ignoreChannelRepository = new MariaIgnoreChannelRepository(this.connectionPool, this.logger);
         }
         return this.ignoreChannelRepository;
     }
@@ -161,7 +165,7 @@ public class DatabaseImpl implements Database {
     @Override
     public @NotNull GuildLeaderboardRepository getGuildLeaderboardRepository() {
         if (this.guildLeaderboardRepository == null) {
-            this.guildLeaderboardRepository = new GuildLeaderboardRepository(this.connectionPool, this.logger);
+            this.guildLeaderboardRepository = new MariaGuildLeaderboardRepository(this.connectionPool, this.logger);
         }
         return this.guildLeaderboardRepository;
     }
@@ -169,7 +173,7 @@ public class DatabaseImpl implements Database {
     @Override
     public @NotNull GuildXpLeaderboardRepository getGuildXpLeaderboardRepository() {
         if (this.guildXpLeaderboardRepository == null) {
-            this.guildXpLeaderboardRepository = new GuildXpLeaderboardRepository(this.connectionPool, this.logger);
+            this.guildXpLeaderboardRepository = new MariaGuildXpLeaderboardRepository(this.connectionPool, this.logger);
         }
         return this.guildXpLeaderboardRepository;
     }
@@ -177,7 +181,7 @@ public class DatabaseImpl implements Database {
     @Override
     public @NotNull PlayerWarLeaderboardRepository getPlayerWarLeaderboardRepository() {
         if (this.playerWarLeaderboardRepository == null) {
-            this.playerWarLeaderboardRepository = new PlayerWarLeaderboardRepository(this.connectionPool, this.logger);
+            this.playerWarLeaderboardRepository = new MariaPlayerWarLeaderboardRepository(this.connectionPool, this.logger);
         }
         return this.playerWarLeaderboardRepository;
     }

@@ -12,7 +12,7 @@ import db.model.warLog.WarLog;
 import db.model.warPlayer.WarPlayer;
 import db.model.warTrack.WarTrack;
 import db.model.world.World;
-import db.repository.*;
+import db.repository.base.*;
 import heartbeat.base.TaskBase;
 import log.Logger;
 import net.dv8tion.jda.api.entities.Activity;

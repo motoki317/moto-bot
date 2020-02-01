@@ -4,7 +4,7 @@ import commands.base.GuildCommand;
 import db.Database;
 import db.model.track.TrackChannel;
 import db.model.track.TrackType;
-import db.repository.TrackChannelRepository;
+import db.repository.base.TrackChannelRepository;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.entities.Message;

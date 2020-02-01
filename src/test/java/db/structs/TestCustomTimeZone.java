@@ -3,8 +3,6 @@ package db.structs;
 import db.model.timezone.CustomTimeZone;
 import org.junit.jupiter.api.Test;
 
-import java.util.List;
-import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
 
 class TestCustomTimeZone {
