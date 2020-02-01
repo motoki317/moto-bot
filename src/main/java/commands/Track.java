@@ -180,7 +180,7 @@ public class Track extends GuildCommand {
             // Disable tracking
             if (this.trackChannelRepository.delete(entity)) {
                 respond(event, ":mute: Successfully **disabled** " + entity.getDisplayName() + " for this channel.");
-                this.logger.log(0, "mute: Tracking has been **disabled**:\n" + entity.toString());
+                this.logger.log(0, ":mute: Tracking has been **disabled**:\n" + entity.toString());
             } else {
                 respondError(event, "Something went wrong while saving data.");
             }
@@ -203,7 +203,7 @@ public class Track extends GuildCommand {
 
             if (this.trackChannelRepository.create(entity)) {
                 respond(event, ":loud_sound: Successfully **enabled** " + entity.getDisplayName() + " for this channel!");
-                this.logger.log(0, "loud_sound: Tracking has been **enabled**:\n" + entity.toString());
+                this.logger.log(0, ":loud_sound: Tracking has been **enabled**:\n" + entity.toString());
             } else {
                 respondError(event, "Something went wrong while saving data.");
             }
