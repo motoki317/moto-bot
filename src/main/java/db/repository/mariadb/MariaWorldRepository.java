@@ -120,6 +120,23 @@ class MariaWorldRepository extends WorldRepository {
         return null;
     }
 
+    @Nullable
+    @Override
+    public List<World> findAllWarWorlds() {
+        ResultSet res = this.executeQuery("SELECT * FROM `world` WHERE `name` LIKE 'WAR%'");
+
+        if (res == null) {
+            return null;
+        }
+
+        try {
+            return bindAll(res);
+        } catch (SQLException e) {
+            this.logResponseException(e);
+        }
+        return null;
+    }
+
     @Override
     public boolean update(@NotNull World entity) {
         return this.execute(

@@ -29,11 +29,12 @@ class MariaWarLogRepository extends WarLogRepository {
     }
 
     @Override
-    protected WarLog bind(@NotNull ResultSet res) {
-        throw new Error("Not implemented: use join binding instead");
-    }
+    protected WarLog bind(@NotNull ResultSet res) throws SQLException {
+        List<WarPlayer> players = this.warPlayerRepository.findAllOfWarLogId(res.getInt(1));
+        if (players == null) {
+            throw new SQLException("Failed to retrieve war players");
+        }
 
-    private WarLog bind(@NotNull ResultSet res, @NotNull List<WarPlayer> players) throws SQLException {
         return new WarLog(res.getInt(1), res.getString(2), res.getString(3),
                 res.getTimestamp(4), res.getTimestamp(5), res.getBoolean(6), res.getBoolean(7),
                 players);
@@ -172,14 +173,9 @@ class MariaWarLogRepository extends WarLogRepository {
             return null;
         }
 
-        List<WarPlayer> players = this.warPlayerRepository.findAllOfWarLogId(warLogId.getId());
-        if (players == null) {
-            return null;
-        }
-
         try {
             if (res.next())
-                return bind(res, players);
+                return bind(res);
         } catch (SQLException e) {
             this.logResponseException(e);
         }
@@ -204,17 +200,27 @@ class MariaWarLogRepository extends WarLogRepository {
             return null;
         }
 
-        List<WarLog> ret = new ArrayList<>();
+        try {
+            return bindAll(res);
+        } catch (SQLException e) {
+            this.logResponseException(e);
+        }
+        return null;
+    }
+
+    @Nullable
+    @Override
+    public List<WarLog> findAllNotEnded() {
+        ResultSet res = this.executeQuery(
+                "SELECT * FROM `war_log` WHERE `ended` = 0"
+        );
+
+        if (res == null) {
+            return null;
+        }
 
         try {
-            while (res.next()) {
-                List<WarPlayer> players = this.warPlayerRepository.findAllOfWarLogId(res.getInt(1));
-                if (players == null) {
-                    return null;
-                }
-                ret.add(bind(res, players));
-            }
-            return ret;
+            return bindAll(res);
         } catch (SQLException e) {
             this.logResponseException(e);
         }
@@ -237,18 +243,8 @@ class MariaWarLogRepository extends WarLogRepository {
             return null;
         }
 
-        List<WarLog> ret = new ArrayList<>();
-
         try {
-            while (res.next()) {
-                int warLogId = res.getInt(1);
-                List<WarPlayer> players = this.warPlayerRepository.findAllOfWarLogId(warLogId);
-                if (players == null) {
-                    return null;
-                }
-                ret.add(bind(res, players));
-            }
-            return ret;
+            return bindAll(res);
         } catch (SQLException e) {
             this.logResponseException(e);
         }

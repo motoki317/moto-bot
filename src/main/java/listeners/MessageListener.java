@@ -78,6 +78,8 @@ public class MessageListener extends ListenerAdapter {
         addCommand.accept(new GuildRank(bot));
         addCommand.accept(new GainedXpRank(bot));
 
+        addCommand.accept(new CurrentWars(bot));
+
         addCommand.accept(new GuildWarStats(bot));
         addCommand.accept(new PlayerWarStats(bot));
 

@@ -23,6 +23,13 @@ public abstract class WorldRepository extends Repository<World, WorldId> {
     public abstract List<World> findAllMainWorlds();
 
     /**
+     * Retrieves all war worlds (WAR.*).
+     * @return List o all war worlds.
+     */
+    @Nullable
+    public abstract List<World> findAllWarWorlds();
+
+    /**
      * Updates all worlds to the given worlds, and removes all worlds not in the given worlds.
      * @param worlds Current list of worlds.
      * @return {@code true} if success.

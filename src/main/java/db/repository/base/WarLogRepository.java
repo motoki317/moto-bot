@@ -34,5 +34,12 @@ public abstract class WarLogRepository extends Repository<WarLog, WarLogId> {
      * @return List of records.
      */
     @Nullable
+    public abstract List<WarLog> findAllNotEnded();
+
+    /**
+     * Finds all records that is NOT marked as `log_ended`.
+     * @return List of records.
+     */
+    @Nullable
     public abstract List<WarLog> findAllLogNotEnded();
 }
