@@ -6,11 +6,13 @@ import db.model.playerWarLeaderboard.PlayerWarLeaderboardId;
 import db.repository.base.PlayerWarLeaderboardRepository;
 import log.Logger;
 import org.jetbrains.annotations.NotNull;
+import utils.UUID;
 
 import javax.annotation.Nullable;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.stream.Collectors;
 
 class MariaPlayerWarLeaderboardRepository extends PlayerWarLeaderboardRepository {
     MariaPlayerWarLeaderboardRepository(ConnectionPool db, Logger logger) {
@@ -113,6 +115,86 @@ class MariaPlayerWarLeaderboardRepository extends PlayerWarLeaderboardRepository
             this.logResponseException(e);
         }
         return null;
+    }
+
+    @Nullable
+    @Override
+    public List<PlayerWarLeaderboard> getByTotalWarDescending(int limit, int offset) {
+        ResultSet res = this.executeQuery(
+                "SELECT * FROM `player_war_leaderboard` ORDER BY `total_war` DESC LIMIT " + limit + " OFFSET " + offset
+        );
+
+        if (res == null) {
+            return null;
+        }
+
+        try {
+            return bindAll(res);
+        } catch (SQLException e) {
+            this.logResponseException(e);
+            return null;
+        }
+    }
+
+    @Nullable
+    @Override
+    public List<PlayerWarLeaderboard> getBySuccessWarDescending(int limit, int offset) {
+        ResultSet res = this.executeQuery(
+                "SELECT * FROM `player_war_leaderboard` ORDER BY `success_war` DESC LIMIT " + limit + " OFFSET " + offset
+        );
+
+        if (res == null) {
+            return null;
+        }
+
+        try {
+            return bindAll(res);
+        } catch (SQLException e) {
+            this.logResponseException(e);
+            return null;
+        }
+    }
+
+    @Nullable
+    @Override
+    public List<PlayerWarLeaderboard> getBySurvivedWarDescending(int limit, int offset) {
+        ResultSet res = this.executeQuery(
+                "SELECT * FROM `player_war_leaderboard` ORDER BY `survived_war` DESC LIMIT " + limit + " OFFSET " + offset
+        );
+
+        if (res == null) {
+            return null;
+        }
+
+        try {
+            return bindAll(res);
+        } catch (SQLException e) {
+            this.logResponseException(e);
+            return null;
+        }
+    }
+
+    @Nullable
+    @Override
+    public List<PlayerWarLeaderboard> getRecordsOf(List<UUID> playerUUIDs) {
+        String placeHolder = "?";
+
+        ResultSet res = this.executeQuery(
+                "SELECT * FROM `player_war_leaderboard` WHERE `uuid` IN ("
+                        + playerUUIDs.stream().map(p -> placeHolder).collect(Collectors.joining(", "))
+                        + ")"
+        );
+
+        if (res == null) {
+            return null;
+        }
+
+        try {
+            return bindAll(res);
+        } catch (SQLException e) {
+            this.logResponseException(e);
+            return null;
+        }
     }
 
     @Override
