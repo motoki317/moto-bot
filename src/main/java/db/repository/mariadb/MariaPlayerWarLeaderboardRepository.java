@@ -182,7 +182,8 @@ class MariaPlayerWarLeaderboardRepository extends PlayerWarLeaderboardRepository
         ResultSet res = this.executeQuery(
                 "SELECT * FROM `player_war_leaderboard` WHERE `uuid` IN ("
                         + playerUUIDs.stream().map(p -> placeHolder).collect(Collectors.joining(", "))
-                        + ")"
+                        + ")",
+                playerUUIDs.stream().map(UUID::toStringWithHyphens).toArray()
         );
 
         if (res == null) {

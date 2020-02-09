@@ -52,4 +52,12 @@ public abstract class WarPlayerRepository extends Repository<WarPlayer, WarPlaye
      */
     @Nullable
     public abstract List<WarPlayer> getLogsOfPlayer(UUID playerUUID, int limit, int offset);
+
+    /**
+     * Retrieves last player name recorded of the given UUID.
+     * @param playerUUID Player UUID.
+     * @return Last player name if found.
+     */
+    @Nullable
+    public abstract String getPlayerNameOf(UUID playerUUID);
 }

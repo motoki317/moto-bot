@@ -214,6 +214,26 @@ class MariaWarPlayerRepository extends WarPlayerRepository {
         }
     }
 
+    @Nullable
+    @Override
+    public String getPlayerNameOf(UUID playerUUID) {
+        ResultSet res = this.executeQuery(
+                "SELECT `player_name` FROM `war_player` WHERE `player_uuid` = ? ORDER BY `war_log_id` DESC LIMIT 1"
+        );
+
+        if (res == null) {
+            return null;
+        }
+
+        try {
+            if (res.next())
+                return res.getString(1);
+        } catch (SQLException e) {
+            this.logResponseException(e);
+        }
+        return null;
+    }
+
     @Override
     public boolean update(@NotNull WarPlayer entity) {
         return this.execute(

@@ -83,6 +83,7 @@ public class MessageListener extends ListenerAdapter {
         addCommand.accept(new GuildWarStats(bot));
         addCommand.accept(new PlayerWarStats(bot));
 
+        addCommand.accept(new PlayerWarLeaderboardCmd(bot));
     }
 
     @Override
