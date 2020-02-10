@@ -174,11 +174,11 @@ CREATE TABLE IF NOT EXISTS `player_war_leaderboard` (
     `survived_war` INT NOT NULL,
     `success_rate` DECIMAL(5,4) UNSIGNED AS (success_war / total_war) PERSISTENT,
     `survived_rate` DECIMAL(5,4) UNSIGNED AS (survived_war / total_war) PERSISTENT,
-    KEY `total_idx` (`total_war`),
-    KEY `success_idx` (`success_war`),
-    KEY `survived_idx` (`survived_war`),
-    KEY `success_rate_idx` (`success_rate`),
-    KEY `survived_rate_idx` (`survived_rate`)
+    KEY `total_uuid_idx` (`total_war`, `uuid`),
+    KEY `success_uuid_idx` (`success_war`, `uuid`),
+    KEY `survived_uuid_idx` (`survived_war`, `uuid`),
+    KEY `success_rate_uuid_idx` (`success_rate`, `uuid`),
+    KEY `survived_rate_uuid_idx` (`survived_rate`, `uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 DROP FUNCTION IF EXISTS `count_guild_territories`;

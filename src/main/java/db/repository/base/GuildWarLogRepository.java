@@ -47,6 +47,18 @@ public abstract class GuildWarLogRepository extends Repository<GuildWarLog, Guil
     public abstract int countTotalWars(String guildName);
 
     /**
+     * Counts success wars done by any guild ever.
+     * @return Number of success wars.
+     */
+    public abstract int countSuccessWarsSum();
+
+    /**
+     * Counts total wars done by any guild ever.
+     * @return Number of total wars.
+     */
+    public abstract int countTotalWarsSum();
+
+    /**
      * Finds all logs of the war log ID list.
      * @param warLogIds List of war_log_id.
      * @return List of logs. null if something went wrong.

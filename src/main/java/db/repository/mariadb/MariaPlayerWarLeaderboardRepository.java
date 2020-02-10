@@ -121,7 +121,8 @@ class MariaPlayerWarLeaderboardRepository extends PlayerWarLeaderboardRepository
     @Override
     public List<PlayerWarLeaderboard> getByTotalWarDescending(int limit, int offset) {
         ResultSet res = this.executeQuery(
-                "SELECT * FROM `player_war_leaderboard` ORDER BY `total_war` DESC LIMIT " + limit + " OFFSET " + offset
+                // secondary sort by uuid to get consistent paging result
+                "SELECT * FROM `player_war_leaderboard` ORDER BY `total_war` DESC, `uuid` DESC LIMIT " + limit + " OFFSET " + offset
         );
 
         if (res == null) {
@@ -140,7 +141,8 @@ class MariaPlayerWarLeaderboardRepository extends PlayerWarLeaderboardRepository
     @Override
     public List<PlayerWarLeaderboard> getBySuccessWarDescending(int limit, int offset) {
         ResultSet res = this.executeQuery(
-                "SELECT * FROM `player_war_leaderboard` ORDER BY `success_war` DESC LIMIT " + limit + " OFFSET " + offset
+                // secondary sort by uuid to get consistent paging result
+                "SELECT * FROM `player_war_leaderboard` ORDER BY `success_war` DESC, `uuid` DESC LIMIT " + limit + " OFFSET " + offset
         );
 
         if (res == null) {
@@ -159,7 +161,8 @@ class MariaPlayerWarLeaderboardRepository extends PlayerWarLeaderboardRepository
     @Override
     public List<PlayerWarLeaderboard> getBySurvivedWarDescending(int limit, int offset) {
         ResultSet res = this.executeQuery(
-                "SELECT * FROM `player_war_leaderboard` ORDER BY `survived_war` DESC LIMIT " + limit + " OFFSET " + offset
+                // secondary sort by uuid to get consistent paging result
+                "SELECT * FROM `player_war_leaderboard` ORDER BY `survived_war` DESC, `uuid` DESC LIMIT " + limit + " OFFSET " + offset
         );
 
         if (res == null) {

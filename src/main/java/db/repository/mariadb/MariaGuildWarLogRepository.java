@@ -166,6 +166,44 @@ class MariaGuildWarLogRepository extends GuildWarLogRepository {
         return -1;
     }
 
+    @Override
+    public int countSuccessWarsSum() {
+        ResultSet res = this.executeQuery(
+                "SELECT COUNT(*) FROM `guild_war_log` WHERE `war_log_id` IS NOT NULL AND `territory_log_id` IS NOT NULL"
+        );
+
+        if (res == null) {
+            return -1;
+        }
+
+        try {
+            if (res.next())
+                return res.getInt(1);
+        } catch (SQLException e) {
+            this.logResponseException(e);
+        }
+        return -1;
+    }
+
+    @Override
+    public int countTotalWarsSum() {
+        ResultSet res = this.executeQuery(
+                "SELECT COUNT(*) FROM `guild_war_log` WHERE `war_log_id` IS NOT NULL"
+        );
+
+        if (res == null) {
+            return -1;
+        }
+
+        try {
+            if (res.next())
+                return res.getInt(1);
+        } catch (SQLException e) {
+            this.logResponseException(e);
+        }
+        return -1;
+    }
+
     @Nullable
     public List<GuildWarLog> findAllOfWarLogIdIn(List<Integer> warLogIds) {
         if (warLogIds.isEmpty()) {

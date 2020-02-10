@@ -8,6 +8,7 @@ import db.model.dateFormat.CustomDateFormat;
 import db.model.playerWarLeaderboard.PlayerWarLeaderboard;
 import db.model.timezone.CustomTimeZone;
 import db.repository.base.DateFormatRepository;
+import db.repository.base.GuildWarLogRepository;
 import db.repository.base.PlayerWarLeaderboardRepository;
 import db.repository.base.TimeZoneRepository;
 import net.dv8tion.jda.api.EmbedBuilder;
@@ -29,7 +30,9 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 public class PlayerWarLeaderboardCmd extends GenericCommand {
+    private final GuildWarLogRepository guildWarLogRepository;
     private final PlayerWarLeaderboardRepository playerWarLeaderboardRepository;
+
     private final DateFormatRepository dateFormatRepository;
     private final TimeZoneRepository timeZoneRepository;
 
@@ -39,6 +42,7 @@ public class PlayerWarLeaderboardCmd extends GenericCommand {
     private final GuildNameResolver guildNameResolver;
 
     public PlayerWarLeaderboardCmd(Bot bot) {
+        this.guildWarLogRepository = bot.getDatabase().getGuildWarLogRepository();
         this.playerWarLeaderboardRepository = bot.getDatabase().getPlayerWarLeaderboardRepository();
         this.dateFormatRepository = bot.getDatabase().getDateFormatRepository();
         this.timeZoneRepository = bot.getDatabase().getTimeZoneRepository();
@@ -213,6 +217,8 @@ public class PlayerWarLeaderboardCmd extends GenericCommand {
 
                         Date updatedAt = new Date();
                         Function<Integer, Message> pageSupplier = guildPageSupplier(
+                                guildName,
+                                prefix,
                                 guildLeaderboard,
                                 sortType,
                                 customDateFormat,
@@ -238,35 +244,63 @@ public class PlayerWarLeaderboardCmd extends GenericCommand {
 
         // Else, all players leaderboard
         // TODO implement range specify
-        respond(event, "not implemented yet");
+        Function<Integer, Message> pageSupplier = allPlayersPageSupplier(sortType, customDateFormat, customTimeZone);
+        if (getMaxPageAllPlayers() == 0) {
+            respond(event, pageSupplier.apply(0));
+            return;
+        }
+
+        respond(event, pageSupplier.apply(0), message -> {
+            MultipageHandler handler = new MultipageHandler(message, pageSupplier, this::getMaxPageAllPlayers);
+            this.reactionManager.addEventListener(handler);
+        });
     }
 
-    private static Function<Integer, Message> guildPageSupplier(List<PlayerWarLeaderboard> guildLeaderboard,
-                                                         SortType sortType,
-                                                         CustomDateFormat customDateFormat,
-                                                         CustomTimeZone customTimeZone,
-                                                         Date updatedAt) {
+    private static class Display {
+        private String rank;
+        private String playerName;
+        private String firstWarNum;
+        private String totalWarNum;
+        private String rate;
+
+        private Display(String rank, String playerName, String firstWarNum, String totalWarNum, String rate) {
+            this.rank = rank;
+            this.playerName = playerName;
+            this.firstWarNum = firstWarNum;
+            this.totalWarNum = totalWarNum;
+            this.rate = rate;
+        }
+    }
+
+    private static class Justify {
+        private int rank;
+        private int playerName;
+        private int firstWarNum;
+        private int totalWarNum;
+        private int rate;
+
+        private Justify(int rank, int playerName, int firstWarNum, int totalWarNum, int rate) {
+            this.rank = rank;
+            this.playerName = playerName;
+            this.firstWarNum = firstWarNum;
+            this.totalWarNum = totalWarNum;
+            this.rate = rate;
+        }
+    }
+
+    // Page supplier for guild leaderboard
+    private static Function<Integer, Message> guildPageSupplier(String guildName,
+                                                                String prefix,
+                                                                List<PlayerWarLeaderboard> guildLeaderboard,
+                                                                SortType sortType,
+                                                                CustomDateFormat customDateFormat,
+                                                                CustomTimeZone customTimeZone,
+                                                                Date updatedAt) {
         int maxPage = (guildLeaderboard.size() - 1) / PLAYERS_PER_PAGE;
 
         sortType.sort(guildLeaderboard);
 
         String warNumbers = "Wars: " + sortType.getWarNumbersMessage() + " / Total";
-
-        class Display {
-            private String rank;
-            private String playerName;
-            private String firstWarNum;
-            private String totalWarNum;
-            private String rate;
-
-            private Display(String rank, String playerName, String firstWarNum, String totalWarNum, String rate) {
-                this.rank = rank;
-                this.playerName = playerName;
-                this.firstWarNum = firstWarNum;
-                this.totalWarNum = totalWarNum;
-                this.rate = rate;
-            }
-        }
 
         List<Display> displays = new ArrayList<>();
         for (int i = 0; i < guildLeaderboard.size(); i++) {
@@ -280,27 +314,31 @@ public class PlayerWarLeaderboardCmd extends GenericCommand {
             ));
         }
 
+        // TODO: get a precise number of wars for a guild
+        // (in this way, if multiple players joined the same war then it duplicates the count)
         int firstWarSum = guildLeaderboard.stream().mapToInt(sortType::getWarNumber).sum();
         int totalWarSum = guildLeaderboard.stream().mapToInt(PlayerWarLeaderboard::getTotalWar).sum();
         String totalRate = String.format("%.2f%%", (double) firstWarSum / (double) totalWarSum * 100d);
 
-        int rankJustify = displays.stream().mapToInt(d -> d.rank.length()).max().orElse(2);
-        int playerNameJustify = IntStream.concat(
-                displays.stream().mapToInt(d -> d.playerName.length()),
-                IntStream.of("Player".length())
-        ).max().orElse("Player".length());
-        int firstWarNumJustify = IntStream.concat(
-                displays.stream().mapToInt(d -> d.firstWarNum.length()),
-                IntStream.of(String.valueOf(firstWarSum).length())
-        ).max().orElse(String.valueOf(firstWarSum).length());
-        int totalWarNumJustify = IntStream.concat(
-                displays.stream().mapToInt(d -> d.totalWarNum.length()),
-                IntStream.of(String.valueOf(totalWarSum).length())
-        ).max().orElse(String.valueOf(totalWarSum).length());
-        int rateJustify = IntStream.concat(
-                displays.stream().mapToInt(d -> d.rate.length()),
-                IntStream.of("0.00%".length(), totalRate.length())
-        ).max().orElse("0.00%".length());
+        Justify justify = new Justify(
+                displays.stream().mapToInt(d -> d.rank.length()).max().orElse(2),
+                IntStream.concat(
+                        displays.stream().mapToInt(d -> d.playerName.length()),
+                        IntStream.of("Player".length())
+                ).max().orElse("Player".length()),
+                IntStream.concat(
+                        displays.stream().mapToInt(d -> d.firstWarNum.length()),
+                        IntStream.of(String.valueOf(firstWarSum).length())
+                ).max().orElse(String.valueOf(firstWarSum).length()),
+                IntStream.concat(
+                        displays.stream().mapToInt(d -> d.totalWarNum.length()),
+                        IntStream.of(String.valueOf(totalWarSum).length())
+                ).max().orElse(String.valueOf(totalWarSum).length()),
+                IntStream.concat(
+                        displays.stream().mapToInt(d -> d.rate.length()),
+                        IntStream.of("0.00%".length(), totalRate.length())
+                ).max().orElse("0.00%".length())
+        );
 
         String rateMessage = sortType.getWarNumbersMessage() + " Rate";
 
@@ -309,53 +347,15 @@ public class PlayerWarLeaderboardCmd extends GenericCommand {
             ret.add("```ml");
             ret.add("---- Player War Leaderboard ----");
             ret.add("");
+            ret.add(String.format("%s [%s]", guildName, prefix));
+            ret.add("");
             ret.add(sortType.getMessage());
             ret.add(warNumbers);
             ret.add("");
 
-            ret.add(String.format(
-                    "%s | Player%s | Wars%s | %s",
-                    nCopies(" ", rankJustify),
-                    nCopies(" ", playerNameJustify - "Player".length()),
-                    nCopies(" ", firstWarNumJustify + totalWarNumJustify - 1),
-                    rateMessage
-            ));
-            ret.add(String.format(
-                    "%s-+-%s-+-%s---%s-+-%s-",
-                    nCopies("-", rankJustify),
-                    nCopies("-", playerNameJustify),
-                    nCopies("-", firstWarNumJustify), nCopies("-", totalWarNumJustify),
-                    nCopies("-", rateMessage.length())
-            ));
-
             int begin = page * PLAYERS_PER_PAGE;
             int end = Math.min((page + 1) * PLAYERS_PER_PAGE, guildLeaderboard.size());
-            for (int i = begin; i < end; i++) {
-                Display d = displays.get(i);
-                ret.add(String.format(
-                        "%s%s | %s%s | %s%s / %s%s | %s%s",
-                        d.rank, nCopies(" ", rankJustify - d.rank.length()),
-                        d.playerName, nCopies(" ", playerNameJustify - d.playerName.length()),
-                        nCopies(" ", firstWarNumJustify - d.firstWarNum.length()), d.firstWarNum,
-                        nCopies(" ", totalWarNumJustify - d.totalWarNum.length()), d.totalWarNum,
-                        nCopies(" ", rateJustify - d.rate.length()), d.rate
-                ));
-            }
-
-            ret.add(String.format(
-                    "%s-+-%s-+-%s---%s-+-%s-",
-                    nCopies("-", rankJustify),
-                    nCopies("-", playerNameJustify),
-                    nCopies("-", firstWarNumJustify), nCopies("-", totalWarNumJustify),
-                    nCopies("-", rateMessage.length())
-            ));
-            ret.add(String.format(
-                    "%s   %sTotal | %s / %s | %s%s",
-                    nCopies(" ", rankJustify),
-                    nCopies(" ", playerNameJustify - "Total".length()),
-                    firstWarSum, totalWarSum,
-                    nCopies(" ", rateJustify - totalRate.length()), totalRate
-            ));
+            ret.add(formatTableDisplays(displays, begin, end, justify, rateMessage, firstWarSum, totalWarSum, totalRate));
 
             ret.add("");
             ret.add(String.format(
@@ -368,7 +368,7 @@ public class PlayerWarLeaderboardCmd extends GenericCommand {
             dateFormat.setTimeZone(customTimeZone.getTimeZoneInstance());
             long elapsedSeconds = (new Date().getTime() - updatedAt.getTime()) / 1000L;
             ret.add(String.format(
-                    "Last Update: %s (%s), %s ago",
+                    "Updated At: %s (%s), %s ago",
                     dateFormat.format(updatedAt),
                     customTimeZone.getFormattedTime(),
                     FormatUtils.formatReadableTime(elapsedSeconds, false, "s")
@@ -378,6 +378,162 @@ public class PlayerWarLeaderboardCmd extends GenericCommand {
 
             return new MessageBuilder(String.join("\n", ret)).build();
         };
+    }
+
+    // Get max page for normal leaderboard
+    private int getMaxPageAllPlayers() {
+        int count = (int) this.playerWarLeaderboardRepository.count();
+        return (count - 1) / PLAYERS_PER_PAGE;
+    }
+
+    // Page supplier for normal leaderboard
+    private Function<Integer, Message> allPlayersPageSupplier(SortType sortType,
+                                                              CustomDateFormat customDateFormat,
+                                                              CustomTimeZone customTimeZone) {
+        return page -> {
+            // Retrieve leaderboard
+            int offset = page * PLAYERS_PER_PAGE;
+
+            // retrieved leaderboard is already sorted
+            List<PlayerWarLeaderboard> leaderboard;
+            switch (sortType) {
+                case Total:
+                    leaderboard = this.playerWarLeaderboardRepository.getByTotalWarDescending(PLAYERS_PER_PAGE, offset);
+                    break;
+                case Success:
+                    leaderboard = this.playerWarLeaderboardRepository.getBySuccessWarDescending(PLAYERS_PER_PAGE, offset);
+                    break;
+                case Survived:
+                    leaderboard = this.playerWarLeaderboardRepository.getBySurvivedWarDescending(PLAYERS_PER_PAGE, offset);
+                    break;
+                default:
+                    return new MessageBuilder("Something went wrong while retrieving data...").build();
+            }
+            if (leaderboard == null) {
+                return new MessageBuilder("Something went wrong while retrieving data...").build();
+            }
+
+            String warNumbers = "Wars: " + sortType.getWarNumbersMessage() + " / Total";
+
+            List<Display> displays = new ArrayList<>();
+            for (int i = 0; i < leaderboard.size(); i++) {
+                PlayerWarLeaderboard l = leaderboard.get(i);
+                displays.add(new Display(
+                        (offset + i + 1) + ".",
+                        l.getLastName(),
+                        String.valueOf(sortType.getWarNumber(l)),
+                        String.valueOf(l.getTotalWar()),
+                        sortType.getWarRate(l)
+                ));
+            }
+
+            int firstWarSum = this.guildWarLogRepository.countSuccessWarsSum();
+            int totalWarSum = this.guildWarLogRepository.countTotalWarsSum();
+            String totalRate = String.format("%.2f%%", (double) firstWarSum / (double) totalWarSum * 100d);
+
+            Justify justify = new Justify(
+                    displays.stream().mapToInt(d -> d.rank.length()).max().orElse(2),
+                    IntStream.concat(
+                            displays.stream().mapToInt(d -> d.playerName.length()),
+                            IntStream.of("Player".length())
+                    ).max().orElse("Player".length()),
+                    IntStream.concat(
+                            displays.stream().mapToInt(d -> d.firstWarNum.length()),
+                            IntStream.of(String.valueOf(firstWarSum).length())
+                    ).max().orElse(String.valueOf(firstWarSum).length()),
+                    IntStream.concat(
+                            displays.stream().mapToInt(d -> d.totalWarNum.length()),
+                            IntStream.of(String.valueOf(totalWarSum).length())
+                    ).max().orElse(String.valueOf(totalWarSum).length()),
+                    IntStream.concat(
+                            displays.stream().mapToInt(d -> d.rate.length()),
+                            IntStream.of("0.00%".length(), totalRate.length())
+                    ).max().orElse("0.00%".length())
+            );
+
+            String rateMessage = sortType.getWarNumbersMessage() + " Rate";
+
+            List<String> ret = new ArrayList<>();
+            ret.add("```ml");
+            ret.add("---- Player War Leaderboard ----");
+            ret.add("");
+            ret.add(sortType.getMessage());
+            ret.add(warNumbers);
+            ret.add("");
+
+            ret.add(formatTableDisplays(displays, 0, displays.size(), justify, rateMessage, firstWarSum, totalWarSum, totalRate));
+
+            ret.add("");
+            ret.add(String.format(
+                    "< page %s / %s >",
+                    page + 1, getMaxPageAllPlayers() + 1
+            ));
+            ret.add("");
+
+            Date now = new Date();
+            DateFormat dateFormat = customDateFormat.getDateFormat().getSecondFormat();
+            dateFormat.setTimeZone(customTimeZone.getTimeZoneInstance());
+            ret.add(String.format(
+                    "Updated At: %s (%s)",
+                    dateFormat.format(now),
+                    customTimeZone.getFormattedTime()
+            ));
+
+            ret.add("```");
+
+            return new MessageBuilder(String.join("\n", ret)).build();
+        };
+    }
+
+    // Formats displays according the given justify info.
+    // Asserts that justify info should make sense for the given displays.
+    private static String formatTableDisplays(List<Display> displays, int begin, int end, Justify justify,
+                                              String rateMessage,
+                                              int firstWarSum, int totalWarSum, String totalRate) {
+        List<String> ret = new ArrayList<>();
+        ret.add(String.format(
+                "%s | Player%s | Wars%s | %s",
+                nCopies(" ", justify.rank),
+                nCopies(" ", justify.playerName - "Player".length()),
+                nCopies(" ", justify.firstWarNum + justify.totalWarNum - 1),
+                rateMessage
+        ));
+        ret.add(String.format(
+                "%s-+-%s-+-%s---%s-+-%s-",
+                nCopies("-", justify.rank),
+                nCopies("-", justify.playerName),
+                nCopies("-", justify.firstWarNum), nCopies("-", justify.totalWarNum),
+                nCopies("-", rateMessage.length())
+        ));
+
+        for (int i = begin; i < end; i++) {
+            Display d = displays.get(i);
+            ret.add(String.format(
+                    "%s%s | %s%s | %s%s / %s%s | %s%s",
+                    d.rank, nCopies(" ", justify.rank - d.rank.length()),
+                    d.playerName, nCopies(" ", justify.playerName - d.playerName.length()),
+                    nCopies(" ", justify.firstWarNum - d.firstWarNum.length()), d.firstWarNum,
+                    nCopies(" ", justify.totalWarNum - d.totalWarNum.length()), d.totalWarNum,
+                    nCopies(" ", justify.rate - d.rate.length()), d.rate
+            ));
+        }
+
+        ret.add(String.format(
+                "%s-+-%s-+-%s---%s-+-%s-",
+                nCopies("-", justify.rank),
+                nCopies("-", justify.playerName),
+                nCopies("-", justify.firstWarNum), nCopies("-", justify.totalWarNum),
+                nCopies("-", rateMessage.length())
+        ));
+        ret.add(String.format(
+                "%s   %sTotal | %s / %s | %s%s",
+                nCopies(" ", justify.rank),
+                nCopies(" ", justify.playerName - "Total".length()),
+                firstWarSum, totalWarSum,
+                nCopies(" ", justify.rate - totalRate.length()), totalRate
+        ));
+
+        return String.join("\n", ret);
     }
 
     private static String nCopies(String s, int n) {
