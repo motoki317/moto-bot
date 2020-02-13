@@ -3,12 +3,10 @@ package commands.guild;
 import app.Bot;
 import commands.base.GenericCommand;
 import db.model.dateFormat.CustomDateFormat;
+import db.model.guild.Guild;
 import db.model.guildWarLeaderboard.GuildWarLeaderboard;
 import db.model.timezone.CustomTimeZone;
-import db.repository.base.DateFormatRepository;
-import db.repository.base.GuildWarLeaderboardRepository;
-import db.repository.base.GuildWarLogRepository;
-import db.repository.base.TimeZoneRepository;
+import db.repository.base.*;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.entities.Message;
@@ -21,9 +19,11 @@ import utils.ArgumentParser;
 import java.text.DateFormat;
 import java.util.*;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 public class GuildWarLeaderboardCmd extends GenericCommand {
+    private final GuildRepository guildRepository;
     private final GuildWarLogRepository guildWarLogRepository;
     private final GuildWarLeaderboardRepository guildWarLeaderboardRepository;
 
@@ -33,6 +33,7 @@ public class GuildWarLeaderboardCmd extends GenericCommand {
     private final ReactionManager reactionManager;
 
     public GuildWarLeaderboardCmd(Bot bot) {
+        this.guildRepository = bot.getDatabase().getGuildRepository();
         this.guildWarLogRepository = bot.getDatabase().getGuildWarLogRepository();
         this.guildWarLeaderboardRepository = bot.getDatabase().getGuildWarLeaderboardRepository();
         this.dateFormatRepository = bot.getDatabase().getDateFormatRepository();
@@ -89,6 +90,25 @@ public class GuildWarLeaderboardCmd extends GenericCommand {
                         false
                 ).build()
         ).build();
+    }
+
+    /**
+     * Retrieves a map containing guild name -> prefix data.
+     * @param guildNames List of guild names.
+     * @return Map from guild names to prefixes.
+     */
+    @NotNull
+    private Map<String, String> resolveGuildNames(List<String> guildNames) {
+        Map<String, String> ret = new HashMap<>();
+        List<Guild> guilds = this.guildRepository.findAllIn(guildNames.toArray(new String[]{}));
+        if (guilds == null) {
+            return ret;
+        }
+
+        for (Guild guild : guilds) {
+            ret.put(guild.getName(), guild.getPrefix());
+        }
+        return ret;
     }
 
     private enum SortType {
@@ -201,12 +221,18 @@ public class GuildWarLeaderboardCmd extends GenericCommand {
                 return new MessageBuilder("Something went wrong while retrieving data...").build();
             }
 
+            Map<String, String> prefixMap = this.resolveGuildNames(leaderboard.stream()
+                    .map(GuildWarLeaderboard::getGuildName).collect(Collectors.toList()));
+
             List<Display> displays = new ArrayList<>();
             for (int i = 0; i < leaderboard.size(); i++) {
                 GuildWarLeaderboard l = leaderboard.get(i);
                 displays.add(new Display(
                         (offset + i + 1) + ".",
-                        l.getGuildName(),
+                        String.format("[%s] %s",
+                                prefixMap.getOrDefault(l.getGuildName(), "???"),
+                                l.getGuildName()
+                        ),
                         String.valueOf(l.getSuccessWar()),
                         String.valueOf(l.getTotalWar()),
                         String.format("%.2f%%", l.getSuccessRate() * 100d)

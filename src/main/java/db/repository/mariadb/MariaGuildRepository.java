@@ -12,6 +12,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -95,6 +96,31 @@ class MariaGuildRepository extends GuildRepository {
             this.logResponseException(e);
         }
         return null;
+    }
+
+    @Nullable
+    @Override
+    public List<Guild> findAllIn(@NotNull String... guildNames) {
+        String placeHolder = "?";
+
+        Object[] objects = Arrays.stream(guildNames).toArray();
+        ResultSet res = this.executeQuery(
+                "SELECT * FROM `guild` WHERE `name` IN ("
+                        + Arrays.stream(guildNames).map(g -> placeHolder).collect(Collectors.joining(", "))
+                        + ")",
+                objects
+        );
+
+        if (res == null) {
+            return null;
+        }
+
+        try {
+            return bindAll(res);
+        } catch (SQLException e) {
+            this.logResponseException(e);
+            return null;
+        }
     }
 
     @Nullable

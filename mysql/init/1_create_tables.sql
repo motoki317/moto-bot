@@ -2,6 +2,8 @@ CREATE DATABASE IF NOT EXISTS `moto-bot`;
 
 USE `moto-bot`;
 
+# TODO: guild name must use VARBINARY, not VARCHAR because it trims white spaces
+
 CREATE TABLE IF NOT EXISTS `track_channel` (
     `type` VARCHAR(30) NOT NULL,
     `guild_id` BIGINT NOT NULL,

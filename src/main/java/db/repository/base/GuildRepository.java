@@ -15,6 +15,14 @@ public abstract class GuildRepository extends Repository<Guild, GuildId> {
     }
 
     /**
+     * Find all guilds with provided guild names.
+     * @param guildNames Guild names.
+     * @return List of guilds.
+     */
+    @Nullable
+    public abstract List<Guild> findAllIn(@NotNull String... guildNames);
+
+    /**
      * Find all matches with case insensitive and ignoring trailing spaces search.
      * Should probably want to call {@link #findOne(Object id)} first.
      * @param guildName Guild name.
