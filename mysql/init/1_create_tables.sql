@@ -2,18 +2,18 @@ CREATE DATABASE IF NOT EXISTS `moto-bot`;
 
 USE `moto-bot`;
 
-# TODO: guild name must use VARBINARY, not VARCHAR because it trims white spaces
+# NOTE: guild name must use VARBINARY, not VARCHAR because it trims white spaces
 
 CREATE TABLE IF NOT EXISTS `track_channel` (
     `type` VARCHAR(30) NOT NULL,
     `guild_id` BIGINT NOT NULL,
     `channel_id` BIGINT NOT NULL,
-    `guild_name` VARCHAR(30) NULL,
+    `guild_name` VARBINARY(30) NULL,
     `player_name` VARCHAR(16) NULL,
     # discord user id of the user who created track
     `user_id` BIGINT NOT NULL,
     `expires_at` DATETIME NOT NULL,
-    `guild_name_v` VARCHAR(30) AS (IF(`guild_name` IS NULL, '', `guild_name`)) VIRTUAL,
+    `guild_name_v` VARBINARY(30) AS (IF(`guild_name` IS NULL, '', `guild_name`)) VIRTUAL,
     `player_name_v` VARCHAR(16) AS (IF(`player_name` IS NULL, '', `player_name`)) VIRTUAL,
     UNIQUE KEY (`type`, `guild_id`, `channel_id`, `guild_name_v`, `player_name_v`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -77,7 +77,7 @@ CREATE TABLE IF NOT EXISTS `guild_xp_leaderboard` (
 
 CREATE TABLE IF NOT EXISTS `territory` (
     `name` VARCHAR(100) PRIMARY KEY NOT NULL,
-    `guild_name` VARCHAR(30),
+    `guild_name` VARBINARY(30),
     `acquired` DATETIME,
     `attacker` VARCHAR(30) NULL,
     `start_x` INT,
@@ -92,8 +92,8 @@ CREATE TABLE IF NOT EXISTS `territory` (
 CREATE TABLE IF NOT EXISTS `territory_log` (
     `id` INT AUTO_INCREMENT PRIMARY KEY NOT NULL,
     `territory_name` VARCHAR(100) NOT NULL,
-    `old_guild_name` VARCHAR(30),
-    `new_guild_name` VARCHAR(30),
+    `old_guild_name` VARBINARY(30),
+    `new_guild_name` VARBINARY(30),
     `old_guild_terr_amt` INT NOT NULL,
     `new_guild_terr_amt` INT NOT NULL,
     `acquired` DATETIME NOT NULL DEFAULT NOW(),
@@ -108,7 +108,7 @@ CREATE TABLE IF NOT EXISTS `territory_log` (
 CREATE TABLE IF NOT EXISTS `war_log` (
     `id` INT AUTO_INCREMENT PRIMARY KEY NOT NULL,
     `server_name` VARCHAR(10) NOT NULL,
-    `guild_name` VARCHAR(30) NULL,
+    `guild_name` VARBINARY(30) NULL,
     `created_at` DATETIME NOT NULL DEFAULT NOW(),
     `last_up` DATETIME NOT NULL DEFAULT NOW() ON UPDATE NOW(),
     `ended` BOOLEAN NOT NULL,
@@ -152,7 +152,7 @@ CREATE TABLE IF NOT EXISTS `war_track` (
 # Records all wars (<-> associated if possible), acquire territory, lost territory (never associated with a war log)
 CREATE TABLE IF NOT EXISTS `guild_war_log` (
     `id` INT AUTO_INCREMENT PRIMARY KEY NOT NULL,
-    `guild_name` VARCHAR(30) NOT NULL,
+    `guild_name` VARBINARY(30) NOT NULL,
     `war_log_id` INT NULL,
     `territory_log_id` INT NULL,
     UNIQUE KEY `guild_idx` (`guild_name`, `id` DESC),
@@ -169,7 +169,7 @@ CREATE TABLE IF NOT EXISTS `guild_war_log` (
 
 # Guild war leaderboard, to be updated on `guild_war_log` update
 CREATE TABLE IF NOT EXISTS `guild_war_leaderboard` (
-    `guild_name` VARCHAR(30) PRIMARY KEY NOT NULL,
+    `guild_name` VARBINARY(30) PRIMARY KEY NOT NULL,
     `total_war` INT NOT NULL,
     `success_war` INT NOT NULL,
     `success_rate` DECIMAL(5,4) UNSIGNED AS (success_war / total_war) PERSISTENT,
@@ -195,7 +195,7 @@ CREATE TABLE IF NOT EXISTS `player_war_leaderboard` (
 
 DROP FUNCTION IF EXISTS `count_guild_territories`;
 DELIMITER //
-CREATE FUNCTION `count_guild_territories` (g_name VARCHAR(30)) RETURNS INT
+CREATE FUNCTION `count_guild_territories` (g_name VARBINARY(30)) RETURNS INT
     BEGIN
         RETURN (SELECT COUNT(*) FROM `territory` WHERE `guild_name` = g_name);
     END; //
@@ -220,7 +220,7 @@ DELIMITER ;
 # Selects id of the last war log for guild that is not yet associated to an territory log
 DROP FUNCTION IF EXISTS `last_unassociated_war_log_id`;
 DELIMITER //
-CREATE FUNCTION `last_unassociated_war_log_id` (g_name VARCHAR(30)) RETURNS INT
+CREATE FUNCTION `last_unassociated_war_log_id` (g_name VARBINARY(30)) RETURNS INT
     BEGIN
         RETURN (SELECT `id` FROM `war_log` WHERE `guild_name` = g_name AND (SELECT `territory_log_id` IS NULL FROM `guild_war_log` WHERE `war_log_id` = `war_log`.`id`) = 1 ORDER BY `created_at` DESC LIMIT 1);
     END; //
@@ -327,7 +327,7 @@ DELIMITER ;
 
 DROP PROCEDURE IF EXISTS `update_guild_war_leaderboard`;
 DELIMITER //
-CREATE PROCEDURE `update_guild_war_leaderboard` (guild CHAR(36))
+CREATE PROCEDURE `update_guild_war_leaderboard` (guild VARBINARY(30))
 BEGIN
     SET @exists = (SELECT COUNT(*) FROM `guild_war_leaderboard` WHERE `guild_name` = guild);
 

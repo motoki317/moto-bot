@@ -28,7 +28,7 @@ DROP PROCEDURE IF EXISTS `populate_guild_war_leaderboard`;
 DELIMITER //
 CREATE PROCEDURE `populate_guild_war_leaderboard`()
     BEGIN
-        DECLARE cursor_NAME VARCHAR(30);
+        DECLARE cursor_NAME VARBINARY(30);
         DECLARE done INT DEFAULT FALSE;
         DECLARE cursor_i CURSOR FOR SELECT DISTINCT `guild_name` FROM `guild_war_log` WHERE `war_log_id` IS NOT NULL;
         DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
