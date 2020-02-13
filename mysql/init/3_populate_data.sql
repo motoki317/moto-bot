@@ -23,3 +23,25 @@ CREATE PROCEDURE `populate_player_war_leaderboard`()
 DELIMITER ;
 
 CALL populate_player_war_leaderboard();
+
+DROP PROCEDURE IF EXISTS `populate_guild_war_leaderboard`;
+DELIMITER //
+CREATE PROCEDURE `populate_guild_war_leaderboard`()
+    BEGIN
+        DECLARE cursor_NAME VARCHAR(30);
+        DECLARE done INT DEFAULT FALSE;
+        DECLARE cursor_i CURSOR FOR SELECT DISTINCT `guild_name` FROM `guild_war_log` WHERE `war_log_id` IS NOT NULL;
+        DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
+        OPEN cursor_i;
+        read_loop: LOOP
+            FETCH cursor_i INTO cursor_NAME;
+            IF done THEN
+                LEAVE read_loop;
+            END IF;
+            CALL update_guild_war_leaderboard(cursor_NAME);
+        END LOOP;
+        CLOSE cursor_i;
+    END; //
+DELIMITER ;
+
+CALL populate_guild_war_leaderboard();

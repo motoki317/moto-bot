@@ -165,6 +165,16 @@ CREATE TABLE IF NOT EXISTS `guild_war_log` (
         ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+# Guild war leaderboard, to be updated on `guild_war_log` update
+CREATE TABLE IF NOT EXISTS `guild_war_leaderboard` (
+    `guild_name` VARCHAR(30) PRIMARY KEY NOT NULL,
+    `total_war` INT NOT NULL,
+    `success_war` INT NOT NULL,
+    `success_rate` DECIMAL(5,4) UNSIGNED AS (success_war / total_war) PERSISTENT,
+    KEY `total_guild_idx` (`total_war`, `guild_name`),
+    KEY `success_guild_idx` (`success_war`, `guild_name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 # Player war leaderboard, to be updated on `war_player` update
 CREATE TABLE IF NOT EXISTS `player_war_leaderboard` (
     `uuid` CHAR(36) PRIMARY KEY NOT NULL,
@@ -311,6 +321,45 @@ CREATE TRIGGER IF NOT EXISTS `player_war_leaderboard_updater_2`
             CALL update_player_war_leaderboard(NEW.player_uuid, NEW.player_name);
         END IF;
     END; //
+DELIMITER ;
+
+DROP PROCEDURE IF EXISTS `update_guild_war_leaderboard`;
+DELIMITER //
+CREATE PROCEDURE `update_guild_war_leaderboard` (guild CHAR(36))
+BEGIN
+    SET @exists = (SELECT COUNT(*) FROM `guild_war_leaderboard` WHERE `guild_name` = guild);
+
+    SET @total_war = (SELECT COUNT(*) FROM `guild_war_log` WHERE `guild_name` = guild AND `war_log_id` IS NOT NULL);
+    SET @success_war = (SELECT COUNT(*) FROM `guild_war_log` WHERE `guild_name` = guild AND `war_log_id` IS NOT NULL AND `territory_log_id` IS NOT NULL);
+
+    IF @exists = 0 THEN
+        INSERT INTO `guild_war_leaderboard` (guild_name, total_war, success_war)
+         VALUES (guild, @total_war, @success_war);
+    ELSE
+        UPDATE `guild_war_leaderboard`
+            SET total_war = @total_war, success_war = @success_war WHERE `guild_name` = guild;
+    END IF;
+END; //
+DELIMITER ;
+
+DELIMITER //
+CREATE TRIGGER IF NOT EXISTS `guild_war_leaderboard_updater_1`
+    AFTER INSERT ON `guild_war_log` FOR EACH ROW
+    BEGIN
+        IF NEW.war_log_id IS NOT NULL THEN
+            CALL update_guild_war_leaderboard(NEW.guild_name);
+        END IF;
+    END; //
+DELIMITER ;
+
+DELIMITER //
+CREATE TRIGGER IF NOT EXISTS `guild_war_leaderboard_updater_2`
+    AFTER UPDATE ON `guild_war_log` FOR EACH ROW
+BEGIN
+    IF NEW.war_log_id IS NOT NULL THEN
+        CALL update_guild_war_leaderboard(NEW.guild_name);
+    END IF;
+END; //
 DELIMITER ;
 
 # User defined timezones for guild / channel / user

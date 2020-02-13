@@ -40,6 +40,7 @@ public class DatabaseMariaImpl implements Database {
     private IgnoreChannelRepository ignoreChannelRepository;
     private GuildLeaderboardRepository guildLeaderboardRepository;
     private GuildXpLeaderboardRepository guildXpLeaderboardRepository;
+    private GuildWarLeaderboardRepository guildWarLeaderboardRepository;
     private PlayerWarLeaderboardRepository playerWarLeaderboardRepository;
 
     public DatabaseMariaImpl(Logger logger) {
@@ -176,6 +177,14 @@ public class DatabaseMariaImpl implements Database {
             this.guildXpLeaderboardRepository = new MariaGuildXpLeaderboardRepository(this.connectionPool, this.logger);
         }
         return this.guildXpLeaderboardRepository;
+    }
+
+    @Override
+    public @NotNull GuildWarLeaderboardRepository getGuildWarLeaderboardRepository() {
+        if (this.guildWarLeaderboardRepository == null) {
+            this.guildWarLeaderboardRepository = new MariaGuildWarLeaderboardRepository(this.connectionPool, this.logger);
+        }
+        return this.guildWarLeaderboardRepository;
     }
 
     @Override
