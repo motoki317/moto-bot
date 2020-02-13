@@ -413,8 +413,6 @@ public class PlayerWarLeaderboardCmd extends GenericCommand {
                 return new MessageBuilder("Something went wrong while retrieving data...").build();
             }
 
-            String warNumbers = "Wars: " + sortType.getWarNumbersMessage() + " / Total";
-
             List<Display> displays = new ArrayList<>();
             for (int i = 0; i < leaderboard.size(); i++) {
                 PlayerWarLeaderboard l = leaderboard.get(i);
@@ -451,6 +449,7 @@ public class PlayerWarLeaderboardCmd extends GenericCommand {
                     ).max().orElse("0.00%".length())
             );
 
+            String warNumbers = "Wars: " + sortType.getWarNumbersMessage() + " / Total";
             String rateMessage = sortType.getWarNumbersMessage() + " Rate";
 
             List<String> ret = new ArrayList<>();
