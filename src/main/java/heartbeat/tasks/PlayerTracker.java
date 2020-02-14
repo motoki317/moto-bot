@@ -183,22 +183,7 @@ public class PlayerTracker implements TaskBase {
         retrievePlayerUUIDs(warPlayers);
 
         // retrieve guild name
-        String guildName = null;
-        for (WarPlayer warPlayer : warPlayers) {
-            Player stats = this.wynnApi.getPlayerStatistics(
-                    warPlayer.getPlayerUUID() != null
-                            ? warPlayer.getPlayerUUID()
-                            : warPlayer.getPlayerName(),
-                    false);
-            if (stats == null) {
-                continue;
-            }
-            warPlayer.setPlayerUUID(stats.getUuid());
-            if (stats.getGuildInfo().getName() != null) {
-                guildName = stats.getGuildInfo().getName();
-                break;
-            }
-        }
+        String guildName = retrieveGuildName(warPlayers);
 
         WarLog warLog = new WarLog(serverName, guildName, now, now, false, false, warPlayers);
 
@@ -236,23 +221,9 @@ public class PlayerTracker implements TaskBase {
 
         // if guild name is null try to retrieve it
         if (prevWarLog.getGuildName() == null) {
-            for (WarPlayer joinedPlayer : joinedPlayers) {
-                Player stats = this.wynnApi.getPlayerStatistics(
-                        joinedPlayer.getPlayerUUID() != null
-                            ? joinedPlayer.getPlayerUUID()
-                            : joinedPlayer.getPlayerName(),
-                        false);
-                if (stats == null) {
-                    continue;
-                }
-                // set uuid as well here if possible
-                if (joinedPlayer.getPlayerUUID() == null) {
-                    joinedPlayer.setPlayerUUID(new UUID(stats.getUuid()).toStringWithHyphens());
-                }
-                if (stats.getGuildInfo().getName() != null) {
-                    prevWarLog.setGuildName(stats.getGuildInfo().getName());
-                    break;
-                }
+            String guildName = retrieveGuildName(joinedPlayers);
+            if (guildName != null) {
+                prevWarLog.setGuildName(guildName);
             }
         }
 
@@ -261,6 +232,33 @@ public class PlayerTracker implements TaskBase {
             return;
         }
         sendWarTracking(prevWarLog);
+    }
+
+    /**
+     * Tries to retrieve guild name from the given players.
+     * @param players List of players to request the Wynn API.
+     * @return Guild name if found.
+     */
+    @Nullable
+    private String retrieveGuildName(List<WarPlayer> players) {
+        for (WarPlayer player : players) {
+            Player stats = this.wynnApi.getPlayerStatistics(
+                    player.getPlayerUUID() != null
+                            ? player.getPlayerUUID()
+                            : player.getPlayerName(),
+                    false);
+            if (stats == null) {
+                continue;
+            }
+            // set uuid as well here if possible
+            if (player.getPlayerUUID() == null) {
+                player.setPlayerUUID(new UUID(stats.getUuid()).toStringWithHyphens());
+            }
+            if (stats.getGuildInfo().getName() != null) {
+                return stats.getGuildInfo().getName();
+            }
+        }
+        return null;
     }
 
     /**
