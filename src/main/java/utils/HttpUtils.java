@@ -3,6 +3,7 @@ package utils;
 import org.apache.http.HttpEntity;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.ResponseHandler;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.ContentType;
@@ -17,8 +18,25 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.concurrent.TimeUnit;
 
 public class HttpUtils {
+    private static final int TIMEOUT_DEFAULT = (int) TimeUnit.SECONDS.toMillis(5);
+
+    private static final CloseableHttpClient client;
+
+    static {
+        RequestConfig config = RequestConfig.custom()
+                // couldn't find a doc saying the arg is in milliseconds, assuming it is
+                .setConnectionRequestTimeout(TIMEOUT_DEFAULT)
+                .setConnectTimeout(TIMEOUT_DEFAULT)
+                .setSocketTimeout(TIMEOUT_DEFAULT)
+                .build();
+        client = HttpClients.custom()
+                .setDefaultRequestConfig(config)
+                .build();
+    }
+
     /**
      * Sends GET request to specified URL.
      * @param url URL string.
@@ -29,10 +47,8 @@ public class HttpUtils {
      */
     @Nullable
     public static String get(String url, int... expectedStatusCodes) throws IOException {
-        try (CloseableHttpClient client = HttpClients.createDefault()) {
-            HttpGet request = new HttpGet(url);
-            return client.execute(request, responseHandler(expectedStatusCodes));
-        }
+        HttpGet request = new HttpGet(url);
+        return client.execute(request, responseHandler(expectedStatusCodes));
     }
 
     /**
@@ -44,11 +60,9 @@ public class HttpUtils {
      */
     @Nullable
     public static String postJson(String url, String body) throws IOException {
-        try (CloseableHttpClient client = HttpClients.createDefault()) {
-            HttpPost request = new HttpPost(url);
-            request.setEntity(new StringEntity(body, ContentType.APPLICATION_JSON));
-            return client.execute(request, defaultResponseHandler());
-        }
+        HttpPost request = new HttpPost(url);
+        request.setEntity(new StringEntity(body, ContentType.APPLICATION_JSON));
+        return client.execute(request, defaultResponseHandler());
     }
 
     /**
