@@ -4,6 +4,8 @@
 src/main/resources/data.json
 # DB Data
 mysql/data
+# CodeMR analyzation
+codemr/
 
 # ----- Java -----
 # https://github.com/github/gitignore/blob/master/Java.gitignore
