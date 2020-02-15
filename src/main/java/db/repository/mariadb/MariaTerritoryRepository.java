@@ -234,6 +234,62 @@ class MariaTerritoryRepository extends TerritoryRepository {
         );
     }
 
+    /**
+     * Creates entity using given connection.
+     * @param connection SQL connection.
+     * @param entity Territory entity.
+     * @return {@code true} if success.
+     */
+    private boolean create(Connection connection, Territory entity) {
+        Territory.Location location = entity.getLocation();
+        return this.execute(connection,
+                "INSERT INTO `territory` (name, guild_name, acquired, attacker, start_x, start_z, end_x, end_z) VALUES " +
+                        "(?, ?, ?, ?, ?, ?, ?, ?)",
+                entity.getName(),
+                entity.getGuild(),
+                dbFormat.format(entity.getAcquired()),
+                entity.getAttacker(),
+                location.getStartX(),
+                location.getStartZ(),
+                location.getEndX(),
+                location.getEndZ()
+        );
+    }
+
+    /**
+     * Updates entity using given connection.
+     * @param connection SQL connection.
+     * @param entity Territory entity.
+     * @return {@code true} if success.
+     */
+    private boolean update(Connection connection, Territory entity) {
+        Territory.Location location = entity.getLocation();
+        return this.execute(connection,
+                "UPDATE `territory` SET `guild_name` = ?, `acquired` = ?, `attacker` = ?, `start_x` = ?, `start_z` = ?, `end_x` = ?, `end_z` = ? WHERE `name` = ?",
+                entity.getGuild(),
+                dbFormat.format(entity.getAcquired()),
+                entity.getAttacker(),
+                location.getStartX(),
+                location.getStartZ(),
+                location.getEndX(),
+                location.getEndZ(),
+                entity.getName()
+        );
+    }
+
+    /**
+     * Deletes entity using given connection.
+     * @param connection SQL connection.
+     * @param entity Territory entity.
+     * @return {@code true} if success.
+     */
+    private boolean delete(Connection connection, TerritoryId entity) {
+        return this.execute(connection,
+                "DELETE FROM `territory` WHERE `name` = ?",
+                entity.getName()
+        );
+    }
+
     @CheckReturnValue
     public boolean updateAll(@NotNull List<Territory> territories) {
         Connection connection = this.db.getConnection();
@@ -251,48 +307,22 @@ class MariaTerritoryRepository extends TerritoryRepository {
 
             int added = 0;
             int removed = 0;
-            for (Territory t : newTerritories.values()) {
-                if (!oldTerritories.containsKey(t.getName())) {
-                    Territory.Location location = t.getLocation();
-                    this.logger.debug("Adding new territory: " + t.getName());
+            for (Territory territory : newTerritories.values()) {
+                if (!oldTerritories.containsKey(territory.getName())) {
+                    this.logger.debug("Adding new territory: " + territory.getName());
                     added++;
-                    boolean res = this.execute(connection,
-                            "INSERT INTO `territory` (name, guild_name, acquired, attacker, start_x, start_z, end_x, end_z) VALUES " +
-                                    "(?, ?, ?, ?, ?, ?, ?, ?)",
-                            t.getName(),
-                            t.getGuild(),
-                            dbFormat.format(t.getAcquired()),
-                            t.getAttacker(),
-                            location.getStartX(),
-                            location.getStartZ(),
-                            location.getEndX(),
-                            location.getEndZ()
-                    );
+                    boolean res = this.create(connection, territory);
                     if (!res) throw new SQLException("Insert failed");
                 } else {
-                    Territory.Location location = t.getLocation();
-                    boolean res = this.execute(connection,
-                            "UPDATE `territory` SET `guild_name` = ?, `acquired` = ?, `attacker` = ?, `start_x` = ?, `start_z` = ?, `end_x` = ?, `end_z` = ? WHERE `name` = ?",
-                            t.getGuild(),
-                            dbFormat.format(t.getAcquired()),
-                            t.getAttacker(),
-                            location.getStartX(),
-                            location.getStartZ(),
-                            location.getEndX(),
-                            location.getEndZ(),
-                            t.getName()
-                    );
+                    boolean res = this.update(connection, territory);
                     if (!res) throw new SQLException("Update failed");
                 }
             }
-            for (Territory t : oldTerritories.values()) {
-                if (!newTerritories.containsKey(t.getName())) {
-                    this.logger.debug("Removing territory: " + t.getName());
+            for (Territory territory : oldTerritories.values()) {
+                if (!newTerritories.containsKey(territory.getName())) {
+                    this.logger.debug("Removing territory: " + territory.getName());
                     removed++;
-                    boolean res = this.execute(connection,
-                            "DELETE FROM `territory` WHERE `name` = ?",
-                            t.getName()
-                    );
+                    boolean res = this.delete(connection, territory);
                     if (!res) throw new SQLException("Delete failed");
                 }
             }
