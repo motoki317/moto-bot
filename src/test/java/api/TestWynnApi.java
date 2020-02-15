@@ -51,7 +51,7 @@ class TestWynnApi {
 
     @Test
     void testGuildLeaderboard() {
-        GuildLeaderboard leaderboard = getWynnApi().getGuildLeaderboard();
+        WynnGuildLeaderboard leaderboard = getWynnApi().getGuildLeaderboard();
         assert leaderboard != null;
         assert leaderboard.getData().size() == 100;
     }

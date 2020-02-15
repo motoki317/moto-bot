@@ -272,7 +272,7 @@ public class WynnApi {
      * @return Guild leaderboard.
      */
     @Nullable
-    public GuildLeaderboard getGuildLeaderboard() {
+    public WynnGuildLeaderboard getGuildLeaderboard() {
         try {
             rateLimiterLegacy.checkRequest();
 
@@ -283,7 +283,7 @@ public class WynnApi {
 
             if (body == null) throw new Exception("returned body was null");
 
-            return mapper.readValue(body, GuildLeaderboard.class);
+            return mapper.readValue(body, WynnGuildLeaderboard.class);
         } catch (Exception e) {
             this.logger.logException("an exception occurred while requesting / parsing guild leaderboard", e);
             return null;

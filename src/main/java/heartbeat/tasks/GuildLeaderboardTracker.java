@@ -1,8 +1,9 @@
 package heartbeat.tasks;
 
 import api.wynn.WynnApi;
-import api.wynn.structs.GuildLeaderboard;
+import api.wynn.structs.WynnGuildLeaderboard;
 import app.Bot;
+import db.model.guildLeaderboard.GuildLeaderboard;
 import db.model.guildXpLeaderboard.GuildXpLeaderboard;
 import db.repository.base.GuildLeaderboardRepository;
 import db.repository.base.GuildXpLeaderboardRepository;
@@ -12,7 +13,6 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class GuildLeaderboardTracker implements TaskBase {
@@ -30,19 +30,19 @@ public class GuildLeaderboardTracker implements TaskBase {
 
     @Override
     public void run() {
-        GuildLeaderboard leaderboard = this.wynnApi.getGuildLeaderboard();
+        WynnGuildLeaderboard leaderboard = this.wynnApi.getGuildLeaderboard();
         if (leaderboard == null) {
             return;
         }
 
-        List<db.model.guildLeaderboard.GuildLeaderboard> current = convertLeaderboard(leaderboard);
-        List<db.model.guildLeaderboard.GuildLeaderboard> last = this.guildLeaderboardRepository.getLatestLeaderboard();
+        List<GuildLeaderboard> current = convertLeaderboard(leaderboard);
+        List<GuildLeaderboard> last = this.guildLeaderboardRepository.getLatestLeaderboard();
         if (last == null) {
             return;
         }
 
-        current.sort(Comparator.comparingInt(db.model.guildLeaderboard.GuildLeaderboard::getNum));
-        last.sort(Comparator.comparingInt(db.model.guildLeaderboard.GuildLeaderboard::getNum));
+        current.sort(Comparator.comparingInt(GuildLeaderboard::getNum));
+        last.sort(Comparator.comparingInt(GuildLeaderboard::getNum));
 
         if (leaderboardEquals(current, last)) {
             return;
@@ -79,12 +79,12 @@ public class GuildLeaderboardTracker implements TaskBase {
     }
 
     @NotNull
-    private static List<db.model.guildLeaderboard.GuildLeaderboard> convertLeaderboard(GuildLeaderboard leaderboard) {
-        List<db.model.guildLeaderboard.GuildLeaderboard> ret = new ArrayList<>();
+    private static List<GuildLeaderboard> convertLeaderboard(WynnGuildLeaderboard leaderboard) {
+        List<GuildLeaderboard> ret = new ArrayList<>();
         Date updatedAt = new Date(leaderboard.getRequest().getTimestamp() * 1000);
 
-        for (GuildLeaderboard.Guild datum : leaderboard.getData()) {
-            ret.add(new db.model.guildLeaderboard.GuildLeaderboard(
+        for (WynnGuildLeaderboard.Guild datum : leaderboard.getData()) {
+            ret.add(new GuildLeaderboard(
                     datum.getName(),
                     datum.getPrefix(),
                     datum.getXp(),
@@ -105,15 +105,15 @@ public class GuildLeaderboardTracker implements TaskBase {
      * @param sortedLast Sorted last one by 'num' field.
      * @return true if yes.
      */
-    private static boolean leaderboardEquals(List<db.model.guildLeaderboard.GuildLeaderboard> sortedCurrent,
-                                             List<db.model.guildLeaderboard.GuildLeaderboard> sortedLast) {
+    private static boolean leaderboardEquals(List<GuildLeaderboard> sortedCurrent,
+                                             List<GuildLeaderboard> sortedLast) {
         if (sortedCurrent.size() != sortedLast.size()) {
             return false;
         }
 
         for (int i = 0; i < sortedCurrent.size(); i++) {
-            db.model.guildLeaderboard.GuildLeaderboard c = sortedCurrent.get(i);
-            db.model.guildLeaderboard.GuildLeaderboard l = sortedLast.get(i);
+            GuildLeaderboard c = sortedCurrent.get(i);
+            GuildLeaderboard l = sortedLast.get(i);
             if (!c.getName().equals(l.getName()) ||
                     c.getLevel() != l.getLevel() || c.getXp() != l.getXp()) {
                 return false;
@@ -129,21 +129,21 @@ public class GuildLeaderboardTracker implements TaskBase {
      * @param last Last leaderboard.
      * @return true if yes.
      */
-    private static boolean checkIntegrity(List<db.model.guildLeaderboard.GuildLeaderboard> current,
-                                          List<db.model.guildLeaderboard.GuildLeaderboard> last) {
+    private static boolean checkIntegrity(List<GuildLeaderboard> current,
+                                          List<GuildLeaderboard> last) {
         Set<String> lastGuilds = last.stream()
-                .map(db.model.guildLeaderboard.GuildLeaderboard::getName).collect(Collectors.toSet());
+                .map(GuildLeaderboard::getName).collect(Collectors.toSet());
         Set<String> guildsContainedInBoth = current.stream()
-                .map(db.model.guildLeaderboard.GuildLeaderboard::getName).filter(lastGuilds::contains)
+                .map(GuildLeaderboard::getName).filter(lastGuilds::contains)
                 .collect(Collectors.toSet());
-        Map<String, db.model.guildLeaderboard.GuildLeaderboard> currentMap = current.stream()
-                .collect(Collectors.toMap(db.model.guildLeaderboard.GuildLeaderboard::getName, g -> g));
-        Map<String, db.model.guildLeaderboard.GuildLeaderboard> lastMap = last.stream()
-                .collect(Collectors.toMap(db.model.guildLeaderboard.GuildLeaderboard::getName, g -> g));
+        Map<String, GuildLeaderboard> currentMap = current.stream()
+                .collect(Collectors.toMap(GuildLeaderboard::getName, g -> g));
+        Map<String, GuildLeaderboard> lastMap = last.stream()
+                .collect(Collectors.toMap(GuildLeaderboard::getName, g -> g));
 
         for (String guildName : guildsContainedInBoth) {
-            db.model.guildLeaderboard.GuildLeaderboard c = currentMap.get(guildName);
-            db.model.guildLeaderboard.GuildLeaderboard l = lastMap.get(guildName);
+            GuildLeaderboard c = currentMap.get(guildName);
+            GuildLeaderboard l = lastMap.get(guildName);
             if (c.getLevel() < l.getLevel()) {
                 // If current level is lower than the last level
                 return false;
@@ -155,82 +155,80 @@ public class GuildLeaderboardTracker implements TaskBase {
         return true;
     }
 
-    /**
-     * Updates `guild_xp_leaderboard` table.
-     */
-    private void updateXpLeaderboard() {
-        List<db.model.guildLeaderboard.GuildLeaderboard> all = this.guildLeaderboardRepository.findAll();
-        if (all == null) {
-            return;
+    private static class GuildHistory {
+        private Map<String, List<GuildLeaderboard>> history;
+
+        GuildHistory() {
+            this.history = new HashMap<>();
         }
 
-        class Leaderboard {
-            private List<db.model.guildLeaderboard.GuildLeaderboard> data;
-
-            private Leaderboard(List<db.model.guildLeaderboard.GuildLeaderboard> data) {
-                this.data = data;
+        private void add(GuildLeaderboard l) {
+            if (!history.containsKey(l.getName())) {
+                history.put(l.getName(), new ArrayList<>());
             }
+            history.get(l.getName()).add(l);
         }
 
-        Map<String, Leaderboard> guildHistory = new HashMap<>();
-        List<Date> dates = all.stream().map(db.model.guildLeaderboard.GuildLeaderboard::getUpdatedAt)
-                .distinct().sorted(Comparator.comparingLong(Date::getTime)).collect(Collectors.toList());
-        if (dates.size() == 0) return;
-        Date newest = dates.get(dates.size() - 1);
-        Date oldest = dates.get(0);
+        private void sortByAscendingTime() {
+            history.forEach((guild, leaderboardHistory) -> leaderboardHistory.sort(Comparator.comparingLong(l -> l.getUpdatedAt().getTime())));
+        }
 
-        all.forEach(g -> {
-            if (!guildHistory.containsKey(g.getName())) {
-                guildHistory.put(g.getName(), new Leaderboard(new ArrayList<>()));
+        private long getXpDiff(String guildName) {
+            List<GuildLeaderboard> leaderboardHistory = history.get(guildName);
+            if (leaderboardHistory == null || leaderboardHistory.isEmpty()) {
+                return 0L;
             }
-            guildHistory.get(g.getName()).data.add(g);
-        });
 
-        guildHistory.forEach((guild, history) -> history.data.sort(Comparator.comparingLong(g -> g.getUpdatedAt().getTime())));
+            GuildLeaderboard first = leaderboardHistory.get(0);
+            GuildLeaderboard last = leaderboardHistory.get(leaderboardHistory.size() - 1);
 
-        // guilds contained in both oldest and newest leaderboard
-        Set<String> guildsContainedInBoth = new HashSet<>();
-        guildHistory.forEach((guild, history) -> {
-            if (history.data.size() == 0) return;
-            db.model.guildLeaderboard.GuildLeaderboard first = history.data.get(0);
-            db.model.guildLeaderboard.GuildLeaderboard last = history.data.get(history.data.size() - 1);
-            if (first.getUpdatedAt().getTime() == oldest.getTime()
-            && last.getUpdatedAt().getTime() == newest.getTime()) {
-                guildsContainedInBoth.add(guild);
-            }
-        });
-
-        Function<Leaderboard, Long> getXpDiff = leaderboard -> {
-            db.model.guildLeaderboard.GuildLeaderboard first = leaderboard.data.get(0);
-            db.model.guildLeaderboard.GuildLeaderboard last = leaderboard.data.get(leaderboard.data.size() - 1);
             // If the level stayed the same, simple case
             if (first.getLevel() == last.getLevel()) {
                 return last.getXp() - first.getXp();
             }
             // Else, go through the history to calculate xp diff
-            long ret = 0;
-            for (int i = 0; i < leaderboard.data.size() - 1; i++) {
-                db.model.guildLeaderboard.GuildLeaderboard old = leaderboard.data.get(i);
-                db.model.guildLeaderboard.GuildLeaderboard next = leaderboard.data.get(i + 1);
+            long xp = 0;
+            for (int i = 0; i < leaderboardHistory.size() - 1; i++) {
+                GuildLeaderboard old = leaderboardHistory.get(i);
+                GuildLeaderboard next = leaderboardHistory.get(i + 1);
                 if (old.getLevel() == next.getLevel()) {
-                    ret += (next.getXp() - old.getXp());
+                    xp += (next.getXp() - old.getXp());
                 } else if (old.getLevel() < next.getLevel()) {
                     // On level up, we do not know the max xp for that level so just calculate from the newer xp
                     // this is one reason the xp leaderboard is not accurate
-                    ret += next.getXp();
+                    xp += next.getXp();
                 }
             }
-            return ret;
-        };
+            return xp;
+        }
+    }
+
+    /**
+     * Updates `guild_xp_leaderboard` table.
+     */
+    private void updateXpLeaderboard() {
+        List<GuildLeaderboard> all = this.guildLeaderboardRepository.findAll();
+        if (all == null) {
+            return;
+        }
+
+        GuildHistory guildHistory = new GuildHistory();
+        all.forEach(guildHistory::add);
+        guildHistory.sortByAscendingTime();
 
         List<GuildXpLeaderboard> xpLeaderboard = new ArrayList<>();
-        for (String guildName : guildsContainedInBoth) {
-            Leaderboard leaderboard = guildHistory.get(guildName);
-            db.model.guildLeaderboard.GuildLeaderboard first = leaderboard.data.get(0);
-            db.model.guildLeaderboard.GuildLeaderboard last = leaderboard.data.get(leaderboard.data.size() - 1);
+        for (String guildName : guildHistory.history.keySet()) {
+            long xpDiff = guildHistory.getXpDiff(guildName);
+            if (xpDiff == 0L) {
+                continue;
+            }
+
+            List<GuildLeaderboard> leaderboard = guildHistory.history.get(guildName);
+            GuildLeaderboard first = leaderboard.get(0);
+            GuildLeaderboard last = leaderboard.get(leaderboard.size() - 1);
             xpLeaderboard.add(new GuildXpLeaderboard(
                     guildName, last.getPrefix(), last.getLevel(), last.getXp(),
-                    getXpDiff.apply(leaderboard), first.getUpdatedAt(), last.getUpdatedAt()
+                    xpDiff, first.getUpdatedAt(), last.getUpdatedAt()
             ));
         }
 
