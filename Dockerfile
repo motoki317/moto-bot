@@ -10,4 +10,4 @@ RUN mvn clean package -D skipTests
 
 EXPOSE 8080
 
-ENTRYPOINT ./target/bin/main
+ENTRYPOINT ["./target/bin/main"]
