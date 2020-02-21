@@ -69,12 +69,18 @@ public class PlayerTracker implements TaskBase {
             return;
         }
 
-        List<World> prevWorldList;
-        Map<String, World> currentWorlds = players.getWorlds().entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, e -> new World(e.getKey(), e.getValue().size())));
-        synchronized (this.dbLock) {
-            prevWorldList = this.worldRepository.findAll();
-            if (prevWorldList == null) return;
+        List<World> prevWorldList = this.worldRepository.findAll();
+        if (prevWorldList == null) return;
 
+        // Check if retrieved timestamp is newer
+        if (!checkIntegrity(prevWorldList, players)) {
+            this.logger.log(0, "Player Tracker failed to pass timestamp integrity check");
+            return;
+        }
+
+        Map<String, World> currentWorlds = players.getWorlds().entrySet().stream()
+                .collect(Collectors.toMap(Map.Entry::getKey, e -> new World(e.getKey(), e.getValue().size())));
+        synchronized (this.dbLock) {
             // Update DB
             if (!this.worldRepository.updateAll(currentWorlds.values())) {
                 this.logger.log(0, "Player Tracker: Failed to update worlds in DB");
@@ -101,6 +107,22 @@ public class PlayerTracker implements TaskBase {
     @Override
     public long getInterval() {
         return PLAYER_TRACKER_DELAY;
+    }
+
+    /**
+     * Checks if the retrieved new data has newer timestamp than the stored previous worlds list.
+     * @param prevWorldList Stored previous worlds list.
+     * @param newData Retrieved new worlds data.
+     * @return {@code true} if ok and the new data can be processed normally.
+     */
+    private static boolean checkIntegrity(@NotNull List<World> prevWorldList, OnlinePlayers newData) {
+        if (prevWorldList.isEmpty()) return true;
+
+        // make both timestamps in seconds
+        long old = prevWorldList.get(0).getUpdatedAt().getTime() / 1000;
+        long retrieved = newData.getRequest().getTimestamp();
+
+        return old <= retrieved;
     }
 
     /**

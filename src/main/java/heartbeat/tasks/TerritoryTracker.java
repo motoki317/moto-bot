@@ -72,6 +72,11 @@ public class TerritoryTracker implements TaskBase {
             }
         }
 
+        if (!checkIntegrity(territories)) {
+            this.logger.log(0, "Territory Tracker failed to pass timestamp integrity check");
+            return;
+        }
+
         int oldLastId;
         int newLastId;
         synchronized (this.dbLock) {
@@ -87,6 +92,20 @@ public class TerritoryTracker implements TaskBase {
         }
 
         this.handleTracking(oldLastId, newLastId);
+    }
+
+    private boolean checkIntegrity(List<Territory> retrieved) {
+        Date storedLatestAcquired = this.territoryRepository.getLatestAcquiredTime();
+        if (storedLatestAcquired == null) {
+            return true;
+        }
+        Date retrievedLatestAcquired = retrieved.stream().map(Territory::getAcquired)
+                .max(Comparator.comparingLong(Date::getTime)).orElse(null);
+        if (retrievedLatestAcquired == null) {
+            return false;
+        }
+
+        return storedLatestAcquired.getTime() <= retrievedLatestAcquired.getTime();
     }
 
     /**
