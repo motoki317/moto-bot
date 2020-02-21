@@ -275,33 +275,21 @@ DROP PROCEDURE IF EXISTS `update_player_war_leaderboard`;
 DELIMITER //
 CREATE PROCEDURE `update_player_war_leaderboard` (player_uuid CHAR(36), player_name VARCHAR(30))
     BEGIN
-        SET @lb = (SELECT `uuid` FROM `player_war_leaderboard` WHERE `uuid` = player_uuid);
+        SET @total_war = (SELECT COUNT(*) FROM `war_player` p WHERE p.`player_uuid` = player_uuid);
+        SET @success_war = (SELECT COUNT(*) FROM `war_player` p
+                                JOIN `guild_war_log` g ON p.`player_uuid` = player_uuid
+                                AND p.war_log_id = g.war_log_id AND g.territory_log_id IS NOT NULL);
+        SET @survived_war = (SELECT COUNT(*) FROM `war_player` p
+                                JOIN `guild_war_log` g ON p.`player_uuid` = player_uuid AND NOT p.exited
+                                AND p.war_log_id = g.war_log_id AND g.territory_log_id IS NOT NULL);
 
-        IF @lb IS NULL THEN
-            INSERT INTO `player_war_leaderboard` (uuid, last_name, total_war, success_war, survived_war) VALUES
-            (
-                player_uuid,
-                player_name,
-                (SELECT COUNT(*) FROM `war_player` p WHERE p.`player_uuid` = player_uuid),
-                (SELECT COUNT(*) FROM `war_player` p
-                    JOIN `guild_war_log` g ON p.`player_uuid` = player_uuid
-                    AND p.war_log_id = g.war_log_id AND g.territory_log_id IS NOT NULL),
-                (SELECT COUNT(*) FROM `war_player` p
-                    JOIN `guild_war_log` g ON p.`player_uuid` = player_uuid AND NOT p.exited
-                    AND p.war_log_id = g.war_log_id AND g.territory_log_id IS NOT NULL)
-            );
-        ELSE
-            UPDATE `player_war_leaderboard`
-            SET last_name = player_name,
-                total_war = (SELECT COUNT(*) FROM `war_player` g WHERE g.`player_uuid` = player_uuid),
-                success_war = (SELECT COUNT(*) FROM `war_player` p
-                    JOIN `guild_war_log` g ON p.`player_uuid` = player_uuid
-                    AND p.war_log_id = g.war_log_id AND g.territory_log_id IS NOT NULL),
-                survived_war = (SELECT COUNT(*) FROM `war_player` p
-                    JOIN `guild_war_log` g ON p.`player_uuid` = player_uuid AND NOT p.exited
-                    AND p.war_log_id = g.war_log_id AND g.territory_log_id IS NOT NULL)
-            WHERE uuid = player_uuid;
-        END IF;
+        INSERT INTO `player_war_leaderboard` (uuid, last_name, total_war, success_war, survived_war) VALUES
+            (player_uuid, player_name, @total_war, @success_war, @survived_war)
+            ON DUPLICATE KEY UPDATE
+                last_name = player_name,
+                total_war = @total_war,
+                success_war = @success_war,
+                survived_war = @survived_war;
     END; //
 DELIMITER ;
 
@@ -329,18 +317,12 @@ DROP PROCEDURE IF EXISTS `update_guild_war_leaderboard`;
 DELIMITER //
 CREATE PROCEDURE `update_guild_war_leaderboard` (guild VARBINARY(30))
 BEGIN
-    SET @exists = (SELECT COUNT(*) FROM `guild_war_leaderboard` WHERE `guild_name` = guild);
-
     SET @total_war = (SELECT COUNT(*) FROM `guild_war_log` WHERE `guild_name` = guild AND `war_log_id` IS NOT NULL);
     SET @success_war = (SELECT COUNT(*) FROM `guild_war_log` WHERE `guild_name` = guild AND `war_log_id` IS NOT NULL AND `territory_log_id` IS NOT NULL);
 
-    IF @exists = 0 THEN
-        INSERT INTO `guild_war_leaderboard` (guild_name, total_war, success_war)
-         VALUES (guild, @total_war, @success_war);
-    ELSE
-        UPDATE `guild_war_leaderboard`
-            SET total_war = @total_war, success_war = @success_war WHERE `guild_name` = guild;
-    END IF;
+    INSERT INTO `guild_war_leaderboard` (guild_name, total_war, success_war)
+        VALUES (guild, @total_war, @success_war)
+        ON DUPLICATE KEY UPDATE total_war = @total_war, success_war = @success_war;
 END; //
 DELIMITER ;
 
