@@ -4,8 +4,10 @@ import db.ConnectionPool;
 import db.model.guildWarLog.GuildWarLog;
 import db.model.guildWarLog.GuildWarLogId;
 import log.Logger;
+import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
+import java.util.Date;
 import java.util.List;
 
 public abstract class GuildWarLogRepository extends Repository<GuildWarLog, GuildWarLogId> {
@@ -57,6 +59,22 @@ public abstract class GuildWarLogRepository extends Repository<GuildWarLog, Guil
      * @return Number of total wars.
      */
     public abstract int countTotalWarsSum();
+
+    /**
+     * Counts success wars done in given time frame.
+     * @param start Start date (inclusive).
+     * @param end End date (exclusive).
+     * @return Number of success wars.
+     */
+    public abstract int countSuccessWarsSum(@NotNull Date start, @NotNull Date end);
+
+    /**
+     * Counts total wars done in given time frame.
+     * @param start Start date (inclusive)
+     * @param end End date (exclusive).
+     * @return Number of total wars.
+     */
+    public abstract int countTotalWarsSum(@NotNull Date start, @NotNull Date end);
 
     /**
      * Finds all logs of the war log ID list.

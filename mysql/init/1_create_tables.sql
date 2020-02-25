@@ -4,6 +4,8 @@ USE `moto-bot`;
 
 # NOTE: guild name must use VARBINARY, not VARCHAR because it trims white spaces
 
+### ----- Main (Wynn-related) tables ----
+
 CREATE TABLE IF NOT EXISTS `track_channel` (
     `type` VARCHAR(30) NOT NULL,
     `guild_id` BIGINT NOT NULL,
@@ -193,6 +195,8 @@ CREATE TABLE IF NOT EXISTS `player_war_leaderboard` (
     KEY `survived_rate_uuid_idx` (`survived_rate`, `uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+### ----- Functions and Triggers -----
+
 DROP FUNCTION IF EXISTS `count_guild_territories`;
 DELIMITER //
 CREATE FUNCTION `count_guild_territories` (g_name VARBINARY(30)) RETURNS INT
@@ -345,6 +349,92 @@ BEGIN
     END IF;
 END; //
 DELIMITER ;
+
+# Returns first war log id coming after the given datetime (inclusive).
+# Returns 1 (i.e. first log id) if all war logs comes after the given datetime (inclusive).
+# Returns MAX(id) + 1 if all war logs comes before the given datetime (exclusive).
+DROP FUNCTION IF EXISTS `first_war_log_id_after`;
+DELIMITER //
+CREATE FUNCTION `first_war_log_id_after` (datetime DATETIME) RETURNS INT
+BEGIN
+    SET @left = (SELECT MIN(id) FROM war_log);
+    SET @right = (SELECT MAX(id) + 1 FROM war_log);
+
+    WHILE @left + 1 < @right DO
+        SET @mid = (@left + @right) DIV 2;
+        SET @target = (SELECT `created_at` FROM `war_log` WHERE `id` = @mid);
+        IF @target < datetime THEN
+            SET @left = @mid;
+        ELSE
+            SET @right = @mid;
+        END IF;
+    END WHILE;
+
+    SET @target = (SELECT `created_at` FROM `war_log` WHERE `id` = @left);
+    IF @target < datetime THEN
+        RETURN @right;
+    ELSE
+        RETURN @left;
+    END IF;
+END; //
+DELIMITER ;
+
+# Returns number of total wars done by a guild between the given war log ids.
+# start is inclusive, and end is exclusive.
+DROP FUNCTION IF EXISTS `guild_total_wars_between`;
+DELIMITER //
+CREATE FUNCTION `guild_total_wars_between` (guild VARBINARY(30), start INT, end INT) RETURNS INT
+BEGIN
+    RETURN (SELECT COUNT(*) FROM `guild_war_log` WHERE `guild_name` = guild AND `war_log_id` IS NOT NULL
+        AND `war_log_id` >= start AND `war_log_id` < end);
+END; //
+DELIMITER ;
+
+# Returns number of success wars done by a guild between the given war log ids.
+# start is inclusive, and end is exclusive.
+DROP FUNCTION IF EXISTS `guild_success_wars_between`;
+DELIMITER //
+CREATE FUNCTION `guild_success_wars_between` (guild VARBINARY(30), start INT, end INT) RETURNS INT
+BEGIN
+    RETURN (SELECT COUNT(*) FROM `guild_war_log` WHERE `guild_name` = guild AND `war_log_id` IS NOT NULL AND `territory_log_id` IS NOT NULL
+        AND `war_log_id` >= start AND `war_log_id` < end);
+END; //
+DELIMITER ;
+
+# Returns number of total wars done by a player between the given war log ids.
+# start is inclusive, and end is exclusive.
+DROP FUNCTION IF EXISTS `player_total_wars_between`;
+DELIMITER //
+CREATE FUNCTION `player_total_wars_between` (player_uuid CHAR(36), start INT, end INT) RETURNS INT
+BEGIN
+    RETURN (SELECT COUNT(*) FROM `war_player` p WHERE p.`player_uuid` = player_uuid
+        AND `war_log_id` >= start AND `war_log_id` < end);
+END; //
+DELIMITER ;
+
+# Returns number of success wars done by a player between the given war log ids.
+# start is inclusive, and end is exclusive.
+DROP FUNCTION IF EXISTS `player_success_wars_between`;
+DELIMITER //
+CREATE FUNCTION `player_success_wars_between` (player_uuid CHAR(36), start INT, end INT) RETURNS INT
+BEGIN
+    RETURN (SELECT COUNT(*) FROM `war_player` w WHERE w.player_uuid = player_uuid AND w.war_log_id >= start AND w.war_log_id < end
+        AND w.war_log_id NOT IN (SELECT war_log_id FROM `guild_war_log` WHERE `war_log_id` >= start AND `war_log_id` < end AND `territory_log_id` IS NULL ORDER BY `war_log_id`));
+END; //
+DELIMITER ;
+
+# Returns number of survived wars done by a player between the given war log ids.
+# start is inclusive, and end is exclusive.
+DROP FUNCTION IF EXISTS `player_survived_wars_between`;
+DELIMITER //
+CREATE FUNCTION `player_survived_wars_between` (player_uuid CHAR(36), start INT, end INT) RETURNS INT
+BEGIN
+    RETURN (SELECT COUNT(*) FROM `war_player` w WHERE w.player_uuid = player_uuid AND NOT w.exited AND w.war_log_id >= start AND w.war_log_id < end
+        AND w.war_log_id NOT IN (SELECT war_log_id FROM `guild_war_log` WHERE `war_log_id` >= start AND `war_log_id` < end AND `territory_log_id` IS NULL ORDER BY `war_log_id`));
+END; //
+DELIMITER ;
+
+### ----- Other tables -----
 
 # User defined timezones for guild / channel / user
 CREATE TABLE IF NOT EXISTS `timezone` (

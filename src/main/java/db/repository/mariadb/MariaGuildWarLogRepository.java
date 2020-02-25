@@ -10,11 +10,16 @@ import org.jetbrains.annotations.NotNull;
 import javax.annotation.Nullable;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
 class MariaGuildWarLogRepository extends GuildWarLogRepository {
+    private static final DateFormat dbFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+
     MariaGuildWarLogRepository(ConnectionPool db, Logger logger) {
         super(db, logger);
     }
@@ -189,6 +194,79 @@ class MariaGuildWarLogRepository extends GuildWarLogRepository {
     public int countTotalWarsSum() {
         ResultSet res = this.executeQuery(
                 "SELECT COUNT(*) FROM `guild_war_log` WHERE `war_log_id` IS NOT NULL"
+        );
+
+        if (res == null) {
+            return -1;
+        }
+
+        try {
+            if (res.next())
+                return res.getInt(1);
+        } catch (SQLException e) {
+            this.logResponseException(e);
+        }
+        return -1;
+    }
+
+    private int getFirstWarLogIdAfter(@NotNull Date date) {
+        ResultSet res = this.executeQuery(
+                "SELECT first_war_log_id_after(?)",
+                dbFormat.format(date)
+        );
+
+        if (res == null) {
+            return -1;
+        }
+
+        try {
+            if (res.next())
+                return res.getInt(1);
+        } catch (SQLException e) {
+            this.logResponseException(e);
+        }
+        return -1;
+    }
+
+    @Override
+    public int countSuccessWarsSum(@NotNull Date start, @NotNull Date end) {
+        int first = getFirstWarLogIdAfter(start);
+        int last = getFirstWarLogIdAfter(end);
+        if (first == -1 || last == -1) {
+            return -1;
+        }
+
+        ResultSet res = this.executeQuery(
+                "SELECT COUNT(*) FROM `guild_war_log` WHERE `war_log_id` IS NOT NULL AND `territory_log_id` IS NOT NULL " +
+                        "AND `war_log_id` >= ? AND `war_log_id` < ?",
+                first, last
+        );
+
+        if (res == null) {
+            return -1;
+        }
+
+        try {
+            if (res.next())
+                return res.getInt(1);
+        } catch (SQLException e) {
+            this.logResponseException(e);
+        }
+        return -1;
+    }
+
+    @Override
+    public int countTotalWarsSum(@NotNull Date start, @NotNull Date end) {
+        int first = getFirstWarLogIdAfter(start);
+        int last = getFirstWarLogIdAfter(end);
+        if (first == -1 || last == -1) {
+            return -1;
+        }
+
+        ResultSet res = this.executeQuery(
+                "SELECT COUNT(*) FROM `guild_war_log` WHERE `war_log_id` IS NOT NULL " +
+                        "AND `war_log_id` >= ? AND `war_log_id` < ?",
+                first, last
         );
 
         if (res == null) {

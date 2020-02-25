@@ -10,9 +10,14 @@ import org.jetbrains.annotations.NotNull;
 import javax.annotation.Nullable;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 
 public class MariaGuildWarLeaderboardRepository extends GuildWarLeaderboardRepository {
+    private static final DateFormat dbFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+
     MariaGuildWarLeaderboardRepository(ConnectionPool db, Logger logger) {
         super(db, logger);
     }
@@ -21,7 +26,7 @@ public class MariaGuildWarLeaderboardRepository extends GuildWarLeaderboardRepos
     protected GuildWarLeaderboard bind(@NotNull ResultSet res) throws SQLException {
         return new GuildWarLeaderboard(
                 res.getString(1), res.getInt(2), res.getInt(3),
-                res.getBigDecimal(4).doubleValue()
+                res.getMetaData().getColumnCount() > 3 ? res.getBigDecimal(4) : null
         );
     }
 
@@ -138,6 +143,123 @@ public class MariaGuildWarLeaderboardRepository extends GuildWarLeaderboardRepos
     public List<GuildWarLeaderboard> getBySuccessWarDescending(int limit, int offset) {
         ResultSet res = this.executeQuery(
                 "SELECT * FROM `guild_war_leaderboard` ORDER BY `success_war` DESC, `guild_name` DESC LIMIT " + limit + " OFFSET " + offset
+        );
+
+        if (res == null) {
+            return null;
+        }
+
+        try {
+            return bindAll(res);
+        } catch (SQLException e) {
+            this.logResponseException(e);
+            return null;
+        }
+    }
+
+    private int getFirstWarLogIdAfter(@NotNull Date date) {
+        ResultSet res = this.executeQuery(
+                "SELECT first_war_log_id_after(?)",
+                dbFormat.format(date)
+        );
+
+        if (res == null) {
+            return -1;
+        }
+
+        try {
+            if (res.next())
+                return res.getInt(1);
+        } catch (SQLException e) {
+            this.logResponseException(e);
+        }
+        return -1;
+    }
+
+    @Override
+    public int getGuildsInRange(@NotNull Date start, @NotNull Date end) {
+        int first = getFirstWarLogIdAfter(start);
+        int last = getFirstWarLogIdAfter(end);
+        if (first == -1 || last == -1) {
+            return -1;
+        }
+
+        ResultSet res = this.executeQuery(
+                "SELECT COUNT(*) FROM (" +
+                        "SELECT guild_name FROM `guild_war_log` " +
+                        "WHERE `guild_total_wars_between`(guild_name, ?, ?) > 0 " +
+                        "GROUP BY `guild_name`" +
+                        ") AS t",
+                first, last
+        );
+
+        if (res == null) {
+            return -1;
+        }
+
+        try {
+            if (res.next())
+                return res.getInt(1);
+        } catch (SQLException e) {
+            this.logResponseException(e);
+        }
+        return -1;
+    }
+
+    @Nullable
+    @Override
+    public List<GuildWarLeaderboard> getByTotalWarDescending(int limit, int offset, @NotNull Date start, @NotNull Date end) {
+        int first = getFirstWarLogIdAfter(start);
+        int last = getFirstWarLogIdAfter(end);
+        if (first == -1 || last == -1) {
+            return null;
+        }
+
+        ResultSet res = this.executeQuery(
+                "SELECT * FROM (SELECT guild_name, " +
+                "guild_total_wars_between(guild_name, ?, ?) AS total_wars, " +
+                "guild_success_wars_between(guild_name, ?, ?) AS success_wars " +
+                "FROM `guild_war_log` " +
+                "WHERE `guild_total_wars_between`(guild_name, ?, ?) > 0 " +
+                "GROUP BY `guild_name` " +
+                "ORDER BY total_wars DESC, guild_name DESC) AS t LIMIT " + limit +  " OFFSET " + offset,
+                first, last,
+                first, last,
+                first, last
+        );
+
+        if (res == null) {
+            return null;
+        }
+
+        try {
+            return bindAll(res);
+        } catch (SQLException e) {
+            this.logResponseException(e);
+            return null;
+        }
+    }
+
+    @Nullable
+    @Override
+    public List<GuildWarLeaderboard> getBySuccessWarDescending(int limit, int offset, @NotNull Date start, @NotNull Date end) {
+        int first = getFirstWarLogIdAfter(start);
+        int last = getFirstWarLogIdAfter(end);
+        if (first == -1 || last == -1) {
+            return null;
+        }
+
+        ResultSet res = this.executeQuery(
+                "SELECT * FROM (SELECT guild_name, " +
+                        "guild_total_wars_between(guild_name, ?, ?) AS total_wars, " +
+                        "guild_success_wars_between(guild_name, ?, ?) AS success_wars " +
+                        "FROM `guild_war_log` " +
+                        "WHERE `guild_total_wars_between`(guild_name, ?, ?) > 0 " +
+                        "GROUP BY `guild_name` " +
+                        "ORDER BY success_wars DESC, guild_name DESC) AS t LIMIT " + limit +  " OFFSET " + offset,
+                first, last,
+                first, last,
+                first, last
         );
 
         if (res == null) {

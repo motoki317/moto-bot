@@ -1,6 +1,9 @@
 package db.model.guildWarLeaderboard;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import java.math.BigDecimal;
 
 public class GuildWarLeaderboard implements GuildWarLeaderboardId {
     @NotNull
@@ -11,18 +14,13 @@ public class GuildWarLeaderboard implements GuildWarLeaderboardId {
     // generated column
     private double successRate;
 
-    public GuildWarLeaderboard(@NotNull String guildName, int totalWar, int successWar) {
+    public GuildWarLeaderboard(@NotNull String guildName, int totalWar, int successWar, @Nullable BigDecimal successRate) {
         this.guildName = guildName;
         this.totalWar = totalWar;
         this.successWar = successWar;
-        this.successRate = (double) successWar / (double) totalWar;
-    }
-
-    public GuildWarLeaderboard(@NotNull String guildName, int totalWar, int successWar, double successRate) {
-        this.guildName = guildName;
-        this.totalWar = totalWar;
-        this.successWar = successWar;
-        this.successRate = successRate;
+        this.successRate = successRate != null ?
+                successRate.doubleValue()
+                : (double) successWar / (double) totalWar;
     }
 
     @NotNull
