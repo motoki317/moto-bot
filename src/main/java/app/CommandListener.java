@@ -1,6 +1,5 @@
-package listeners;
+package app;
 
-import app.Bot;
 import commands.*;
 import commands.base.BotCommand;
 import commands.guild.*;
@@ -17,9 +16,8 @@ import utils.BotUtils;
 
 import javax.annotation.Nonnull;
 import java.util.*;
-import java.util.function.Consumer;
 
-public class MessageListener extends ListenerAdapter {
+public class CommandListener extends ListenerAdapter {
     private final List<BotCommand> commands;
     private final Map<String, BotCommand> commandNameMap;
     private int maxArgumentsLength;
@@ -32,7 +30,7 @@ public class MessageListener extends ListenerAdapter {
     private final PrefixRepository prefixRepository;
     private final IgnoreChannelRepository ignoreChannelRepository;
 
-    public MessageListener(Bot bot) {
+    CommandListener(Bot bot) {
         this.commands = new ArrayList<>();
         this.commandNameMap = new HashMap<>();
         this.maxArgumentsLength = 1;
@@ -45,46 +43,46 @@ public class MessageListener extends ListenerAdapter {
         this.prefixRepository = bot.getDatabase().getPrefixRepository();
         this.ignoreChannelRepository = bot.getDatabase().getIgnoreChannelRepository();
 
-        Consumer<BotCommand> addCommand = (command) -> {
-            for (String commandName : command.getNames()) {
-                commandName = commandName.toLowerCase();
+        addCommand(new Help(bot, this.commands, this.commandNameMap, () -> this.maxArgumentsLength));
+        addCommand(new Ping(bot));
+        addCommand(new Info(bot));
+        addCommand(new ServerList(bot));
+        addCommand(new Track(bot));
+        addCommand(new TimeZoneCmd(bot.getDatabase().getTimeZoneRepository(), bot.getDatabase().getDateFormatRepository()));
+        addCommand(new PrefixCmd(bot.getProperties().prefix, bot.getDatabase().getPrefixRepository()));
+        addCommand(new DateFormatCmd(bot.getDatabase().getDateFormatRepository(), bot.getDatabase().getTimeZoneRepository()));
+        addCommand(new Ignore(bot.getDatabase().getIgnoreChannelRepository()));
+        addCommand(new Find(bot));
+        addCommand(new PlayerStats(bot));
 
-                if (this.commandNameMap.containsKey(commandName)) {
-                    throw new Error("FATAL: Command name conflict: " + commandName + "\n" +
-                            "Command " + command.getClass().getName() + " is not being added.");
-                }
+        addCommand(new GuildCmd(bot));
+        addCommand(new GuildStats(bot));
 
-                this.commandNameMap.put(commandName, command);
+        addCommand(new GuildRank(bot));
+        addCommand(new GainedXpRank(bot));
+
+        addCommand(new CurrentWars(bot));
+
+        addCommand(new GuildWarStats(bot));
+        addCommand(new PlayerWarStats(bot));
+
+        addCommand(new GuildWarLeaderboardCmd(bot));
+        addCommand(new PlayerWarLeaderboardCmd(bot));
+    }
+
+    private void addCommand(BotCommand command) {
+        for (String commandName : command.getNames()) {
+            commandName = commandName.toLowerCase();
+
+            if (this.commandNameMap.containsKey(commandName)) {
+                throw new Error("FATAL: Command name conflict: " + commandName + "\n" +
+                        "Command " + command.getClass().getName() + " is not being added.");
             }
-            this.commands.add(command);
-            this.maxArgumentsLength = Math.max(this.maxArgumentsLength, command.getArgumentsLength());
-        };
 
-        addCommand.accept(new Help(bot, this.commands, this.commandNameMap, () -> this.maxArgumentsLength));
-        addCommand.accept(new Ping(bot));
-        addCommand.accept(new Info(bot));
-        addCommand.accept(new ServerList(bot));
-        addCommand.accept(new Track(bot));
-        addCommand.accept(new TimeZoneCmd(bot.getDatabase().getTimeZoneRepository(), bot.getDatabase().getDateFormatRepository()));
-        addCommand.accept(new PrefixCmd(bot.getProperties().prefix, bot.getDatabase().getPrefixRepository()));
-        addCommand.accept(new DateFormatCmd(bot.getDatabase().getDateFormatRepository(), bot.getDatabase().getTimeZoneRepository()));
-        addCommand.accept(new Ignore(bot.getDatabase().getIgnoreChannelRepository()));
-        addCommand.accept(new Find(bot));
-        addCommand.accept(new PlayerStats(bot));
-
-        addCommand.accept(new GuildCmd(bot));
-        addCommand.accept(new GuildStats(bot));
-
-        addCommand.accept(new GuildRank(bot));
-        addCommand.accept(new GainedXpRank(bot));
-
-        addCommand.accept(new CurrentWars(bot));
-
-        addCommand.accept(new GuildWarStats(bot));
-        addCommand.accept(new PlayerWarStats(bot));
-
-        addCommand.accept(new GuildWarLeaderboardCmd(bot));
-        addCommand.accept(new PlayerWarLeaderboardCmd(bot));
+            this.commandNameMap.put(commandName, command);
+        }
+        this.commands.add(command);
+        this.maxArgumentsLength = Math.max(this.maxArgumentsLength, command.getArgumentsLength());
     }
 
     @Override
@@ -117,48 +115,50 @@ public class MessageListener extends ListenerAdapter {
             }
 
             // Process command from the most 'specific' (e.g. g pws) to most 'generic' (e.g. guild)
-            for (int argLength = this.maxArgumentsLength; argLength > 0; argLength--) {
-                if (args.length < argLength) continue;
-
+            for (int argLength = Math.min(this.maxArgumentsLength, args.length - 1); argLength > 0; argLength--) {
                 String cmdBase = String.join(" ", Arrays.copyOfRange(args, 0, argLength));
                 // Command name match
                 if (this.commandNameMap.containsKey(cmdBase.toLowerCase())) {
-                    BotCommand command = this.commandNameMap.get(cmdBase.toLowerCase());
-
-                    // Check guild-only command
-                    if (!event.isFromGuild() && command.guildOnly()) {
-                        String message = String.format("This command (%s) cannot be executed in direct messages.", cmdBase);
-                        event.getChannel().sendMessage(message).queue();
-                        return;
-                    }
-
-                    // Log and check spam
-                    boolean isSpam = this.logger.logEvent(event);
-                    if (isSpam) {
-                        String message = "You are requesting commands too quickly! Please wait at least 1 second between each commands.";
-                        event.getChannel().sendMessage(message).queue();
-                        return;
-                    }
-
-                    // If the first argument is "help", then send full help of the command
-                    // e.g. "track help"
-                    if (argLength < args.length && args[argLength].equalsIgnoreCase("help")) {
-                        event.getChannel().sendMessage(command.longHelp()).queue();
-                        return;
-                    }
-
-                    try {
-                        command.process(event, args);
-                    } catch (Throwable e) {
-                        BotCommand.respondError(event, "Something went wrong while processing your command...");
-                        this.logger.logException("Something went wrong while processing a user command", e);
-                    }
-
-                    addCommandLog(cmdBase, commandMessage, event);
+                    processCommand(event, commandMessage, args, argLength, cmdBase);
                     return;
                 }
             }
         }
+    }
+
+    private void processCommand(@Nonnull MessageReceivedEvent event, String commandMessage, String[] args, int argLength, String cmdBase) {
+        BotCommand command = this.commandNameMap.get(cmdBase.toLowerCase());
+
+        // Check guild-only command
+        if (!event.isFromGuild() && command.guildOnly()) {
+            String message = String.format("This command (%s) cannot be executed in direct messages.", cmdBase);
+            event.getChannel().sendMessage(message).queue();
+            return;
+        }
+
+        // Log and check spam
+        boolean isSpam = this.logger.logEvent(event);
+        if (isSpam) {
+            String message = "You are requesting commands too quickly! Please wait at least 1 second between each commands.";
+            event.getChannel().sendMessage(message).queue();
+            return;
+        }
+
+        // If the first argument is "help", then send full help of the command
+        // e.g. "track help"
+        if (argLength < args.length && args[argLength].equalsIgnoreCase("help")) {
+            event.getChannel().sendMessage(command.longHelp()).queue();
+            return;
+        }
+
+        try {
+            command.process(event, args);
+        } catch (Throwable e) {
+            BotCommand.respondError(event, "Something went wrong while processing your command...");
+            this.logger.logException("Something went wrong while processing a user command", e);
+        }
+
+        addCommandLog(cmdBase, commandMessage, event);
     }
 
     /**

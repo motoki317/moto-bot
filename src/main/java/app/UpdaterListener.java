@@ -1,4 +1,4 @@
-package listeners;
+package app;
 
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
@@ -13,7 +13,7 @@ public class UpdaterListener extends ListenerAdapter {
     private final ResponseManager responseManager;
     private final ReactionManager reactionManager;
 
-    public UpdaterListener(ResponseManager responseManager, ReactionManager reactionManager) {
+    UpdaterListener(ResponseManager responseManager, ReactionManager reactionManager) {
         this.responseManager = responseManager;
         this.reactionManager = reactionManager;
     }

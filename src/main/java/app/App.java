@@ -4,8 +4,6 @@ import db.Database;
 import db.model.world.World;
 import db.repository.mariadb.DatabaseMariaImpl;
 import heartbeat.HeartBeat;
-import listeners.MessageListener;
-import listeners.UpdaterListener;
 import log.ConsoleLogger;
 import log.DiscordLogger;
 import log.Logger;
@@ -37,7 +35,7 @@ public class App implements Runnable, Bot {
 
     private final ResponseManager responseManager;
 
-    private boolean[] isConnected;
+    private final boolean[] isConnected;
 
     private final StoppableThread heartBeat;
 
@@ -170,7 +168,7 @@ public class App implements Runnable, Bot {
     }
 
     private void addEventListeners() {
-        this.manager.addEventListener(new MessageListener(this));
+        this.manager.addEventListener(new CommandListener(this));
         this.manager.addEventListener(new UpdaterListener(this.responseManager, this.reactionManager));
         this.logger.debug("Added event listeners.");
     }
