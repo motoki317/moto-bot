@@ -115,7 +115,7 @@ public class DiscordLogger implements Logger {
     }
 
     @Override
-    public void logException(CharSequence message, Exception e) {
+    public void logException(CharSequence message, Throwable e) {
         e.printStackTrace();
         String formatted = message + "\n" + e.getMessage();
         // Print short version

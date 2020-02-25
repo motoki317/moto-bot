@@ -42,7 +42,7 @@ public class ConsoleLogger implements Logger {
     }
 
     @Override
-    public void logException(CharSequence message, Exception e) {
+    public void logException(CharSequence message, Throwable e) {
         this.log(0, message);
         e.printStackTrace();
     }

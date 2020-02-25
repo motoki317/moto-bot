@@ -149,7 +149,7 @@ public class MessageListener extends ListenerAdapter {
 
                     try {
                         command.process(event, args);
-                    } catch (Exception e) {
+                    } catch (Throwable e) {
                         BotCommand.respondError(event, "Something went wrong while processing your command...");
                         this.logger.logException("Something went wrong while processing a user command", e);
                     }

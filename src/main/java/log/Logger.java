@@ -12,5 +12,5 @@ public interface Logger {
      * @return True if the message is considered a spam.
      */
     boolean logEvent(MessageReceivedEvent event);
-    void logException(CharSequence message, Exception e);
+    void logException(CharSequence message, Throwable e);
 }
