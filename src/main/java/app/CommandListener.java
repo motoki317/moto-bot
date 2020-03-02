@@ -115,7 +115,7 @@ public class CommandListener extends ListenerAdapter {
             }
 
             // Process command from the most 'specific' (e.g. g pws) to most 'generic' (e.g. guild)
-            for (int argLength = Math.min(this.maxArgumentsLength, args.length - 1); argLength > 0; argLength--) {
+            for (int argLength = Math.min(this.maxArgumentsLength, args.length); argLength > 0; argLength--) {
                 String cmdBase = String.join(" ", Arrays.copyOfRange(args, 0, argLength));
                 // Command name match
                 if (this.commandNameMap.containsKey(cmdBase.toLowerCase())) {
