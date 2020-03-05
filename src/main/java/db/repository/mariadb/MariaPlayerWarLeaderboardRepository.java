@@ -11,10 +11,15 @@ import utils.UUID;
 import javax.annotation.Nullable;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
 class MariaPlayerWarLeaderboardRepository extends PlayerWarLeaderboardRepository {
+    private static final DateFormat dbFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+
     MariaPlayerWarLeaderboardRepository(ConnectionPool db, Logger logger) {
         super(db, logger);
     }
@@ -23,7 +28,8 @@ class MariaPlayerWarLeaderboardRepository extends PlayerWarLeaderboardRepository
     protected PlayerWarLeaderboard bind(@NotNull ResultSet res) throws SQLException {
         return new PlayerWarLeaderboard(res.getString(1), res.getString(2),
                 res.getInt(3), res.getInt(4), res.getInt(5),
-                res.getBigDecimal(6).doubleValue(), res.getBigDecimal(7).doubleValue());
+                res.getMetaData().getColumnCount() > 5 ? res.getBigDecimal(6) : null,
+                res.getMetaData().getColumnCount() > 6 ? res.getBigDecimal(7): null);
     }
 
     @Override
@@ -187,6 +193,206 @@ class MariaPlayerWarLeaderboardRepository extends PlayerWarLeaderboardRepository
                         + playerUUIDs.stream().map(p -> placeHolder).collect(Collectors.joining(", "))
                         + ")",
                 playerUUIDs.stream().map(UUID::toStringWithHyphens).toArray()
+        );
+
+        if (res == null) {
+            return null;
+        }
+
+        try {
+            return bindAll(res);
+        } catch (SQLException e) {
+            this.logResponseException(e);
+            return null;
+        }
+    }
+
+    @Override
+    public int getPlayersInRange(@NotNull Date start, @NotNull Date end) {
+        int first = getFirstWarLogIdAfter(start);
+        int last = getFirstWarLogIdAfter(end);
+        if (first == -1 || last == -1) {
+            return -1;
+        }
+
+        ResultSet res = this.executeQuery(
+                "SELECT COUNT(*) FROM (" +
+                        "SELECT `player_uuid` FROM `war_player` " +
+                        "WHERE `player_total_wars_between`(player_uuid, ?, ?) > 0 " +
+                        "GROUP BY `player_uuid`" +
+                        ") AS t",
+                first, last
+        );
+
+        if (res == null) {
+            return -1;
+        }
+
+        try {
+            if (res.next())
+                return res.getInt(1);
+        } catch (SQLException e) {
+            this.logResponseException(e);
+        }
+        return -1;
+    }
+
+    private int getFirstWarLogIdAfter(@NotNull Date date) {
+        ResultSet res = this.executeQuery(
+                "SELECT first_war_log_id_after(?)",
+                dbFormat.format(date)
+        );
+
+        if (res == null) {
+            return -1;
+        }
+
+        try {
+            if (res.next())
+                return res.getInt(1);
+        } catch (SQLException e) {
+            this.logResponseException(e);
+        }
+        return -1;
+    }
+
+    @Nullable
+    @Override
+    public List<PlayerWarLeaderboard> getByTotalWarDescending(int limit, int offset, @NotNull Date start, @NotNull Date end) {
+        int first = getFirstWarLogIdAfter(start);
+        int last = getFirstWarLogIdAfter(end);
+        if (first == -1 || last == -1) {
+            return null;
+        }
+
+        ResultSet res = this.executeQuery(
+                "SELECT * FROM (SELECT `player_uuid`, " +
+                        "`player_name`, " +
+                        "`player_total_wars_between`(player_uuid, ?, ?) AS total_wars, " +
+                        "`player_success_wars_between`(player_uuid, ?, ?) AS success_wars, " +
+                        // since default view is success wars only, to reduce computation time
+                        "0 AS survived_wars " +
+                        "FROM `war_player` " +
+                        "WHERE `player_total_wars_between`(player_uuid, ?, ?) > 0 " +
+                        "GROUP BY `player_uuid` " +
+                        "ORDER BY `total_wars` DESC, `player_uuid` DESC) AS t LIMIT " + limit + " OFFSET " + offset,
+                first, last,
+                first, last,
+                first, last
+        );
+
+        if (res == null) {
+            return null;
+        }
+
+        try {
+            return bindAll(res);
+        } catch (SQLException e) {
+            this.logResponseException(e);
+            return null;
+        }
+    }
+
+    @Nullable
+    @Override
+    public List<PlayerWarLeaderboard> getBySuccessWarDescending(int limit, int offset, @NotNull Date start, @NotNull Date end) {
+        int first = getFirstWarLogIdAfter(start);
+        int last = getFirstWarLogIdAfter(end);
+        if (first == -1 || last == -1) {
+            return null;
+        }
+
+        ResultSet res = this.executeQuery(
+                "SELECT * FROM (SELECT `player_uuid`, " +
+                        "`player_name`, " +
+                        "`player_total_wars_between`(player_uuid, ?, ?) AS total_wars, " +
+                        "`player_success_wars_between`(player_uuid, ?, ?) AS success_wars, " +
+                        // since default view is success wars only, to reduce computation time
+                        "0 AS survived_wars " +
+                        "FROM `war_player` " +
+                        "WHERE `player_total_wars_between`(player_uuid, ?, ?) > 0 " +
+                        "GROUP BY `player_uuid` " +
+                        "ORDER BY `success_wars` DESC, `player_uuid` DESC) AS t LIMIT " + limit + " OFFSET " + offset,
+                first, last,
+                first, last,
+                first, last
+        );
+
+        if (res == null) {
+            return null;
+        }
+
+        try {
+            return bindAll(res);
+        } catch (SQLException e) {
+            this.logResponseException(e);
+            return null;
+        }
+    }
+
+    @Nullable
+    @Override
+    public List<PlayerWarLeaderboard> getBySurvivedWarDescending(int limit, int offset, @NotNull Date start, @NotNull Date end) {
+        int first = getFirstWarLogIdAfter(start);
+        int last = getFirstWarLogIdAfter(end);
+        if (first == -1 || last == -1) {
+            return null;
+        }
+
+        ResultSet res = this.executeQuery(
+                "SELECT * FROM (SELECT `player_uuid`, " +
+                        "`player_name`, " +
+                        "`player_total_wars_between`(player_uuid, ?, ?) AS total_wars, " +
+                        // since default view is survived wars only, to reduce computation time
+                        "0 AS success_wars, " +
+                        "`player_survived_wars_between`(player_uuid, ?, ?) AS survived_wars " +
+                        "FROM `war_player` " +
+                        "WHERE `player_total_wars_between`(player_uuid, ?, ?) > 0 " +
+                        "GROUP BY `player_uuid` " +
+                        "ORDER BY `total_wars` DESC, `player_uuid` DESC) AS t LIMIT " + limit + " OFFSET " + offset,
+                first, last,
+                first, last,
+                first, last
+        );
+
+        if (res == null) {
+            return null;
+        }
+
+        try {
+            return bindAll(res);
+        } catch (SQLException e) {
+            this.logResponseException(e);
+            return null;
+        }
+    }
+
+    @Nullable
+    @Override
+    public List<PlayerWarLeaderboard> getRecordsOf(List<UUID> playerUUIDs, @NotNull Date start, @NotNull Date end) {
+        int first = getFirstWarLogIdAfter(start);
+        int last = getFirstWarLogIdAfter(end);
+        if (first == -1 || last == -1) {
+            return null;
+        }
+
+        String UUIDs = playerUUIDs.stream().map(p -> "\"" + p.toStringWithHyphens() + "\"").collect(Collectors.joining(", "));
+
+        ResultSet res = this.executeQuery(
+                "SELECT `player_uuid`, " +
+                        "`player_name`, " +
+                        "`player_total_wars_between`(player_uuid, ?, ?) AS total_wars, " +
+                        "`player_success_wars_between`(player_uuid, ?, ?) AS success_wars, " +
+                        "`player_survived_wars_between`(player_uuid, ?, ?) AS survived_wars " +
+                        "FROM `war_player` " +
+                        "WHERE `player_uuid` IN (" + UUIDs + ") " +
+                        "AND `player_total_wars_between`(player_uuid, ?, ?) > 0 " +
+                        "GROUP BY `player_uuid` " +
+                        "ORDER BY `total_wars` DESC, `player_uuid` DESC",
+                first, last,
+                first, last,
+                first, last,
+                first, last
         );
 
         if (res == null) {

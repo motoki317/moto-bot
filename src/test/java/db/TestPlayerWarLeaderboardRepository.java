@@ -30,8 +30,8 @@ class TestPlayerWarLeaderboardRepository {
         clearTable();
         PlayerWarLeaderboardRepository repo = getRepository();
 
-        PlayerWarLeaderboard p1 = new PlayerWarLeaderboard("ba9aee7f-0585-43cc-b2ae-5d4795ef8265", "Luky0", 1000, 990, 980);
-        PlayerWarLeaderboard p2 = new PlayerWarLeaderboard("c173e626-61d7-4dae-8fcc-9f9809901e76", "Lego_DW", 500, 490, 480);
+        PlayerWarLeaderboard p1 = new PlayerWarLeaderboard("ba9aee7f-0585-43cc-b2ae-5d4795ef8265", "Luky0", 1000, 990, 980, null, null);
+        PlayerWarLeaderboard p2 = new PlayerWarLeaderboard("c173e626-61d7-4dae-8fcc-9f9809901e76", "Lego_DW", 500, 490, 480, null, null);
 
         assert repo.count() == 0;
         assert !repo.exists(p1);

@@ -3,6 +3,8 @@ package app;
 import commands.*;
 import commands.base.BotCommand;
 import commands.guild.*;
+import commands.guild.leaderboard.GuildWarLeaderboardCmd;
+import commands.guild.leaderboard.PlayerWarLeaderboardCmd;
 import db.model.commandLog.CommandLog;
 import db.model.prefix.Prefix;
 import db.repository.base.CommandLogRepository;

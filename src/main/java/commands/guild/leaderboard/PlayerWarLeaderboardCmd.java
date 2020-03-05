@@ -1,9 +1,10 @@
-package commands.guild;
+package commands.guild.leaderboard;
 
 import api.wynn.WynnApi;
 import api.wynn.structs.WynnGuild;
 import app.Bot;
 import commands.base.GenericCommand;
+import commands.guild.GuildNameResolver;
 import db.model.dateFormat.CustomDateFormat;
 import db.model.playerWarLeaderboard.PlayerWarLeaderboard;
 import db.model.timezone.CustomTimeZone;
@@ -16,6 +17,7 @@ import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import update.multipage.MultipageHandler;
 import update.reaction.ReactionManager;
 import utils.ArgumentParser;
@@ -28,6 +30,8 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+
+import static commands.guild.leaderboard.LeaderboardCommon.*;
 
 public class PlayerWarLeaderboardCmd extends GenericCommand {
     private final GuildWarLogRepository guildWarLogRepository;
@@ -61,7 +65,7 @@ public class PlayerWarLeaderboardCmd extends GenericCommand {
 
     @Override
     public @NotNull String syntax() {
-        return "g plb [-g|--guild guild name] [-t|--total] [-sc|--success] [-sr|--survived]";
+        return "g plb [-g|--guild guild name] [-t|--total] [-sc|--success] [-sr|--survived] [-d|--days]";
     }
 
     @Override
@@ -88,17 +92,16 @@ public class PlayerWarLeaderboardCmd extends GenericCommand {
                                 "**-g|--guild <guild name>** : Specifies a guild, and display leaderboard for that guild.",
                                 "**-t --total** : Sorts in order of # of total wars.",
                                 "**-sc --success** : Sorts in order of # of success wars.",
-                                "**-sr --survived** : Sorts in order of # of survived wars."
-                                // TODO: implement range specify
-                                // "**-d <days>** : Specifies the range of leaderboard, day-specifying is up to 30 days."
+                                "**-sr --survived** : Sorts in order of # of survived wars.",
+                                "**-d|--days <days>** : Specifies the range of leaderboard, day-specifying is up to 30 days."
                         ),
                         false
                 )
                 .addField("Examples",
                         String.join("\n",
                                 ".g plb : Displays leaderboard of all players ordered by # of success wars.",
-                                ".g plb -g UXs -t : Displays leaderboard of players in the guild UXs ordered by # of total wars."
-                                // ".g plb -sc -d 7 : Displays leaderboard of all players, in last 7 days, and in order of # of success rate."
+                                ".g plb -g UXs -t : Displays leaderboard of players in the guild UXs ordered by # of total wars.",
+                                ".g plb -sc -d 7 : Displays leaderboard of all players, in last 7 days, and in order of # of success rate."
                         ),
                         false
                 ).build()
@@ -112,20 +115,6 @@ public class PlayerWarLeaderboardCmd extends GenericCommand {
 
         private static SortType getDefault() {
             return Success;
-        }
-
-        private String getMessage() {
-            // TODO implement range specify
-            switch (this) {
-                case Total:
-                    return "All Time: by # of total wars";
-                case Success:
-                    return "All Time: by # of success wars";
-                case Survived:
-                    return "All Time: by # of survived wars";
-                default:
-                    return "error: unknown sorting type";
-            }
         }
 
         private String getWarNumbersMessage() {
@@ -167,22 +156,65 @@ public class PlayerWarLeaderboardCmd extends GenericCommand {
         }
     }
 
+    // Get description of the leaderboard of the given context in arguments
+    @NotNull
+    private static String getTypeDescription(@NotNull SortType sortType,
+                                             @Nullable Range range,
+                                             @NotNull CustomTimeZone customTimeZone,
+                                             @NotNull CustomDateFormat customDateFormat) {
+        if (range == null) {
+            switch (sortType) {
+                case Total:
+                    return "All Time: by # of total wars";
+                case Success:
+                    return "All Time: by # of success wars";
+                case Survived:
+                    return "All Time: by # of survived wars";
+            }
+        } else {
+            DateFormat dateFormat = customDateFormat.getDateFormat().getMinuteFormat();
+            dateFormat.setTimeZone(customTimeZone.getTimeZoneInstance());
+
+            String startAndEnd = String.format(
+                    "Start: %s (%s)\n" +
+                            "  End: %s (%s)",
+                    dateFormat.format(range.start), customTimeZone.getFormattedTime(),
+                    dateFormat.format(range.end), customTimeZone.getFormattedTime());
+
+            switch (sortType) {
+                case Total:
+                    return String.format("Ranged: by # of total wars\n%s", startAndEnd);
+                case Success:
+                    return String.format("Ranged: by # of success wars\n%s", startAndEnd);
+                case Survived:
+                    return String.format("Ranged: by # of survived wars\n%s", startAndEnd);
+            }
+        }
+
+        return "error: unknown sorting type";
+    }
+
     private static final int PLAYERS_PER_PAGE = 10;
+
+    @NotNull
+    private static SortType parseSortType(Map<String, String> parsedArgs) {
+        if (parsedArgs.containsKey("t") || parsedArgs.containsKey("-total")) {
+            return SortType.Total;
+        } else if (parsedArgs.containsKey("sc") || parsedArgs.containsKey("-success")) {
+            return SortType.Success;
+        } else if (parsedArgs.containsKey("sr") || parsedArgs.containsKey("-survived")) {
+            return SortType.Survived;
+        } else {
+            return SortType.getDefault();
+        }
+    }
 
     @Override
     public void process(@NotNull MessageReceivedEvent event, @NotNull String[] args) {
         Map<String, String> parsedArgs = new ArgumentParser(args).getArgumentMap();
 
-        final SortType sortType;
-        if (parsedArgs.containsKey("t") || parsedArgs.containsKey("-total")) {
-            sortType = SortType.Total;
-        } else if (parsedArgs.containsKey("sc") || parsedArgs.containsKey("-success")) {
-            sortType = SortType.Success;
-        } else if (parsedArgs.containsKey("sr") || parsedArgs.containsKey("-survived")) {
-            sortType = SortType.Survived;
-        } else {
-            sortType = SortType.getDefault();
-        }
+        SortType sortType = parseSortType(parsedArgs);
+        Range range = parseRange(parsedArgs);
 
         CustomDateFormat customDateFormat = this.dateFormatRepository.getDateFormat(event);
         CustomTimeZone customTimeZone = this.timeZoneRepository.getTimeZone(event);
@@ -194,66 +226,78 @@ public class PlayerWarLeaderboardCmd extends GenericCommand {
                     : parsedArgs.get("-guild");
 
             this.guildNameResolver.resolve(specifiedName, event.getTextChannel(), event.getAuthor(),
-                    (guildName, prefix) -> {
-                        WynnGuild wynnGuild = this.wynnApi.getGuildStats(guildName);
-                        if (wynnGuild == null) {
-                            respondError(event, "Something went wrong while requesting Wynncraft API.");
-                            return;
-                        }
-                        List<UUID> guildMemberUUIDs = wynnGuild.getMembers().stream()
-                                .map(m -> new UUID(m.getUuid()))
-                                .collect(Collectors.toList());
-                        // TODO implement range specify
-                        List<PlayerWarLeaderboard> guildLeaderboard = this.playerWarLeaderboardRepository.getRecordsOf(guildMemberUUIDs);
-                        if (guildLeaderboard == null) {
-                            respondError(event, "Something went wrong while retrieving leaderboard.");
-                            return;
-                        }
-                        if (guildLeaderboard.isEmpty()) {
-                            respond(event, String.format("No war logs found for members of guild `%s` `[%s]`. (%s members)",
-                                    guildName, prefix, wynnGuild.getMembers().size()));
-                            return;
-                        }
-
-                        Date updatedAt = new Date();
-                        Function<Integer, Message> pageSupplier = guildPageSupplier(
-                                guildName,
-                                prefix,
-                                guildLeaderboard,
-                                sortType,
-                                customDateFormat,
-                                customTimeZone,
-                                updatedAt
-                        );
-                        Supplier<Integer> maxPage = () -> (guildLeaderboard.size() - 1) / PLAYERS_PER_PAGE;
-
-                        if (maxPage.get() == 0) {
-                            respond(event, pageSupplier.apply(0));
-                            return;
-                        }
-
-                        respond(event, pageSupplier.apply(0), message -> {
-                            MultipageHandler handler = new MultipageHandler(message, pageSupplier, maxPage);
-                            this.reactionManager.addEventListener(handler);
-                        });
-                    },
+                    (guildName, prefix) -> processGuildPlayerLeaderboard(event, sortType, range, customDateFormat, customTimeZone, guildName, prefix),
                     error -> respondError(event, error)
             );
             return;
         }
 
         // Else, all players leaderboard
-        // TODO implement range specify
-        Function<Integer, Message> pageSupplier = allPlayersPageSupplier(sortType, customDateFormat, customTimeZone);
-        if (getMaxPageAllPlayers() == 0) {
+        Supplier<Integer> maxPage = () -> this.getMaxPageAllPlayers(range);
+        Function<Integer, Message> pageSupplier = page -> allPlayersPageSupplier(page, sortType, range, customDateFormat, customTimeZone);
+        respondLeaderboard(event, maxPage, pageSupplier);
+    }
+
+    private void respondLeaderboard(MessageReceivedEvent event,
+                                    Supplier<Integer> maxPage,
+                                    Function<Integer, Message> pageSupplier) {
+        if (maxPage.get() == 0) {
             respond(event, pageSupplier.apply(0));
             return;
         }
 
         respond(event, pageSupplier.apply(0), message -> {
-            MultipageHandler handler = new MultipageHandler(message, pageSupplier, this::getMaxPageAllPlayers);
+            MultipageHandler handler = new MultipageHandler(message, pageSupplier, maxPage);
             this.reactionManager.addEventListener(handler);
         });
+    }
+
+    private void processGuildPlayerLeaderboard(@NotNull MessageReceivedEvent event,
+                                               SortType sortType,
+                                               @Nullable Range range,
+                                               CustomDateFormat customDateFormat,
+                                               CustomTimeZone customTimeZone,
+                                               @NotNull String guildName,
+                                               @Nullable String prefix) {
+        WynnGuild wynnGuild = this.wynnApi.getGuildStats(guildName);
+        if (wynnGuild == null) {
+            respondError(event, "Something went wrong while requesting Wynncraft API.");
+            return;
+        }
+        List<UUID> guildMemberUUIDs = wynnGuild.getMembers().stream()
+                .map(m -> new UUID(m.getUuid()))
+                .collect(Collectors.toList());
+
+        List<PlayerWarLeaderboard> guildLeaderboard;
+        if (range == null) {
+            guildLeaderboard = this.playerWarLeaderboardRepository.getRecordsOf(guildMemberUUIDs);
+        } else {
+            guildLeaderboard = this.playerWarLeaderboardRepository.getRecordsOf(guildMemberUUIDs, range.start, range.end);
+        }
+
+        if (guildLeaderboard == null) {
+            respondError(event, "Something went wrong while retrieving leaderboard.");
+            return;
+        }
+        if (guildLeaderboard.isEmpty()) {
+            respond(event, String.format("No war logs found for members of guild `%s` `[%s]` (within the provided time frame). (%s members)",
+                    guildName, prefix, wynnGuild.getMembers().size()));
+            return;
+        }
+
+        Date updatedAt = new Date();
+        Function<Integer, Message> pageSupplier = guildPageSupplier(
+                guildName,
+                prefix,
+                guildLeaderboard,
+                sortType,
+                range,
+                customDateFormat,
+                customTimeZone,
+                updatedAt
+        );
+        Supplier<Integer> maxPage = () -> (guildLeaderboard.size() - 1) / PLAYERS_PER_PAGE;
+        respondLeaderboard(event, maxPage, pageSupplier);
     }
 
     private static class Display {
@@ -293,14 +337,13 @@ public class PlayerWarLeaderboardCmd extends GenericCommand {
                                                                 String prefix,
                                                                 List<PlayerWarLeaderboard> guildLeaderboard,
                                                                 SortType sortType,
+                                                                @Nullable Range range,
                                                                 CustomDateFormat customDateFormat,
                                                                 CustomTimeZone customTimeZone,
                                                                 Date updatedAt) {
         int maxPage = (guildLeaderboard.size() - 1) / PLAYERS_PER_PAGE;
 
         sortType.sort(guildLeaderboard);
-
-        String warNumbers = "Wars: " + sortType.getWarNumbersMessage() + " / Total";
 
         List<Display> displays = new ArrayList<>();
         for (int i = 0; i < guildLeaderboard.size(); i++) {
@@ -320,27 +363,11 @@ public class PlayerWarLeaderboardCmd extends GenericCommand {
         int totalWarSum = guildLeaderboard.stream().mapToInt(PlayerWarLeaderboard::getTotalWar).sum();
         String totalRate = String.format("%.2f%%", (double) firstWarSum / (double) totalWarSum * 100d);
 
-        Justify justify = new Justify(
-                displays.stream().mapToInt(d -> d.rank.length()).max().orElse(2),
-                IntStream.concat(
-                        displays.stream().mapToInt(d -> d.playerName.length()),
-                        IntStream.of("Player".length())
-                ).max().orElse("Player".length()),
-                IntStream.concat(
-                        displays.stream().mapToInt(d -> d.firstWarNum.length()),
-                        IntStream.of(String.valueOf(firstWarSum).length())
-                ).max().orElse(String.valueOf(firstWarSum).length()),
-                IntStream.concat(
-                        displays.stream().mapToInt(d -> d.totalWarNum.length()),
-                        IntStream.of(String.valueOf(totalWarSum).length())
-                ).max().orElse(String.valueOf(totalWarSum).length()),
-                IntStream.concat(
-                        displays.stream().mapToInt(d -> d.rate.length()),
-                        IntStream.of("0.00%".length(), totalRate.length())
-                ).max().orElse("0.00%".length())
-        );
+        Justify justify = getSpaceJustify(displays, firstWarSum, totalWarSum, totalRate);
 
         String rateMessage = sortType.getWarNumbersMessage() + " Rate";
+        String typeDescription = getTypeDescription(sortType, range, customTimeZone, customDateFormat);
+        String warNumbers = "Wars: " + sortType.getWarNumbersMessage() + " / Total";
 
         return page -> {
             List<String> ret = new ArrayList<>();
@@ -349,7 +376,7 @@ public class PlayerWarLeaderboardCmd extends GenericCommand {
             ret.add("");
             ret.add(String.format("%s [%s]", guildName, prefix));
             ret.add("");
-            ret.add(sortType.getMessage());
+            ret.add(typeDescription);
             ret.add(warNumbers);
             ret.add("");
 
@@ -381,107 +408,135 @@ public class PlayerWarLeaderboardCmd extends GenericCommand {
     }
 
     // Get max page for normal leaderboard
-    private int getMaxPageAllPlayers() {
-        int count = (int) this.playerWarLeaderboardRepository.count();
+    private int getMaxPageAllPlayers(@Nullable Range range) {
+        int count;
+        if (range == null) {
+            count = (int) this.playerWarLeaderboardRepository.count();
+        } else {
+            count = this.playerWarLeaderboardRepository.getPlayersInRange(range.start, range.end);
+        }
         return (count - 1) / PLAYERS_PER_PAGE;
     }
 
-    // Page supplier for normal leaderboard
-    private Function<Integer, Message> allPlayersPageSupplier(SortType sortType,
-                                                              CustomDateFormat customDateFormat,
-                                                              CustomTimeZone customTimeZone) {
-        return page -> {
-            // Retrieve leaderboard
-            int offset = page * PLAYERS_PER_PAGE;
-
-            // retrieved leaderboard is already sorted
-            List<PlayerWarLeaderboard> leaderboard;
+    @Nullable
+    private List<PlayerWarLeaderboard> allPlayersGetPartialLeaderboard(@NotNull SortType sortType,
+                                                                       @Nullable Range range,
+                                                                       int offset) {
+        if (range == null) {
             switch (sortType) {
                 case Total:
-                    leaderboard = this.playerWarLeaderboardRepository.getByTotalWarDescending(PLAYERS_PER_PAGE, offset);
-                    break;
+                    return this.playerWarLeaderboardRepository.getByTotalWarDescending(PLAYERS_PER_PAGE, offset);
                 case Success:
-                    leaderboard = this.playerWarLeaderboardRepository.getBySuccessWarDescending(PLAYERS_PER_PAGE, offset);
-                    break;
+                    return this.playerWarLeaderboardRepository.getBySuccessWarDescending(PLAYERS_PER_PAGE, offset);
                 case Survived:
-                    leaderboard = this.playerWarLeaderboardRepository.getBySurvivedWarDescending(PLAYERS_PER_PAGE, offset);
-                    break;
-                default:
-                    return new MessageBuilder("Something went wrong while retrieving data...").build();
+                    return this.playerWarLeaderboardRepository.getBySurvivedWarDescending(PLAYERS_PER_PAGE, offset);
             }
-            if (leaderboard == null) {
-                return new MessageBuilder("Something went wrong while retrieving data...").build();
+        } else {
+            switch (sortType) {
+                case Total:
+                    return this.playerWarLeaderboardRepository.getByTotalWarDescending(PLAYERS_PER_PAGE, offset, range.start, range.end);
+                case Success:
+                    return this.playerWarLeaderboardRepository.getBySuccessWarDescending(PLAYERS_PER_PAGE, offset, range.start, range.end);
+                case Survived:
+                    return this.playerWarLeaderboardRepository.getBySurvivedWarDescending(PLAYERS_PER_PAGE, offset, range.start, range.end);
             }
+        }
+        return null;
+    }
 
-            List<Display> displays = new ArrayList<>();
-            for (int i = 0; i < leaderboard.size(); i++) {
-                PlayerWarLeaderboard l = leaderboard.get(i);
-                displays.add(new Display(
-                        (offset + i + 1) + ".",
-                        l.getLastName(),
-                        String.valueOf(sortType.getWarNumber(l)),
-                        String.valueOf(l.getTotalWar()),
-                        sortType.getWarRate(l)
-                ));
-            }
+    // Page supplier for normal leaderboard
+    private Message allPlayersPageSupplier(int page,
+                                           SortType sortType,
+                                           @Nullable Range range,
+                                           CustomDateFormat customDateFormat,
+                                           CustomTimeZone customTimeZone) {
+        // Retrieve leaderboard
+        int offset = page * PLAYERS_PER_PAGE;
 
-            int firstWarSum = this.guildWarLogRepository.countSuccessWarsSum();
-            int totalWarSum = this.guildWarLogRepository.countTotalWarsSum();
-            String totalRate = String.format("%.2f%%", (double) firstWarSum / (double) totalWarSum * 100d);
+        // retrieved partial leaderboard is already sorted
+        List<PlayerWarLeaderboard> leaderboard = allPlayersGetPartialLeaderboard(sortType, range, offset);
+        if (leaderboard == null) {
+            return new MessageBuilder("Something went wrong while retrieving data...").build();
+        }
 
-            Justify justify = new Justify(
-                    displays.stream().mapToInt(d -> d.rank.length()).max().orElse(2),
-                    IntStream.concat(
-                            displays.stream().mapToInt(d -> d.playerName.length()),
-                            IntStream.of("Player".length())
-                    ).max().orElse("Player".length()),
-                    IntStream.concat(
-                            displays.stream().mapToInt(d -> d.firstWarNum.length()),
-                            IntStream.of(String.valueOf(firstWarSum).length())
-                    ).max().orElse(String.valueOf(firstWarSum).length()),
-                    IntStream.concat(
-                            displays.stream().mapToInt(d -> d.totalWarNum.length()),
-                            IntStream.of(String.valueOf(totalWarSum).length())
-                    ).max().orElse(String.valueOf(totalWarSum).length()),
-                    IntStream.concat(
-                            displays.stream().mapToInt(d -> d.rate.length()),
-                            IntStream.of("0.00%".length(), totalRate.length())
-                    ).max().orElse("0.00%".length())
-            );
-
-            String warNumbers = "Wars: " + sortType.getWarNumbersMessage() + " / Total";
-            String rateMessage = sortType.getWarNumbersMessage() + " Rate";
-
-            List<String> ret = new ArrayList<>();
-            ret.add("```ml");
-            ret.add("---- Player War Leaderboard ----");
-            ret.add("");
-            ret.add(sortType.getMessage());
-            ret.add(warNumbers);
-            ret.add("");
-
-            ret.add(formatTableDisplays(displays, 0, displays.size(), justify, rateMessage, firstWarSum, totalWarSum, totalRate));
-
-            ret.add("");
-            ret.add(String.format(
-                    "< page %s / %s >",
-                    page + 1, getMaxPageAllPlayers() + 1
+        List<Display> displays = new ArrayList<>();
+        for (int i = 0; i < leaderboard.size(); i++) {
+            PlayerWarLeaderboard l = leaderboard.get(i);
+            displays.add(new Display(
+                    (offset + i + 1) + ".",
+                    l.getLastName(),
+                    String.valueOf(sortType.getWarNumber(l)),
+                    String.valueOf(l.getTotalWar()),
+                    sortType.getWarRate(l)
             ));
-            ret.add("");
+        }
 
-            Date now = new Date();
-            DateFormat dateFormat = customDateFormat.getDateFormat().getSecondFormat();
-            dateFormat.setTimeZone(customTimeZone.getTimeZoneInstance());
-            ret.add(String.format(
-                    "Updated At: %s (%s)",
-                    dateFormat.format(now),
-                    customTimeZone.getFormattedTime()
-            ));
+        int successWarSum = range == null
+                ? this.guildWarLogRepository.countSuccessWarsSum()
+                : this.guildWarLogRepository.countSuccessWarsSum(range.start, range.end);
+        int totalWarSum = range == null
+                ? this.guildWarLogRepository.countTotalWarsSum()
+                : this.guildWarLogRepository.countTotalWarsSum(range.start, range.end);
+        String totalRate = String.format("%.2f%%", (double) successWarSum / (double) totalWarSum * 100d);
 
-            ret.add("```");
+        Justify justify = getSpaceJustify(displays, successWarSum, totalWarSum, totalRate);
 
-            return new MessageBuilder(String.join("\n", ret)).build();
-        };
+        String typeDescription = getTypeDescription(sortType, range, customTimeZone, customDateFormat);
+        String warNumbers = "Wars: " + sortType.getWarNumbersMessage() + " / Total";
+        String rateMessage = sortType.getWarNumbersMessage() + " Rate";
+
+        List<String> ret = new ArrayList<>();
+        ret.add("```ml");
+        ret.add("---- Player War Leaderboard ----");
+        ret.add("");
+        ret.add(typeDescription);
+        ret.add(warNumbers);
+        ret.add("");
+
+        ret.add(formatTableDisplays(displays, 0, displays.size(), justify, rateMessage, successWarSum, totalWarSum, totalRate));
+
+        ret.add("");
+        ret.add(String.format(
+                "< page %s / %s >",
+                page + 1, getMaxPageAllPlayers(range) + 1
+        ));
+        ret.add("");
+
+        Date now = new Date();
+        DateFormat dateFormat = customDateFormat.getDateFormat().getSecondFormat();
+        dateFormat.setTimeZone(customTimeZone.getTimeZoneInstance());
+        ret.add(String.format(
+                "Updated At: %s (%s)",
+                dateFormat.format(now),
+                customTimeZone.getFormattedTime()
+        ));
+
+        ret.add("```");
+
+        return new MessageBuilder(String.join("\n", ret)).build();
+    }
+
+    @NotNull
+    private static Justify getSpaceJustify(List<Display> displays, int successWarSum, int totalWarSum, String totalRate) {
+        return new Justify(
+                displays.stream().mapToInt(d -> d.rank.length()).max().orElse(2),
+                IntStream.concat(
+                        displays.stream().mapToInt(d -> d.playerName.length()),
+                        IntStream.of("Player".length())
+                ).max().orElse("Player".length()),
+                IntStream.concat(
+                        displays.stream().mapToInt(d -> d.firstWarNum.length()),
+                        IntStream.of(String.valueOf(successWarSum).length())
+                ).max().orElse(String.valueOf(successWarSum).length()),
+                IntStream.concat(
+                        displays.stream().mapToInt(d -> d.totalWarNum.length()),
+                        IntStream.of(String.valueOf(totalWarSum).length())
+                ).max().orElse(String.valueOf(totalWarSum).length()),
+                IntStream.concat(
+                        displays.stream().mapToInt(d -> d.rate.length()),
+                        IntStream.of("0.00%".length(), totalRate.length())
+                ).max().orElse("0.00%".length())
+        );
     }
 
     // Formats displays according the given justify info.

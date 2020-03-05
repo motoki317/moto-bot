@@ -1,4 +1,4 @@
-package commands.guild;
+package commands.guild.leaderboard;
 
 import app.Bot;
 import commands.base.GenericCommand;
@@ -16,15 +16,16 @@ import org.jetbrains.annotations.Nullable;
 import update.multipage.MultipageHandler;
 import update.reaction.ReactionManager;
 import utils.ArgumentParser;
-import utils.InputChecker;
 
 import java.text.DateFormat;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+
+import static commands.guild.leaderboard.LeaderboardCommon.Range;
+import static commands.guild.leaderboard.LeaderboardCommon.parseRange;
 
 public class GuildWarLeaderboardCmd extends GenericCommand {
     private final GuildRepository guildRepository;
@@ -101,7 +102,7 @@ public class GuildWarLeaderboardCmd extends GenericCommand {
      * @return Map from guild names to prefixes.
      */
     @NotNull
-    private Map<String, String> resolveGuildNames(List<String> guildNames) {
+    private Map<String, String> resolveGuildPrefixes(List<String> guildNames) {
         Map<String, String> ret = new HashMap<>();
         if (guildNames.isEmpty()) {
             return ret;
@@ -127,18 +128,6 @@ public class GuildWarLeaderboardCmd extends GenericCommand {
         }
     }
 
-    private static class Range {
-        @NotNull
-        private final Date start;
-        @NotNull
-        private final Date end;
-
-        private Range(@NotNull Date start, @NotNull Date end) {
-            this.start = start;
-            this.end = end;
-        }
-    }
-
     private static final int GUILDS_PER_PAGE = 10;
 
     @NotNull
@@ -149,23 +138,6 @@ public class GuildWarLeaderboardCmd extends GenericCommand {
             return SortType.Success;
         } else {
             return SortType.getDefault();
-        }
-    }
-
-    @Nullable
-    private static Range parseRange(Map<String, String> parsedArgs) throws NumberFormatException {
-        if (parsedArgs.containsKey("d") || parsedArgs.containsKey("-days")) {
-            int days = InputChecker.getPositiveInteger(parsedArgs.get("d") != null
-                    ? parsedArgs.get("d") : parsedArgs.get("-days"));
-            if (days < 0 || days > 30) {
-                throw new NumberFormatException("Please input an integer between 1 and 30 for days argument!");
-            }
-
-            Date now = new Date();
-            Date old = new Date(now.getTime() - TimeUnit.DAYS.toMillis(days));
-            return new Range(old, now);
-        } else {
-            return null;
         }
     }
 
@@ -273,10 +245,10 @@ public class GuildWarLeaderboardCmd extends GenericCommand {
 
     // Get description of the leaderboard of the given context in arguments
     @NotNull
-    private String getTypeDescription(@NotNull SortType sortType,
-                                      @Nullable Range range,
-                                      @NotNull CustomTimeZone customTimeZone,
-                                      @NotNull CustomDateFormat customDateFormat) {
+    private static String getTypeDescription(@NotNull SortType sortType,
+                                             @Nullable Range range,
+                                             @NotNull CustomTimeZone customTimeZone,
+                                             @NotNull CustomDateFormat customDateFormat) {
         if (range == null) {
             switch (sortType) {
                 case Total:
@@ -296,9 +268,9 @@ public class GuildWarLeaderboardCmd extends GenericCommand {
 
             switch (sortType) {
                 case Total:
-                    return String.format("Range: by # of total wars\n%s", startAndEnd);
+                    return String.format("Ranged: by # of total wars\n%s", startAndEnd);
                 case Success:
-                    return String.format("Range: by # of success wars\n%s", startAndEnd);
+                    return String.format("Ranged: by # of success wars\n%s", startAndEnd);
             }
         }
 
@@ -333,7 +305,7 @@ public class GuildWarLeaderboardCmd extends GenericCommand {
             return new MessageBuilder("Something went wrong while retrieving data...").build();
         }
 
-        Map<String, String> prefixMap = this.resolveGuildNames(leaderboard.stream()
+        Map<String, String> prefixMap = this.resolveGuildPrefixes(leaderboard.stream()
                 .map(GuildWarLeaderboard::getGuildName).collect(Collectors.toList()));
 
         List<Display> displays = new ArrayList<>();

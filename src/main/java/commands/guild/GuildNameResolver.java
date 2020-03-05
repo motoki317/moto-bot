@@ -16,11 +16,11 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-class GuildNameResolver {
+public class GuildNameResolver {
     private final ResponseManager responseManager;
     private final GuildRepository guildRepository;
 
-    GuildNameResolver(ResponseManager responseManager, GuildRepository guildRepository) {
+    public GuildNameResolver(ResponseManager responseManager, GuildRepository guildRepository) {
         this.responseManager = responseManager;
         this.guildRepository = guildRepository;
     }
@@ -33,7 +33,7 @@ class GuildNameResolver {
      * @param onResolve On resolve, guild name and guild prefix are given.
      * @param onFailure On error, reason is given.
      */
-    void resolve(@NotNull String guildName,
+    public void resolve(@NotNull String guildName,
                  TextChannel textChannel,
                  User author,
                  BiConsumer<@NotNull String, @Nullable String> onResolve,

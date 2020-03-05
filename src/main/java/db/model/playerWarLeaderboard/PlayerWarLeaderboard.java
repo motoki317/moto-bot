@@ -1,6 +1,9 @@
 package db.model.playerWarLeaderboard;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import java.math.BigDecimal;
 
 public class PlayerWarLeaderboard implements PlayerWarLeaderboardId {
     @NotNull
@@ -13,24 +16,19 @@ public class PlayerWarLeaderboard implements PlayerWarLeaderboardId {
     private double successRate;
     private double survivedRate;
 
-    public PlayerWarLeaderboard(@NotNull String UUID, @NotNull String lastName, int totalWar, int successWar, int survivedWar) {
+    public PlayerWarLeaderboard(@NotNull String UUID, @NotNull String lastName, int totalWar, int successWar, int survivedWar,
+                                @Nullable BigDecimal successRate, @Nullable BigDecimal survivedRate) {
         this.UUID = UUID;
         this.lastName = lastName;
         this.totalWar = totalWar;
         this.successWar = successWar;
         this.survivedWar = survivedWar;
-        this.successRate = (double) successWar / (double) totalWar;
-        this.survivedRate = (double) survivedWar / (double) totalWar;
-    }
-
-    public PlayerWarLeaderboard(@NotNull String UUID, @NotNull String lastName, int totalWar, int successWar, int survivedWar, double successRate, double survivedRate) {
-        this.UUID = UUID;
-        this.lastName = lastName;
-        this.totalWar = totalWar;
-        this.successWar = successWar;
-        this.survivedWar = survivedWar;
-        this.successRate = successRate;
-        this.survivedRate = survivedRate;
+        this.successRate = successRate == null
+                ? (double) successWar / (double) totalWar
+                : successRate.doubleValue();
+        this.survivedRate = survivedRate == null
+                ? (double) survivedWar / (double) totalWar
+                : survivedRate.doubleValue();
     }
 
     @NotNull
