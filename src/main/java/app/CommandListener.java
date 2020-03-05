@@ -18,11 +18,15 @@ import utils.BotUtils;
 
 import javax.annotation.Nonnull;
 import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class CommandListener extends ListenerAdapter {
     private final List<BotCommand> commands;
     private final Map<String, BotCommand> commandNameMap;
     private int maxArgumentsLength;
+
+    private final ExecutorService threadPool;
 
     private final Bot bot;
     private final Logger logger;
@@ -36,6 +40,8 @@ public class CommandListener extends ListenerAdapter {
         this.commands = new ArrayList<>();
         this.commandNameMap = new HashMap<>();
         this.maxArgumentsLength = 1;
+
+        this.threadPool = Executors.newFixedThreadPool(5);
 
         this.bot = bot;
         this.logger = bot.getLogger();
@@ -121,7 +127,8 @@ public class CommandListener extends ListenerAdapter {
                 String cmdBase = String.join(" ", Arrays.copyOfRange(args, 0, argLength));
                 // Command name match
                 if (this.commandNameMap.containsKey(cmdBase.toLowerCase())) {
-                    processCommand(event, commandMessage, args, argLength, cmdBase);
+                    int finalArgLength = argLength;
+                    this.threadPool.execute(() -> processCommand(event, commandMessage, args, finalArgLength, cmdBase));
                     return;
                 }
             }
