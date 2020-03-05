@@ -418,8 +418,8 @@ DROP FUNCTION IF EXISTS `player_success_wars_between`;
 DELIMITER //
 CREATE FUNCTION `player_success_wars_between` (player_uuid CHAR(36), start INT, end INT) RETURNS INT
 BEGIN
-    RETURN (SELECT COUNT(*) FROM `war_player` w WHERE w.player_uuid = player_uuid AND w.war_log_id >= start AND w.war_log_id < end
-        AND w.war_log_id NOT IN (SELECT war_log_id FROM `guild_war_log` WHERE `war_log_id` >= start AND `war_log_id` < end AND `territory_log_id` IS NULL ORDER BY `war_log_id`));
+    RETURN (SELECT COUNT(*) FROM (SELECT war_log_id FROM `war_player` p WHERE p.`player_uuid` = player_uuid AND p.`war_log_id` >= start AND p.`war_log_id` < end)
+        AS t LEFT JOIN guild_war_log g ON t.war_log_id = g.war_log_id AND g.territory_log_id IS NOT NULL);
 END; //
 DELIMITER ;
 
@@ -429,8 +429,8 @@ DROP FUNCTION IF EXISTS `player_survived_wars_between`;
 DELIMITER //
 CREATE FUNCTION `player_survived_wars_between` (player_uuid CHAR(36), start INT, end INT) RETURNS INT
 BEGIN
-    RETURN (SELECT COUNT(*) FROM `war_player` w WHERE w.player_uuid = player_uuid AND NOT w.exited AND w.war_log_id >= start AND w.war_log_id < end
-        AND w.war_log_id NOT IN (SELECT war_log_id FROM `guild_war_log` WHERE `war_log_id` >= start AND `war_log_id` < end AND `territory_log_id` IS NULL ORDER BY `war_log_id`));
+    RETURN (SELECT COUNT(*) FROM (SELECT war_log_id FROM `war_player` p WHERE p.`player_uuid` = player_uuid AND NOT p.`exited` AND p.`war_log_id` >= start AND p.`war_log_id` < end)
+        AS t LEFT JOIN guild_war_log g ON t.war_log_id = g.war_log_id AND g.territory_log_id IS NOT NULL);
 END; //
 DELIMITER ;
 
