@@ -218,8 +218,9 @@ class MariaPlayerWarLeaderboardRepository extends PlayerWarLeaderboardRepository
         ResultSet res = this.executeQuery(
                 "SELECT COUNT(*) FROM (" +
                         "SELECT `player_uuid` FROM `war_player` " +
-                        "WHERE `player_total_wars_between`(player_uuid, ?, ?) > 0 " +
-                        "GROUP BY `player_uuid`" +
+                        "WHERE `war_log_id` >= ? AND `war_log_id` < ? " +
+                        "GROUP BY `player_uuid` " +
+                        "HAVING COUNT(*) > 0" +
                         ") AS t",
                 first, last
         );
@@ -266,17 +267,19 @@ class MariaPlayerWarLeaderboardRepository extends PlayerWarLeaderboardRepository
         }
 
         ResultSet res = this.executeQuery(
-                "SELECT * FROM (SELECT `player_uuid`, " +
-                        "`player_name`, " +
-                        "`player_total_wars_between`(player_uuid, ?, ?) AS total_wars, " +
+                "SELECT *, " +
+                        // TODO: optimize success / survived wars count query
                         "`player_success_wars_between`(player_uuid, ?, ?) AS success_wars, " +
-                        // since default view is success wars only, to reduce computation time
+                        // default view is success wars only
                         "0 AS survived_wars " +
+                        "FROM (SELECT `player_uuid`, `player_name`, " +
+                        "COUNT(*) AS total_wars " +
                         "FROM `war_player` " +
-                        "WHERE `player_total_wars_between`(player_uuid, ?, ?) > 0 " +
+                        "WHERE `war_log_id` >= ? AND `war_log_id` < ? " +
                         "GROUP BY `player_uuid` " +
-                        "ORDER BY `total_wars` DESC, `player_uuid` DESC) AS t LIMIT " + limit + " OFFSET " + offset,
-                first, last,
+                        "HAVING `total_wars` > 0 AND player_uuid IS NOT NULL " +
+                        "ORDER BY `total_wars` DESC, `player_uuid` DESC " +
+                        "LIMIT " + limit + " OFFSET " + offset + ") AS t",
                 first, last,
                 first, last
         );
@@ -303,17 +306,18 @@ class MariaPlayerWarLeaderboardRepository extends PlayerWarLeaderboardRepository
         }
 
         ResultSet res = this.executeQuery(
-                "SELECT * FROM (SELECT `player_uuid`, " +
-                        "`player_name`, " +
-                        "`player_total_wars_between`(player_uuid, ?, ?) AS total_wars, " +
+                "SELECT *, " +
                         "`player_success_wars_between`(player_uuid, ?, ?) AS success_wars, " +
-                        // since default view is success wars only, to reduce computation time
+                        // default view is success wars only
                         "0 AS survived_wars " +
+                        "FROM (SELECT `player_uuid`, `player_name`, " +
+                        "COUNT(*) AS total_wars " +
                         "FROM `war_player` " +
-                        "WHERE `player_total_wars_between`(player_uuid, ?, ?) > 0 " +
+                        "WHERE `war_log_id` >= ? AND `war_log_id` < ? " +
                         "GROUP BY `player_uuid` " +
-                        "ORDER BY `success_wars` DESC, `player_uuid` DESC) AS t LIMIT " + limit + " OFFSET " + offset,
-                first, last,
+                        "HAVING `total_wars` > 0 AND player_uuid IS NOT NULL) AS t " +
+                        "ORDER BY `success_wars` DESC, `player_uuid` DESC " +
+                        "LIMIT " + limit + " OFFSET " + offset,
                 first, last,
                 first, last
         );
@@ -340,17 +344,18 @@ class MariaPlayerWarLeaderboardRepository extends PlayerWarLeaderboardRepository
         }
 
         ResultSet res = this.executeQuery(
-                "SELECT * FROM (SELECT `player_uuid`, " +
-                        "`player_name`, " +
-                        "`player_total_wars_between`(player_uuid, ?, ?) AS total_wars, " +
-                        // since default view is survived wars only, to reduce computation time
+                "SELECT *, " +
+                        // default view is survived wars only
                         "0 AS success_wars, " +
                         "`player_survived_wars_between`(player_uuid, ?, ?) AS survived_wars " +
+                        "FROM (SELECT `player_uuid`, `player_name`, " +
+                        "COUNT(*) AS total_wars " +
                         "FROM `war_player` " +
-                        "WHERE `player_total_wars_between`(player_uuid, ?, ?) > 0 " +
+                        "WHERE `war_log_id` >= ? AND `war_log_id` < ? " +
                         "GROUP BY `player_uuid` " +
-                        "ORDER BY `total_wars` DESC, `player_uuid` DESC) AS t LIMIT " + limit + " OFFSET " + offset,
-                first, last,
+                        "HAVING `total_wars` > 0 AND player_uuid IS NOT NULL) AS t " +
+                        "ORDER BY `survived_wars` DESC, `player_uuid` DESC " +
+                        "LIMIT " + limit + " OFFSET " + offset,
                 first, last,
                 first, last
         );
@@ -379,17 +384,16 @@ class MariaPlayerWarLeaderboardRepository extends PlayerWarLeaderboardRepository
         String UUIDs = playerUUIDs.stream().map(p -> "\"" + p.toStringWithHyphens() + "\"").collect(Collectors.joining(", "));
 
         ResultSet res = this.executeQuery(
-                "SELECT `player_uuid`, " +
-                        "`player_name`, " +
-                        "`player_total_wars_between`(player_uuid, ?, ?) AS total_wars, " +
+                "SELECT *, " +
                         "`player_success_wars_between`(player_uuid, ?, ?) AS success_wars, " +
                         "`player_survived_wars_between`(player_uuid, ?, ?) AS survived_wars " +
+                        "FROM (SELECT `player_uuid`, `player_name`, " +
+                        "COUNT(*) AS total_wars " +
                         "FROM `war_player` " +
-                        "WHERE `player_uuid` IN (" + UUIDs + ") " +
-                        "AND `player_total_wars_between`(player_uuid, ?, ?) > 0 " +
+                        "WHERE `war_log_id` >= ? AND `war_log_id` < ? " +
                         "GROUP BY `player_uuid` " +
-                        "ORDER BY `total_wars` DESC, `player_uuid` DESC",
-                first, last,
+                        "HAVING `total_wars` > 0 AND player_uuid IN (" + UUIDs + ") " +
+                        "ORDER BY `total_wars` DESC, `player_uuid` DESC) AS t",
                 first, last,
                 first, last,
                 first, last
