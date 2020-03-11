@@ -8,15 +8,6 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-/**
- * Parses arguments and returns their corresponding string in form of map.
- * <br>Examples:
- * <br>Input {@code -g Kingdom Foxes -t -sr} produces:
- * <br>{@code {g: "Kingdom Foxes", t: "", sr: ""}}
- * <br>
- * <br>Input {@code -g Hax --total -sr} produces:
- * <br>{@code {g: "Hax", -total: "", sr: ""}}
- */
 public class ArgumentParser {
     private Map<String, String> argumentMap;
 
@@ -52,6 +43,15 @@ public class ArgumentParser {
         return ret;
     }
 
+    /**
+     * Parses arguments and returns their corresponding string in form of map.
+     * <br>Examples:
+     * <br>Input {@code -g Kingdom Foxes -t -sr} produces:
+     * <br>{@code {g: "Kingdom Foxes", t: "", sr: ""}}
+     * <br>
+     * <br>Input {@code -g Hax --total -sr} produces:
+     * <br>{@code {g: "Hax", -total: "", sr: ""}}
+     */
     public Map<String, String> getArgumentMap() {
         return argumentMap;
     }

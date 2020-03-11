@@ -214,7 +214,13 @@ public class PlayerWarLeaderboardCmd extends GenericCommand {
         Map<String, String> parsedArgs = new ArgumentParser(args).getArgumentMap();
 
         SortType sortType = parseSortType(parsedArgs);
-        Range range = parseRange(parsedArgs);
+        Range range;
+        try {
+            range = parseRange(parsedArgs);
+        } catch (NumberFormatException e) {
+            respond(event, e.getMessage());
+            return;
+        }
 
         CustomDateFormat customDateFormat = this.dateFormatRepository.getDateFormat(event);
         CustomTimeZone customTimeZone = this.timeZoneRepository.getTimeZone(event);
