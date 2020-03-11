@@ -268,9 +268,8 @@ class MariaPlayerWarLeaderboardRepository extends PlayerWarLeaderboardRepository
 
         ResultSet res = this.executeQuery(
                 "SELECT *, " +
-                        // TODO: optimize success / survived wars count query
                         "`player_success_wars_between`(player_uuid, ?, ?) AS success_wars, " +
-                        // default view is success wars only
+                        // default view is total/success wars only, to reduce computation time
                         "0 AS survived_wars " +
                         "FROM (SELECT `player_uuid`, `player_name`, " +
                         "COUNT(*) AS total_wars " +
@@ -306,18 +305,18 @@ class MariaPlayerWarLeaderboardRepository extends PlayerWarLeaderboardRepository
         }
 
         ResultSet res = this.executeQuery(
-                "SELECT *, " +
-                        "`player_success_wars_between`(player_uuid, ?, ?) AS success_wars, " +
-                        // default view is success wars only
+                "SELECT t.player_uuid, t.player_name, " +
+                        "`player_total_wars_between`(player_uuid, ?, ?) AS total_wars, " +
+                        "t.success_wars, " +
+                        // default view is total/success wars only, to reduce computation time
                         "0 AS survived_wars " +
-                        "FROM (SELECT `player_uuid`, `player_name`, " +
-                        "COUNT(*) AS total_wars " +
-                        "FROM `war_player` " +
-                        "WHERE `war_log_id` >= ? AND `war_log_id` < ? " +
-                        "GROUP BY `player_uuid` " +
-                        "HAVING `total_wars` > 0 AND player_uuid IS NOT NULL) AS t " +
+                        "FROM (SELECT t.player_uuid, t.player_name, COUNT(*) AS `success_wars` FROM " +
+                        "(SELECT * FROM `war_player` WHERE `war_log_id` >= ? AND `war_log_id` < ?) AS t " +
+                        "LEFT JOIN `guild_war_log` g ON g.war_log_id = t.war_log_id AND g.territory_log_id IS NOT NULL " +
+                        "GROUP BY t.`player_uuid` " +
+                        "HAVING `success_wars` > 0 AND player_uuid IS NOT NULL " +
                         "ORDER BY `success_wars` DESC, `player_uuid` DESC " +
-                        "LIMIT " + limit + " OFFSET " + offset,
+                        "LIMIT " + limit + " OFFSET " + offset + ") AS t",
                 first, last,
                 first, last
         );
@@ -344,18 +343,18 @@ class MariaPlayerWarLeaderboardRepository extends PlayerWarLeaderboardRepository
         }
 
         ResultSet res = this.executeQuery(
-                "SELECT *, " +
-                        // default view is survived wars only
+                "SELECT t.player_uuid, t.player_name, " +
+                        "`player_total_wars_between`(player_uuid, ?, ?) AS total_wars, " +
+                        // default view is total/survived wars only, to reduce computation time
                         "0 AS success_wars, " +
-                        "`player_survived_wars_between`(player_uuid, ?, ?) AS survived_wars " +
-                        "FROM (SELECT `player_uuid`, `player_name`, " +
-                        "COUNT(*) AS total_wars " +
-                        "FROM `war_player` " +
-                        "WHERE `war_log_id` >= ? AND `war_log_id` < ? " +
-                        "GROUP BY `player_uuid` " +
-                        "HAVING `total_wars` > 0 AND player_uuid IS NOT NULL) AS t " +
+                        "t.survived_wars " +
+                        "FROM (SELECT t.player_uuid, t.player_name, COUNT(*) AS `survived_wars` FROM " +
+                        "(SELECT * FROM `war_player` WHERE `war_log_id` >= ? AND `war_log_id` < ? AND NOT `exited`) AS t " +
+                        "LEFT JOIN `guild_war_log` g ON g.war_log_id = t.war_log_id AND g.territory_log_id IS NOT NULL " +
+                        "GROUP BY t.`player_uuid` " +
+                        "HAVING `survived_wars` > 0 AND player_uuid IS NOT NULL " +
                         "ORDER BY `survived_wars` DESC, `player_uuid` DESC " +
-                        "LIMIT " + limit + " OFFSET " + offset,
+                        "LIMIT " + limit + " OFFSET " + offset + ") AS t",
                 first, last,
                 first, last
         );
@@ -392,8 +391,7 @@ class MariaPlayerWarLeaderboardRepository extends PlayerWarLeaderboardRepository
                         "FROM `war_player` " +
                         "WHERE `war_log_id` >= ? AND `war_log_id` < ? " +
                         "GROUP BY `player_uuid` " +
-                        "HAVING `total_wars` > 0 AND player_uuid IN (" + UUIDs + ") " +
-                        "ORDER BY `total_wars` DESC, `player_uuid` DESC) AS t",
+                        "HAVING `total_wars` > 0 AND player_uuid IN (" + UUIDs + ")) AS t",
                 first, last,
                 first, last,
                 first, last
