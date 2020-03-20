@@ -24,7 +24,6 @@ import java.math.RoundingMode;
 import java.text.DateFormat;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class GuildWarStats extends GenericCommand {
@@ -120,7 +119,7 @@ public class GuildWarStats extends GenericCommand {
         respond(event, format(guildName, guildPrefix, 0, timeZone, dateFormat), success -> {
             MultipageHandler handler = new MultipageHandler(
                     success,
-                    pageSupplier(guildName, guildPrefix, timeZone, dateFormat),
+                    page -> new MessageBuilder(format(guildName, guildPrefix, page, timeZone, dateFormat)).build(),
                     () -> maxPage(guildName)
             );
             this.reactionManager.addEventListener(handler);
@@ -130,10 +129,6 @@ public class GuildWarStats extends GenericCommand {
     private int maxPage(String guildName) {
         int count = this.guildWarLogRepository.countGuildLogs(guildName);
         return count > 0 ? (count - 1) / LOGS_PER_PAGE : -1;
-    }
-
-    private Function<Integer, Message> pageSupplier(String guildName, @Nullable String guildPrefix, CustomTimeZone timeZone, CustomDateFormat dateFormat) {
-        return page -> new MessageBuilder(format(guildName, guildPrefix, page, timeZone, dateFormat)).build();
     }
 
     private String format(String guildName, @Nullable String guildPrefix, int page, CustomTimeZone timeZone, CustomDateFormat dateFormat) {

@@ -30,7 +30,6 @@ import java.math.RoundingMode;
 import java.text.DateFormat;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class PlayerWarStats extends GenericCommand {
@@ -141,7 +140,9 @@ public class PlayerWarStats extends GenericCommand {
 
         respond(event, format(uuid, playerName, player, guildPrefix, 0, customTimeZone, customDateFormat), msg -> {
             MultipageHandler handler = new MultipageHandler(
-                    msg, pageSupplier(uuid, playerName, player, guildPrefix, customTimeZone, customDateFormat), () -> maxPage(uuid)
+                    msg,
+                    page -> new MessageBuilder(format(uuid, playerName, player, guildPrefix, page, customTimeZone, customDateFormat)).build(),
+                    () -> maxPage(uuid)
             );
             this.reactionManager.addEventListener(handler);
         });
@@ -155,15 +156,6 @@ public class PlayerWarStats extends GenericCommand {
 
     private int maxPage(UUID playerUUID) {
         return (getLogCount(playerUUID) - 1) / LOGS_PER_PAGE;
-    }
-
-    private Function<Integer, Message> pageSupplier(@NotNull UUID playerUUID,
-                                                    @Nullable String playerName,
-                                                    @Nullable Player player,
-                                                    @Nullable String guildPrefix,
-                                                    @NotNull CustomTimeZone timeZone,
-                                                    @NotNull CustomDateFormat dateFormat) {
-        return page -> new MessageBuilder(format(playerUUID, playerName, player, guildPrefix, page, timeZone, dateFormat)).build();
     }
 
     @NotNull

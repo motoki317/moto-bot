@@ -130,7 +130,7 @@ public class GuildStats extends GenericCommand {
             CustomDateFormat customDateFormat = this.dateFormatRepository.getDateFormat(event);
             CustomTimeZone customTimeZone = this.timeZoneRepository.getTimeZone(event);
 
-            Function<Integer, Message> pageSupplier = pageSupplier(guild, customDateFormat, customTimeZone);
+            Function<Integer, Message> pageSupplier = page -> getPage(page, guild, customDateFormat, customTimeZone);
             respond(event, pageSupplier.apply(0), msg -> {
                 MultipageHandler handler = new MultipageHandler(
                         msg, pageSupplier, () -> maxPage(guild)
@@ -152,75 +152,74 @@ public class GuildStats extends GenericCommand {
             return 6 + contributeExtraPages;
         }
 
-        private Function<Integer, Message> pageSupplier(@NotNull WynnGuild guild,
-                                                        @NotNull CustomDateFormat customDateFormat,
-                                                        @NotNull CustomTimeZone customTimeZone) {
+        private Message getPage(int page,
+                                @NotNull WynnGuild guild,
+                                @NotNull CustomDateFormat customDateFormat,
+                                @NotNull CustomTimeZone customTimeZone) {
             DateFormat dateFormat = customDateFormat.getDateFormat().getSecondFormat();
             dateFormat.setTimeZone(customTimeZone.getTimeZoneInstance());
 
-            return page -> {
-                List<String> ret = new ArrayList<>();
+            List<String> ret = new ArrayList<>();
 
-                ret.add("```ml");
-                ret.add(String.format("%s [%s]", guild.getName(), guild.getPrefix()));
+            ret.add("```ml");
+            ret.add(String.format("%s [%s]", guild.getName(), guild.getPrefix()));
 
-                ret.add("");
+            ret.add("");
 
-                // TODO: precise xp, xp gained ranking
-                /* Something along:
-                Level 79 | 44.9%, 29.18B XP (#2)
-                1.418B XP gained in last 1 d  0 h  0 m
-                [=========-----------]
-                 */
-                ret.add(String.format("Level %s | %s%%", guild.getLevel(), guild.getXp()));
-                int bars = (int) Math.round(Double.parseDouble(guild.getXp()) / 5.0d);
-                ret.add(makeBar(bars));
+            // TODO: precise xp, xp gained ranking
+            /* Something along:
+            Level 79 | 44.9%, 29.18B XP (#2)
+            1.418B XP gained in last 1 d  0 h  0 m
+            [=========-----------]
+             */
+            ret.add(String.format("Level %s | %s%%", guild.getLevel(), guild.getXp()));
+            int bars = (int) Math.round(Double.parseDouble(guild.getXp()) / 5.0d);
+            ret.add(makeBar(bars));
 
-                ret.add("");
+            ret.add("");
 
-                switch (page) {
-                    case 0:
-                        // main
-                        ret.add(getMainPage(guild, customDateFormat, customTimeZone));
-                        break;
-                    case 1:
-                        // online players
-                        ret.add(getOnlinePlayers(guild));
-                        break;
-                    case 2:
-                        // chiefs, captains, recruiters, recruits
-                        ret.add(getMembers(guild, Rank.CHIEF));
-                        break;
-                    case 3:
-                        ret.add(getMembers(guild, Rank.CAPTAIN));
-                        break;
-                    case 4:
-                        ret.add(getMembers(guild, Rank.RECRUITER));
-                        break;
-                    case 5:
-                        ret.add(getMembers(guild, Rank.RECRUIT));
-                        break;
-                    default:
-                        int contributePageNum = page - 6;
-                        ret.add(getContributePage(guild, contributePageNum));
-                        break;
-                }
+            switch (page) {
+                case 0:
+                    // main
+                    ret.add(getMainPage(guild, customDateFormat, customTimeZone));
+                    break;
+                case 1:
+                    // online players
+                    ret.add(getOnlinePlayers(guild));
+                    break;
+                case 2:
+                    // chiefs, captains, recruiters, recruits
+                    ret.add(getMembers(guild, Rank.CHIEF));
+                    break;
+                case 3:
+                    ret.add(getMembers(guild, Rank.CAPTAIN));
+                    break;
+                case 4:
+                    ret.add(getMembers(guild, Rank.RECRUITER));
+                    break;
+                case 5:
+                    ret.add(getMembers(guild, Rank.RECRUIT));
+                    break;
+                default:
+                    int contributePageNum = page - 6;
+                    ret.add(getContributePage(guild, contributePageNum));
+                    break;
+            }
 
-                ret.add("");
+            ret.add("");
 
-                ret.add(String.format("  last guild info update: %s",
-                        dateFormat.format(new Date(guild.getRequest().getTimestamp() * 1000))
-                ));
-                ret.add(String.format("last online stats update: %s",
-                        dateFormat.format(getLastOnlinePlayerUpdate())
-                ));
+            ret.add(String.format("  last guild info update: %s",
+                    dateFormat.format(new Date(guild.getRequest().getTimestamp() * 1000))
+            ));
+            ret.add(String.format("last online stats update: %s",
+                    dateFormat.format(getLastOnlinePlayerUpdate())
+            ));
 
-                ret.add("```");
+            ret.add("```");
 
-                return new MessageBuilder(
-                        String.join("\n", ret)
-                ).build();
-            };
+            return new MessageBuilder(
+                    String.join("\n", ret)
+            ).build();
         }
 
         /**

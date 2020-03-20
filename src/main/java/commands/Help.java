@@ -14,7 +14,6 @@ import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
 import java.util.function.Supplier;
 
 public class Help extends GenericCommand {
@@ -60,15 +59,14 @@ public class Help extends GenericCommand {
     @Override
     public void process(@NotNull MessageReceivedEvent event, @NotNull String[] args) {
         if (args.length == 1) {
-            Function<Integer, Message> pages = this.pageSupplier();
 
             if (this.maxPage() == 0) {
-                respond(event, pages.apply(0));
+                respond(event, this.getPage(0));
                 return;
             }
 
-            respond(event, pages.apply(0), message -> {
-                MultipageHandler handler = new MultipageHandler(message, pages, this::maxPage);
+            respond(event, this.getPage(0), message -> {
+                MultipageHandler handler = new MultipageHandler(message, this::getPage, this::maxPage);
                 bot.getReactionManager().addEventListener(handler);
             });
             return;
@@ -90,28 +88,26 @@ public class Help extends GenericCommand {
 
     private static final int COMMANDS_PER_PAGE = 5;
 
-    private Function<Integer, Message> pageSupplier() {
-        return (page) -> {
-            EmbedBuilder eb = new EmbedBuilder()
-                    .setColor(this.bot.getProperties().getMainColor())
-                    .setTitle(String.format("Commands List : Page [%s/%s]", page + 1, maxPage() + 1))
-                    .setFooter("<text> means required, and [text] means optional arguments.")
-                    .setTimestamp(Instant.now());
+    private Message getPage(int page) {
+        EmbedBuilder eb = new EmbedBuilder()
+                .setColor(this.bot.getProperties().getMainColor())
+                .setTitle(String.format("Commands List : Page [%s/%s]", page + 1, maxPage() + 1))
+                .setFooter("<text> means required, and [text] means optional arguments.")
+                .setTimestamp(Instant.now());
 
-            int min = COMMANDS_PER_PAGE * page;
-            int max = Math.min(COMMANDS_PER_PAGE * (page + 1), this.commands.size());
-            for (int i = min; i < max; i++) {
-                BotCommand cmd = this.commands.get(i);
-                eb.addField(
-                        this.bot.getProperties().prefix + cmd.syntax(),
-                        cmd.shortHelp(),
-                        false
-                );
-            }
-            return new MessageBuilder(
-                    eb.build()
-            ).build();
-        };
+        int min = COMMANDS_PER_PAGE * page;
+        int max = Math.min(COMMANDS_PER_PAGE * (page + 1), this.commands.size());
+        for (int i = min; i < max; i++) {
+            BotCommand cmd = this.commands.get(i);
+            eb.addField(
+                    this.bot.getProperties().prefix + cmd.syntax(),
+                    cmd.shortHelp(),
+                    false
+            );
+        }
+        return new MessageBuilder(
+                eb.build()
+        ).build();
     }
 
     private int maxPage() {
