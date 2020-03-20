@@ -14,7 +14,7 @@ db-up:
 	docker-compose -f ./development/docker-compose.yml up -d mysql
 
 db:
-	docker-compose -f ./development/docker-compose.yml exec mysql mysql -u root -p
+	docker-compose -f ./development/docker-compose.yml exec mysql mysql -u root -p password
 
 javadoc: # Downloads javadoc
-	mvn dependency:resolve -Dclassifier=javadoc
+	mvn dependency:resolve -D classifier=javadoc

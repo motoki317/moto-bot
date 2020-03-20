@@ -305,19 +305,16 @@ class MariaPlayerWarLeaderboardRepository extends PlayerWarLeaderboardRepository
         }
 
         ResultSet res = this.executeQuery(
-                "SELECT t.player_uuid, t.player_name, " +
-                        "`player_total_wars_between`(player_uuid, ?, ?) AS total_wars, " +
-                        "t.success_wars, " +
+                "SELECT *, " +
                         // default view is total/success wars only, to reduce computation time
                         "0 AS survived_wars " +
-                        "FROM (SELECT t.player_uuid, t.player_name, COUNT(*) AS `success_wars` FROM " +
+                        "FROM (SELECT t.player_uuid, t.player_name, COUNT(*) AS `total_wars`, SUM(g.territory_log_id IS NOT NULL) AS `success_wars` FROM " +
                         "(SELECT * FROM `war_player` WHERE `war_log_id` >= ? AND `war_log_id` < ?) AS t " +
-                        "LEFT JOIN `guild_war_log` g ON g.war_log_id = t.war_log_id AND g.territory_log_id IS NOT NULL " +
+                        "LEFT JOIN `guild_war_log` g ON g.war_log_id = t.war_log_id " +
                         "GROUP BY t.`player_uuid` " +
-                        "HAVING `success_wars` > 0 AND player_uuid IS NOT NULL " +
+                        "HAVING `total_wars` > 0 AND player_uuid IS NOT NULL " +
                         "ORDER BY `success_wars` DESC, `player_uuid` DESC " +
                         "LIMIT " + limit + " OFFSET " + offset + ") AS t",
-                first, last,
                 first, last
         );
 
@@ -343,19 +340,17 @@ class MariaPlayerWarLeaderboardRepository extends PlayerWarLeaderboardRepository
         }
 
         ResultSet res = this.executeQuery(
-                "SELECT t.player_uuid, t.player_name, " +
-                        "`player_total_wars_between`(player_uuid, ?, ?) AS total_wars, " +
+                "SELECT t.player_uuid, t.player_name, t.total_wars, " +
                         // default view is total/survived wars only, to reduce computation time
                         "0 AS success_wars, " +
                         "t.survived_wars " +
-                        "FROM (SELECT t.player_uuid, t.player_name, COUNT(*) AS `survived_wars` FROM " +
+                        "FROM (SELECT t.player_uuid, t.player_name, COUNT(*) AS `total_wars`, SUM(g.territory_log_id IS NOT NULL) AS `survived_wars` FROM " +
                         "(SELECT * FROM `war_player` WHERE `war_log_id` >= ? AND `war_log_id` < ? AND NOT `exited`) AS t " +
-                        "LEFT JOIN `guild_war_log` g ON g.war_log_id = t.war_log_id AND g.territory_log_id IS NOT NULL " +
+                        "LEFT JOIN `guild_war_log` g ON g.war_log_id = t.war_log_id " +
                         "GROUP BY t.`player_uuid` " +
-                        "HAVING `survived_wars` > 0 AND player_uuid IS NOT NULL " +
+                        "HAVING `total_wars` > 0 AND player_uuid IS NOT NULL " +
                         "ORDER BY `survived_wars` DESC, `player_uuid` DESC " +
                         "LIMIT " + limit + " OFFSET " + offset + ") AS t",
-                first, last,
                 first, last
         );
 
