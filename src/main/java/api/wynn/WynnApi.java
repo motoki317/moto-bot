@@ -21,7 +21,7 @@ public class WynnApi {
 
         // As of Jan 15th, 2020: rate limit for legacy (including all routes) is 1200 requests / 20 minutes.
         long waitBetweenRequests = TimeUnit.MINUTES.toMillis(20) / 1200;
-        System.out.printf("Wynn API: for legacy resources setting wait between requests to %s ms",
+        System.out.printf("Wynn API: for legacy resources setting wait between requests to %s ms\n",
                 waitBetweenRequests);
         rateLimiterLegacy = new WaitableRateLimiter(
                 "Wynn Legacy", waitBetweenRequests, maxRequestStack
@@ -29,10 +29,10 @@ public class WynnApi {
 
         // As of Mar 20th, 2020: V2 Player (wynncraft/player) : 500 per 30 minutes
         waitBetweenRequests = TimeUnit.MINUTES.toMillis(30) / 500;
-        System.out.printf("Wynn API v2: for player resources setting wait between requests to %s ms",
+        System.out.printf("Wynn API v2: for player resources setting wait between requests to %s ms\n",
                 waitBetweenRequests);
         rateLimiterV2Player = new WaitableRateLimiter(
-                "V2 Player", waitBetweenRequests, maxRequestStack
+                "Wynn V2 Player", waitBetweenRequests, maxRequestStack
         );
     }
 
@@ -56,6 +56,9 @@ public class WynnApi {
         this.legacyGuildLeaderboard = new LegacyGuildLeaderboard(rateLimiterLegacy, logger);
 
         this.v2PlayerStats = new V2PlayerStats(rateLimiterV2Player, logger);
+
+        rateLimiterLegacy.setLogger(logger);
+        rateLimiterV2Player.setLogger(logger);
     }
 
     /**

@@ -47,6 +47,8 @@ public class MojangApi {
 
     public MojangApi(Logger logger) {
         this.logger = logger;
+
+        rateLimiter.setLogger(logger);
     }
 
     private static final int NAME_TO_UUID_PLAYERS_PER_REQUEST = 10;
