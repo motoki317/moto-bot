@@ -23,6 +23,7 @@ import org.jetbrains.annotations.Nullable;
 import update.multipage.MultipageHandler;
 import update.reaction.ReactionManager;
 import utils.UUID;
+import utils.rateLimit.RateLimitException;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -115,7 +116,13 @@ public class PlayerWarStats extends GenericCommand {
             }
         }
 
-        Player player = this.wynnApi.getPlayerStatistics(uuid.toStringWithHyphens(),  false);
+        Player player;
+        try {
+            player = this.wynnApi.getPlayerStats(uuid.toStringWithHyphens(),  false);
+        } catch (RateLimitException e) {
+            respondException(event, e.getMessage());
+            return;
+        }
         String guildPrefix;
         if (player != null && player.getGuildInfo().getName() != null) {
             Guild guild = this.guildRepository.findOne(() -> player.getGuildInfo().getName());

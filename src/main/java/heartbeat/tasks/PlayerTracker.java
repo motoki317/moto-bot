@@ -63,7 +63,7 @@ public class PlayerTracker implements TaskBase {
 
     @Override
     public void run() {
-        OnlinePlayers players = this.wynnApi.getOnlinePlayers();
+        OnlinePlayers players = this.wynnApi.mustGetOnlinePlayers();
         if (players == null) {
             this.logger.log(0, "Player Tracker: Failed to retrieve online players list");
             return;
@@ -264,7 +264,7 @@ public class PlayerTracker implements TaskBase {
     @Nullable
     private String retrieveGuildName(List<WarPlayer> players) {
         for (WarPlayer player : players) {
-            Player stats = this.wynnApi.getPlayerStatistics(
+            Player stats = this.wynnApi.mustGetPlayerStatistics(
                     player.getPlayerUUID() != null
                             ? player.getPlayerUUID()
                             : player.getPlayerName(),

@@ -59,7 +59,7 @@ public class TerritoryTracker implements TaskBase {
 
     @Override
     public void run() {
-        TerritoryList territoryList = this.wynnApi.getTerritoryList();
+        TerritoryList territoryList = this.wynnApi.mustGetTerritoryList();
         if (territoryList == null) return;
 
         List<Territory> territories = new ArrayList<>();

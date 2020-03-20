@@ -48,17 +48,12 @@ public class Find extends GenericCommand {
 
         String playerName = args[1];
         if (!InputChecker.isValidMinecraftUsername(playerName)) {
-            respond(event,
-                    new EmbedBuilder()
-                    .setColor(MinecraftColor.RED.getColor())
-                    .setDescription(String.format("Given player name `%s` doesn't seem to be a valid minecraft username...",
-                            playerName))
-                    .build()
-            );
+            respondException(event, String.format("Given player name `%s` doesn't seem to be a valid minecraft username...",
+                    playerName));
             return;
         }
 
-        String world = this.wynnApi.findPlayer(playerName);
+        String world = this.wynnApi.mustFindPlayer(playerName);
         if (world == null) {
             respond(event,
                     new EmbedBuilder()

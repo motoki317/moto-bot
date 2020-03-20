@@ -59,7 +59,7 @@ public class GuildTracker implements TaskBase {
 
     @Override
     public void run() {
-        GuildList guildList = this.wynnApi.getGuildList();
+        GuildList guildList = this.wynnApi.mustGetGuildList();
         if (guildList == null) {
             return;
         }
@@ -100,7 +100,7 @@ public class GuildTracker implements TaskBase {
      */
     private void handleGuildCreation(String guildName) {
         // Retrieve guild stats
-        WynnGuild guild = this.wynnApi.getGuildStats(guildName);
+        WynnGuild guild = this.wynnApi.mustGetGuildStats(guildName);
         if (guild == null) {
             return;
         }

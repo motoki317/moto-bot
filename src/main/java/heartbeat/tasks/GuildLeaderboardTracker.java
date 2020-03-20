@@ -30,7 +30,7 @@ public class GuildLeaderboardTracker implements TaskBase {
 
     @Override
     public void run() {
-        WynnGuildLeaderboard leaderboard = this.wynnApi.getGuildLeaderboard();
+        WynnGuildLeaderboard leaderboard = this.wynnApi.mustGetGuildLeaderboard();
         if (leaderboard == null) {
             return;
         }

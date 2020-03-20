@@ -19,7 +19,6 @@ import org.jetbrains.annotations.NotNull;
 import update.multipage.MultipageHandler;
 import update.reaction.ReactionManager;
 import utils.InputChecker;
-import utils.MinecraftColor;
 import utils.rateLimit.RateLimitException;
 
 import java.text.DateFormat;
@@ -100,13 +99,8 @@ public class GuildStats extends GenericCommand {
 
         public void handle(@NotNull MessageReceivedEvent event, @NotNull String guildName) {
             if (!InputChecker.isValidWynncraftGuildName(guildName)) {
-                respond(event,
-                        new EmbedBuilder()
-                                .setColor(MinecraftColor.RED.getColor())
-                                .setDescription(String.format("Given guild name `%s` doesn't seem to be a valid Wynncraft guild name...",
-                                        guildName))
-                                .build()
-                );
+                respond(event, String.format("Given guild name `%s` doesn't seem to be a valid Wynncraft guild name...",
+                        guildName));
                 return;
             }
 
@@ -122,24 +116,14 @@ public class GuildStats extends GenericCommand {
         private void handleResolved(@NotNull MessageReceivedEvent event, @NotNull String guildName) {
             WynnGuild guild;
             try {
-                guild = this.wynnApi.getGuildStatsWaitable(guildName);
+                guild = this.wynnApi.getGuildStats(guildName);
             } catch (RateLimitException e) {
-                respond(event,
-                        new EmbedBuilder()
-                        .setColor(MinecraftColor.RED.getColor())
-                        .setDescription(e.getMessage())
-                        .build()
-                );
+                respondException(event, e.getMessage());
                 return;
             }
 
             if (guild == null) {
-                respond(event,
-                        new EmbedBuilder()
-                                .setColor(MinecraftColor.RED.getColor())
-                                .setDescription(String.format("Failed to retrieve guild data for %s.", guildName))
-                                .build()
-                );
+                respondException(event, String.format("Failed to retrieve guild data for %s.", guildName));
                 return;
             }
 
@@ -274,7 +258,7 @@ public class GuildStats extends GenericCommand {
             ret.add("Owner: " + guild.getOwnerName());
 
             long onlineMembers = guild.getMembers().stream()
-                    .filter(m -> this.wynnApi.findPlayer(m.getName()) != null).count();
+                    .filter(m -> this.wynnApi.mustFindPlayer(m.getName()) != null).count();
             ret.add(String.format(
                     "Members: %s / %s (Online: %s)",
                     guild.getMembers().size(),
@@ -320,7 +304,7 @@ public class GuildStats extends GenericCommand {
             }
 
             List<Member> onlineMembers = guild.getMembers().stream()
-                    .map(m -> new Member(m.getName(), Rank.valueOf(m.getRank()), this.wynnApi.findPlayer(m.getName())))
+                    .map(m -> new Member(m.getName(), Rank.valueOf(m.getRank()), this.wynnApi.mustFindPlayer(m.getName())))
                     .filter(m -> m.server != null)
                     .sorted((m1, m2) -> m2.rank.rank - m1.rank.rank).collect(Collectors.toList());
 
@@ -369,7 +353,7 @@ public class GuildStats extends GenericCommand {
             }
             List<Member> members = guild.getMembers().stream()
                     .filter(m -> m.getRank().equals(rank.name()))
-                    .map(m -> new Member(m.getName(), this.wynnApi.findPlayer(m.getName())))
+                    .map(m -> new Member(m.getName(), this.wynnApi.mustFindPlayer(m.getName())))
                     .sorted(Comparator.comparing(m -> m.name))
                     .collect(Collectors.toList());
 

@@ -23,6 +23,7 @@ import update.reaction.ReactionManager;
 import utils.ArgumentParser;
 import utils.FormatUtils;
 import utils.UUID;
+import utils.rateLimit.RateLimitException;
 
 import java.text.DateFormat;
 import java.util.*;
@@ -265,7 +266,13 @@ public class PlayerWarLeaderboardCmd extends GenericCommand {
                                                CustomTimeZone customTimeZone,
                                                @NotNull String guildName,
                                                @Nullable String prefix) {
-        WynnGuild wynnGuild = this.wynnApi.getGuildStats(guildName);
+        WynnGuild wynnGuild;
+        try {
+            wynnGuild = this.wynnApi.getGuildStats(guildName);
+        } catch (RateLimitException e) {
+            respondException(event, e.getMessage());
+            return;
+        }
         if (wynnGuild == null) {
             respondError(event, "Something went wrong while requesting Wynncraft API.");
             return;

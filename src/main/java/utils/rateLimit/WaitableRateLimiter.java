@@ -40,6 +40,7 @@ public class WaitableRateLimiter implements RateLimiter {
     }
 
     public void stackUpRequest() {
+        // TODO: check rate limit and wait inside whenever absolutely needed
         long timeSinceLast = Math.abs(System.currentTimeMillis() - lastRequestTime);
         long hasToWait = waitBetweenRequests * requestStack;
 

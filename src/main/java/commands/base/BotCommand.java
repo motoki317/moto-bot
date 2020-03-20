@@ -110,6 +110,20 @@ public abstract class BotCommand {
     }
 
     /**
+     * Respond exception in red embed message.
+     * @param event Message received event.
+     * @param message Description of the exception.
+     */
+    protected static void respondException(MessageReceivedEvent event, CharSequence message) {
+        respond(event,
+                new EmbedBuilder()
+                        .setColor(MinecraftColor.RED.getColor())
+                        .setDescription(message)
+                        .build()
+        );
+    }
+
+    /**
      * Respond error message when something seriously went wrong (not because of bad user action) while processing a command.
      * @param event Message received event.
      * @param message Description of the error.

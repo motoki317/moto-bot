@@ -80,35 +80,20 @@ public class PlayerStats extends GenericCommand {
 
         String specified = args[1];
         if (!InputChecker.isValidMinecraftUsername(specified)) {
-            respond(event,
-                    new EmbedBuilder()
-                            .setColor(MinecraftColor.RED.getColor())
-                            .setDescription(String.format("Given player name `%s` doesn't seem to be a valid minecraft username...",
-                                    specified))
-                            .build()
-            );
+            respond(event, String.format("Given player name `%s` doesn't seem to be a valid minecraft username...",
+                            specified));
             return;
         }
 
         Player player;
         try {
-            player = this.wynnApi.getPlayerStatisticsWaitable(specified, false);
+            player = this.wynnApi.getPlayerStats(specified, false);
         } catch (RateLimitException e) {
-            respond(event,
-                    new EmbedBuilder()
-                    .setColor(MinecraftColor.RED.getColor())
-                    .setDescription(e.getMessage())
-                    .build()
-            );
+            respondException(event, e.getMessage());
             return;
         }
         if (player == null) {
-            respond(event,
-                    new EmbedBuilder()
-                            .setColor(MinecraftColor.RED.getColor())
-                            .setDescription(String.format("Failed to retrieve player statistics for `%s`.", specified))
-                            .build()
-            );
+            respondException(event, String.format("Failed to retrieve player statistics for `%s`.", specified));
             return;
         }
 
@@ -150,7 +135,7 @@ public class PlayerStats extends GenericCommand {
 
         ret.add("");
 
-        String world = this.wynnApi.findPlayer(player.getUsername());
+        String world = this.wynnApi.mustFindPlayer(player.getUsername());
         if (world == null) {
             ret.add(
                     String.format(
