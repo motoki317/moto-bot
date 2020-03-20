@@ -294,13 +294,13 @@ public class WynnApi {
 
     // Rate limit is dependant on each resource.
     // Known limits:
-    // Player (wynncraft/player) : 750 per 30 minutes
+    // Player (wynncraft/player) : 500 per 30 minutes
 
     private static final Map<String, RateLimiter> rateLimitersV2 = new HashMap<>();
 
     static {
         Map<String, Integer[]> rateLimits = new HashMap<>();
-        rateLimits.put("player", new Integer[]{750, 30});
+        rateLimits.put("player", new Integer[]{500, 30});
 
         for (Map.Entry<String, Integer[]> e : rateLimits.entrySet()) {
             long waitBetweenRequests = TimeUnit.MINUTES.toMillis(e.getValue()[1]) / e.getValue()[0];
