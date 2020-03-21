@@ -50,6 +50,9 @@ class TestGuildXpLeaderboardRepository {
         assert repo.exists(g1);
         assert repo.exists(g2);
 
+        assert repo.getRank("Kingdom Foxes") == 1;
+        assert repo.getRank("Imperial") == 2;
+
         assert repo.delete(g1);
 
         assert repo.count() == 1;

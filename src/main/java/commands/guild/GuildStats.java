@@ -5,22 +5,23 @@ import api.wynn.structs.WynnGuild;
 import app.Bot;
 import commands.base.GenericCommand;
 import db.model.dateFormat.CustomDateFormat;
+import db.model.guildXpLeaderboard.GuildXpLeaderboard;
 import db.model.timezone.CustomTimeZone;
 import db.model.world.World;
-import db.repository.base.DateFormatRepository;
-import db.repository.base.TerritoryRepository;
-import db.repository.base.TimeZoneRepository;
-import db.repository.base.WorldRepository;
+import db.repository.base.*;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import update.multipage.MultipageHandler;
 import update.reaction.ReactionManager;
+import utils.FormatUtils;
 import utils.InputChecker;
 import utils.rateLimit.RateLimitException;
 
+import java.math.BigDecimal;
 import java.text.DateFormat;
 import java.util.*;
 import java.util.function.Function;
@@ -83,6 +84,7 @@ public class GuildStats extends GenericCommand {
         private final TimeZoneRepository timeZoneRepository;
         private final WorldRepository worldRepository;
         private final TerritoryRepository territoryRepository;
+        private final GuildXpLeaderboardRepository guildXpLeaderboardRepository;
 
         Handler(Bot bot) {
             this.wynnApi = new WynnApi(bot.getLogger(), bot.getProperties().wynnTimeZone);
@@ -95,6 +97,7 @@ public class GuildStats extends GenericCommand {
             this.timeZoneRepository = bot.getDatabase().getTimeZoneRepository();
             this.worldRepository = bot.getDatabase().getWorldRepository();
             this.territoryRepository = bot.getDatabase().getTerritoryRepository();
+            this.guildXpLeaderboardRepository = bot.getDatabase().getGuildXpLeaderboardRepository();
         }
 
         public void handle(@NotNull MessageReceivedEvent event, @NotNull String guildName) {
@@ -152,6 +155,20 @@ public class GuildStats extends GenericCommand {
             return 6 + contributeExtraPages;
         }
 
+        // Returns entry of leaderboard info and rank inside the leaderboard
+        @Nullable
+        private Map.Entry<GuildXpLeaderboard, Integer> getGuildXpRanking(String guildName) {
+            GuildXpLeaderboard l = this.guildXpLeaderboardRepository.findOne(() -> guildName);
+            if (l == null) {
+                return null;
+            }
+            int rank = this.guildXpLeaderboardRepository.getRank(guildName);
+            if (rank == -1) {
+                return null;
+            }
+            return new AbstractMap.SimpleEntry<>(l, rank);
+        }
+
         private Message getPage(int page,
                                 @NotNull WynnGuild guild,
                                 @NotNull CustomDateFormat customDateFormat,
@@ -166,13 +183,19 @@ public class GuildStats extends GenericCommand {
 
             ret.add("");
 
-            // TODO: precise xp, xp gained ranking
-            /* Something along:
-            Level 79 | 44.9%, 29.18B XP (#2)
-            1.418B XP gained in last 1 d  0 h  0 m
-            [=========-----------]
-             */
-            ret.add(String.format("Level %s | %s%%", guild.getLevel(), guild.getXp()));
+            Map.Entry<GuildXpLeaderboard, Integer> xpRank = this.getGuildXpRanking(guild.getName());
+            if (xpRank == null) {
+                ret.add(String.format("Level %s | %s%%", guild.getLevel(), guild.getXp()));
+            } else {
+                GuildXpLeaderboard lb = xpRank.getKey();
+                int rank = xpRank.getValue();
+                ret.add(String.format("Level %s | %s%%, %s XP (#%s)", guild.getLevel(), guild.getXp(),
+                        FormatUtils.truncateNumber(BigDecimal.valueOf(lb.getXp())), rank));
+                long seconds = (lb.getTo().getTime() - lb.getFrom().getTime()) / 1000L;
+                ret.add(String.format("%s XP gained in last %s",
+                        FormatUtils.truncateNumber(BigDecimal.valueOf(lb.getXpDiff())),
+                        FormatUtils.formatReadableTime(seconds, false, "m")));
+            }
             int bars = (int) Math.round(Double.parseDouble(guild.getXp()) / 5.0d);
             ret.add(makeBar(bars));
 

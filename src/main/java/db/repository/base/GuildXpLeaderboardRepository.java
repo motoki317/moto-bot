@@ -21,6 +21,13 @@ public abstract class GuildXpLeaderboardRepository extends Repository<GuildXpLea
     public abstract boolean createAll(@NotNull List<GuildXpLeaderboard> list);
 
     /**
+     * Retrieves the rank of given guild in xp leaderboard.
+     * @param guildName Guild name.
+     * @return Rank of the guild. -1 if the guild is not in, or something went wrong.
+     */
+    public abstract int getRank(@NotNull String guildName);
+
+    /**
      * Truncates table and deletes all data.
      * @return true if success.
      */
