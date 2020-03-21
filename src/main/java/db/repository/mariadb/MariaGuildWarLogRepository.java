@@ -172,6 +172,60 @@ class MariaGuildWarLogRepository extends GuildWarLogRepository {
     }
 
     @Override
+    public int countSuccessWars(String guildName, @NotNull Date start, @NotNull Date end) {
+        int first = getFirstWarLogIdAfter(start);
+        int last = getFirstWarLogIdAfter(end);
+        if (first == -1 || last == -1) {
+            return -1;
+        }
+
+        ResultSet res = this.executeQuery(
+                "SELECT COUNT(*) FROM `guild_war_log` WHERE `guild_name` = ? " +
+                        "AND `war_log_id` >= ? AND `war_log_id` < ? AND `territory_log_id` IS NOT NULL",
+                guildName, first, last
+        );
+
+        if (res == null) {
+            return -1;
+        }
+
+        try {
+            if (res.next())
+                return res.getInt(1);
+        } catch (SQLException e) {
+            this.logResponseException(e);
+        }
+        return -1;
+    }
+
+    @Override
+    public int countTotalWars(String guildName, @NotNull Date start, @NotNull Date end) {
+        int first = getFirstWarLogIdAfter(start);
+        int last = getFirstWarLogIdAfter(end);
+        if (first == -1 || last == -1) {
+            return -1;
+        }
+
+        ResultSet res = this.executeQuery(
+                "SELECT COUNT(*) FROM `guild_war_log` WHERE `guild_name` = ? " +
+                        "AND `war_log_id` >= ? AND `war_log_id` < ?",
+                guildName, first, last
+        );
+
+        if (res == null) {
+            return -1;
+        }
+
+        try {
+            if (res.next())
+                return res.getInt(1);
+        } catch (SQLException e) {
+            this.logResponseException(e);
+        }
+        return -1;
+    }
+
+    @Override
     public int countSuccessWarsSum() {
         ResultSet res = this.executeQuery(
                 "SELECT COUNT(*) FROM `guild_war_log` WHERE `war_log_id` IS NOT NULL AND `territory_log_id` IS NOT NULL"

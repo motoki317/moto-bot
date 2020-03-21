@@ -32,7 +32,8 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static commands.guild.leaderboard.LeaderboardCommon.*;
+import static commands.guild.leaderboard.LeaderboardCommon.Range;
+import static commands.guild.leaderboard.LeaderboardCommon.parseRange;
 
 public class PlayerWarLeaderboardCmd extends GenericCommand {
     private final GuildWarLogRepository guildWarLogRepository;
@@ -155,6 +156,30 @@ public class PlayerWarLeaderboardCmd extends GenericCommand {
                     break;
             }
         }
+    }
+
+    private int getSuccessWars(@Nullable Range range, @NotNull String guildName) {
+        return range == null
+                ? this.guildWarLogRepository.countSuccessWars(guildName)
+                : this.guildWarLogRepository.countSuccessWars(guildName, range.start, range.end);
+    }
+
+    private int getTotalWars(@Nullable Range range, @NotNull String guildName) {
+        return range == null
+                ? this.guildWarLogRepository.countTotalWars(guildName)
+                : this.guildWarLogRepository.countTotalWars(guildName, range.start, range.end);
+    }
+
+    private int getSuccessWarSum(@Nullable Range range) {
+        return range == null
+                ? this.guildWarLogRepository.countSuccessWarsSum()
+                : this.guildWarLogRepository.countSuccessWarsSum(range.start, range.end);
+    }
+
+    private int getTotalWarSum(@Nullable Range range) {
+        return range == null
+                ? this.guildWarLogRepository.countTotalWarsSum()
+                : this.guildWarLogRepository.countTotalWarsSum(range.start, range.end);
     }
 
     // Get description of the leaderboard of the given context in arguments
@@ -346,14 +371,14 @@ public class PlayerWarLeaderboardCmd extends GenericCommand {
     }
 
     // Page supplier for guild leaderboard
-    private static Function<Integer, Message> guildPageSupplier(String guildName,
-                                                                String prefix,
-                                                                List<PlayerWarLeaderboard> guildLeaderboard,
-                                                                SortType sortType,
-                                                                @Nullable Range range,
-                                                                CustomDateFormat customDateFormat,
-                                                                CustomTimeZone customTimeZone,
-                                                                Date updatedAt) {
+    private Function<Integer, Message> guildPageSupplier(String guildName,
+                                                         String prefix,
+                                                         List<PlayerWarLeaderboard> guildLeaderboard,
+                                                         SortType sortType,
+                                                         @Nullable Range range,
+                                                         CustomDateFormat customDateFormat,
+                                                         CustomTimeZone customTimeZone,
+                                                         Date updatedAt) {
         int maxPage = (guildLeaderboard.size() - 1) / PLAYERS_PER_PAGE;
 
         sortType.sort(guildLeaderboard);
@@ -370,13 +395,11 @@ public class PlayerWarLeaderboardCmd extends GenericCommand {
             ));
         }
 
-        // TODO: get a precise number of wars for a guild
-        // (in this way, if multiple players joined the same war then it duplicates the count)
-        int firstWarSum = guildLeaderboard.stream().mapToInt(sortType::getWarNumber).sum();
-        int totalWarSum = guildLeaderboard.stream().mapToInt(PlayerWarLeaderboard::getTotalWar).sum();
-        String totalRate = String.format("%.2f%%", (double) firstWarSum / (double) totalWarSum * 100d);
+        int successWars = this.getSuccessWars(range, guildName);
+        int totalWars = this.getTotalWars(range, guildName);
+        String totalRate = String.format("%.2f%%", (double) successWars / (double) totalWars * 100d);
 
-        Justify justify = getSpaceJustify(displays, firstWarSum, totalWarSum, totalRate);
+        Justify justify = getSpaceJustify(displays, successWars, totalWars, totalRate);
 
         String rateMessage = sortType.getWarNumbersMessage() + " Rate";
         String typeDescription = getTypeDescription(sortType, range, customTimeZone, customDateFormat);
@@ -395,7 +418,7 @@ public class PlayerWarLeaderboardCmd extends GenericCommand {
 
             int begin = page * PLAYERS_PER_PAGE;
             int end = Math.min((page + 1) * PLAYERS_PER_PAGE, guildLeaderboard.size());
-            ret.add(formatTableDisplays(displays, begin, end, justify, rateMessage, firstWarSum, totalWarSum, totalRate));
+            ret.add(formatTableDisplays(displays, begin, end, justify, rateMessage, successWars, totalWars, totalRate));
 
             ret.add("");
             ret.add(String.format(
@@ -484,12 +507,8 @@ public class PlayerWarLeaderboardCmd extends GenericCommand {
             ));
         }
 
-        int successWarSum = range == null
-                ? this.guildWarLogRepository.countSuccessWarsSum()
-                : this.guildWarLogRepository.countSuccessWarsSum(range.start, range.end);
-        int totalWarSum = range == null
-                ? this.guildWarLogRepository.countTotalWarsSum()
-                : this.guildWarLogRepository.countTotalWarsSum(range.start, range.end);
+        int successWarSum = this.getSuccessWarSum(range);
+        int totalWarSum = this.getTotalWarSum(range);
         String totalRate = String.format("%.2f%%", (double) successWarSum / (double) totalWarSum * 100d);
 
         Justify justify = getSpaceJustify(displays, successWarSum, totalWarSum, totalRate);

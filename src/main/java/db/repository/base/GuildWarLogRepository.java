@@ -49,6 +49,24 @@ public abstract class GuildWarLogRepository extends Repository<GuildWarLog, Guil
     public abstract int countTotalWars(String guildName);
 
     /**
+     * Counts success wars done by a guild in given time frame.
+     * @param guildName Guild name.
+     * @param start Start date (inclusive).
+     * @param end End date (exclusive).
+     * @return Number of success wars.
+     */
+    public abstract int countSuccessWars(String guildName, @NotNull Date start, @NotNull Date end);
+
+    /**
+     * Counts total wars done by a guild in given time frame.
+     * @param guildName Guild name.
+     * @param start Start date (inclusive).
+     * @param end End date (exclusive).
+     * @return Number of total wars.
+     */
+    public abstract int countTotalWars(String guildName, @NotNull Date start, @NotNull Date end);
+
+    /**
      * Counts success wars done by any guild ever.
      * @return Number of success wars.
      */
