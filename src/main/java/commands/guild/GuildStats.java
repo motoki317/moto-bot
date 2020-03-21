@@ -72,7 +72,7 @@ public class GuildStats extends GenericCommand {
             return;
         }
 
-        String guildName = String.join("\n", Arrays.copyOfRange(args, 1, args.length));
+        String guildName = String.join(" ", Arrays.copyOfRange(args, 2, args.length));
         handler.handle(event, guildName);
     }
 
