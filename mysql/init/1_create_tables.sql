@@ -1,7 +1,3 @@
-CREATE DATABASE IF NOT EXISTS `moto-bot`;
-
-USE `moto-bot`;
-
 # NOTE: guild name must use VARBINARY, not VARCHAR because it trims white spaces
 
 ### ----- Main (Wynn-related) tables ----
