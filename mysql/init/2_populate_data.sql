@@ -1,5 +1,3 @@
-USE `moto-bot`;
-
 DROP PROCEDURE IF EXISTS `populate_player_war_leaderboard`;
 DELIMITER //
 CREATE PROCEDURE `populate_player_war_leaderboard`()
