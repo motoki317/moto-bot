@@ -10,6 +10,8 @@ import db.repository.base.WarPlayerRepository;
 import heartbeat.base.TaskBase;
 import log.Logger;
 import utils.UUID;
+import utils.cache.DataCache;
+import utils.cache.HashMapDataCache;
 
 import java.util.Date;
 import java.util.List;
@@ -33,16 +35,32 @@ public class PlayerUUIDRetriever implements TaskBase {
 
     @Override
     public void run() {
+        // tried players and
+        DataCache<String, Long> tried = new HashMapDataCache<>(
+                100, TimeUnit.MINUTES.toMillis(30), TimeUnit.MINUTES.toMillis(30)
+        );
+        retriever:
         while (true) {
             // Pick one player whose logged UUID is null
-            WarPlayer warPlayer = this.warPlayerRepository.getUUIDNullPlayer();
-            if (warPlayer == null) {
-                break;
+            WarPlayer warPlayer;
+            int offset = 0;
+            while (true) {
+                warPlayer = this.warPlayerRepository.getUUIDNullPlayer(offset);
+                if (warPlayer == null) {
+                    // finished retrieving
+                    break retriever;
+                }
+                if (tried.get(warPlayer.getPlayerName()) == null) {
+                    break;
+                }
+                offset++;
             }
             WarLog warLog = this.warLogRepository.findOne(warPlayer::getWarLogId);
             if (warLog == null) {
                 break;
             }
+
+            tried.add(warPlayer.getPlayerName(), warLog.getCreatedAt().getTime());
 
             UUID uuid = this.mojangApi.mustGetUUIDAtTime(warPlayer.getPlayerName(), warLog.getCreatedAt().getTime());
             if (uuid == null) {
@@ -50,6 +68,13 @@ public class PlayerUUIDRetriever implements TaskBase {
                         "Player UUID Retriever: Failed to get UUID for %s at %s, skipping.",
                         warPlayer.getPlayerName(), warLog.getCreatedAt().getTime()));
                 continue;
+            }
+
+            // update this single entry
+            warPlayer.setPlayerUUID(uuid.toStringWithHyphens());
+            if (!this.warPlayerRepository.update(warPlayer)) {
+                this.logger.log(0, "Player UUID Retriever: Failed to update DB");
+                return;
             }
 
             // Retrieve name history for them, and fill player uuid fields
@@ -85,7 +110,7 @@ public class PlayerUUIDRetriever implements TaskBase {
             String username = history.get(i).getUsername();
 
             // update corresponding entries
-            if (!this.warPlayerRepository.getPlayerNameOfBetween(username, uuid, new Date(start), new Date(end))) {
+            if (!this.warPlayerRepository.updatePlayerNameOfBetween(username, uuid, new Date(start), new Date(end))) {
                 this.logger.log(0, "Player UUID Retriever: Failed to update DB");
             }
         }
@@ -93,7 +118,7 @@ public class PlayerUUIDRetriever implements TaskBase {
 
     @Override
     public long getFirstDelay() {
-        return TimeUnit.MINUTES.toMillis(3);
+        return TimeUnit.MINUTES.toMillis(2);
     }
 
     @Override

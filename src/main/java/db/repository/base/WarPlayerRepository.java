@@ -59,7 +59,7 @@ public abstract class WarPlayerRepository extends Repository<WarPlayer, WarPlaye
      * @return War player entry. null if something went wrong or not found.
      */
     @Nullable
-    public abstract WarPlayer getUUIDNullPlayer();
+    public abstract WarPlayer getUUIDNullPlayer(int offset);
 
     /**
      * Updates list of war player entries of player name between the given dates, to given player uuid.
@@ -69,5 +69,5 @@ public abstract class WarPlayerRepository extends Repository<WarPlayer, WarPlaye
      * @param end End date (exclusive).
      * @return {@code true} if success.
      */
-    public abstract boolean getPlayerNameOfBetween(String playerName, UUID uuid, Date start, Date end);
+    public abstract boolean updatePlayerNameOfBetween(String playerName, UUID uuid, Date start, Date end);
 }

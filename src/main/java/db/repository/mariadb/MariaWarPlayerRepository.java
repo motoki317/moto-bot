@@ -221,9 +221,9 @@ class MariaWarPlayerRepository extends WarPlayerRepository {
 
     @Nullable
     @Override
-    public WarPlayer getUUIDNullPlayer() {
+    public WarPlayer getUUIDNullPlayer(int offset) {
         ResultSet res = this.executeQuery(
-                "SELECT * FROM `war_player` WHERE `player_uuid` IS NULL LIMIT 1"
+                "SELECT * FROM `war_player` WHERE `player_uuid` IS NULL ORDER BY `war_log_id` LIMIT 1 OFFSET " + offset
         );
 
         if (res == null) {
@@ -259,7 +259,7 @@ class MariaWarPlayerRepository extends WarPlayerRepository {
     }
 
     @Override
-    public boolean getPlayerNameOfBetween(String playerName, UUID uuid, Date start, Date end) {
+    public boolean updatePlayerNameOfBetween(String playerName, UUID uuid, Date start, Date end) {
         int first = getFirstWarLogIdAfter(start);
         int last = getFirstWarLogIdAfter(end);
         if (first == -1 || last == -1) {
