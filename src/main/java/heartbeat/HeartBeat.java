@@ -2,7 +2,7 @@ package heartbeat;
 
 import app.Bot;
 import heartbeat.base.TaskBase;
-import heartbeat.tasks.*;
+import heartbeat.tasks.PlayerUUIDRetriever;
 import log.Logger;
 import utils.StoppableThread;
 
@@ -20,11 +20,11 @@ public class HeartBeat extends StoppableThread {
 
         final Object dbLock = new Object();
 
-        addTask(new PlayerTracker(bot, dbLock));
-        addTask(new TerritoryTracker(bot, dbLock));
-        addTask(new GuildTracker(bot));
-        addTask(new GuildLeaderboardTracker(bot));
-        addTask(new TrackingManager(bot));
+//        addTask(new PlayerTracker(bot, dbLock));
+//        addTask(new TerritoryTracker(bot, dbLock));
+//        addTask(new GuildTracker(bot));
+//        addTask(new GuildLeaderboardTracker(bot));
+//        addTask(new TrackingManager(bot));
         addTask(new PlayerUUIDRetriever(bot));
     }
 

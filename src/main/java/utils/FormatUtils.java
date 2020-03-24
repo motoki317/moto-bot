@@ -9,6 +9,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class FormatUtils {
     /**
@@ -66,6 +69,39 @@ public class FormatUtils {
         }
 
         return String.join(" ", formattedStrings);
+    }
+
+    private static final Pattern readableTimePattern = Pattern.compile(
+            "\\s*((((\\d+) d\\s{1,2})?(\\d+) h\\s{1,2})?(\\d+) m\\s{1,2})?(\\d+) s"
+    );
+
+    /**
+     * Parses readable time formatted by {@link FormatUtils#formatReadableTime} and returns seconds.
+     * @param time Formatted time.
+     * @return Time in seconds.
+     */
+    public static long parseReadableTime(String time) throws IllegalArgumentException {
+        Matcher m = readableTimePattern.matcher(time);
+        if (!m.matches()) {
+            throw new IllegalArgumentException("Invalid input");
+        }
+
+        Function<String, Long> parser = i -> {
+            if (i == null || i.isEmpty()) {
+                return 0L;
+            }
+            return Long.parseLong(i);
+        };
+
+        long days = parser.apply(m.group(4));
+        long hours = parser.apply(m.group(5));
+        long minutes = parser.apply(m.group(6));
+        long seconds = parser.apply(m.group(7));
+
+        return TimeUnit.DAYS.toSeconds(days) +
+                TimeUnit.HOURS.toSeconds(hours) +
+                TimeUnit.MINUTES.toSeconds(minutes) +
+                TimeUnit.SECONDS.toSeconds(seconds);
     }
 
     private static final BigDecimal THOUSAND = new BigDecimal("1000");

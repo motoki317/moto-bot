@@ -18,6 +18,14 @@ class TestFormatUtils {
     }
 
     @Test
+    void testParseReadableFormat() {
+        assert FormatUtils.parseReadableTime("1 h 1 m 13 s") == 3673L;
+        assert FormatUtils.parseReadableTime(" 1 h  1 m 13 s") == 3673L;
+        assert FormatUtils.parseReadableTime("1 d 0 h 0 m 0 s") == 86400L;
+        assert FormatUtils.parseReadableTime("0 s") == 0L;
+    }
+
+    @Test
     void testTruncateNumber() {
         assert "1.235M".equals(FormatUtils.truncateNumber(new BigDecimal(1_234_567)));
         assert "1.234M".equals(FormatUtils.truncateNumber(new BigDecimal(1_234_432)));

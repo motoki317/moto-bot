@@ -18,7 +18,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class MariaTerritoryLogRepository extends TerritoryLogRepository {
+class MariaTerritoryLogRepository extends TerritoryLogRepository {
     private static final DateFormat dbFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
     MariaTerritoryLogRepository(ConnectionPool db, Logger logger) {
@@ -45,7 +45,18 @@ public class MariaTerritoryLogRepository extends TerritoryLogRepository {
 
     @Override
     public <S extends TerritoryLog> boolean create(@NotNull S entity) {
-        throw new Error("Insert not implemented: records are automatically created by the triggers");
+        return this.execute(
+                "INSERT INTO `territory_log`" +
+                        " (territory_name, old_guild_name, new_guild_name, old_guild_terr_amt, new_guild_terr_amt, acquired, time_diff)" +
+                        " VALUES (?, ?, ?, ?, ?, ?, ?)",
+                entity.getTerritoryName(),
+                entity.getOldGuildName(),
+                entity.getNewGuildName(),
+                entity.getOldGuildTerrAmt(),
+                entity.getNewGuildTerrAmt(),
+                dbFormat.format(entity.getAcquired()),
+                entity.getTimeDiff()
+        );
     }
 
     @Override

@@ -28,6 +28,17 @@ public class TerritoryLog implements TerritoryLogId {
         this.timeDiff = timeDiff;
     }
 
+    public TerritoryLog(String territoryName, String oldGuildName, String newGuildName,
+                        int oldGuildTerrAmt, int newGuildTerrAmt, Date acquired, long timeDiff) {
+        this.territoryName = territoryName;
+        this.oldGuildName = oldGuildName;
+        this.newGuildName = newGuildName;
+        this.oldGuildTerrAmt = oldGuildTerrAmt;
+        this.newGuildTerrAmt = newGuildTerrAmt;
+        this.acquired = acquired;
+        this.timeDiff = timeDiff;
+    }
+
     @Override
     public int getId() {
         return id;

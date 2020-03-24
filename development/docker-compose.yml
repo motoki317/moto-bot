@@ -7,7 +7,7 @@ services:
     environment:
       MYSQL_HOST: mysql
       MYSQL_PORT: 3306
-      MYSQL_DATABASE: moto-bot
+      MYSQL_DATABASE: migrate
       MYSQL_USER: moto-bot
       MYSQL_PASSWORD: password
       DISCORD_ACCESS_TOKEN: ${DISCORD_ACCESS_TOKEN}
@@ -34,7 +34,7 @@ services:
     restart: always
     environment:
       MYSQL_ROOT_PASSWORD: password
-      MYSQL_DATABASE: moto-bot
+      MYSQL_DATABASE: migrate
     expose:
       - 3306
     ports:
