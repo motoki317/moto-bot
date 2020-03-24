@@ -1,6 +1,7 @@
 package api;
 
 import api.mojang.MojangApi;
+import api.mojang.structs.NameHistory;
 import api.mojang.structs.NullableUUID;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.TestOnly;
@@ -32,5 +33,22 @@ class TestMojangApi {
             assert uuid != null;
             assert uuid.toStringWithHyphens().equals(playerList.get(player));
         }
+    }
+
+    @Test
+    void testUUIDAtTime() {
+        MojangApi api = getApi();
+        UUID uuid = api.mustGetUUIDAtTime("MidnightGoden", 1457572526000L);
+        assert uuid != null;
+        assert uuid.toStringWithHyphens().equals("1d378fba-e8d2-44bc-b731-db5d42dfc791");
+    }
+
+    @Test
+    void testNameHistory() {
+        MojangApi api = getApi();
+        NameHistory history = api.mustGetNameHistory(new UUID("1d378fba-e8d2-44bc-b731-db5d42dfc791"));
+        assert history != null;
+        assert history.getNameAt(1000L).equals("GOden02");
+        assert history.getNameAt(1457572526000L).equals("MidnightGoden");
     }
 }
