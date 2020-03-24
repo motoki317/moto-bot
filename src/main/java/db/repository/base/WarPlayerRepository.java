@@ -7,6 +7,7 @@ import log.Logger;
 import utils.UUID;
 
 import javax.annotation.Nullable;
+import java.util.Date;
 import java.util.List;
 
 public abstract class WarPlayerRepository extends Repository<WarPlayer, WarPlayerId> {
@@ -54,10 +55,19 @@ public abstract class WarPlayerRepository extends Repository<WarPlayer, WarPlaye
     public abstract List<WarPlayer> getLogsOfPlayer(UUID playerUUID, int limit, int offset);
 
     /**
-     * Retrieves last player name recorded of the given UUID.
-     * @param playerUUID Player UUID.
-     * @return Last player name if found.
+     * Retrieves single player whose logged UUID is null.
+     * @return War player entry. null if something went wrong or not found.
      */
     @Nullable
-    public abstract String getPlayerNameOf(UUID playerUUID);
+    public abstract WarPlayer getUUIDNullPlayer();
+
+    /**
+     * Updates list of war player entries of player name between the given dates, to given player uuid.
+     * @param playerName Player name.
+     * @param uuid Player UUID to update to.
+     * @param start Start date (inclusive).
+     * @param end End date (exclusive).
+     * @return {@code true} if success.
+     */
+    public abstract boolean getPlayerNameOfBetween(String playerName, UUID uuid, Date start, Date end);
 }

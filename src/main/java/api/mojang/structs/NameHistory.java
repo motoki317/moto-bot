@@ -16,6 +16,14 @@ public class NameHistory {
             this.username = username;
             this.changedToAt = changedToAt;
         }
+
+        public String getUsername() {
+            return username;
+        }
+
+        public long getChangedToAt() {
+            return changedToAt;
+        }
     }
 
     private final UUID uuid;
@@ -30,6 +38,11 @@ public class NameHistory {
     @NotNull
     public UUID getUuid() {
         return uuid;
+    }
+
+    @NotNull
+    public List<NameHistoryEntry> getHistory() {
+        return history;
     }
 
     /**

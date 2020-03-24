@@ -12,9 +12,14 @@ import javax.annotation.Nullable;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 
 class MariaWarPlayerRepository extends WarPlayerRepository {
+    private static final DateFormat dbFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+
     MariaWarPlayerRepository(ConnectionPool db, Logger logger) {
         super(db, logger);
     }
@@ -216,9 +221,9 @@ class MariaWarPlayerRepository extends WarPlayerRepository {
 
     @Nullable
     @Override
-    public String getPlayerNameOf(UUID playerUUID) {
+    public WarPlayer getUUIDNullPlayer() {
         ResultSet res = this.executeQuery(
-                "SELECT `player_name` FROM `war_player` WHERE `player_uuid` = ? ORDER BY `war_log_id` DESC LIMIT 1"
+                "SELECT * FROM `war_player` WHERE `player_uuid` IS NULL LIMIT 1"
         );
 
         if (res == null) {
@@ -227,11 +232,44 @@ class MariaWarPlayerRepository extends WarPlayerRepository {
 
         try {
             if (res.next())
-                return res.getString(1);
+                return bind(res);
         } catch (SQLException e) {
             this.logResponseException(e);
         }
         return null;
+    }
+
+    private int getFirstWarLogIdAfter(@NotNull Date date) {
+        ResultSet res = this.executeQuery(
+                "SELECT first_war_log_id_after(?)",
+                dbFormat.format(date)
+        );
+
+        if (res == null) {
+            return -1;
+        }
+
+        try {
+            if (res.next())
+                return res.getInt(1);
+        } catch (SQLException e) {
+            this.logResponseException(e);
+        }
+        return -1;
+    }
+
+    @Override
+    public boolean getPlayerNameOfBetween(String playerName, UUID uuid, Date start, Date end) {
+        int first = getFirstWarLogIdAfter(start);
+        int last = getFirstWarLogIdAfter(end);
+        if (first == -1 || last == -1) {
+            return false;
+        }
+
+        return this.execute(
+                "UPDATE `war_player` SET `player_uuid` = ? WHERE `player_name` = ? AND `war_log_id` >= ? AND `war_log_id` < ?",
+                uuid.toStringWithHyphens(), playerName, first, last
+        );
     }
 
     @Override
