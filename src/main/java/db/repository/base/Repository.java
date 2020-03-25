@@ -14,6 +14,8 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
+import static utils.SQLReplacer.replaceSql;
+
 public abstract class Repository<T, ID> implements IRepository<T, ID> {
     protected final ConnectionPool db;
 
@@ -105,38 +107,6 @@ public abstract class Repository<T, ID> implements IRepository<T, ID> {
             this.logger.logException("an exception occurred while executing sql: " + fullSql, e);
             return null;
         }
-    }
-
-    private static String replaceSql(String sql, @NotNull Object... objects) {
-        if (numQuestionChars(sql) != objects.length) {
-            throw new Error(String.format("Number of replacements (\"?\", %s) and number of given objects (%s) do not match.\n" +
-                    "SQL before replacement: %s", numQuestionChars(sql), objects.length, sql));
-        }
-
-        String ret = sql;
-        for (Object o : objects) {
-            ret = ret.replaceFirst("\\?", objectToString(o));
-        }
-        return ret;
-    }
-
-    private static int numQuestionChars(String sql) {
-        int ret = 0;
-        for (char c : sql.toCharArray()) {
-            if (c == '?')
-                ret++;
-        }
-        return ret;
-    }
-
-    @NotNull
-    private static String objectToString(@Nullable Object o) {
-        return o == null ? "NULL" : "\"" + escapeString(o.toString()) + "\"";
-    }
-
-    @NotNull
-    private static String escapeString(@NotNull String s) {
-        return s.replace("\\", "\\\\").replace("\"", "\\\"");
     }
 
     protected void logResponseException(SQLException e) {
