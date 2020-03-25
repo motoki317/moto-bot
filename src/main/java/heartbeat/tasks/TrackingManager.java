@@ -7,6 +7,7 @@ import heartbeat.base.TaskBase;
 import log.Logger;
 import net.dv8tion.jda.api.entities.TextChannel;
 import net.dv8tion.jda.api.sharding.ShardManager;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -23,6 +24,11 @@ public class TrackingManager implements TaskBase {
         this.shardManager = bot.getManager();
         this.logger = bot.getLogger();
         this.trackChannelRepository = bot.getDatabase().getTrackingChannelRepository();
+    }
+
+    @Override
+    public @NotNull String getName() {
+        return "Tracking Manager";
     }
 
     @Override

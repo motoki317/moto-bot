@@ -61,6 +61,12 @@ public class PlayerTracker implements TaskBase {
         this.warTrackRepository = bot.getDatabase().getWarTrackRepository();
     }
 
+    @NotNull
+    @Override
+    public String getName() {
+        return "Player Tracker";
+    }
+
     @Override
     public void run() {
         OnlinePlayers players = this.wynnApi.mustGetOnlinePlayers();

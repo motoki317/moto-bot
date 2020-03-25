@@ -58,6 +58,11 @@ public class TerritoryTracker implements TaskBase {
     }
 
     @Override
+    public @NotNull String getName() {
+        return "Territory Tracker";
+    }
+
+    @Override
     public void run() {
         TerritoryList territoryList = this.wynnApi.mustGetTerritoryList();
         if (territoryList == null) return;

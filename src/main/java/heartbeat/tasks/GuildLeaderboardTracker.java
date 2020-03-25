@@ -28,6 +28,12 @@ public class GuildLeaderboardTracker implements TaskBase {
         this.guildXpLeaderboardRepository = bot.getDatabase().getGuildXpLeaderboardRepository();
     }
 
+    @NotNull
+    @Override
+    public String getName() {
+        return "Guild Leaderboard Tracker";
+    }
+
     @Override
     public void run() {
         WynnGuildLeaderboard leaderboard = this.wynnApi.mustGetGuildLeaderboard();

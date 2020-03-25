@@ -8,60 +8,39 @@ import utils.StoppableThread;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Timer;
-import java.util.function.BiConsumer;
 
 public class HeartBeat extends StoppableThread {
     private final Logger logger;
 
-    private final Timer timer;
-
-    private final List<Task> tasks;
+    private final List<HeartBeatTask> tasks;
 
     public HeartBeat(Bot bot) {
         this.logger = bot.getLogger();
-        this.timer = new Timer();
         this.tasks = new ArrayList<>();
-
-        BiConsumer<TaskBase, String> addTask = (task, name) -> this.tasks.add(new Task(
-                this.timer,
-                () -> {
-                    long start = System.nanoTime();
-                    try {
-                        task.run();
-                    } catch (Exception e) {
-                        this.logger.logException(String.format("HeatBeat: %s: caught exception", name), e);
-                    }
-                    long end = System.nanoTime();
-                    bot.getLogger().log(-1, String.format("HeartBeat: %s took %.6f ms to run.",
-                            name,
-                            ((double) (end - start)) / 1_000_000D)
-                    );
-                },
-                task.getFirstDelay(),
-                task.getInterval()
-        ));
 
         final Object dbLock = new Object();
 
-        addTask.accept(new PlayerTracker(bot, dbLock), "Player Tracker");
-        addTask.accept(new TerritoryTracker(bot, dbLock), "Territory Tracker");
-        addTask.accept(new GuildTracker(bot), "Guild Tracker");
-        addTask.accept(new GuildLeaderboardTracker(bot), "Guild Leaderboard Tracker");
-        addTask.accept(new TrackingManager(bot), "Tracking Manager");
-        addTask.accept(new PlayerUUIDRetriever(bot), "Player UUID Retriever");
+        addTask(new PlayerTracker(bot, dbLock));
+        addTask(new TerritoryTracker(bot, dbLock));
+        addTask(new GuildTracker(bot));
+        addTask(new GuildLeaderboardTracker(bot));
+        addTask(new TrackingManager(bot));
+        addTask(new PlayerUUIDRetriever(bot));
+    }
+
+    private void addTask(TaskBase task) {
+        this.tasks.add(new HeartBeatTask(this.logger, task));
     }
 
     @Override
     public void run() {
         this.logger.debug("Starting heartbeat... (Thread id " + this.getId() + ")");
-
-        this.tasks.forEach(Task::start);
+        this.tasks.forEach(HeartBeatTask::start);
     }
 
     @Override
     protected void cleanUp() {
         this.logger.log(-1, "Stopping heartbeat... (Thread id " + this.getId() + ")");
-        this.timer.cancel();
+        this.tasks.forEach(HeartBeatTask::clearUp);
     }
 }

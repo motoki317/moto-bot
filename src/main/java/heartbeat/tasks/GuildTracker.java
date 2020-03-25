@@ -16,6 +16,7 @@ import heartbeat.base.TaskBase;
 import log.Logger;
 import net.dv8tion.jda.api.entities.TextChannel;
 import net.dv8tion.jda.api.sharding.ShardManager;
+import org.jetbrains.annotations.NotNull;
 
 import java.text.DateFormat;
 import java.util.HashSet;
@@ -55,6 +56,12 @@ public class GuildTracker implements TaskBase {
     @Override
     public long getInterval() {
         return GUILD_TRACKER_DELAY;
+    }
+
+    @NotNull
+    @Override
+    public String getName() {
+        return "Guild Tracker";
     }
 
     @Override

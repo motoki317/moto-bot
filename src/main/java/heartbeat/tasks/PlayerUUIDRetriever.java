@@ -9,6 +9,7 @@ import db.repository.base.WarLogRepository;
 import db.repository.base.WarPlayerRepository;
 import heartbeat.base.TaskBase;
 import log.Logger;
+import org.jetbrains.annotations.NotNull;
 import utils.UUID;
 import utils.cache.DataCache;
 import utils.cache.HashMapDataCache;
@@ -31,6 +32,11 @@ public class PlayerUUIDRetriever implements TaskBase {
         this.logger = bot.getLogger();
         this.warPlayerRepository = bot.getDatabase().getWarPlayerRepository();
         this.warLogRepository = bot.getDatabase().getWarLogRepository();
+    }
+
+    @Override
+    public @NotNull String getName() {
+        return "Player UUID Retriever";
     }
 
     @Override
