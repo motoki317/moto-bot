@@ -17,6 +17,7 @@ import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import org.jetbrains.annotations.NotNull;
+import migrate.CommandLogMigration;
 import migrate.WarsMigration;
 import utils.BotUtils;
 
@@ -114,6 +115,7 @@ public class CommandListener extends ListenerAdapter {
         addCommand(new Music(bot));
 
         addCommand(new WarsMigration(bot));
+        addCommand(new CommandLogMigration(bot));
     }
 
     private void addCommand(BotCommand command) {
