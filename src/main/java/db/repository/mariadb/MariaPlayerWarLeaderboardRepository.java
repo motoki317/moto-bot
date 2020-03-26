@@ -344,8 +344,8 @@ class MariaPlayerWarLeaderboardRepository extends PlayerWarLeaderboardRepository
                         // default view is total/survived wars only, to reduce computation time
                         "0 AS success_wars, " +
                         "t.survived_wars " +
-                        "FROM (SELECT t.player_uuid, t.player_name, COUNT(*) AS `total_wars`, SUM(g.territory_log_id IS NOT NULL) AS `survived_wars` FROM " +
-                        "(SELECT * FROM `war_player` WHERE `war_log_id` >= ? AND `war_log_id` < ? AND NOT `exited`) AS t " +
+                        "FROM (SELECT t.player_uuid, t.player_name, COUNT(*) AS `total_wars`, SUM(NOT t.exited AND g.territory_log_id IS NOT NULL) AS `survived_wars` FROM " +
+                        "(SELECT * FROM `war_player` WHERE `war_log_id` >= ? AND `war_log_id` < ?) AS t " +
                         "LEFT JOIN `guild_war_log` g ON g.war_log_id = t.war_log_id " +
                         "GROUP BY t.`player_uuid` " +
                         "HAVING `total_wars` > 0 AND player_uuid IS NOT NULL " +
