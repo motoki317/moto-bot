@@ -108,29 +108,26 @@ public class CommandListener extends ListenerAdapter {
         );
 
         // Check prefix
-        Set<String> prefixes = getPrefix(event);
+        String prefix = getPrefix(event);
         String rawMessage = event.getMessage().getContentRaw();
-        // Repeat for each prefix
-        for (String prefix : prefixes) {
-            if (!rawMessage.startsWith(prefix)) continue;
+        if (!rawMessage.startsWith(prefix)) return;
 
-            String commandMessage = rawMessage.substring(prefix.length());
-            String[] args = commandMessage.split(" ");
+        String commandMessage = rawMessage.substring(prefix.length());
+        String[] args = commandMessage.split(" ");
 
-            // Do not process command for ignored channel, unless it was ignore command itself
-            if (channelIsIgnored && !commandMessage.toLowerCase().startsWith("ignore")) {
-                continue;
-            }
+        // Do not process command for ignored channel, unless it was ignore command itself
+        if (channelIsIgnored && !commandMessage.toLowerCase().startsWith("ignore")) {
+            return;
+        }
 
-            // Process command from the most 'specific' (e.g. g pws) to most 'generic' (e.g. guild)
-            for (int argLength = Math.min(this.maxArgumentsLength, args.length); argLength > 0; argLength--) {
-                String cmdBase = String.join(" ", Arrays.copyOfRange(args, 0, argLength));
-                // Command name match
-                if (this.commandNameMap.containsKey(cmdBase.toLowerCase())) {
-                    int finalArgLength = argLength;
-                    this.threadPool.execute(() -> processCommand(event, commandMessage, args, finalArgLength, cmdBase));
-                    return;
-                }
+        // Process command from the most 'specific' (e.g. g pws) to most 'generic' (e.g. guild)
+        for (int argLength = Math.min(this.maxArgumentsLength, args.length); argLength > 0; argLength--) {
+            String cmdBase = String.join(" ", Arrays.copyOfRange(args, 0, argLength));
+            // Command name match
+            if (this.commandNameMap.containsKey(cmdBase.toLowerCase())) {
+                int finalArgLength = argLength;
+                this.threadPool.execute(() -> processCommand(event, commandMessage, args, finalArgLength, cmdBase));
+                return;
             }
         }
     }
@@ -171,28 +168,32 @@ public class CommandListener extends ListenerAdapter {
     }
 
     /**
-     * Retrieves prefix for the received event.
+     * Retrieves the prefix for the received event with the highest priority:<ol>
+     *     <li>user</li>
+     *     <li>channel</li>
+     *     <li>guild</li>
+     *     <li>default</li>
+     * </ol>
      * @param event Message received event
-     * @return Resolved set of prefixes
+     * @return Resolved prefix with the highest priority found.
      */
-    private Set<String> getPrefix(@NotNull MessageReceivedEvent event) {
-        Set<String> ret = new HashSet<>();
-        ret.add(this.defaultPrefix);
+    private String getPrefix(@NotNull MessageReceivedEvent event) {
+        String prefix = this.defaultPrefix;
         if (event.isFromGuild()) {
             Prefix guild = this.prefixRepository.findOne(() -> event.getGuild().getIdLong());
             if (guild != null) {
-                ret.add(guild.getPrefix());
+                prefix = guild.getPrefix();
             }
         }
         Prefix channel = this.prefixRepository.findOne(() -> event.getChannel().getIdLong());
         if (channel != null) {
-            ret.add(channel.getPrefix());
+            prefix = channel.getPrefix();
         }
         Prefix user = this.prefixRepository.findOne(() -> event.getAuthor().getIdLong());
         if (user != null) {
-            ret.add(user.getPrefix());
+            prefix = user.getPrefix();
         }
-        return ret;
+        return prefix;
     }
 
     /**
