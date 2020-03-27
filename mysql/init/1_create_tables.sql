@@ -7,13 +7,13 @@ CREATE TABLE IF NOT EXISTS `track_channel` (
     `guild_id` BIGINT NOT NULL,
     `channel_id` BIGINT NOT NULL,
     `guild_name` VARBINARY(30) NULL,
-    `player_name` VARCHAR(16) NULL,
+    `player_uuid` CHAR(36) NULL,
     # discord user id of the user who created track
     `user_id` BIGINT NOT NULL,
     `expires_at` DATETIME NOT NULL,
     `guild_name_v` VARBINARY(30) AS (IF(`guild_name` IS NULL, '', `guild_name`)) VIRTUAL,
-    `player_name_v` VARCHAR(16) AS (IF(`player_name` IS NULL, '', `player_name`)) VIRTUAL,
-    UNIQUE KEY (`type`, `guild_id`, `channel_id`, `guild_name_v`, `player_name_v`)
+    `player_uuid_v` CHAR(36) AS (IF(`player_uuid` IS NULL, '00000000-0000-0000-0000-000000000000', `player_uuid`)) VIRTUAL,
+    UNIQUE KEY (`type`, `guild_id`, `channel_id`, `guild_name_v`, `player_uuid_v`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS `world` (

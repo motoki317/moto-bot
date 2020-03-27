@@ -1,5 +1,6 @@
 package commands;
 
+import api.mojang.MojangApi;
 import app.Bot;
 import commands.base.GuildCommand;
 import db.Database;
@@ -16,6 +17,7 @@ import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import org.jetbrains.annotations.NotNull;
+import utils.UUID;
 
 import javax.annotation.Nullable;
 import java.text.DateFormat;
@@ -27,6 +29,7 @@ public class Track extends GuildCommand {
     private final TrackChannelRepository trackChannelRepository;
     private final DateFormatRepository dateFormatRepository;
     private final TimeZoneRepository timeZoneRepository;
+    private final MojangApi mojangApi;
 
     public Track(Bot bot) {
         this.logger = bot.getLogger();
@@ -34,6 +37,7 @@ public class Track extends GuildCommand {
         this.trackChannelRepository = db.getTrackingChannelRepository();
         this.dateFormatRepository = db.getDateFormatRepository();
         this.timeZoneRepository = db.getTimeZoneRepository();
+        this.mojangApi = new MojangApi(bot.getLogger());
     }
 
     @NotNull
@@ -170,8 +174,14 @@ public class Track extends GuildCommand {
                     return;
                 }
 
-                // TODO: specify with player UUID
-                entity.setPlayerName(playerName);
+                UUID uuid = this.mojangApi.mustGetUUIDAtTime(playerName, new Date().getTime());
+                if (uuid == null) {
+                    respond(event, String.format("Failed to retrieve player UUID for `%s`... " +
+                            "Check the spelling, and make sure the player with that name exists.", playerName));
+                    return;
+                }
+
+                entity.setPlayerUUID(uuid.toStringWithHyphens());
                 break;
         }
 

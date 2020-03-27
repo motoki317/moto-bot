@@ -11,5 +11,5 @@ public interface TrackChannelId {
     @Nullable
     String getGuildName();
     @Nullable
-    String getPlayerName();
+    String getPlayerUUID();
 }

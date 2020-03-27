@@ -15,7 +15,7 @@ public class TrackChannel implements TrackChannelId {
     @Nullable
     private String guildName;
     @Nullable
-    private String playerName;
+    private String playerUUID;
 
     private long userId;
     @NotNull
@@ -52,12 +52,12 @@ public class TrackChannel implements TrackChannelId {
     }
 
     @Nullable
-    public String getPlayerName() {
-        return playerName;
+    public String getPlayerUUID() {
+        return playerUUID;
     }
 
-    public void setPlayerName(@Nullable String playerName) {
-        this.playerName = playerName;
+    public void setPlayerUUID(@Nullable String playerUUID) {
+        this.playerUUID = playerUUID;
     }
 
     public long getUserId() {
@@ -82,7 +82,7 @@ public class TrackChannel implements TrackChannelId {
                 ret += " (Guild: " + this.guildName + ")";
                 break;
             case WAR_PLAYER:
-                ret += " (Player: " + this.playerName + ")";
+                ret += " (Player UUID: " + this.playerUUID + ")";
                 break;
         }
         return ret;
@@ -100,11 +100,11 @@ public class TrackChannel implements TrackChannelId {
                 && ((TrackChannel) obj).guildId == this.guildId
                 && ((TrackChannel) obj).channelId == this.channelId
                 && ((((TrackChannel) obj).guildName == null && this.guildName == null) || (this.guildName != null && this.guildName.equals(((TrackChannel) obj).guildName)))
-                && ((((TrackChannel) obj).playerName == null && this.playerName == null) || (this.playerName != null && this.playerName.equals(((TrackChannel) obj).playerName)));
+                && ((((TrackChannel) obj).playerUUID == null && this.playerUUID == null) || (this.playerUUID != null && this.playerUUID.equals(((TrackChannel) obj).playerUUID)));
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(this.type, this.guildId, this.channelId, this.guildName, this.playerName);
+        return Objects.hash(this.type, this.guildId, this.channelId, this.guildName, this.playerUUID);
     }
 }

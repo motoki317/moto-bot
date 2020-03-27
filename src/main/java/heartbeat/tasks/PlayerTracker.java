@@ -398,13 +398,13 @@ public class PlayerTracker implements TaskBase {
         }
 
         // specific player war tracking
-        List<TrackChannel> playerTrack = this.trackChannelRepository.findAllOfType(TrackType.WAR_PLAYER);
-        if (playerTrack == null) {
+        List<TrackChannel> playerTracks = this.trackChannelRepository.findAllOfType(TrackType.WAR_PLAYER);
+        if (playerTracks == null) {
             return null;
         }
-        Set<String> players = warLog.getPlayers().stream().map(WarPlayer::getPlayerName).collect(Collectors.toSet());
-        for (TrackChannel t : playerTrack) {
-            if (t.getPlayerName() != null && players.contains(t.getPlayerName())) {
+        Set<String> playerUUIDs = warLog.getPlayers().stream().map(WarPlayer::getPlayerUUID).collect(Collectors.toSet());
+        for (TrackChannel t : playerTracks) {
+            if (t.getPlayerUUID() != null && playerUUIDs.contains(t.getPlayerUUID())) {
                 channelsToSend.add(t);
             }
         }

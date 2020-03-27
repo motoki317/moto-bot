@@ -17,7 +17,6 @@ import java.util.List;
 
 class MariaTrackChannelRepository extends TrackChannelRepository {
     private static final DateFormat dbFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-    // NOTE: guild_name, player_name columns are NULL-able
 
     MariaTrackChannelRepository(ConnectionPool db, Logger logger) {
         super(db, logger);
@@ -29,19 +28,19 @@ class MariaTrackChannelRepository extends TrackChannelRepository {
                 res.getLong(6), res.getTimestamp(7)
         );
         instance.setGuildName(res.getString(4));
-        instance.setPlayerName(res.getString(5));
+        instance.setPlayerUUID(res.getString(5));
         return instance;
     }
 
     @Override
     public boolean create(@NotNull TrackChannel entity) {
         return this.execute(
-                "INSERT INTO `track_channel` (`type`, `guild_id`, `channel_id`, `guild_name`, `player_name`, `user_id`, `expires_at`) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                "INSERT INTO `track_channel` (`type`, `guild_id`, `channel_id`, `guild_name`, `player_uuid`, `user_id`, `expires_at`) VALUES (?, ?, ?, ?, ?, ?, ?)",
                 entity.getType(),
                 entity.getGuildId(),
                 entity.getChannelId(),
                 entity.getGuildName(),
-                entity.getPlayerName(),
+                entity.getPlayerUUID(),
                 entity.getUserId(),
                 dbFormat.format(entity.getExpiresAt())
         );
@@ -50,12 +49,12 @@ class MariaTrackChannelRepository extends TrackChannelRepository {
     @Override
     public boolean exists(@NotNull TrackChannelId id) {
         ResultSet res = this.executeQuery(
-                "SELECT COUNT(*) FROM `track_channel` WHERE `type` = ? AND `guild_id` = ? AND `channel_id` = ? AND `guild_name` <=> ? AND `player_name` <=> ?",
+                "SELECT COUNT(*) FROM `track_channel` WHERE `type` = ? AND `guild_id` = ? AND `channel_id` = ? AND `guild_name` <=> ? AND `player_uuid` <=> ?",
                 id.getType(),
                 id.getGuildId(),
                 id.getChannelId(),
                 id.getGuildName(),
-                id.getPlayerName()
+                id.getPlayerUUID()
         );
         if (res == null) return false;
 
@@ -85,12 +84,12 @@ class MariaTrackChannelRepository extends TrackChannelRepository {
     @Override
     public TrackChannel findOne(@NotNull TrackChannelId id) {
         ResultSet res = this.executeQuery(
-                "SELECT * FROM `track_channel` WHERE `type` = ? AND `guild_id` = ? AND `channel_id` = ? AND `guild_name` <=> ? AND `player_name` <=> ? LIMIT 1",
+                "SELECT * FROM `track_channel` WHERE `type` = ? AND `guild_id` = ? AND `channel_id` = ? AND `guild_name` <=> ? AND `player_uuid` <=> ? LIMIT 1",
                 id.getType(),
                 id.getGuildId(),
                 id.getChannelId(),
                 id.getGuildName(),
-                id.getPlayerName()
+                id.getPlayerUUID()
         );
         if (res == null) return null;
 
@@ -138,26 +137,26 @@ class MariaTrackChannelRepository extends TrackChannelRepository {
     @Override
     public boolean update(@NotNull TrackChannel entity) {
         return this.execute(
-                "UPDATE `track_channel` SET `user_id` = ?, `expires_at` = ? WHERE `type` = ? AND `guild_id` = ? AND `channel_id` = ? AND `guild_name` <=> ? AND `player_name` <=> ?",
+                "UPDATE `track_channel` SET `user_id` = ?, `expires_at` = ? WHERE `type` = ? AND `guild_id` = ? AND `channel_id` = ? AND `guild_name` <=> ? AND `player_uuid` <=> ?",
                 entity.getUserId(),
                 dbFormat.format(entity.getExpiresAt()),
                 entity.getType(),
                 entity.getGuildId(),
                 entity.getChannelId(),
                 entity.getGuildName(),
-                entity.getPlayerName()
+                entity.getPlayerUUID()
         );
     }
 
     @Override
     public boolean delete(@NotNull TrackChannelId id) {
         return this.execute(
-                "DELETE FROM `track_channel` WHERE `type` = ? AND `guild_id` = ? AND `channel_id` = ? AND `guild_name` <=> ? AND `player_name` <=> ?",
+                "DELETE FROM `track_channel` WHERE `type` = ? AND `guild_id` = ? AND `channel_id` = ? AND `guild_name` <=> ? AND `player_uuid` <=> ?",
                 id.getType(),
                 id.getGuildId(),
                 id.getChannelId(),
                 id.getGuildName(),
-                id.getPlayerName()
+                id.getPlayerUUID()
         );
     }
 
