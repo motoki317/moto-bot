@@ -67,46 +67,44 @@ public class Track extends GuildCommand {
                 .addField("Syntax",
                         String.join("\n",
                                 "`" + this.syntax() + "`",
-                                "First argument specifies the type of action, or type of tracking. " +
-                                        "Use without arguments to view all tracking currently enabled in this channel."
+                                "First argument specifies the type of action. " +
+                                        "Use without arguments to view all tracking enabled in this channel."
                                 ),
                         false)
                 .addField("Server Tracking Syntax",
                         String.join("\n",
                                 "`track server <start|close> [all]`",
                                 "`<start|close>` specifies when to send message.",
-                                "\"start\" sends message when a server starts",
-                                "\"close\" sends message when a server closes.",
-                                "`[all]` optional argument specifies on which server start/close the bot should send messages.",
+                                "\"start\" : When a server starts",
+                                "\"close\" : When a server closes.",
+                                "`[all]` : On which server start/close the bot should send messages.",
                                 "Without all argument, the bot sends messages only when main servers (WC and EU) start/close.",
-                                "With all argument, the bot sends messages when every server, but excluding WAR servers, starts/closes."
+                                "With all argument, the bot sends messages when every server, but excluding WAR servers, start/close."
                                 ),
                         false)
-                .addField("Guild Tracking Syntax",
+                .addField("Guild Creation/Deletion Tracking Syntax",
                         String.join("\n",
-                                "`track guild <create|delete>",
-                                "Guild tracking will send a message to channel when the bot detects new guild creation, " +
-                                        "or deletion.",
-                                "`<create|delete>` specifies when to send message."
+                                "`track guild <create|delete>`",
+                                "Guild tracking will send a message when a guild is created or deleted."
                         ),
                         false)
                 .addField("War Tracking Syntax",
                         String.join("\n",
                         "`track war <all|guild|player> [name]`",
                                 "`<all|guild|player>` specifies the war track type.",
-                                "\"all\" sends message when any guild starts a war.",
-                                "\"guild\" sends message when a specified guild starts a war.",
-                                "\"player\" sends message when a specified player starts a war.",
-                                "`[name]` optional argument must be specified if you choose guild or player track type."
+                                "\"all\" : When any guild starts a war.",
+                                "\"guild\" : When a specified guild starts a war.",
+                                "\"player\" : When a specified player starts a war.",
+                                "`[name]` : Must be specified if you choose guild or player track type."
                         ),
                         false)
                 .addField("Territory Tracking Syntax",
                         String.join("\n",
                                 "`track territory <all|guild> [name]`",
                                 "`<all|guild> specifies the territory track type.`",
-                                "\"all\" sends message when any guild acquires a territory.",
-                                "\"guild\" sends message when a specified guild acquires a territory.",
-                                "`[name]` optional argument must be specified if you choose guild track type."
+                                "\"all\" : When any guild acquires a territory.",
+                                "\"guild\" : When a specified guild acquires a territory.",
+                                "`[name]` : Must be specified if you choose guild track type."
                                 ),
                         false)
                 .addField("Update the Expiration Time",
@@ -172,6 +170,7 @@ public class Track extends GuildCommand {
                     return;
                 }
 
+                // TODO: specify with player UUID
                 entity.setPlayerName(playerName);
                 break;
         }
