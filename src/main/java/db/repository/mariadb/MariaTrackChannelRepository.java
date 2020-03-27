@@ -119,6 +119,46 @@ class MariaTrackChannelRepository extends TrackChannelRepository {
         }
     }
 
+    @Override
+    public @Nullable List<TrackChannel> findAllOfGuildNameAndType(String guildName, TrackType type) {
+        ResultSet res = this.executeQuery(
+                "SELECT * FROM `track_channel` WHERE `guild_name` = ? AND `type` = ?",
+                guildName,
+                type
+        );
+
+        if (res == null) {
+            return null;
+        }
+
+        try {
+            return bindAll(res);
+        } catch (SQLException e) {
+            this.logResponseException(e);
+            return null;
+        }
+    }
+
+    @Override
+    public @Nullable List<TrackChannel> findAllOfPlayerUUIDAndType(String playerUUID, TrackType type) {
+        ResultSet res = this.executeQuery(
+                "SELECT * FROM `track_channel` WHERE `player_uuid` = ? AND `type` = ?",
+                playerUUID,
+                type
+        );
+
+        if (res == null) {
+            return null;
+        }
+
+        try {
+            return bindAll(res);
+        } catch (SQLException e) {
+            this.logResponseException(e);
+            return null;
+        }
+    }
+
     @Nullable
     @Override
     public List<TrackChannel> findAll() {

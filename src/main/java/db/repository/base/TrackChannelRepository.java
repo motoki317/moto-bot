@@ -30,4 +30,20 @@ public abstract class TrackChannelRepository extends Repository<TrackChannel, Tr
      */
     @Nullable
     public abstract List<TrackChannel> findAllOf(long guildId, long channelId);
+
+    /**
+     * Returns all track channel entries with the given guild name.
+     * @param guildName Guild name.
+     * @return List of entries.
+     */
+    @Nullable
+    public abstract List<TrackChannel> findAllOfGuildNameAndType(String guildName, TrackType type);
+
+    /**
+     * Returns all track channel entries with the given player UUID.
+     * @param playerUUID Player UUID with hyphens.
+     * @return List of entries.
+     */
+    @Nullable
+    public abstract List<TrackChannel> findAllOfPlayerUUIDAndType(String playerUUID, TrackType type);
 }

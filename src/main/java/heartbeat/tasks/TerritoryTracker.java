@@ -20,7 +20,6 @@ import java.text.DateFormat;
 import java.text.ParseException;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 public class TerritoryTracker implements TaskBase {
     private final Logger logger;
@@ -127,21 +126,30 @@ public class TerritoryTracker implements TaskBase {
             return;
         }
 
-        List<TrackChannel> allTerritories = this.trackChannelRepository.findAllOfType(TrackType.TERRITORY_ALL);
-        List<TrackChannel> allSpecifics = this.trackChannelRepository.findAllOfType(TrackType.TERRITORY_SPECIFIC);
-        if (allTerritories == null || allSpecifics == null) {
+        if (logs.isEmpty()) {
+            return;
+        }
+
+        List<TrackChannel> allTerritoryTracks = this.trackChannelRepository.findAllOfType(TrackType.TERRITORY_ALL);
+        if (allTerritoryTracks == null) {
             this.logger.log(0, "Territory tracker: failed to retrieve tracking channels list. " +
                     "Not sending tracking this time. old id (exclusive): " + oldLastId + ", new id (inclusive): " + newLastId);
             return;
         }
 
         for (TerritoryLog log : logs) {
-            Set<TrackChannel> channelsToSend = new HashSet<>(allTerritories);
-            channelsToSend.addAll(
-                    allSpecifics.stream().filter(
-                            t -> t.getGuildName() != null && (t.getGuildName().equals(log.getOldGuildName()) || t.getGuildName().equals(log.getNewGuildName()))
-                    ).collect(Collectors.toList())
-            );
+            Set<TrackChannel> channelsToSend = new HashSet<>(allTerritoryTracks);
+
+            List<TrackChannel> specificTracksOld = this.trackChannelRepository
+                    .findAllOfGuildNameAndType(log.getOldGuildName(), TrackType.TERRITORY_SPECIFIC);
+            List<TrackChannel> specificTracksNew = this.trackChannelRepository
+                    .findAllOfGuildNameAndType(log.getNewGuildName(), TrackType.TERRITORY_SPECIFIC);
+            if (specificTracksOld == null || specificTracksNew == null) {
+                return;
+            }
+            channelsToSend.addAll(specificTracksOld);
+            channelsToSend.addAll(specificTracksNew);
+
             String messageBase = formatBase(log);
             channelsToSend.forEach(ch -> {
                 TextChannel channel = this.manager.getTextChannelById(ch.getChannelId());

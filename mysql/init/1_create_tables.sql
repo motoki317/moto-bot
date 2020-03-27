@@ -13,7 +13,9 @@ CREATE TABLE IF NOT EXISTS `track_channel` (
     `expires_at` DATETIME NOT NULL,
     `guild_name_v` VARBINARY(30) AS (IF(`guild_name` IS NULL, '', `guild_name`)) VIRTUAL,
     `player_uuid_v` CHAR(36) AS (IF(`player_uuid` IS NULL, '00000000-0000-0000-0000-000000000000', `player_uuid`)) VIRTUAL,
-    UNIQUE KEY (`type`, `guild_id`, `channel_id`, `guild_name_v`, `player_uuid_v`)
+    UNIQUE KEY (`type`, `guild_id`, `channel_id`, `guild_name_v`, `player_uuid_v`),
+    KEY `guild_name_type_idx` (`guild_name`, `type`),
+    KEY `player_uuid_type_idx` (`player_uuid`, `type`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS `world` (

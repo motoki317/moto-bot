@@ -387,27 +387,25 @@ public class PlayerTracker implements TaskBase {
         Set<TrackChannel> channelsToSend = new HashSet<>(allTrack);
 
         // specific guild war tracking
-        List<TrackChannel> specificTrack = this.trackChannelRepository.findAllOfType(TrackType.WAR_SPECIFIC);
-        if (specificTrack == null) {
-            return null;
-        }
-        for (TrackChannel t : specificTrack) {
-            if (t.getGuildName() != null && t.getGuildName().equals(warLog.getGuildName())) {
-                channelsToSend.add(t);
+        if (warLog.getGuildName() != null) {
+            List<TrackChannel> specificTracks = this.trackChannelRepository.findAllOfGuildNameAndType(warLog.getGuildName(), TrackType.WAR_SPECIFIC);
+            if (specificTracks == null) {
+                return null;
             }
+            channelsToSend.addAll(specificTracks);
         }
 
         // specific player war tracking
-        List<TrackChannel> playerTracks = this.trackChannelRepository.findAllOfType(TrackType.WAR_PLAYER);
-        if (playerTracks == null) {
-            return null;
-        }
-        Set<String> playerUUIDs = warLog.getPlayers().stream().map(WarPlayer::getPlayerUUID).collect(Collectors.toSet());
-        for (TrackChannel t : playerTracks) {
-            if (t.getPlayerUUID() != null && playerUUIDs.contains(t.getPlayerUUID())) {
-                channelsToSend.add(t);
+        Set<String> playerUUIDs = warLog.getPlayers().stream().map(WarPlayer::getPlayerUUID)
+                .filter(Objects::nonNull).collect(Collectors.toSet());
+        for (String playerUUID : playerUUIDs) {
+            List<TrackChannel> specificTracks = this.trackChannelRepository.findAllOfPlayerUUIDAndType(playerUUID, TrackType.WAR_PLAYER);
+            if (specificTracks == null) {
+                return null;
             }
+            channelsToSend.addAll(specificTracks);
         }
+
         return channelsToSend;
     }
 
