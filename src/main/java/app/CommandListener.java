@@ -178,22 +178,21 @@ public class CommandListener extends ListenerAdapter {
      * @return Resolved prefix with the highest priority found.
      */
     private String getPrefix(@NotNull MessageReceivedEvent event) {
-        String prefix = this.defaultPrefix;
-        if (event.isFromGuild()) {
-            Prefix guild = this.prefixRepository.findOne(() -> event.getGuild().getIdLong());
-            if (guild != null) {
-                prefix = guild.getPrefix();
-            }
+        Prefix user = this.prefixRepository.findOne(() -> event.getAuthor().getIdLong());
+        if (user != null) {
+            return user.getPrefix();
         }
         Prefix channel = this.prefixRepository.findOne(() -> event.getChannel().getIdLong());
         if (channel != null) {
-            prefix = channel.getPrefix();
+            return channel.getPrefix();
         }
-        Prefix user = this.prefixRepository.findOne(() -> event.getAuthor().getIdLong());
-        if (user != null) {
-            prefix = user.getPrefix();
+        if (event.isFromGuild()) {
+            Prefix guild = this.prefixRepository.findOne(() -> event.getGuild().getIdLong());
+            if (guild != null) {
+                return guild.getPrefix();
+            }
         }
-        return prefix;
+        return this.defaultPrefix;
     }
 
     /**
