@@ -55,7 +55,7 @@ public class GuildWarLeaderboardCmd extends GenericCommand {
 
     @Override
     public @NotNull String syntax() {
-        return "g lb [-t|--total] [-sc|--success] [-d|--days]";
+        return "g lb [-t|--total] [-sc|--success] [-d|--days] [--since|-S] [--until|-U]";
     }
 
     @Override
@@ -81,7 +81,10 @@ public class GuildWarLeaderboardCmd extends GenericCommand {
                         String.join("\n",
                                 "**-t --total** : Sorts in order of # of total wars.",
                                 "**-sc --success** : Sorts in order of # of success wars.",
-                                "**-d|--days <days>** : Shows leaderboard of last given days, up to last 30 days."
+                                "**-d|--days <days>** : Shows leaderboard of last given days, up to last 30 days.",
+                                "**--since|-S <date>**, **--until|-U <date>** : Directly specifies time range of the leaderboard.",
+                                "If --until is omitted, current time is specified.",
+                                "Acceptable formats: \"2020/01/01\", \"2020-01-01 15:00:00\", \"15 days ago\", \"8 hours ago\", \"30 minutes ago\""
                         ),
                         false
                 )
@@ -145,17 +148,17 @@ public class GuildWarLeaderboardCmd extends GenericCommand {
     public void process(@NotNull MessageReceivedEvent event, @NotNull String[] args) {
         Map<String, String> parsedArgs = new ArgumentParser(args).getArgumentMap();
 
+        CustomDateFormat customDateFormat = this.dateFormatRepository.getDateFormat(event);
+        CustomTimeZone customTimeZone = this.timeZoneRepository.getTimeZone(event);
+
         SortType sortType = parseSortType(parsedArgs);
         Range range;
         try {
-            range = parseRange(parsedArgs);
-        } catch (NumberFormatException e) {
+            range = parseRange(parsedArgs, customTimeZone.getTimeZoneInstance());
+        } catch (IllegalArgumentException e) {
             respond(event, e.getMessage());
             return;
         }
-
-        CustomDateFormat customDateFormat = this.dateFormatRepository.getDateFormat(event);
-        CustomTimeZone customTimeZone = this.timeZoneRepository.getTimeZone(event);
 
         Supplier<Integer> maxPageSupplier;
         if (range == null) {
