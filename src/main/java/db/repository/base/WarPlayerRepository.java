@@ -69,5 +69,5 @@ public abstract class WarPlayerRepository extends Repository<WarPlayer, WarPlaye
      * @param end End date (exclusive).
      * @return {@code true} if success.
      */
-    public abstract boolean updatePlayerNameOfBetween(String playerName, UUID uuid, Date start, Date end);
+    public abstract boolean updatePlayerUUIDBetween(String playerName, UUID uuid, Date start, Date end);
 }

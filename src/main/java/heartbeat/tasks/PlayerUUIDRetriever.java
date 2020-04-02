@@ -116,7 +116,7 @@ public class PlayerUUIDRetriever implements TaskBase {
             String username = history.get(i).getUsername();
 
             // update corresponding entries
-            if (!this.warPlayerRepository.updatePlayerNameOfBetween(username, uuid, new Date(start), new Date(end))) {
+            if (!this.warPlayerRepository.updatePlayerUUIDBetween(username, uuid, new Date(start), new Date(end))) {
                 this.logger.log(0, "Player UUID Retriever: Failed to update DB");
             }
         }

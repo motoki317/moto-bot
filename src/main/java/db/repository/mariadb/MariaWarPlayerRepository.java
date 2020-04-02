@@ -259,7 +259,7 @@ class MariaWarPlayerRepository extends WarPlayerRepository {
     }
 
     @Override
-    public boolean updatePlayerNameOfBetween(String playerName, UUID uuid, Date start, Date end) {
+    public boolean updatePlayerUUIDBetween(String playerName, UUID uuid, Date start, Date end) {
         int first = getFirstWarLogIdAfter(start);
         int last = getFirstWarLogIdAfter(end);
         if (first == -1 || last == -1) {

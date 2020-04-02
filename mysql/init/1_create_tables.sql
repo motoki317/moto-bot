@@ -99,9 +99,7 @@ CREATE TABLE IF NOT EXISTS `territory_log` (
     `acquired` DATETIME NOT NULL DEFAULT NOW(),
     # milliseconds
     `time_diff` BIGINT NOT NULL,
-    KEY `territory_name_idx` (`territory_name`, `acquired` DESC),
-    KEY `old_guild_idx` (`old_guild_name`, `acquired` DESC),
-    KEY `new_guild_idx` (`new_guild_name`, `acquired` DESC)
+    KEY `territory_name_idx` (`territory_name`, `acquired` DESC)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 # War log table is to be updated in the code
@@ -129,7 +127,6 @@ CREATE TABLE IF NOT EXISTS `war_player` (
     # or that guild acquired a territory (= `ended` flag in `war_log` table)
     `exited` BOOLEAN NOT NULL,
     PRIMARY KEY (`war_log_id`, `player_name`),
-    KEY `name_id_idx` (`player_name`, `war_log_id`),
     KEY `uuid_id_idx` (`player_uuid`, `war_log_id`),
     KEY `uuid_exited_id_idx` (`player_uuid`, `exited`, `war_log_id`),
     CONSTRAINT `fk_war_log_id` FOREIGN KEY (`war_log_id`) REFERENCES `war_log` (`id`)
@@ -158,7 +155,6 @@ CREATE TABLE IF NOT EXISTS `guild_war_log` (
     UNIQUE KEY `guild_idx` (`guild_name`, `id` DESC),
     UNIQUE KEY `guild_war_territory_log_idx` (`guild_name`, `war_log_id`, `territory_log_id`),
     UNIQUE KEY `war_territory_log_idx` (`war_log_id`, `territory_log_id`),
-    UNIQUE KEY `territory_log_idx` (`territory_log_id`, `guild_name`),
     CONSTRAINT `fk_guild_war_log_id` FOREIGN KEY (`war_log_id`) REFERENCES `war_log` (`id`)
         ON DELETE CASCADE
         ON UPDATE CASCADE,
