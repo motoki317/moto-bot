@@ -66,7 +66,7 @@ public class Help extends GenericCommand {
             }
 
             respond(event, this.getPage(0), message -> {
-                MultipageHandler handler = new MultipageHandler(message, this::getPage, this::maxPage);
+                MultipageHandler handler = new MultipageHandler(message, event.getAuthor().getIdLong(), this::getPage, this::maxPage);
                 bot.getReactionManager().addEventListener(handler);
             });
             return;

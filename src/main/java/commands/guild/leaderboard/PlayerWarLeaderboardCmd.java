@@ -282,7 +282,7 @@ public class PlayerWarLeaderboardCmd extends GenericCommand {
         }
 
         respond(event, pageSupplier.apply(0), message -> {
-            MultipageHandler handler = new MultipageHandler(message, pageSupplier, maxPage);
+            MultipageHandler handler = new MultipageHandler(message, event.getAuthor().getIdLong(), pageSupplier, maxPage);
             this.reactionManager.addEventListener(handler);
         });
     }

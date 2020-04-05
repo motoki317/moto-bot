@@ -133,7 +133,7 @@ public class ServerList extends GenericCommand {
         }
 
         respond(event, pages.apply(0), message -> {
-            MultipageHandler handler = new MultipageHandler(message, pages, () -> maxPage);
+            MultipageHandler handler = new MultipageHandler(message, event.getAuthor().getIdLong(), pages, () -> maxPage);
             this.reactionManager.addEventListener(handler);
         });
     }

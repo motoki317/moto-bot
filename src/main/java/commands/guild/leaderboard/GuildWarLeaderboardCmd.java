@@ -176,7 +176,7 @@ public class GuildWarLeaderboardCmd extends GenericCommand {
         }
 
         respond(event, pageSupplier.apply(0), message -> {
-            MultipageHandler handler = new MultipageHandler(message, pageSupplier, maxPageSupplier);
+            MultipageHandler handler = new MultipageHandler(message, event.getAuthor().getIdLong(), pageSupplier, maxPageSupplier);
             this.reactionManager.addEventListener(handler);
         });
     }

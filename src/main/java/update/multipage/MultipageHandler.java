@@ -25,22 +25,13 @@ public class MultipageHandler extends ReactionResponse {
 
     private int currentPage;
 
-    public MultipageHandler(Message message, Function<Integer, Message> pages, Supplier<Integer> maxPage) {
-        super(message.getIdLong(), (e) -> false);
-        this.message = message;
-        this.maxPage = maxPage;
-        this.pages = pages;
-        this.onReaction = this::handlePage;
-        this.setOnDestroy(() -> this.deletePagingReactions(message.getJDA().getSelfUser()));
-
-        addPagingReactions(message);
-    }
-
     public MultipageHandler(Message message, long userId, Function<Integer, Message> pages, Supplier<Integer> maxPage) {
-        super(message.getIdLong(), userId, (e) -> false);
+        // intentionally setting all multi page handlers to not be user-private (anyone can press the reaction buttons)
+        super(message.getIdLong(), message.getChannel().getIdLong(), userId, false, (e) -> false);
         this.message = message;
         this.maxPage = maxPage;
         this.pages = pages;
+        // set custom on reaction handler and on destroy handler
         this.onReaction = this::handlePage;
         this.setOnDestroy(() -> this.deletePagingReactions(message.getJDA().getSelfUser()));
 
@@ -78,6 +69,18 @@ public class MultipageHandler extends ReactionResponse {
                 this.pages.apply(this.currentPage)
         ).queue();
         return false;
+    }
+
+    /**
+     * Sets page to the given page (0-indexed) and updates the message.
+     * @param newPage 0-indexed new page number.
+     */
+    public void setPageAndUpdate(int newPage) {
+        int mod = this.maxPage.get() + 1;
+        this.currentPage = ((newPage % mod) + mod) % mod;
+        this.message.editMessage(
+                this.pages.apply(this.currentPage)
+        ).queue();
     }
 
     /**

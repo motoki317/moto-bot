@@ -136,7 +136,7 @@ public class GuildStats extends GenericCommand {
             Function<Integer, Message> pageSupplier = page -> getPage(page, guild, customDateFormat, customTimeZone);
             respond(event, pageSupplier.apply(0), msg -> {
                 MultipageHandler handler = new MultipageHandler(
-                        msg, pageSupplier, () -> maxPage(guild)
+                        msg, event.getAuthor().getIdLong(), pageSupplier, () -> maxPage(guild)
                 );
                 this.reactionManager.addEventListener(handler);
             });

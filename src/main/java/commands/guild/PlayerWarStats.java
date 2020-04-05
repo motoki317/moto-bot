@@ -141,6 +141,7 @@ public class PlayerWarStats extends GenericCommand {
         respond(event, format(uuid, playerName, player, guildPrefix, 0, customTimeZone, customDateFormat), msg -> {
             MultipageHandler handler = new MultipageHandler(
                     msg,
+                    event.getAuthor().getIdLong(),
                     page -> new MessageBuilder(format(uuid, playerName, player, guildPrefix, page, customTimeZone, customDateFormat)).build(),
                     () -> maxPage(uuid)
             );

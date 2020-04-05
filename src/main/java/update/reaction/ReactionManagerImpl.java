@@ -1,6 +1,7 @@
 package update.reaction;
 
 import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent;
+import update.multipage.MultipageHandler;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -79,5 +80,23 @@ public class ReactionManagerImpl implements ReactionManager {
                     .forEach(ReactionResponse::onDestroy);
             this.messageHandlers.values().removeIf(removeIf);
         }
+    }
+
+    @Override
+    public boolean setPage(long userId, long channelId, int newPage) {
+        MultipageHandler handler = this.messageHandlers.values().stream()
+                .filter(h -> h.getUserId() == userId)
+                .filter(h -> h.getChannelId() == channelId)
+                .filter(h -> h instanceof MultipageHandler)
+                .map(h -> (MultipageHandler) h)
+                .max((h1, h2) -> Long.compare(h2.getUpdatedAt(), h1.getUpdatedAt()))
+                .orElse(null);
+
+        if (handler == null) {
+            return false;
+        }
+
+        handler.setPageAndUpdate(newPage);
+        return true;
     }
 }

@@ -86,7 +86,7 @@ public class GainedXpRank extends GenericCommand {
 
         respond(event, pageSupplier.apply(0), msg -> {
             MultipageHandler handler = new MultipageHandler(
-                    msg, pageSupplier, () -> maxPage(xpLeaderboard)
+                    msg, event.getAuthor().getIdLong(), pageSupplier, () -> maxPage(xpLeaderboard)
             );
             this.reactionManager.addEventListener(handler);
         });

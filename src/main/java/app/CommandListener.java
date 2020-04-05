@@ -55,11 +55,14 @@ public class CommandListener extends ListenerAdapter {
         addCommand(new Ping(bot));
         addCommand(new Info(bot));
         addCommand(new ServerList(bot));
+
         addCommand(new Track(bot));
         addCommand(new TimeZoneCmd(bot.getDatabase().getTimeZoneRepository(), bot.getDatabase().getDateFormatRepository()));
         addCommand(new PrefixCmd(bot.getProperties().prefix, bot.getDatabase().getPrefixRepository()));
         addCommand(new DateFormatCmd(bot.getDatabase().getDateFormatRepository(), bot.getDatabase().getTimeZoneRepository()));
         addCommand(new Ignore(bot.getDatabase().getIgnoreChannelRepository()));
+        addCommand(new SetPage(bot));
+
         addCommand(new Find(bot));
         addCommand(new PlayerStats(bot));
 

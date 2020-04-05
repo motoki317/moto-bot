@@ -9,9 +9,9 @@ import java.util.function.Predicate;
 // Represents bot's response to user's reaction to a message.
 public class ReactionResponse implements UserResponseListener<MessageReactionAddEvent> {
     private final long messageId;
-
-    private boolean userPrivate;
-    private long userId;
+    private final long channelId;
+    private final long userId;
+    private final boolean userPrivate;
 
     protected Predicate<MessageReactionAddEvent> onReaction;
     // Called when this instance is discarded by manager
@@ -20,21 +20,16 @@ public class ReactionResponse implements UserResponseListener<MessageReactionAdd
     private long updatedAt;
     private long maxLive;
 
-    protected ReactionResponse(long messageId,
+    protected ReactionResponse(long messageId, long channelId, long userId, boolean userPrivate,
                      Predicate<MessageReactionAddEvent> onReaction) {
         this.messageId = messageId;
+        this.channelId = channelId;
+        this.userId = userId;
+        this.userPrivate = userPrivate;
         this.onReaction = onReaction;
         this.onDestroy = () -> {};
         this.updatedAt = System.currentTimeMillis();
         this.maxLive = TimeUnit.MINUTES.toMillis(10);
-    }
-
-    protected ReactionResponse(long messageId,
-                     long userId,
-                     Predicate<MessageReactionAddEvent> onReaction) {
-        this(messageId, onReaction);
-        this.userPrivate = true;
-        this.userId = userId;
     }
 
     // boolean returned by predicate indicates if manager should discard this response object.
@@ -45,6 +40,10 @@ public class ReactionResponse implements UserResponseListener<MessageReactionAdd
 
     long getMessageId() {
         return messageId;
+    }
+
+    long getChannelId() {
+        return channelId;
     }
 
     boolean isUserPrivate() {

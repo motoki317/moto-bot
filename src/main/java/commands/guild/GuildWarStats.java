@@ -119,6 +119,7 @@ public class GuildWarStats extends GenericCommand {
         respond(event, format(guildName, guildPrefix, 0, timeZone, dateFormat), success -> {
             MultipageHandler handler = new MultipageHandler(
                     success,
+                    event.getAuthor().getIdLong(),
                     page -> new MessageBuilder(format(guildName, guildPrefix, page, timeZone, dateFormat)).build(),
                     () -> maxPage(guildName)
             );

@@ -75,7 +75,7 @@ public class GuildRank extends GenericCommand {
 
         respond(event, pageSupplier.apply(0), msg -> {
             MultipageHandler handler = new MultipageHandler(
-                    msg, pageSupplier, this::maxPage
+                    msg, event.getAuthor().getIdLong(), pageSupplier, this::maxPage
             );
             this.reactionManager.addEventListener(handler);
         });
