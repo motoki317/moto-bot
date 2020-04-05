@@ -1,0 +1,25 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - master
+
+env:
+  IMAGE_NAME: moto-bot
+  IMAGE_TAG: master
+
+jobs:
+  image:
+    name: Build Docker Image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set IMAGE_TAG env
+        run: echo ::set-env name=IMAGE_TAG::$(echo ${GITHUB_REF:11})
+      - uses: actions/checkout@v2
+      - name: Login to GitHub Registry
+        run: docker login docker.pkg.github.com -u motoki317 -p ${{ secrets.GITHUB_TOKEN }}
+      - name: Build Image
+        run: docker build -t docker.pkg.github.com/motoki317/moto-bot/${IMAGE_NAME}:${IMAGE_TAG} .
+      - name: Push image to GitHub Registry
+        run: docker push docker.pkg.github.com/motoki317/moto-bot/${IMAGE_NAME}:${IMAGE_TAG}
