@@ -21,7 +21,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.concurrent.TimeUnit;
 
 public class HttpUtils {
-    private static final int TIMEOUT_DEFAULT = (int) TimeUnit.SECONDS.toMillis(5);
+    private static final int TIMEOUT_DEFAULT = (int) TimeUnit.SECONDS.toMillis(10);
 
     private static final CloseableHttpClient client;
 
