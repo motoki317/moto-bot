@@ -122,7 +122,9 @@ public class ServerList extends GenericCommand {
         DateFormat dateFormat = this.dateFormatRepository.getDateFormat(event).getDateFormat().getMinuteFormat();
         dateFormat.setTimeZone(timeZone.getTimeZoneInstance());
 
-        Function<Integer, Message> pages = pageSupplier(worlds, worldsPerPage, timeZone, dateFormat);
+        int finalWorldsPerPage = worldsPerPage;
+        Function<Integer, Message> pages = page ->
+                new MessageBuilder(format(worlds, page, finalWorldsPerPage, timeZone, dateFormat)).build();
         int maxPage = maxPage(worlds.size(), worldsPerPage);
 
         if (maxPage == 0) {
@@ -136,20 +138,12 @@ public class ServerList extends GenericCommand {
         });
     }
 
-    private static Function<Integer, Message> pageSupplier(@NotNull List<World> worlds, int worldsPerPage, CustomTimeZone timeZone, DateFormat dateFormat) {
-        return (page) -> {
-            int min = page * worldsPerPage;
-            int max = Math.min((page + 1) * worldsPerPage, worlds.size());
-            return new MessageBuilder(format(worlds, min, max, timeZone, dateFormat)).build();
-        };
-    }
-
     private static int maxPage(int worldsSize, int worldsPerPage) {
         return (worldsSize - 1) / worldsPerPage;
     }
 
     @NotNull
-    private static String format(@NotNull List<World> worlds, int min, int max, CustomTimeZone timeZone, DateFormat dateFormat) {
+    private static String format(@NotNull List<World> worlds, int page, int worldsPerPage, CustomTimeZone timeZone, DateFormat dateFormat) {
         List<String> ret = new ArrayList<>();
         ret.add("```ml");
         ret.add("---- Server List ----");
@@ -173,6 +167,8 @@ public class ServerList extends GenericCommand {
 
         long currentTimeMillis = System.currentTimeMillis();
 
+        int min = page * worldsPerPage;
+        int max = Math.min((page + 1) * worldsPerPage, worlds.size());
         List<WorldDisplay> displays = new ArrayList<>();
         for (int i = min; i < max; i++) {
             World w = worlds.get(i);
@@ -212,6 +208,11 @@ public class ServerList extends GenericCommand {
 
             ret.add(toAdd);
         }
+
+        ret.add("");
+
+        int maxPage = maxPage(worlds.size(), worldsPerPage);
+        ret.add(String.format("< page %s / %s >", page + 1, maxPage + 1));
 
         ret.add("");
 
