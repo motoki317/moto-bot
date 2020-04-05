@@ -16,5 +16,4 @@ public interface UserResponseListener<T> {
     void setOnDestroy(Runnable onDestroy);
     long getUpdatedAt();
     long getMaxLive();
-    void setMaxLive(long maxLive);
 }

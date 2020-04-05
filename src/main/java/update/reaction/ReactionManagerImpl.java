@@ -10,6 +10,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 
 public class ReactionManagerImpl implements ReactionManager {
+    // message id to reaction response handler
     private final Map<Long, ReactionResponse> messageHandlers;
 
     private final Object lock;
@@ -30,18 +31,6 @@ public class ReactionManagerImpl implements ReactionManager {
                 delay,
                 delay
         );
-    }
-
-    @Override
-    public void addEventListener(long messageId, Predicate<MessageReactionAddEvent> onReaction) {
-        ReactionResponse botResponse = new ReactionResponse(messageId, onReaction);
-        addEventListener(botResponse);
-    }
-
-    @Override
-    public void addEventListener(long messageId, long userId, Predicate<MessageReactionAddEvent> onReaction) {
-        ReactionResponse botResponse = new ReactionResponse(messageId, userId, onReaction);
-        addEventListener(botResponse);
     }
 
     @Override

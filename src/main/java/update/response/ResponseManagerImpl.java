@@ -30,14 +30,6 @@ public class ResponseManagerImpl implements ResponseManager {
     }
 
     @Override
-    public void addEventListener(long channelId,
-                                    long userId,
-                                    Predicate<MessageReceivedEvent> onResponse) {
-        Response botResponse = new Response(channelId, userId, onResponse);
-        addEventListener(botResponse);
-    }
-
-    @Override
     public void addEventListener(Response botResponse) {
         synchronized (this.lock) {
             long userId = botResponse.getUserId();

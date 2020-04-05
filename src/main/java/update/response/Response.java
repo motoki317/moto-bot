@@ -50,10 +50,6 @@ public class Response implements UserResponseListener<MessageReceivedEvent> {
         return maxLive;
     }
 
-    public void setMaxLive(long maxLive) {
-        this.maxLive = maxLive;
-    }
-
     public void onDestroy() {
         this.onDestroy.run();
     }
