@@ -20,7 +20,7 @@ public abstract class TerritoryRepository extends Repository<Territory, Territor
     /**
      * Counts number of guild territories a guild possesses.
      * @param guildName Guild name.
-     * @return Territory count. -1 if something
+     * @return Territory count. -1 if something went wrong.
      */
     public abstract int countGuildTerritories(@NotNull String guildName);
 
@@ -52,4 +52,12 @@ public abstract class TerritoryRepository extends Repository<Territory, Territor
      */
     @CheckReturnValue
     public abstract boolean updateAll(@NotNull List<Territory> territories);
+
+    /**
+     * Retrieves all territory names that begins with the given prefix. Case insensitive.
+     * @param prefix Prefix.
+     * @return List of territory names.
+     */
+    @Nullable
+    public abstract List<String> territoryNamesBeginsWith(String prefix);
 }

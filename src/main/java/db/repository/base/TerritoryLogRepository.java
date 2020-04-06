@@ -35,4 +35,21 @@ public abstract class TerritoryLogRepository extends Repository<TerritoryLog, Te
      */
     @Nullable
     public abstract List<TerritoryLog> findAllIn(List<Integer> ids);
+
+    /**
+     * Counts territory log with the given territory name.
+     * @param territoryName Exact territory name.
+     * @return Territory log count. -1 if something went wrong.
+     */
+    public abstract int territoryLogCount(String territoryName);
+
+    /**
+     * Retrieves territory log with the given territory name ordered by descending time.
+     * @param territoryName Exact territory name.
+     * @param limit Limit.
+     * @param offset Offset.
+     * @return List of territory logs.
+     */
+    @Nullable
+    public abstract List<TerritoryLog> territoryLogs(String territoryName, int limit, int offset);
 }

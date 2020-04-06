@@ -353,6 +353,32 @@ class MariaTerritoryRepository extends TerritoryRepository {
         }
     }
 
+    @Nullable
+    @Override
+    public List<String> territoryNamesBeginsWith(String prefix) {
+        prefix += "%";
+
+        ResultSet res = this.executeQuery(
+                "SELECT `name` FROM `territory` WHERE `name` LIKE ?",
+                prefix
+        );
+
+        if (res == null) {
+            return null;
+        }
+
+        try {
+            List<String> ret = new ArrayList<>();
+            while (res.next()) {
+                ret.add(res.getString(1));
+            }
+            return ret;
+        } catch (SQLException e) {
+            this.logResponseException(e);
+        }
+        return null;
+    }
+
     @Override
     public boolean delete(@NotNull TerritoryId territoryId) {
         return this.execute(

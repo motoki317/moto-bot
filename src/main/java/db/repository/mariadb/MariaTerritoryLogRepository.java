@@ -154,6 +154,47 @@ public class MariaTerritoryLogRepository extends TerritoryLogRepository {
         return null;
     }
 
+    @Override
+    public int territoryLogCount(String territoryName) {
+        ResultSet res = this.executeQuery(
+                "SELECT COUNT(*) FROM `territory_log` WHERE `territory_name` = ?",
+                territoryName
+        );
+
+        if (res == null) {
+            return -1;
+        }
+
+        try {
+            if (res.next())
+                return res.getInt(1);
+        } catch (SQLException e) {
+            this.logResponseException(e);
+        }
+        return -1;
+    }
+
+    @Nullable
+    @Override
+    public List<TerritoryLog> territoryLogs(String territoryName, int limit, int offset) {
+        ResultSet res = this.executeQuery(
+                "SELECT * FROM `territory_log` WHERE `territory_name` = ?" +
+                        " ORDER BY `id` DESC LIMIT " + limit + " OFFSET " + offset,
+                territoryName
+        );
+
+        if (res == null) {
+            return null;
+        }
+
+        try {
+            return bindAll(res);
+        } catch (SQLException e) {
+            this.logResponseException(e);
+            return null;
+        }
+    }
+
     @Nullable
     @Override
     public List<TerritoryLog> findAll() {
