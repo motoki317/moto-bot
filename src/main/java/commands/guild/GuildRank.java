@@ -39,7 +39,7 @@ public class GuildRank extends GenericCommand {
     @NotNull
     @Override
     protected String[][] names() {
-        return new String[][]{{"g", "guild"}, {"rank"}};
+        return new String[][]{{"g", "guild"}, {"rank", "r"}};
     }
 
     @Override

@@ -60,7 +60,7 @@ class TestBotCommand {
             @NotNull
             @Override
             protected String[][] names() {
-                return new String[][]{{"guild", "g"}, {"levelrank", "lrank"}};
+                return new String[][]{{"guild", "g"}, {"levelRank", "lRank", "lr"}};
             }
 
             @Override

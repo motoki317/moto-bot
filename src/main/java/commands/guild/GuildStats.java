@@ -37,7 +37,7 @@ public class GuildStats extends GenericCommand {
     @NotNull
     @Override
     protected String[][] names() {
-        return new String[][]{{"g", "guild"}, {"s", "stats"}};
+        return new String[][]{{"g", "guild"}, {"s", "stats", "info", "i"}};
     }
 
     @Override

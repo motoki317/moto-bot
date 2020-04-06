@@ -62,7 +62,8 @@ public class PlayerWarLeaderboardCmd extends GenericCommand {
     @NotNull
     @Override
     protected String[][] names() {
-        return new String[][]{{"g", "guild"}, {"playerWarLeaderboard", "plb"}};
+        return new String[][]{{"g", "guild"}, {"playerWarLeaderboard", "PWLb", "plb", "playerLeaderboard",
+        }};
     }
 
     @Override

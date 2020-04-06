@@ -60,7 +60,7 @@ public class PlayerWarStats extends GenericCommand {
     @NotNull
     @Override
     protected String[][] names() {
-        return new String[][]{{"guild", "g"}, {"playerWarStats", "pWarStats", "pStats", "pws"}};
+        return new String[][]{{"guild", "g"}, {"playerWarStats", "pWarStats", "pwStats", "pStats", "pws"}};
     }
 
     @Override

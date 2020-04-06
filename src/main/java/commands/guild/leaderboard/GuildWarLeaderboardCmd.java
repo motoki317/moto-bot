@@ -50,7 +50,7 @@ public class GuildWarLeaderboardCmd extends GenericCommand {
     @NotNull
     @Override
     protected String[][] names() {
-        return new String[][]{{"g", "guild"}, {"lb", "leaderboard", "glb", "guildLeaderboard"}};
+        return new String[][]{{"g", "guild"}, {"lb", "leaderboard", "wlb", "warLeaderboard", "warLB"}};
     }
 
     @Override
