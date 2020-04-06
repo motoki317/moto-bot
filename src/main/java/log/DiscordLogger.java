@@ -8,7 +8,10 @@ import utils.FormatUtils;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.Map;
+import java.util.TimeZone;
 import java.util.stream.Collectors;
 
 /**
@@ -21,8 +24,6 @@ public class DiscordLogger implements Logger {
 
     private final DateFormat logFormat;
 
-    private final DiscordSpamChecker spamChecker;
-
     private final boolean debug;
 
     public DiscordLogger(Bot bot, TimeZone logTimeZone) {
@@ -33,7 +34,6 @@ public class DiscordLogger implements Logger {
 
         this.logFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss.SSS");
         this.logFormat.setTimeZone(logTimeZone);
-        this.spamChecker = new DiscordSpamChecker();
         this.debug = "1".equals(System.getenv("DEBUG"));
     }
 
@@ -78,11 +78,9 @@ public class DiscordLogger implements Logger {
      * Logs message received event to bot-log-4.
      * @param event Guild message received event.
      */
-    public boolean logEvent(MessageReceivedEvent event) {
-        boolean isSpam = this.spamChecker.isSpam(event);
-        String logMsg = this.createCommandLog(event, isSpam);
+    public void logEvent(MessageReceivedEvent event, boolean isSpam) {
+        String logMsg = createCommandLog(event, isSpam);
         this.log(4, logMsg);
-        return isSpam;
     }
 
     /**
@@ -93,7 +91,7 @@ public class DiscordLogger implements Logger {
      * @param event Guild message received event.
      * @return Human readable user command usage log.
      */
-    private String createCommandLog(MessageReceivedEvent event, boolean isSpam) {
+    static String createCommandLog(MessageReceivedEvent event, boolean isSpam) {
         if (event.isFromGuild()) {
             return String.format(
                     "(%s)[%s]<%s>: `%s`%s",

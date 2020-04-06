@@ -7,6 +7,8 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.TimeZone;
 
+import static log.DiscordLogger.createCommandLog;
+
 /**
  * ConsoleLogger only logs to standard output.
  */
@@ -37,8 +39,9 @@ public class ConsoleLogger implements Logger {
     }
 
     @Override
-    public boolean logEvent(MessageReceivedEvent event) {
-        return false;
+    public void logEvent(MessageReceivedEvent event, boolean isSpam) {
+        String logMsg = createCommandLog(event, isSpam);
+        this.log(4, logMsg);
     }
 
     @Override

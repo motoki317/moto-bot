@@ -7,7 +7,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-class DiscordSpamChecker {
+public class DiscordSpamChecker {
     // 1 second
     private static final long SPAM_PREVENTION = TimeUnit.SECONDS.toMillis(1);
 
@@ -16,11 +16,11 @@ class DiscordSpamChecker {
     // User ID to last message time
     private final Map<Long, Long> messages;
 
-    DiscordSpamChecker() {
+    public DiscordSpamChecker() {
         this.messages = new HashMap<>();
     }
 
-    boolean isSpam(MessageReceivedEvent event) {
+    public boolean isSpam(MessageReceivedEvent event) {
         long userId = event.getAuthor().getIdLong();
         long time = BotUtils.getIdCreationTime(event.getMessageIdLong());
         long lastMessageTime = this.messages.getOrDefault(userId, -1L);

@@ -7,10 +7,10 @@ public interface Logger {
     void debug(CharSequence message);
 
     /**
-     * Logs message received event and returns true if the message event is considered spam.
-     * @param event Discord message received event.
-     * @return True if the message is considered a spam.
+     * Logs message received event.
+     * @param event  Discord message received event.
+     * @param isSpam If the message was considered spam.
      */
-    boolean logEvent(MessageReceivedEvent event);
+    void logEvent(MessageReceivedEvent event, boolean isSpam);
     void logException(CharSequence message, Throwable e);
 }

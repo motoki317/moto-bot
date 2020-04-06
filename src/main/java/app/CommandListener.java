@@ -10,6 +10,7 @@ import db.model.prefix.Prefix;
 import db.repository.base.CommandLogRepository;
 import db.repository.base.IgnoreChannelRepository;
 import db.repository.base.PrefixRepository;
+import log.DiscordSpamChecker;
 import log.Logger;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
@@ -36,6 +37,8 @@ public class CommandListener extends ListenerAdapter {
     private final PrefixRepository prefixRepository;
     private final IgnoreChannelRepository ignoreChannelRepository;
 
+    private final DiscordSpamChecker spamChecker;
+
     CommandListener(Bot bot) {
         this.commands = new ArrayList<>();
         this.commandNameMap = new HashMap<>();
@@ -50,6 +53,8 @@ public class CommandListener extends ListenerAdapter {
         this.commandLogRepository = bot.getDatabase().getCommandLogRepository();
         this.prefixRepository = bot.getDatabase().getPrefixRepository();
         this.ignoreChannelRepository = bot.getDatabase().getIgnoreChannelRepository();
+
+        this.spamChecker = new DiscordSpamChecker();
 
         addCommand(new Help(bot, this.commands, this.commandNameMap, () -> this.maxArgumentsLength));
         addCommand(new Ping(bot));
@@ -147,8 +152,9 @@ public class CommandListener extends ListenerAdapter {
             return;
         }
 
-        // Log and check spam
-        boolean isSpam = this.logger.logEvent(event);
+        // Check spam and log event
+        boolean isSpam = this.spamChecker.isSpam(event);
+        this.logger.logEvent(event, isSpam);
         if (isSpam) {
             String message = "You are requesting commands too quickly! Please wait at least 1 second between each commands.";
             event.getChannel().sendMessage(message).queue();
