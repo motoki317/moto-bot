@@ -168,6 +168,8 @@ public class CommandListener extends ListenerAdapter {
             return;
         }
 
+        // Process command
+        event.getChannel().sendTyping().queue();
         try {
             command.process(event, args);
         } catch (Throwable e) {
