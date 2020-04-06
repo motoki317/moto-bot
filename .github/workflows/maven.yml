@@ -4,6 +4,7 @@ on: [push, pull_request]
 
 jobs:
   build:
+    name: Compile from source
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
@@ -23,6 +24,11 @@ jobs:
         java-version: 1.8
     - name: Makes sure the source compiles
       run: mvn -B package --file pom.xml -D skipTests
+  test:
+    name: Run tests
+    runs-on: ubuntu-latest
+    needs: [build]
+    steps:
     - name: Run tests
       run: mvn -B test --file pom.xml
       env:
