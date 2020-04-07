@@ -1,5 +1,9 @@
 # moto-bot
 
+[![](https://github.com/motoki317/moto-bot/workflows/Build%20and%20Test/badge.svg)](https://github.com/motoki317/moto-bot/actions?query=workflow%3A%22Build+and+Test%22)
+[![](https://github.com/motoki317/moto-bot/workflows/Release%20master/badge.svg)](https://github.com/motoki317/moto-bot/actions?query=workflow%3A%22Release+master%22)
+[![](https://github.com/motoki317/moto-bot/workflows/Release%20version/badge.svg)](https://github.com/motoki317/moto-bot/actions?query=workflow%3A%22Release+version%22)
+
 A discord bot for Wynncraft utility commands, written in Java using JDA.
 
 See usage (old v1 info):
