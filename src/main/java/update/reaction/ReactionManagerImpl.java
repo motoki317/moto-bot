@@ -3,10 +3,7 @@ package update.reaction;
 import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent;
 import update.multipage.MultipageHandler;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 
@@ -89,7 +86,7 @@ public class ReactionManagerImpl implements ReactionManager {
                 .filter(h -> h.getChannelId() == channelId)
                 .filter(h -> h instanceof MultipageHandler)
                 .map(h -> (MultipageHandler) h)
-                .max((h1, h2) -> Long.compare(h2.getUpdatedAt(), h1.getUpdatedAt()))
+                .max(Comparator.comparingLong(ReactionResponse::getMessageId))
                 .orElse(null);
 
         if (handler == null) {
