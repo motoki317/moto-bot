@@ -83,10 +83,12 @@ class TestBotCommand {
         };
 
         Set<String> levelRankNames = new HashSet<>();
-        levelRankNames.add("guild levelrank");
-        levelRankNames.add("guild lrank");
-        levelRankNames.add("g levelrank");
-        levelRankNames.add("g lrank");
+        levelRankNames.add("guild levelRank");
+        levelRankNames.add("guild lRank");
+        levelRankNames.add("guild lr");
+        levelRankNames.add("g levelRank");
+        levelRankNames.add("g lRank");
+        levelRankNames.add("g lr");
 
         assert levelRank.getNames().equals(levelRankNames);
     }
