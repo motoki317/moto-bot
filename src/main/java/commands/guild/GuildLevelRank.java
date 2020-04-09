@@ -22,6 +22,7 @@ import utils.FormatUtils;
 import java.math.BigDecimal;
 import java.text.DateFormat;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class GuildLevelRank extends GenericCommand {
@@ -92,15 +93,40 @@ public class GuildLevelRank extends GenericCommand {
         CustomDateFormat customDateFormat = this.dateFormatRepository.getDateFormat(event);
         CustomTimeZone customTimeZone = this.timeZoneRepository.getTimeZone(event);
 
-        if (maxPage(lb) == 0) {
-            respond(event, format(0, lb, xpGainedMap, customDateFormat, customTimeZone));
+        Date from = this.guildLeaderboardRepository.getOldestDate();
+        Date to = this.guildLeaderboardRepository.getNewestDate();
+        if (from == null || to == null) {
+            respondError(event, "Something went wrong while retrieving data...");
+            return;
         }
 
-        respond(event, format(0, lb, xpGainedMap, customDateFormat, customTimeZone), message -> {
+        String lbDuration = FormatUtils.formatReadableTime(
+                (to.getTime() - from.getTime()) / 1000L, false, "s"
+        );
+        String totalXPGained = FormatUtils.truncateNumber(BigDecimal.valueOf(
+                xpGainedMap.values().stream().mapToLong(GuildXpLeaderboard::getXpDiff).sum()
+        ));
+        int totalTerritories = lb.stream().mapToInt(GuildLeaderboard::getTerritories).sum();
+
+        LBDisplay lbDisplay = new LBDisplay(
+                maxPage(lb), lbDuration, totalXPGained,
+                String.valueOf(totalTerritories), to
+        );
+
+        Function<Integer, Message> pages = page -> {
+            List<Display> displays = getDisplays(page, lb, xpGainedMap);
+            return new MessageBuilder(formatDisplays(page, displays, customDateFormat, customTimeZone, lbDisplay)).build();
+        };
+
+        if (maxPage(lb) == 0) {
+            respond(event, pages.apply(0));
+        }
+
+        respond(event, pages.apply(0), message -> {
             MultipageHandler handler = new MultipageHandler(
                     message,
                     event.getAuthor().getIdLong(),
-                    page -> new MessageBuilder(format(page, lb, xpGainedMap, customDateFormat, customTimeZone)).build(),
+                    pages,
                     () -> maxPage(lb)
             );
             this.reactionManager.addEventListener(handler);
@@ -148,8 +174,7 @@ public class GuildLevelRank extends GenericCommand {
         }
     }
 
-    private static String format(int page, List<GuildLeaderboard> lb, Map<String, GuildXpLeaderboard> xpGainedMap,
-                          CustomDateFormat customDateFormat, CustomTimeZone customTimeZone) {
+    private static List<Display> getDisplays(int page, List<GuildLeaderboard> lb, Map<String, GuildXpLeaderboard> xpGainedMap) {
         int start = page * GUILDS_PER_PAGE;
         int end = Math.min((page + 1) * GUILDS_PER_PAGE, lb.size());
 
@@ -169,35 +194,17 @@ public class GuildLevelRank extends GenericCommand {
             ));
         }
 
-        GuildXpLeaderboard xp = xpGainedMap.values().stream().findAny().orElse(null);
-        String lbDuration = FormatUtils.formatReadableTime(
-                xp != null ? (xp.getTo().getTime() - xp.getFrom().getTime()) / 1000L : 0L,
-                false, "s"
-        );
-        String totalXPGained = FormatUtils.truncateNumber(BigDecimal.valueOf(
-                xpGainedMap.values().stream().mapToLong(GuildXpLeaderboard::getXpDiff).sum()
-        ));
-        int totalTerritories = lb.stream().mapToInt(GuildLeaderboard::getTerritories).sum();
-
-        LBDisplay lbDisplay = new LBDisplay(
-                page, maxPage(lb), lbDuration, totalXPGained,
-                String.valueOf(totalTerritories),
-                xp != null ? xp.getTo() : new Date()
-        );
-
-        return formatDisplays(displays, customDateFormat, customTimeZone, lbDisplay);
+        return displays;
     }
 
     private static class LBDisplay {
-        private int page;
         private int maxPage;
         private String lbDuration;
         private String totalXPGained;
         private String totalTerritories;
         private Date lastUpdate;
 
-        private LBDisplay(int page, int maxPage, String lbDuration, String totalXPGained, String totalTerritories, Date lastUpdate) {
-            this.page = page;
+        private LBDisplay(int maxPage, String lbDuration, String totalXPGained, String totalTerritories, Date lastUpdate) {
             this.maxPage = maxPage;
             this.lbDuration = lbDuration;
             this.totalXPGained = totalXPGained;
@@ -206,7 +213,7 @@ public class GuildLevelRank extends GenericCommand {
         }
     }
 
-    private static String formatDisplays(List<Display> displays,
+    private static String formatDisplays(int page, List<Display> displays,
                                          CustomDateFormat customDateFormat, CustomTimeZone customTimeZone,
                                          LBDisplay lbDisplay) {
         int numJustify = displays.stream().mapToInt(d -> d.num.length()).max().orElse(1);
@@ -245,7 +252,7 @@ public class GuildLevelRank extends GenericCommand {
                 nCopies("-", gainedJustify), nCopies("-", "Territory".length())));
 
         int leftJustify = numJustify + 2 + nameJustify + 3 + lvJustify + 3 + xpJustify;
-        String pageView = String.format("< page %s / %s >", lbDisplay.page + 1, lbDisplay.maxPage + 1);
+        String pageView = String.format("< page %s / %s >", page + 1, lbDisplay.maxPage + 1);
         ret.add(String.format("%s%sTotal | %s | %s",
                 pageView, nCopies(" ", leftJustify - 5 - pageView.length()),
                 lbDisplay.totalXPGained, lbDisplay.totalTerritories));
