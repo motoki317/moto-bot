@@ -161,9 +161,10 @@ public class GuildLevelRank extends GenericCommand {
                     String.format("[%s] %s", g.getPrefix(), g.getName()),
                     String.valueOf(g.getLevel()),
                     FormatUtils.truncateNumber(BigDecimal.valueOf(g.getXp())),
-                    xpGainedMap.containsKey(g.getName())
-                            ? FormatUtils.truncateNumber(BigDecimal.valueOf(xpGainedMap.get(g.getName()).getXpDiff()))
-                            : "----",
+                    FormatUtils.truncateNumber(
+                            BigDecimal.valueOf(xpGainedMap.containsKey(g.getName())
+                                    ? xpGainedMap.get(g.getName()).getXpDiff() : 0L)
+                    ),
                     String.valueOf(g.getTerritories())
             ));
         }
