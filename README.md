@@ -56,6 +56,6 @@ mvn clean package -D skipTests
 2. Edit the bot version you want to use in `docker-compose.yml`.
     - `latest` refers to the latest version release (`v*.*.*`).
     - `master` refers to the latest commit to master branch.
-    - For example, if you want to use v2.0.0 release, set the image name to `docker.pkg.github.com/motoki317/moto-bot/moto-bot/2.0.0`.
+    - For example, if you want to use v2.0.0 release, set the image name to `docker.pkg.github.com/motoki317/moto-bot/moto-bot:2.0.0`.
 3. Create a file named `.env` and set environment variables (see `.env-sample`).
 4. Execute `docker-compose up -d`.
