@@ -75,4 +75,14 @@ public class GuildLeaderboard implements GuildLeaderboardId {
     public int hashCode() {
         return Objects.hash(name, prefix, xp, level, num, territories, memberCount, updatedAt);
     }
+
+    public int compareLevelAndXP(GuildLeaderboard other) {
+        if (this.level < other.level) {
+            return -1;
+        } else if (this.level > other.level) {
+            return 1;
+        }
+
+        return Long.compare(this.xp, other.xp);
+    }
 }
