@@ -43,6 +43,7 @@ public class WynnApi {
     private final LegacyGuildStats legacyGuildStats;
     private final LegacyForumId legacyForumId;
     private final LegacyGuildLeaderboard legacyGuildLeaderboard;
+    private final LegacyItemDB legacyItemDB;
 
     // ----- V2 Routes -----
     private final V2PlayerStats v2PlayerStats;
@@ -54,6 +55,7 @@ public class WynnApi {
         this.legacyGuildStats = new LegacyGuildStats(rateLimiterLegacy, logger);
         this.legacyForumId = new LegacyForumId(rateLimiterLegacy, logger);
         this.legacyGuildLeaderboard = new LegacyGuildLeaderboard(rateLimiterLegacy, logger);
+        this.legacyItemDB = new LegacyItemDB(rateLimiterLegacy, logger);
 
         this.v2PlayerStats = new V2PlayerStats(rateLimiterV2Player, logger);
 
@@ -144,6 +146,16 @@ public class WynnApi {
     @Nullable
     public WynnGuildLeaderboard mustGetGuildLeaderboard() {
         return this.legacyGuildLeaderboard.mustGetGuildLeaderboard();
+    }
+
+    /**
+     * Retrieves item list.
+     * @param forceReload If {@code true}, ignores internal cache and requests the API again.
+     * @return Item DB.
+     */
+    @Nullable
+    public ItemDB mustGetItemDB(boolean forceReload) {
+        return this.legacyItemDB.mustGetItemDB(forceReload);
     }
 
     // ---- V2 Routes ----
