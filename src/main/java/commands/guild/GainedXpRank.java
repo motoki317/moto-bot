@@ -216,19 +216,17 @@ public class GainedXpRank extends GenericCommand {
 
         DateFormat dateFormat = customDateFormat.getDateFormat().getSecondFormat();
         dateFormat.setTimeZone(customTimeZone.getTimeZoneInstance());
-        ret.add(String.format(
-                "    from: %s (%s)",
-                dateFormat.format(oldest), customTimeZone.getFormattedTime()
-        ));
-        ret.add(String.format(
-                "      to: %s (%s)",
-                dateFormat.format(newest), customTimeZone.getFormattedTime()
-        ));
 
-        long duration = (newest.getTime() - oldest.getTime()) / 1000;
+        long duration = (newest.getTime() - oldest.getTime()) / 1000L;
         ret.add(String.format(
-                "duration: %s",
+                "   duration: %s",
                 FormatUtils.formatReadableTime(duration, false, "s")
+        ));
+        long sinceLastUpdate = (new Date().getTime() - newest.getTime()) / 1000L;
+        ret.add(String.format(
+                "last update: %s (%s), %s ago",
+                dateFormat.format(newest), customTimeZone.getFormattedTime(),
+                FormatUtils.formatReadableTime(sinceLastUpdate, false, "s")
         ));
 
         return String.join("\n", ret);
