@@ -62,12 +62,14 @@ public class Item {
     @Nullable
     private String classRequirement;
 
+    // Skill point requirements
     private int strength;
     private int dexterity;
     private int intelligence;
     private int defense;
     private int agility;
 
+    // Identifications begin
     private int strengthPoints;
     private int dexterityPoints;
     private int intelligencePoints;
@@ -137,6 +139,7 @@ public class Item {
     private int bonusWaterDefense;
     private int bonusFireDefense;
     private int bonusAirDefense;
+    // Identifications end
 
     private String category;
 

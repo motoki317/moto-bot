@@ -1,6 +1,7 @@
 package commands;
 
 import api.wynn.WynnApi;
+import api.wynn.structs.Item;
 import api.wynn.structs.ItemDB;
 import app.Bot;
 import commands.base.GenericCommand;
@@ -9,6 +10,13 @@ import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import org.jetbrains.annotations.NotNull;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 public class ItemView extends GenericCommand {
     private final WynnApi wynnApi;
@@ -50,6 +58,351 @@ public class ItemView extends GenericCommand {
             respondError(event, "Something went wrong while requesting Wynncraft API.");
             return;
         }
-        respond(event, "db size: " + db.getItems().size());
+
+        String input = String.join(" ", Arrays.copyOfRange(args, 1, args.length));
+        List<Item> matched = searchItem(input, db.getItems());
+
+        if (matched.size() == 0) {
+            respond(event, String.format("No items matched with input `%s`.", input));
+            return;
+        } else if (matched.size() > 1) {
+            respond(event, String.format("Multiple items (%s items) matched with input `%s`.\nMatched items: %s",
+                    matched.size(), input,
+                    matched.stream().limit(50).map(i -> "`" + i.getName() + "`")
+                            .collect(Collectors.joining(", "))));
+            return;
+        }
+
+        Item item = matched.get(0);
+
+        respond(event, formatItemInfo(item));
+    }
+
+    private static List<Item> searchItem(String input, List<Item> items) {
+        // case insensitive search
+        input = input.toLowerCase();
+
+        List<Item> prefixMatch = new ArrayList<>();
+        List<Item> partialMatch = new ArrayList<>();
+        for (Item item : items) {
+            String itemName = item.getName().toLowerCase();
+            // Exact match
+            if (input.equals(itemName)) {
+                return new ArrayList<>(Collections.singletonList(item));
+            }
+            // Prefix match
+            if (itemName.startsWith(input)) {
+                prefixMatch.add(item);
+                partialMatch.add(item);
+            } else if (itemName.contains(input)) {
+                // Partial match
+                partialMatch.add(item);
+            }
+        }
+
+        if (prefixMatch.size() == 1) {
+            return prefixMatch;
+        }
+        if (prefixMatch.size() > 1) {
+            return prefixMatch;
+        }
+        // No prefix match
+        return partialMatch;
+    }
+
+    private static Message formatItemInfo(Item item) {
+        EmbedBuilder eb = new EmbedBuilder();
+        eb.addField("Base Status", getBaseStatus(item), true);
+        eb.addField("Requirements", getRequirements(item), true);
+        eb.addField("Misc.", getMiscStatus(item), true);
+
+        if (item.getAddedLore() != null) {
+            eb.addField("Lore", item.getAddedLore(), false);
+        }
+
+        if ("weapon".equals(item.getCategory())) {
+            eb.addField("DPS", getDPS(item), false);
+        }
+
+        return new MessageBuilder(
+                "```ml\n" +
+                        getIDs(item) +
+                        "\n```"
+        ).setEmbed(
+                eb.build()
+        ).build();
+    }
+
+    private static class Status {
+        Function<Item, Integer> status;
+        String displayName;
+
+        private Status(Function<Item, Integer> status, String displayName) {
+            this.status = status;
+            this.displayName = displayName;
+        }
+    }
+
+    private static class Damage {
+        private Function<Item, String> status;
+        private String displayName;
+
+        private Damage(Function<Item, String> status, String displayName) {
+            this.status = status;
+            this.displayName = displayName;
+        }
+
+        private double getAverageDamage(Item item) {
+            // Damage example "0-0"
+            String[] status = this.status.apply(item).split("-");
+            double lower = Double.parseDouble(status[0]);
+            double higher = Double.parseDouble(status[1]);
+            return (lower + higher) / 2;
+        }
+    }
+
+    private static final Status[] armorStatuses = {
+            new Status(Item::getHealth, "Health"),
+            new Status(Item::getEarthDefense, "Earth Defense"),
+            new Status(Item::getThunderDefense, "Thunder Defense"),
+            new Status(Item::getWaterDefense, "Water Defense"),
+            new Status(Item::getFireDefense, "Fire Defense"),
+            new Status(Item::getAirDefense, "Air Defense")
+    };
+
+    private static final Damage[] weaponStatuses = {
+            new Damage(Item::getDamage, "Neutral Damage"),
+            new Damage(Item::getEarthDamage, "Earth Damage"),
+            new Damage(Item::getThunderDamage, "Thunder Damage"),
+            new Damage(Item::getWaterDamage, "Water Damage"),
+            new Damage(Item::getFireDamage, "Fire Damage"),
+            new Damage(Item::getAirDamage, "Air Damage")
+    };
+
+    private enum AttackSpeed {
+        SUPER_SLOW(0.51),
+        VERY_SLOW(0.83),
+        SLOW(1.5),
+        NORMAL(2.05),
+        FAST(2.5),
+        VERY_FAST(3.1),
+        SUPER_FAST(4.3);
+
+        private double multiplier;
+
+        AttackSpeed(double multiplier) {
+            this.multiplier = multiplier;
+        }
+    }
+
+    private static String getBaseStatus(Item item) {
+        List<String> ret = new ArrayList<>();
+
+        switch (item.getCategory()) {
+            case "weapon":
+                for (Damage status : weaponStatuses) {
+                    String dmg = status.status.apply(item);
+                    if ("0-0".equals(dmg) || dmg.isEmpty()) {
+                        continue;
+                    }
+                    ret.add(String.format("%s : %s", status.displayName, dmg));
+                }
+
+                AttackSpeed speed = AttackSpeed.valueOf(item.getAttackSpeed());
+                ret.add(String.format("Attack Speed : %s (%s)", speed.name(), speed.multiplier));
+                break;
+            case "armor":
+            case "accessory":
+                for (Status status : armorStatuses) {
+                    int val = status.status.apply(item);
+                    if (val == 0) {
+                        continue;
+                    }
+                    ret.add(String.format("%s : %s", status.displayName, val));
+                }
+                break;
+        }
+
+        return String.join("\n", ret);
+    }
+
+    private static String getDPS(Item item) {
+        List<String> ret = new ArrayList<>();
+
+        AttackSpeed speed = AttackSpeed.valueOf(item.getAttackSpeed());
+
+        double total = 0;
+        for (Damage status : weaponStatuses) {
+            String dmg = status.status.apply(item);
+            if ("0-0".equals(dmg) || dmg.isEmpty()) {
+                continue;
+            }
+            double dps = speed.multiplier * status.getAverageDamage(item);
+            total += dps;
+            ret.add(String.format("%s : %.2f", status.displayName, dps));
+        }
+
+        ret.add("");
+        ret.add(String.format("Total : %.2f", total));
+
+        return String.join("\n", ret);
+    }
+
+    private static final Status[] skillPointRequirements = {
+            new Status(Item::getStrength, "Strength Min."),
+            new Status(Item::getDexterity, "Dexterity Min."),
+            new Status(Item::getIntelligence, "Intelligence Min."),
+            new Status(Item::getDefense, "Defense Min."),
+            new Status(Item::getAgility, "Agility Min.")
+    };
+
+    private static String getRequirements(Item item) {
+        List<String> ret = new ArrayList<>();
+
+        ret.add("Level : " + item.getLevel());
+
+        if (item.getQuest() != null) {
+            ret.add("Quest : " + item.getQuest());
+        }
+        if (item.getClassRequirement() != null) {
+            ret.add("Class Req. : " + item.getClassRequirement());
+        }
+
+        for (Status req : skillPointRequirements) {
+            int val = req.status.apply(item);
+            if (val == 0) {
+                continue;
+            }
+            ret.add(String.format("%s : %s", req.displayName, val));
+        }
+
+        return String.join("\n", ret);
+    }
+
+    private static String getMiscStatus(Item item) {
+        List<String> ret = new ArrayList<>();
+
+        ret.add(String.format("Drop type : %s", item.getDropType()));
+        if (item.getSockets() != 0) {
+            ret.add(String.format("Sockets : %s", item.getSockets()));
+        }
+        if (item.getRestrictions() != null) {
+            ret.add(String.format("Restrictions : %s", item.getRestrictions()));
+        }
+        if (item.isIdentified()) {
+            ret.add("Pre-identified item");
+        }
+
+        return String.join("\n", ret);
+    }
+
+    private static class Identification extends Status {
+        private String suffix;
+
+        private Identification(Function<Item, Integer> status, String displayName, String suffix) {
+            super(status, displayName);
+            this.suffix = suffix;
+        }
+
+        private String getFormattedID(Item item) {
+            return this.status.apply(item) + this.suffix;
+        }
+    }
+
+    // Identifications, their display name, and suffix
+    private static final Identification[] identifications = {
+            // Bonus skill points
+            new Identification(Item::getStrengthPoints, "Strength", ""),
+            new Identification(Item::getDexterityPoints, "Dexterity", ""),
+            new Identification(Item::getIntelligencePoints, "Intelligence", ""),
+            new Identification(Item::getDefensePoints, "Defense", ""),
+            new Identification(Item::getAgilityPoints, "Agility", ""),
+            // Melee
+            new Identification(Item::getDamageBonus, "Melee Damage", "%"),
+            new Identification(Item::getDamageBonusRaw, "Melee Damage Raw", ""),
+            // Spell
+            new Identification(Item::getSpellDamage, "Spell Damage", "%"),
+            new Identification(Item::getSpellDamageRaw, "Spell Damage Raw", ""),
+            // Rainbow
+            new Identification(Item::getRainbowSpellDamageRaw, "Rainbow Spell Damage Raw", ""),
+            // HP Regen
+            new Identification(Item::getHealthRegen, "Health Regen", "%"),
+            new Identification(Item::getHealthRegenRaw, "Health Regen Raw", ""),
+            // HP
+            new Identification(Item::getHealthBonus, "Health", ""),
+            // Poison
+            new Identification(Item::getPoison, "Poison", "/3s"),
+            // Life steal
+            new Identification(Item::getLifeSteal, "Life Steal", "/4s"),
+            // Mana
+            new Identification(Item::getManaRegen, "Mana Regen", "/4s"),
+            new Identification(Item::getManaSteal, "Mana Steal", "/4s"),
+            // Spell cost
+            new Identification(Item::getSpellCostPct1, "1st Spell Cost", "%"),
+            new Identification(Item::getSpellCostRaw1, "1st Spell Cost", ""),
+            new Identification(Item::getSpellCostPct2, "2nd Spell Cost", "%"),
+            new Identification(Item::getSpellCostRaw2, "2nd Spell Cost", ""),
+            new Identification(Item::getSpellCostPct3, "3rd Spell Cost", "%"),
+            new Identification(Item::getSpellCostRaw3, "3rd Spell Cost", ""),
+            new Identification(Item::getSpellCostPct4, "4th Spell Cost", "%"),
+            new Identification(Item::getSpellCostRaw4, "4th Spell Cost", ""),
+            // Thorns and Reflection
+            new Identification(Item::getThorns, "Thorns", "%"),
+            new Identification(Item::getReflection, "Reflection", "%"),
+            // Attack speed
+            new Identification(Item::getAttackSpeedBonus, "Attack Speed Bonus", " tier"),
+            // Walk speed
+            new Identification(Item::getSpeed, "Speed", "%"),
+            // Exploding
+            new Identification(Item::getExploding, "Exploding", "%"),
+            // Soul point regen
+            new Identification(Item::getSoulPoints, "Soul Point Regen", "%"),
+            // Sprint and Jump
+            new Identification(Item::getSprint, "Sprint", "%"),
+            new Identification(Item::getSprintRegen, "Sprint Regen", "%"),
+            new Identification(Item::getJumpHeight, "Jump Height", ""),
+            // XP and Loot
+            new Identification(Item::getXpBonus, "XP Bonus", "%"),
+            new Identification(Item::getLootBonus, "Loot Bonus", "%"),
+            new Identification(Item::getLootQuality, "Loot Quality", "%"),
+            new Identification(Item::getEmeraldStealing, "Emerald Stealing", "%"),
+            // Gathering
+            new Identification(Item::getGatherXpBonus, "Gather XP Bonus", "%"),
+            new Identification(Item::getGatherSpeed, "Gather Speed", "%"),
+            // Bonus elemental damage
+            new Identification(Item::getBonusEarthDamage, "Earth Damage", "%"),
+            new Identification(Item::getBonusThunderDamage, "Thunder Damage", "%"),
+            new Identification(Item::getBonusWaterDamage, "Water Damage", "%"),
+            new Identification(Item::getBonusFireDamage, "Fire Damage", "%"),
+            new Identification(Item::getBonusAirDamage, "Air Damage", "%"),
+            // Bonus elemental defense
+            new Identification(Item::getBonusEarthDefense, "Earth Defense", "%"),
+            new Identification(Item::getBonusThunderDefense, "Thunder Defense", "%"),
+            new Identification(Item::getBonusWaterDefense, "Water Defense", "%"),
+            new Identification(Item::getBonusFireDefense, "Fire Defense", "%"),
+            new Identification(Item::getBonusAirDefense, "Air Defense", "%")
+    };
+
+    private static String getIDs(Item item) {
+        List<Identification> availableIDs = Arrays.stream(identifications)
+                .filter(i -> i.status.apply(item) != 0).collect(Collectors.toList());
+
+        List<String> ret = new ArrayList<>();
+        if (availableIDs.isEmpty()) {
+            return "No Identifications";
+        }
+
+        int displayJustify = availableIDs.stream().mapToInt(i -> i.displayName.length()).max().getAsInt();
+        for (Identification id : availableIDs) {
+            ret.add(String.format("%s%s : %s",
+                    nSpaces(displayJustify - id.displayName.length()), id.displayName,
+                    id.getFormattedID(item)));
+        }
+
+        return String.join("\n", ret);
+    }
+
+    private static String nSpaces(int n) {
+        return String.join("", Collections.nCopies(n, " "));
     }
 }
