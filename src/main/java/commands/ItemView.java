@@ -315,89 +315,106 @@ public class ItemView extends GenericCommand {
 
     private static class Identification extends Status {
         private String suffix;
+        private boolean identified;
 
-        private Identification(Function<Item, Integer> status, String displayName, String suffix) {
+        private Identification(Function<Item, Integer> status, String displayName, String suffix, boolean identified) {
             super(status, displayName);
             this.suffix = suffix;
+            this.identified = identified;
         }
 
         private String getFormattedID(Item item) {
-            return this.status.apply(item) + this.suffix;
+            int val = this.status.apply(item);
+            if (identified || item.isIdentified()) {
+                return val + this.suffix;
+            }
+
+            // show value range
+            int lo, hi;
+            if (val > 0) {
+                lo = (int) Math.round((double) val * 0.3d);
+                hi = (int) Math.round((double) val * 1.3d);
+            } else {
+                lo = (int) Math.round((double) val * 1.3d);
+                hi = (int) Math.round((double) val * 0.7d);
+            }
+
+            return String.format("%s%s, %s ~ %s", val, this.suffix, lo, hi);
         }
     }
 
     // Identifications, their display name, and suffix
     private static final Identification[] identifications = {
             // Bonus skill points
-            new Identification(Item::getStrengthPoints, "Strength", ""),
-            new Identification(Item::getDexterityPoints, "Dexterity", ""),
-            new Identification(Item::getIntelligencePoints, "Intelligence", ""),
-            new Identification(Item::getDefensePoints, "Defense", ""),
-            new Identification(Item::getAgilityPoints, "Agility", ""),
+            new Identification(Item::getStrengthPoints, "Strength", "", true),
+            new Identification(Item::getDexterityPoints, "Dexterity", "", true),
+            new Identification(Item::getIntelligencePoints, "Intelligence", "", true),
+            new Identification(Item::getDefensePoints, "Defense", "", true),
+            new Identification(Item::getAgilityPoints, "Agility", "", true),
             // Melee
-            new Identification(Item::getDamageBonus, "Melee Damage", "%"),
-            new Identification(Item::getDamageBonusRaw, "Melee Damage Raw", ""),
+            new Identification(Item::getDamageBonus, "Melee Damage", "%", false),
+            new Identification(Item::getDamageBonusRaw, "Melee Damage Raw", "", false),
             // Spell
-            new Identification(Item::getSpellDamage, "Spell Damage", "%"),
-            new Identification(Item::getSpellDamageRaw, "Spell Damage Raw", ""),
+            new Identification(Item::getSpellDamage, "Spell Damage", "%", false),
+            new Identification(Item::getSpellDamageRaw, "Spell Damage Raw", "", false),
             // Rainbow
-            new Identification(Item::getRainbowSpellDamageRaw, "Rainbow Spell Damage Raw", ""),
+            new Identification(Item::getRainbowSpellDamageRaw, "Rainbow Spell Damage Raw", "", false),
             // HP Regen
-            new Identification(Item::getHealthRegen, "Health Regen", "%"),
-            new Identification(Item::getHealthRegenRaw, "Health Regen Raw", ""),
+            new Identification(Item::getHealthRegen, "Health Regen", "%", false),
+            new Identification(Item::getHealthRegenRaw, "Health Regen Raw", "", false),
             // HP
-            new Identification(Item::getHealthBonus, "Health", ""),
+            new Identification(Item::getHealthBonus, "Health", "", false),
             // Poison
-            new Identification(Item::getPoison, "Poison", "/3s"),
+            new Identification(Item::getPoison, "Poison", "/3s", false),
             // Life steal
-            new Identification(Item::getLifeSteal, "Life Steal", "/4s"),
+            new Identification(Item::getLifeSteal, "Life Steal", "/4s", false),
             // Mana
-            new Identification(Item::getManaRegen, "Mana Regen", "/4s"),
-            new Identification(Item::getManaSteal, "Mana Steal", "/4s"),
+            new Identification(Item::getManaRegen, "Mana Regen", "/4s", false),
+            new Identification(Item::getManaSteal, "Mana Steal", "/4s", false),
             // Spell cost
-            new Identification(Item::getSpellCostPct1, "1st Spell Cost", "%"),
-            new Identification(Item::getSpellCostRaw1, "1st Spell Cost", ""),
-            new Identification(Item::getSpellCostPct2, "2nd Spell Cost", "%"),
-            new Identification(Item::getSpellCostRaw2, "2nd Spell Cost", ""),
-            new Identification(Item::getSpellCostPct3, "3rd Spell Cost", "%"),
-            new Identification(Item::getSpellCostRaw3, "3rd Spell Cost", ""),
-            new Identification(Item::getSpellCostPct4, "4th Spell Cost", "%"),
-            new Identification(Item::getSpellCostRaw4, "4th Spell Cost", ""),
+            new Identification(Item::getSpellCostPct1, "1st Spell Cost", "%", false),
+            new Identification(Item::getSpellCostRaw1, "1st Spell Cost", "", false),
+            new Identification(Item::getSpellCostPct2, "2nd Spell Cost", "%", false),
+            new Identification(Item::getSpellCostRaw2, "2nd Spell Cost", "", false),
+            new Identification(Item::getSpellCostPct3, "3rd Spell Cost", "%", false),
+            new Identification(Item::getSpellCostRaw3, "3rd Spell Cost", "", false),
+            new Identification(Item::getSpellCostPct4, "4th Spell Cost", "%", false),
+            new Identification(Item::getSpellCostRaw4, "4th Spell Cost", "", false),
             // Thorns and Reflection
-            new Identification(Item::getThorns, "Thorns", "%"),
-            new Identification(Item::getReflection, "Reflection", "%"),
+            new Identification(Item::getThorns, "Thorns", "%", false),
+            new Identification(Item::getReflection, "Reflection", "%", false),
             // Attack speed
-            new Identification(Item::getAttackSpeedBonus, "Attack Speed Bonus", " tier"),
+            new Identification(Item::getAttackSpeedBonus, "Attack Speed Bonus", " tier", false),
             // Walk speed
-            new Identification(Item::getSpeed, "Speed", "%"),
+            new Identification(Item::getSpeed, "Speed", "%", false),
             // Exploding
-            new Identification(Item::getExploding, "Exploding", "%"),
+            new Identification(Item::getExploding, "Exploding", "%", false),
             // Soul point regen
-            new Identification(Item::getSoulPoints, "Soul Point Regen", "%"),
+            new Identification(Item::getSoulPoints, "Soul Point Regen", "%", false),
             // Sprint and Jump
-            new Identification(Item::getSprint, "Sprint", "%"),
-            new Identification(Item::getSprintRegen, "Sprint Regen", "%"),
-            new Identification(Item::getJumpHeight, "Jump Height", ""),
+            new Identification(Item::getSprint, "Sprint", "%", false),
+            new Identification(Item::getSprintRegen, "Sprint Regen", "%", false),
+            new Identification(Item::getJumpHeight, "Jump Height", "", false),
             // XP and Loot
-            new Identification(Item::getXpBonus, "XP Bonus", "%"),
-            new Identification(Item::getLootBonus, "Loot Bonus", "%"),
-            new Identification(Item::getLootQuality, "Loot Quality", "%"),
-            new Identification(Item::getEmeraldStealing, "Emerald Stealing", "%"),
+            new Identification(Item::getXpBonus, "XP Bonus", "%", false),
+            new Identification(Item::getLootBonus, "Loot Bonus", "%", false),
+            new Identification(Item::getLootQuality, "Loot Quality", "%", false),
+            new Identification(Item::getEmeraldStealing, "Emerald Stealing", "%", false),
             // Gathering
-            new Identification(Item::getGatherXpBonus, "Gather XP Bonus", "%"),
-            new Identification(Item::getGatherSpeed, "Gather Speed", "%"),
+            new Identification(Item::getGatherXpBonus, "Gather XP Bonus", "%", false),
+            new Identification(Item::getGatherSpeed, "Gather Speed", "%", false),
             // Bonus elemental damage
-            new Identification(Item::getBonusEarthDamage, "Earth Damage", "%"),
-            new Identification(Item::getBonusThunderDamage, "Thunder Damage", "%"),
-            new Identification(Item::getBonusWaterDamage, "Water Damage", "%"),
-            new Identification(Item::getBonusFireDamage, "Fire Damage", "%"),
-            new Identification(Item::getBonusAirDamage, "Air Damage", "%"),
+            new Identification(Item::getBonusEarthDamage, "Earth Damage", "%", false),
+            new Identification(Item::getBonusThunderDamage, "Thunder Damage", "%", false),
+            new Identification(Item::getBonusWaterDamage, "Water Damage", "%", false),
+            new Identification(Item::getBonusFireDamage, "Fire Damage", "%", false),
+            new Identification(Item::getBonusAirDamage, "Air Damage", "%", false),
             // Bonus elemental defense
-            new Identification(Item::getBonusEarthDefense, "Earth Defense", "%"),
-            new Identification(Item::getBonusThunderDefense, "Thunder Defense", "%"),
-            new Identification(Item::getBonusWaterDefense, "Water Defense", "%"),
-            new Identification(Item::getBonusFireDefense, "Fire Defense", "%"),
-            new Identification(Item::getBonusAirDefense, "Air Defense", "%")
+            new Identification(Item::getBonusEarthDefense, "Earth Defense", "%", false),
+            new Identification(Item::getBonusThunderDefense, "Thunder Defense", "%", false),
+            new Identification(Item::getBonusWaterDefense, "Water Defense", "%", false),
+            new Identification(Item::getBonusFireDefense, "Fire Defense", "%", false),
+            new Identification(Item::getBonusAirDefense, "Air Defense", "%", false)
     };
 
     private static String getIDs(Item item) {
