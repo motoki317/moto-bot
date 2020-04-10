@@ -10,15 +10,10 @@ import java.util.stream.IntStream;
 
 public class ArgumentParser {
     private Map<String, String> argumentMap;
+    private String normalArgument;
 
     public ArgumentParser(@NotNull String[] arguments) {
-        this.argumentMap = parseHyphenArguments(arguments);
-    }
-
-    private static final String HYPHEN = "-";
-
-    private static Map<String, String> parseHyphenArguments(@NotNull String[] arguments) {
-        Map<String, String> ret = new HashMap<>();
+        this.argumentMap = new HashMap<>();
 
         int[] argStarts = IntStream.range(0, arguments.length)
                 .filter(i -> arguments[i].startsWith(HYPHEN))
@@ -26,8 +21,8 @@ public class ArgumentParser {
                 .toArray();
 
         // No hyphen argument
-        ret.put("", Arrays.stream(arguments, 0, argStarts.length > 0 ? argStarts[0] : arguments.length)
-                .collect(Collectors.joining(" ")));
+        this.normalArgument = Arrays.stream(arguments, 0, argStarts.length > 0 ? argStarts[0] : arguments.length)
+                .collect(Collectors.joining(" "));
 
         for (int i = 0; i < argStarts.length; i++) {
             int argStart = argStarts[i];
@@ -38,28 +33,37 @@ public class ArgumentParser {
                 end = argStarts[i + 1];
             }
 
-            ret.put(arguments[argStart].substring(HYPHEN.length()),
+            this.argumentMap.put(arguments[argStart].substring(HYPHEN.length()),
                     Arrays.stream(arguments, argStart + 1, end)
-                    .collect(Collectors.joining(" "))
+                            .collect(Collectors.joining(" "))
             );
         }
-
-        return ret;
     }
+
+    private static final String HYPHEN = "-";
 
     /**
      * Parses arguments and returns their corresponding string in form of map.
      * <br>Examples:
      * <br>Input {@code -g Kingdom Foxes -t -sr} produces:
-     * <br>{@code {"": "", g: "Kingdom Foxes", t: "", sr: ""}}
+     * <br>{@code {g: "Kingdom Foxes", t: "", sr: ""}}
      * <br>
      * <br>Input {@code -g Hax --total -sr} produces:
-     * <br>{@code {"": "", g: "Hax", -total: "", sr: ""}}
+     * <br>{@code {g: "Hax", -total: "", sr: ""}}
      * <br>
      * <br>Input {@code test -g Hax} produces:
-     * <br>{@code {"": "test", g: "Hax"}}
+     * <br>{@code {g: "Hax"}}
      */
     public Map<String, String> getArgumentMap() {
         return argumentMap;
+    }
+
+    /**
+     * Returns an argument without hyphen.
+     * For example, input {@code test -g Hax} produces "test"
+     * @return Argument
+     */
+    public String getNormalArgument() {
+        return normalArgument;
     }
 }

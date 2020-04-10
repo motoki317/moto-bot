@@ -8,16 +8,18 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class ArgumentParserTest {
     private static class TestCase {
         private String[] input;
         private Map<String, String> expectOutput;
+        private String expectedNormalArg;
 
-        private TestCase(String[] input, Map<String, String> expectOutput) {
+        private TestCase(String[] input, Map<String, String> expectOutput, String expectedNormalArg) {
             this.input = input;
             this.expectOutput = expectOutput;
+            this.expectedNormalArg = expectedNormalArg;
         }
     }
 
@@ -32,7 +34,7 @@ class ArgumentParserTest {
             expectOutput.put("t", "");
             expectOutput.put("sr", "");
 
-            ret.add(new TestCase(input.split(" "), expectOutput));
+            ret.add(new TestCase(input.split(" "), expectOutput, ""));
         }
 
         {
@@ -42,7 +44,7 @@ class ArgumentParserTest {
             expectOutput.put("-total", "");
             expectOutput.put("sr", "");
 
-            ret.add(new TestCase(input.split(" "), expectOutput));
+            ret.add(new TestCase(input.split(" "), expectOutput, ""));
         }
 
         {
@@ -52,7 +54,27 @@ class ArgumentParserTest {
             expectOutput.put("-total", "");
             expectOutput.put("sr", "");
 
-            ret.add(new TestCase(input.split(" "), expectOutput));
+            ret.add(new TestCase(input.split(" "), expectOutput, ""));
+        }
+
+        {
+            String input = "Kingdom Foxes --total -sr -g Hax";
+            Map<String, String> expectOutput = new HashMap<>();
+            expectOutput.put("g", "Hax");
+            expectOutput.put("-total", "");
+            expectOutput.put("sr", "");
+
+            ret.add(new TestCase(input.split(" "), expectOutput, "Kingdom Foxes"));
+        }
+
+        {
+            String input = "aaa -t -sr -g Hax";
+            Map<String, String> expectOutput = new HashMap<>();
+            expectOutput.put("g", "Hax");
+            expectOutput.put("t", "");
+            expectOutput.put("sr", "");
+
+            ret.add(new TestCase(input.split(" "), expectOutput, "aaa"));
         }
 
         return ret;
@@ -62,7 +84,8 @@ class ArgumentParserTest {
     void testHyphenParser() {
         for (TestCase testCase : prepareTestCases()) {
             ArgumentParser parser = new ArgumentParser(testCase.input);
-            assertEquals(parser.getArgumentMap(), testCase.expectOutput);
+            assertEquals(testCase.expectOutput, parser.getArgumentMap());
+            assertEquals(testCase.expectedNormalArg, parser.getNormalArgument());
         }
     }
 }

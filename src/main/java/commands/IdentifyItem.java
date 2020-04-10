@@ -76,10 +76,9 @@ public class IdentifyItem extends GenericCommand {
             return;
         }
 
-        Map<String, String> arguments = new ArgumentParser(Arrays.copyOfRange(args, 1, args.length))
-                .getArgumentMap();
+        ArgumentParser parser = new ArgumentParser(Arrays.copyOfRange(args, 1, args.length));
 
-        String input = arguments.get("");
+        String input = parser.getNormalArgument();
         List<Item> matched = searchItem(input, db.getItems());
 
         if (matched.size() == 0) {
@@ -95,7 +94,7 @@ public class IdentifyItem extends GenericCommand {
 
         Item item = matched.get(0);
 
-        boolean reIdentify = arguments.containsKey("re");
+        boolean reIdentify = parser.getArgumentMap().containsKey("re");
         if (!reIdentify) {
             respond(event, formatItemInfo(item, this.imageURLBase, 1));
             return;
