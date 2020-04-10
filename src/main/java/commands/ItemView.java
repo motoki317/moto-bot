@@ -10,19 +10,21 @@ import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
+import java.awt.*;
 import java.util.List;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class ItemView extends GenericCommand {
     private final WynnApi wynnApi;
+    private final String imageURLBase;
 
     public ItemView(Bot bot) {
         this.wynnApi = new WynnApi(bot.getLogger(), bot.getProperties().wynnTimeZone);
+        this.imageURLBase = bot.getProperties().githubImagesUrl;
     }
 
     @NotNull
@@ -53,6 +55,11 @@ public class ItemView extends GenericCommand {
 
     @Override
     public void process(@NotNull MessageReceivedEvent event, @NotNull String[] args) {
+        if (args.length < 2) {
+            respond(event, "Please input the item name you want to view stats of.");
+            return;
+        }
+
         ItemDB db = this.wynnApi.mustGetItemDB(false);
         if (db == null) {
             respondError(event, "Something went wrong while requesting Wynncraft API.");
@@ -75,7 +82,7 @@ public class ItemView extends GenericCommand {
 
         Item item = matched.get(0);
 
-        respond(event, formatItemInfo(item));
+        respond(event, formatItemInfo(item, this.imageURLBase));
     }
 
     private static List<Item> searchItem(String input, List<Item> items) {
@@ -110,8 +117,18 @@ public class ItemView extends GenericCommand {
         return partialMatch;
     }
 
-    private static Message formatItemInfo(Item item) {
+    private static Message formatItemInfo(Item item, String imageURLBase) {
         EmbedBuilder eb = new EmbedBuilder();
+        eb.setTitle(String.format("Lv. %s %s, %s %s",
+                item.getLevel(), item.getName(), item.getTier(), item.getType()));
+
+        eb.setThumbnail(imageURLBase + getImageName(item));
+
+        Color col = getTierColor(item.getTier());
+        if (col != null) {
+            eb.setColor(col);
+        }
+
         eb.addField("Base Status", getBaseStatus(item), true);
         eb.addField("Requirements", getRequirements(item), true);
         eb.addField("Misc.", getMiscStatus(item), true);
@@ -392,7 +409,7 @@ public class ItemView extends GenericCommand {
             return "No Identifications";
         }
 
-        int displayJustify = availableIDs.stream().mapToInt(i -> i.displayName.length()).max().getAsInt();
+        int displayJustify = availableIDs.stream().mapToInt(i -> i.displayName.length()).max().getAsInt() + 1;
         for (Identification id : availableIDs) {
             ret.add(String.format("%s%s : %s",
                     nSpaces(displayJustify - id.displayName.length()), id.displayName,
@@ -400,6 +417,110 @@ public class ItemView extends GenericCommand {
         }
 
         return String.join("\n", ret);
+    }
+
+    private static final Set<String> gifImages = new HashSet<>(Arrays.asList("27", "28", "160-14"));
+
+    /**
+     * Retrieves image name such as "160-14.gif"
+     * @param item Item
+     * @return Image name
+     */
+    private static String getImageName(Item item) {
+        String id = getImageID(item);
+        if (gifImages.contains(id)) {
+            return id + ".gif";
+        }
+        return id + ".png";
+    }
+
+    /**
+     * Retrieves image name such as "160-14"
+     * @param item Item
+     * @return Image ID
+     */
+    private static String getImageID(Item item) {
+        // Expected values like "1" or "161:1"
+        String material = item.getMaterial();
+        if (material != null) {
+            if (material.matches("\\d+:\\d+")) {
+                String[] sp = material.split(":");
+                if (sp[1].equals("0")) {
+                    return sp[0];
+                }
+                return sp[0] + "-" + sp[1];
+            } else {
+                return material;
+            }
+        }
+
+        // Get ID from armor type
+        if (item.getType() != null && item.getArmorType() != null) {
+            return getArmorID(item.getType(), item.getArmorType()) + "-0";
+        }
+
+        return "0";
+    }
+
+    /**
+     * Retrieves item ID from type and armor type
+     * @param type Type such as "Helmet"
+     * @param armorType Armor type such as "Leather"
+     * @return Numeric item ID such as "298"
+     */
+    private static int getArmorID(String type, String armorType) {
+        int offset = 0;
+        switch (type) {
+            case "Helmet":
+                offset = 0;
+                break;
+            case "Chestplate":
+                offset = 1;
+                break;
+            case "Leggings":
+                offset = 2;
+                break;
+            case "Boots":
+                offset = 3;
+                break;
+        }
+
+        switch (armorType) {
+            case "Leather":
+                return 298 + offset;
+            case "Chain":
+                return 302 + offset;
+            case "Iron":
+                return 306 + offset;
+            case "Diamond":
+                return 310 + offset;
+            case "Golden":
+                return 314 + offset;
+        }
+
+        return 0;
+    }
+
+    /**
+     * Retrieves corresponding theme color from item tier.
+     * @param tier Item tier such as "Mythic"
+     * @return Color
+     */
+    @Nullable
+    private static Color getTierColor(String tier) {
+        switch (tier) {
+            case "Unique":
+                return new Color(255, 255, 85);
+            case "Rare":
+                return new Color(255, 85, 255);
+            case "Legendary":
+                return new Color(85, 255, 255);
+            case "Mythic":
+                return new Color(170, 0, 170);
+            case "Set":
+                return new Color(0, 170, 0);
+        }
+        return null;
     }
 
     private static String nSpaces(int n) {
