@@ -25,6 +25,10 @@ public class ArgumentParser {
                 .sorted()
                 .toArray();
 
+        // No hyphen argument
+        ret.put("", Arrays.stream(arguments, 0, argStarts.length > 0 ? argStarts[0] : arguments.length)
+                .collect(Collectors.joining(" ")));
+
         for (int i = 0; i < argStarts.length; i++) {
             int argStart = argStarts[i];
             int end;
@@ -47,10 +51,13 @@ public class ArgumentParser {
      * Parses arguments and returns their corresponding string in form of map.
      * <br>Examples:
      * <br>Input {@code -g Kingdom Foxes -t -sr} produces:
-     * <br>{@code {g: "Kingdom Foxes", t: "", sr: ""}}
+     * <br>{@code {"": "", g: "Kingdom Foxes", t: "", sr: ""}}
      * <br>
      * <br>Input {@code -g Hax --total -sr} produces:
-     * <br>{@code {g: "Hax", -total: "", sr: ""}}
+     * <br>{@code {"": "", g: "Hax", -total: "", sr: ""}}
+     * <br>
+     * <br>Input {@code test -g Hax} produces:
+     * <br>{@code {"": "test", g: "Hax"}}
      */
     public Map<String, String> getArgumentMap() {
         return argumentMap;

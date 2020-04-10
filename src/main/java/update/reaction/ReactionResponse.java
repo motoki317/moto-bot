@@ -21,7 +21,7 @@ public class ReactionResponse implements UserResponseListener<MessageReactionAdd
     private long maxLive;
 
     protected ReactionResponse(long messageId, long channelId, long userId, boolean userPrivate,
-                     Predicate<MessageReactionAddEvent> onReaction) {
+                               Predicate<MessageReactionAddEvent> onReaction) {
         this.messageId = messageId;
         this.channelId = channelId;
         this.userId = userId;

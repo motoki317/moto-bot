@@ -85,7 +85,7 @@ public class ItemView extends GenericCommand {
         respond(event, formatItemInfo(item, this.imageURLBase));
     }
 
-    private static List<Item> searchItem(String input, List<Item> items) {
+    static List<Item> searchItem(String input, List<Item> items) {
         // case insensitive search
         input = input.toLowerCase();
 
@@ -118,6 +118,16 @@ public class ItemView extends GenericCommand {
     }
 
     private static Message formatItemInfo(Item item, String imageURLBase) {
+        return new MessageBuilder(
+                "```ml\n" +
+                        getIDs(item) +
+                        "\n```"
+        ).setEmbed(
+                getEmbed(item, imageURLBase).build()
+        ).build();
+    }
+
+    static EmbedBuilder getEmbed(Item item, String imageURLBase) {
         EmbedBuilder eb = new EmbedBuilder();
         eb.setTitle(String.format("Lv. %s %s, %s %s",
                 item.getLevel(), item.getName(), item.getTier(), item.getType()));
@@ -141,13 +151,7 @@ public class ItemView extends GenericCommand {
             eb.addField("DPS", getDPS(item), false);
         }
 
-        return new MessageBuilder(
-                "```ml\n" +
-                        getIDs(item) +
-                        "\n```"
-        ).setEmbed(
-                eb.build()
-        ).build();
+        return eb;
     }
 
     private static class Status {
@@ -313,7 +317,7 @@ public class ItemView extends GenericCommand {
         return String.join("\n", ret);
     }
 
-    private static class Identification extends Status {
+    static class Identification extends Status {
         private String suffix;
         private boolean identified;
 
@@ -339,12 +343,20 @@ public class ItemView extends GenericCommand {
                 hi = (int) Math.round((double) val * 0.7d);
             }
 
-            return String.format("%s%s, %s ~ %s", val, this.suffix, lo, hi);
+            return String.format("%s%s, %s%s ~ %s%s", val, this.suffix, lo, this.suffix, hi, this.suffix);
+        }
+
+        boolean isIdentified() {
+            return this.identified;
+        }
+
+        String getSuffix() {
+            return this.suffix;
         }
     }
 
     // Identifications, their display name, and suffix
-    private static final Identification[] identifications = {
+    static final Identification[] identifications = {
             // Bonus skill points
             new Identification(Item::getStrengthPoints, "Strength", "", true),
             new Identification(Item::getDexterityPoints, "Dexterity", "", true),

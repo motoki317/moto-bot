@@ -72,6 +72,7 @@ public class CommandListener extends ListenerAdapter {
         addCommand(new PlayerStats(bot));
 
         addCommand(new ItemView(bot));
+        addCommand(new IdentifyItem(bot));
 
         addCommand(new GuildCmd(bot));
         addCommand(new GuildStats(bot));
