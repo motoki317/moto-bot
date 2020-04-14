@@ -20,20 +20,27 @@ import utils.FormatUtils;
 
 import java.text.DateFormat;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class TerritoryListCmd extends GenericCommand {
     private final TerritoryRepository territoryRepository;
     private final ReactionManager reactionManager;
-    private final GuildNameResolver guildNameResolver;
+
     private final TimeZoneRepository timeZoneRepository;
     private final DateFormatRepository dateFormatRepository;
+
+    private final GuildNameResolver guildNameResolver;
+    private final GuildPrefixesResolver guildPrefixesResolver;
 
     public TerritoryListCmd(Bot bot) {
         this.territoryRepository = bot.getDatabase().getTerritoryRepository();
         this.reactionManager = bot.getReactionManager();
-        this.guildNameResolver = new GuildNameResolver(bot.getResponseManager(), bot.getDatabase().getGuildRepository());
+
         this.timeZoneRepository = bot.getDatabase().getTimeZoneRepository();
         this.dateFormatRepository = bot.getDatabase().getDateFormatRepository();
+
+        this.guildNameResolver = new GuildNameResolver(bot.getResponseManager(), bot.getDatabase().getGuildRepository());
+        this.guildPrefixesResolver = new GuildPrefixesResolver(bot.getDatabase().getGuildRepository());
     }
 
     @NotNull
@@ -146,12 +153,14 @@ public class TerritoryListCmd extends GenericCommand {
     private static class Display {
         private String num;
         private String territoryName;
+        private Guild guild;
         private String acquired;
         private String heldTime;
 
-        private Display(String num, String territoryName, String acquired, String heldTime) {
+        private Display(String num, String territoryName, Guild guild, String acquired, String heldTime) {
             this.num = num;
             this.territoryName = territoryName;
+            this.guild = guild;
             this.acquired = acquired;
             this.heldTime = heldTime;
         }
@@ -179,11 +188,17 @@ public class TerritoryListCmd extends GenericCommand {
         int end = Math.min((page + 1) * TERRITORIES_PER_PAGE, territories.size());
         Date now = new Date();
         List<Display> displays = new ArrayList<>();
+
+        Map<String, String> guildPrefixes = this.guildPrefixesResolver.resolveGuildPrefixes(
+                territories.subList(begin, end).stream().map(Territory::getGuild).collect(Collectors.toList())
+        );
+
         for (int i = begin; i < end; i++) {
             Territory t = territories.get(i);
             displays.add(new Display(
                     String.valueOf(i + 1),
                     t.getName(),
+                    new Guild(t.getGuild(), guildPrefixes.getOrDefault(t.getGuild(), null)),
                     dateFormat.format(t.getAcquired()),
                     FormatUtils.formatReadableTime(
                             (now.getTime() - t.getAcquired().getTime()) / 1000L, false, "s"
@@ -213,9 +228,10 @@ public class TerritoryListCmd extends GenericCommand {
 
         List<String> ret = new ArrayList<>();
         for (Display d : displays) {
-            ret.add(String.format("%s.%s %s",
+            ret.add(String.format("%s.%s %s : %s [%s]",
                     d.num, nSpaces(numJustify - d.num.length()),
-                    d.territoryName
+                    d.territoryName,
+                    d.guild.name, d.guild.prefix != null ? d.guild.prefix : "???"
             ));
             ret.add(String.format("%s  Acquired: %s",
                     nSpaces(numJustify), d.acquired
