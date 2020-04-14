@@ -110,6 +110,26 @@ class MariaTerritoryRepository extends TerritoryRepository {
     }
 
     @Nullable
+    @Override
+    public List<Territory> getGuildTerritories(@NotNull String guildName) {
+        ResultSet res = this.executeQuery(
+                "SELECT * FROM `territory` WHERE `guild_name` = ?",
+                guildName
+        );
+
+        if (res == null) {
+            return null;
+        }
+
+        try {
+            return bindAll(res);
+        } catch (SQLException e) {
+            this.logResponseException(e);
+            return null;
+        }
+    }
+
+    @Nullable
     public List<TerritoryRank> getGuildTerritoryNumbers() {
         ResultSet res = this.executeQuery(
                 "SELECT `guild_name`, COUNT(*) AS `territories`, RANK() OVER (ORDER BY COUNT(*) DESC) FROM `territory` GROUP BY `guild_name`"
@@ -137,7 +157,7 @@ class MariaTerritoryRepository extends TerritoryRepository {
         return null;
     }
 
-    public int getGuildTerritoryRankingSpecific(@NotNull String guildName) {
+    public int getGuildTerritoryRanking(@NotNull String guildName) {
         ResultSet res = this.executeQuery(
                 "SELECT `ttn`.`rank` FROM (SELECT `guild_name`, RANK() OVER (ORDER BY COUNT(*) DESC) AS `rank` FROM `territory` GROUP BY `guild_name`) AS ttn WHERE `guild_name` = ?",
                 guildName

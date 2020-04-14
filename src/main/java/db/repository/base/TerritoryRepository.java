@@ -25,6 +25,14 @@ public abstract class TerritoryRepository extends Repository<Territory, Territor
     public abstract int countGuildTerritories(@NotNull String guildName);
 
     /**
+     * Returns a list of territories the guild possesses.
+     * @param guildName Guild name.
+     * @return Territory list.
+     */
+    @Nullable
+    public abstract List<Territory> getGuildTerritories(@NotNull String guildName);
+
+    /**
      * Get ranking of guilds by number of territories.
      * @return Ranking map, where keys are guild names and values are number of territories.
      */
@@ -36,7 +44,7 @@ public abstract class TerritoryRepository extends Repository<Territory, Territor
      * @param guildName Guild name.
      * @return Ranking. -1 if something went wrong. 0 if the guild does not exist in the ranking.
      */
-    public abstract int getGuildTerritoryRankingSpecific(@NotNull String guildName);
+    public abstract int getGuildTerritoryRanking(@NotNull String guildName);
 
     /**
      * Retrieves the latest `acquired` time.

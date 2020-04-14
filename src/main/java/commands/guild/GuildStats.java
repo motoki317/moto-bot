@@ -296,7 +296,7 @@ public class GuildStats extends GenericCommand {
             ));
 
             int territories = this.territoryRepository.countGuildTerritories(guild.getName());
-            int territoryRank = this.territoryRepository.getGuildTerritoryRankingSpecific(guild.getName());
+            int territoryRank = this.territoryRepository.getGuildTerritoryRanking(guild.getName());
             if (territoryRank <= 0) {
                 ret.add(
                         String.format("Territory: %s", territories)

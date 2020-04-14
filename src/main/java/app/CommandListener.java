@@ -76,6 +76,7 @@ public class CommandListener extends ListenerAdapter {
 
         addCommand(new GuildCmd(bot));
         addCommand(new GuildStats(bot));
+        addCommand(new TerritoryListCmd(bot));
 
         addCommand(new GuildRank(bot));
         addCommand(new GuildLevelRank(bot));

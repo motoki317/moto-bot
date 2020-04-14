@@ -40,7 +40,7 @@ public class GuildNameResolver {
                  Consumer<@NotNull String> onFailure) {
         List<Guild> guilds = findGuilds(guildName);
         if (guilds == null) {
-            onFailure.accept("Something went wrong while retrieving guilds...");
+            onFailure.accept("Something went wrong while retrieving guilds data...");
             return;
         }
 
