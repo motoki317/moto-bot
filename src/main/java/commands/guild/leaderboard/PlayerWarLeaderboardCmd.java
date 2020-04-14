@@ -105,9 +105,10 @@ public class PlayerWarLeaderboardCmd extends GenericCommand {
                 )
                 .addField("Examples",
                         String.join("\n",
-                                ".g plb : Displays leaderboard of all players ordered by # of success wars.",
-                                ".g plb -g UXs -t : Displays leaderboard of players in the guild UXs ordered by # of total wars.",
-                                ".g plb -sc -d 7 : Displays leaderboard of all players, in last 7 days, and in order of # of success rate."
+                                ">g plb : Displays leaderboard of all players ordered by # of success wars.",
+                                ">g plb -g UXs -t : Displays leaderboard of players in the guild UXs ordered by # of total wars.",
+                                ">g plb -sc -d 7 : Displays leaderboard of all players, in last 7 days, and in order of # of success rate.",
+                                ">g plb --since 3 days ago --until 1 day ago : Displays leaderboard from 3 days ago to 1 day ago."
                         ),
                         false
                 ).build()

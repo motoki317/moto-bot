@@ -94,9 +94,10 @@ public class GuildWarLeaderboardCmd extends GenericCommand {
                 )
                 .addField("Examples",
                         String.join("\n",
-                                ".g lb : Displays leaderboard of all guilds ordered by # of success wars.",
-                                ".g lb -t : Displays leaderboard of guilds ordered by # of total wars.",
-                                ".g plb -sc -d 7 : Displays leaderboard of all players in last 7 days in order of # of success rate."
+                                ">g lb : Displays leaderboard of all guilds ordered by # of success wars.",
+                                ">g lb -t : Displays leaderboard of guilds ordered by # of total wars.",
+                                ">g lb -sc -d 7 : Displays leaderboard of all guilds in last 7 days in order of # of success rate.",
+                                ">g lb --since 3 days ago --until 1 day ago : Displays leaderboard from 3 days ago to 1 day ago."
                         ),
                         false
                 ).build()
