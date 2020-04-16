@@ -42,6 +42,8 @@ public class DatabaseMariaImpl implements Database {
     private GuildXpLeaderboardRepository guildXpLeaderboardRepository;
     private GuildWarLeaderboardRepository guildWarLeaderboardRepository;
     private PlayerWarLeaderboardRepository playerWarLeaderboardRepository;
+    private TerritoryListRepository territoryListRepository;
+    private GuildListRepository guildListRepository;
 
     public DatabaseMariaImpl(Logger logger) {
         this.logger = logger;
@@ -193,5 +195,21 @@ public class DatabaseMariaImpl implements Database {
             this.playerWarLeaderboardRepository = new MariaPlayerWarLeaderboardRepository(this.connectionPool, this.logger);
         }
         return this.playerWarLeaderboardRepository;
+    }
+
+    @Override
+    public @NotNull TerritoryListRepository getTerritoryListRepository() {
+        if (this.territoryListRepository == null) {
+            this.territoryListRepository = new MariaTerritoryListRepository(this.connectionPool, this.logger);
+        }
+        return this.territoryListRepository;
+    }
+
+    @Override
+    public @NotNull GuildListRepository getGuildListRepository() {
+        if (this.guildListRepository == null) {
+            this.guildListRepository = new MariaGuildListRepository(this.connectionPool, this.logger);
+        }
+        return this.guildListRepository;
     }
 }

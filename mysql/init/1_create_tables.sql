@@ -453,3 +453,19 @@ CREATE TABLE IF NOT EXISTS `date_format` (
 CREATE TABLE IF NOT EXISTS `ignore_channel` (
     `channel_id` BIGINT PRIMARY KEY NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+# User defined custom guild list
+CREATE TABLE IF NOT EXISTS `guild_list` (
+    `user_id` BIGINT NOT NULL,
+    `list_name` VARCHAR(30) NOT NULL,
+    `guild_name` VARBINARY(30) NOT NULL,
+    PRIMARY KEY (`user_id`, `list_name`, `guild_name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+# User defined custom territory list
+CREATE TABLE IF NOT EXISTS `territory_list` (
+    `user_id` BIGINT NOT NULL,
+    `list_name` VARCHAR(30) NOT NULL,
+    `territory_name` VARCHAR(100) NOT NULL,
+    PRIMARY KEY (`user_id`, `list_name`, `territory_name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

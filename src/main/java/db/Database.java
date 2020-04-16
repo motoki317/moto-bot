@@ -40,4 +40,8 @@ public interface Database {
     GuildWarLeaderboardRepository getGuildWarLeaderboardRepository();
     @NotNull
     PlayerWarLeaderboardRepository getPlayerWarLeaderboardRepository();
+    @NotNull
+    TerritoryListRepository getTerritoryListRepository();
+    @NotNull
+    GuildListRepository getGuildListRepository();
 }
