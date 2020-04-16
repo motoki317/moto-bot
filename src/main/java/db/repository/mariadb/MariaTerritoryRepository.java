@@ -399,6 +399,29 @@ class MariaTerritoryRepository extends TerritoryRepository {
         return null;
     }
 
+    @Nullable
+    @Override
+    public List<Territory> findAllIn(List<String> territoryNames) {
+        String placeHolder = "?";
+        ResultSet res = this.executeQuery(
+                "SELECT * FROM `territory` WHERE `name` IN (" +
+                        territoryNames.stream().map(t -> placeHolder).collect(Collectors.joining(", "))
+                        + ")",
+                territoryNames.toArray()
+        );
+
+        if (res == null) {
+            return null;
+        }
+
+        try {
+            return bindAll(res);
+        } catch (SQLException e) {
+            this.logResponseException(e);
+            return null;
+        }
+    }
+
     @Override
     public boolean delete(@NotNull TerritoryId territoryId) {
         return this.execute(

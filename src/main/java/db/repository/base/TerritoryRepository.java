@@ -68,4 +68,12 @@ public abstract class TerritoryRepository extends Repository<Territory, Territor
      */
     @Nullable
     public abstract List<String> territoryNamesBeginsWith(String prefix);
+
+    /**
+     * Retrieves all territory data in the given territory names.
+     * @param territoryNames Exact territory names
+     * @return List of territories.
+     */
+    @Nullable
+    public abstract List<Territory> findAllIn(List<String> territoryNames);
 }
