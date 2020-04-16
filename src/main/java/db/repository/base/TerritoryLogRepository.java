@@ -1,11 +1,14 @@
 package db.repository.base;
 
 import db.ConnectionPool;
+import db.model.territoryLog.TerritoryActivity;
 import db.model.territoryLog.TerritoryLog;
 import db.model.territoryLog.TerritoryLogId;
 import log.Logger;
+import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
+import java.util.Date;
 import java.util.List;
 
 public abstract class TerritoryLogRepository extends Repository<TerritoryLog, TerritoryLogId> {
@@ -52,4 +55,19 @@ public abstract class TerritoryLogRepository extends Repository<TerritoryLog, Te
      */
     @Nullable
     public abstract List<TerritoryLog> territoryLogs(String territoryName, int limit, int offset);
+
+    /**
+     * Retrieves how many territory logs there are for every territory.
+     * @return List of territory activities.
+     */
+    @Nullable
+    public abstract List<TerritoryActivity> territoryActivity();
+
+    /**
+     * Retrieves how many territory logs there are for every territory in the specified range.
+     * @param start Start date (inclusive).
+     * @param end End date (exclusive).
+     * @return List of territory activities.
+     */
+    public abstract List<TerritoryActivity> territoryActivity(@NotNull Date start, @NotNull Date end);
 }

@@ -24,16 +24,35 @@ public class RangeParser {
         }
     }
 
+    /**
+     * Parses range from the given arguments.
+     * @param parsedArgs Parsed arguments in form of map. e.g. {"-since": "2020-01-01 12:00:00", "-until", "2020-01-05 12:00:00"} and so on.
+     * @param timeZone Time zone to parse with.
+     * @param maxRange Max range in milliseconds. If the parsed range exceeds this range, an exception is thrown.
+     * @return Time range.
+     * @throws IllegalArgumentException On parse error, i.e. argument like "-since" was specified but unable to parse it.
+     * @see ArgumentParser for parsedArgs argument.
+     */
     @Nullable
-    public static Range parseRange(Map<String, String> parsedArgs, TimeZone timeZone) throws IllegalArgumentException {
+    public static Range parseRange(Map<String, String> parsedArgs, TimeZone timeZone, @Nullable Long maxRange) throws IllegalArgumentException {
         // Specify range with "--days" argument
         Range range = parseRangeByDays(parsedArgs);
-        if (range != null) {
-            return range;
-        }
 
         // Specify range with "--since" and "--until" argument
-        range = parseRangeByTime(parsedArgs, timeZone);
+        if (range == null) {
+            range = parseRangeByTime(parsedArgs, timeZone);
+        }
+
+        // Validate the outcome
+        if (range != null) {
+            if (range.start.after(range.end)) {
+                throw new IllegalArgumentException("Since date comes after the specified until date.");
+            }
+            if (maxRange != null && (range.end.getTime() - range.start.getTime()) > maxRange) {
+                throw new IllegalArgumentException(String.format("Too large date difference (max: %s days).",
+                        maxRange / TimeUnit.DAYS.toMillis(1)));
+            }
+        }
 
         return range;
     }
@@ -43,9 +62,6 @@ public class RangeParser {
         if (parsedArgs.containsKey("d") || parsedArgs.containsKey("-days")) {
             int days = InputChecker.getPositiveInteger(parsedArgs.get("d") != null
                     ? parsedArgs.get("d") : parsedArgs.get("-days"));
-            if (days < 0 || days > 30) {
-                throw new NumberFormatException("Please input an integer between 1 and 30 for days argument!");
-            }
 
             Date now = new Date();
             Date old = new Date(now.getTime() - TimeUnit.DAYS.toMillis(days));
@@ -71,24 +87,14 @@ public class RangeParser {
             Date until = untilStr == null
                     ? new Date(now)
                     : parseDate(untilStr, timeZone, now);
+
             if (since == null || until == null) {
                 throw new IllegalArgumentException("Failed to parse since or until arguments. Please input a valid date.");
-            }
-
-            if (since.after(until)) {
-                throw new IllegalArgumentException("Since date comes after the specified until date.");
-            }
-
-            if ((until.getTime() - since.getTime()) > MAX_RANGE) {
-                throw new IllegalArgumentException(String.format("Too large date difference (max: %s days).", MAX_DAYS));
             }
             return new Range(since, until);
         }
         return null;
     }
-
-    private final static int MAX_DAYS = 32;
-    private final static long MAX_RANGE = TimeUnit.DAYS.toMillis(MAX_DAYS);
 
     private static class TimePattern {
         private final Pattern pattern;

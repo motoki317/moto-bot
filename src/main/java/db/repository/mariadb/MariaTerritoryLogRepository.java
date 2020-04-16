@@ -1,6 +1,7 @@
 package db.repository.mariadb;
 
 import db.ConnectionPool;
+import db.model.territoryLog.TerritoryActivity;
 import db.model.territoryLog.TerritoryLog;
 import db.model.territoryLog.TerritoryLogId;
 import db.repository.base.TerritoryLogRepository;
@@ -10,11 +11,16 @@ import org.jetbrains.annotations.NotNull;
 import javax.annotation.Nullable;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
 public class MariaTerritoryLogRepository extends TerritoryLogRepository {
+    private static final DateFormat dbFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+
     MariaTerritoryLogRepository(ConnectionPool db, Logger logger) {
         super(db, logger);
     }
@@ -23,6 +29,18 @@ public class MariaTerritoryLogRepository extends TerritoryLogRepository {
     protected TerritoryLog bind(@NotNull ResultSet res) throws SQLException {
         return new TerritoryLog(res.getInt(1), res.getString(2), res.getString(3), res.getString(4),
                 res.getInt(5), res.getInt(6), res.getTimestamp(7), res.getLong(8));
+    }
+
+    private TerritoryActivity bindActivity(@NotNull ResultSet res) throws SQLException {
+        return new TerritoryActivity(res.getString(1), res.getInt(2));
+    }
+
+    private List<TerritoryActivity> bindAllActivities(@NotNull ResultSet res) throws SQLException {
+        List<TerritoryActivity> ret = new ArrayList<>();
+        while (res.next()) {
+            ret.add(bindActivity(res));
+        }
+        return ret;
     }
 
     @Override
@@ -189,6 +207,46 @@ public class MariaTerritoryLogRepository extends TerritoryLogRepository {
 
         try {
             return bindAll(res);
+        } catch (SQLException e) {
+            this.logResponseException(e);
+            return null;
+        }
+    }
+
+    @Nullable
+    @Override
+    public List<TerritoryActivity> territoryActivity() {
+        ResultSet res = this.executeQuery(
+                "SELECT `territory_name`, COUNT(*) FROM `territory_log` GROUP BY `territory_name`"
+        );
+
+        if (res == null) {
+            return null;
+        }
+
+        try {
+            return bindAllActivities(res);
+        } catch (SQLException e) {
+            this.logResponseException(e);
+            return null;
+        }
+    }
+
+    @Override
+    public List<TerritoryActivity> territoryActivity(@NotNull Date start, @NotNull Date end) {
+        ResultSet res = this.executeQuery(
+                "SELECT `territory_name`, COUNT(*) FROM `territory_log`" +
+                        " WHERE `acquired` >= ? AND `acquired` < ? GROUP BY `territory_name`",
+                dbFormat.format(start),
+                dbFormat.format(end)
+        );
+
+        if (res == null) {
+            return null;
+        }
+
+        try {
+            return bindAllActivities(res);
         } catch (SQLException e) {
             this.logResponseException(e);
             return null;

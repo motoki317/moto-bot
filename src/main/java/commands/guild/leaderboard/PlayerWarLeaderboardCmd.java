@@ -27,6 +27,7 @@ import utils.rateLimit.RateLimitException;
 
 import java.text.DateFormat;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -240,6 +241,8 @@ public class PlayerWarLeaderboardCmd extends GenericCommand {
         }
     }
 
+    private static final long MAX_RANGE = TimeUnit.DAYS.toMillis(32);
+
     @Override
     public void process(@NotNull MessageReceivedEvent event, @NotNull String[] args) {
         Map<String, String> parsedArgs = new ArgumentParser(args).getArgumentMap();
@@ -250,9 +253,9 @@ public class PlayerWarLeaderboardCmd extends GenericCommand {
         SortType sortType = parseSortType(parsedArgs);
         Range range;
         try {
-            range = parseRange(parsedArgs, customTimeZone.getTimeZoneInstance());
+            range = parseRange(parsedArgs, customTimeZone.getTimeZoneInstance(), MAX_RANGE);
         } catch (IllegalArgumentException e) {
-            respond(event, e.getMessage());
+            respondException(event, e.getMessage());
             return;
         }
 

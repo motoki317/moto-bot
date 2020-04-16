@@ -13,8 +13,7 @@ import java.util.Map;
 import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.*;
 import static utils.RangeParser.Range;
 import static utils.RangeParser.parseRange;
 
@@ -126,7 +125,7 @@ class RangeParserTest {
         };
 
         for (TestCase t : cases) {
-            Range range = parseRange(t.args, utc);
+            Range range = parseRange(t.args, utc, null);
             String caseStr = String.format("Test case %s", t.args);
             assertNotNull(range, caseStr);
             assertEquals(t.expected, range.end.getTime() - range.start.getTime(), caseStr);
@@ -137,5 +136,21 @@ class RangeParserTest {
                 assertEquals(t.expectedUntil, range.end, caseStr);
             }
         }
+    }
+
+    @Test
+    void testMaxRange() {
+        long MAX_RANGE = TimeUnit.DAYS.toMillis(31);
+
+        assertDoesNotThrow(() -> parseRange(
+                createMap("S", "2020-04-01", "U", "2020-04-05"),
+                utc,
+                MAX_RANGE
+        ));
+        assertThrows(IllegalArgumentException.class, () -> parseRange(
+                createMap("S", "2019-04-01", "U", "2020-04-05"),
+                utc,
+                MAX_RANGE
+        ));
     }
 }
