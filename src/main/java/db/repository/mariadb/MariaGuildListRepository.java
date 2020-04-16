@@ -124,7 +124,7 @@ public class MariaGuildListRepository extends GuildListRepository {
     @Override
     public List<GuildListEntry> getList(long userId, @NotNull String listName) {
         ResultSet res = this.executeQuery(
-                "SELECT COUNT(*) FROM `guild_list` WHERE `user_id` = ? AND `list_name` = ?",
+                "SELECT * FROM `guild_list` WHERE `user_id` = ? AND `list_name` = ?",
                 userId, listName
         );
 

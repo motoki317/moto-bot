@@ -94,6 +94,7 @@ public class CommandListener extends ListenerAdapter {
         addCommand(new PlayerWarLeaderboardCmd(bot));
 
         addCommand(new CustomTerritoryListCmd(bot));
+        addCommand(new CustomGuildListCmd(bot));
     }
 
     private void addCommand(BotCommand command) {

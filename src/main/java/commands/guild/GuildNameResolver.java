@@ -76,7 +76,7 @@ public class GuildNameResolver {
      * @return List of found guilds. null if something went wrong.
      */
     @Nullable
-    private List<Guild> findGuilds(@NotNull String specified) {
+    List<Guild> findGuilds(@NotNull String specified) {
         // Case sensitive full name search
         List<Guild> ret;
         Guild guild = this.guildRepository.findOne(() -> specified);
