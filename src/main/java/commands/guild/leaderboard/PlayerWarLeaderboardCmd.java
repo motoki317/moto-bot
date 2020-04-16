@@ -32,8 +32,8 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static commands.guild.leaderboard.LeaderboardCommon.Range;
-import static commands.guild.leaderboard.LeaderboardCommon.parseRange;
+import static utils.RangeParser.Range;
+import static utils.RangeParser.parseRange;
 
 public class PlayerWarLeaderboardCmd extends GenericCommand {
     private final GuildWarLogRepository guildWarLogRepository;
@@ -68,7 +68,7 @@ public class PlayerWarLeaderboardCmd extends GenericCommand {
 
     @Override
     public @NotNull String syntax() {
-        return "g plb [-g|--guild guild name] [-t|--total] [-sc|--success] [-sr|--survived] [-d|--days] [--since|-S] [--until|-U]";
+        return "g plb [-g|--guild <guild name>] [-t|--total] [-sc|--success] [-sr|--survived] [-d|--days <num>] [--since|-S <date>] [--until|-U <date>]";
     }
 
     @Override

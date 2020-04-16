@@ -1,8 +1,7 @@
-package commands.guild.leaderboard;
+package utils;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import utils.InputChecker;
 
 import java.text.DateFormat;
 import java.text.ParseException;
@@ -12,21 +11,21 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-class LeaderboardCommon {
-    static class Range {
+public class RangeParser {
+    public static class Range {
         @NotNull
-        final Date start;
+        public final Date start;
         @NotNull
-        final Date end;
+        public final Date end;
 
-        Range(@NotNull Date start, @NotNull Date end) {
+        private Range(@NotNull Date start, @NotNull Date end) {
             this.start = start;
             this.end = end;
         }
     }
 
     @Nullable
-    static Range parseRange(Map<String, String> parsedArgs, TimeZone timeZone) throws IllegalArgumentException {
+    public static Range parseRange(Map<String, String> parsedArgs, TimeZone timeZone) throws IllegalArgumentException {
         // Specify range with "--days" argument
         Range range = parseRangeByDays(parsedArgs);
         if (range != null) {
@@ -58,18 +57,20 @@ class LeaderboardCommon {
     @Nullable
     private static Range parseRangeByTime(Map<String, String> parsedArgs, TimeZone timeZone) throws IllegalArgumentException {
         if (parsedArgs.containsKey("-since") || parsedArgs.containsKey("S")) {
+            long now = System.currentTimeMillis();
+
             String sinceStr = parsedArgs.get("-since") != null
                     ? parsedArgs.get("-since")
                     : parsedArgs.get("S");
             String untilStr = parsedArgs.get("-until") != null
                     ? parsedArgs.get("-until")
-                    : parsedArgs.get("S");
+                    : parsedArgs.get("U");
 
-            Date since = parseDate(sinceStr, timeZone);
+            Date since = parseDate(sinceStr, timeZone, now);
             // If "until" argument is not specified, take current time
             Date until = untilStr == null
-                    ? new Date()
-                    : parseDate(untilStr, timeZone);
+                    ? new Date(now)
+                    : parseDate(untilStr, timeZone, now);
             if (since == null || until == null) {
                 throw new IllegalArgumentException("Failed to parse since or until arguments. Please input a valid date.");
             }
@@ -104,10 +105,11 @@ class LeaderboardCommon {
 
     static {
         acceptableFormats = new ArrayList<>();
-        acceptableFormats.add(new SimpleDateFormat("yyyy-MM-dd"));
-        acceptableFormats.add(new SimpleDateFormat("yyyy/MM/dd"));
+        // Try more precise formats first
         acceptableFormats.add(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"));
         acceptableFormats.add(new SimpleDateFormat("yyyy/MM/dd HH:mm:ss"));
+        acceptableFormats.add(new SimpleDateFormat("yyyy-MM-dd"));
+        acceptableFormats.add(new SimpleDateFormat("yyyy/MM/dd"));
 
         timePatterns = new ArrayList<>();
         timePatterns.add(new TimePattern(
@@ -125,7 +127,7 @@ class LeaderboardCommon {
     }
 
     @Nullable
-    private synchronized static Date parseDate(String str, TimeZone timeZone) {
+    private synchronized static Date parseDate(String str, TimeZone timeZone, long now) {
         for (DateFormat format : acceptableFormats) {
             format.setTimeZone(timeZone);
             try {
@@ -142,7 +144,7 @@ class LeaderboardCommon {
             if (m.matches()) {
                 int num = Integer.parseInt(m.group(1));
                 return new Date(
-                        System.currentTimeMillis() - p.unit.toMillis(num)
+                        now - p.unit.toMillis(num)
                 );
             }
         }

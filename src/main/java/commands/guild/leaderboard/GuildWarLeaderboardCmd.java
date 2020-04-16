@@ -27,8 +27,8 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static commands.guild.leaderboard.LeaderboardCommon.Range;
-import static commands.guild.leaderboard.LeaderboardCommon.parseRange;
+import static utils.RangeParser.Range;
+import static utils.RangeParser.parseRange;
 
 public class GuildWarLeaderboardCmd extends GenericCommand {
     private final GuildWarLogRepository guildWarLogRepository;
@@ -59,7 +59,7 @@ public class GuildWarLeaderboardCmd extends GenericCommand {
 
     @Override
     public @NotNull String syntax() {
-        return "g lb [-t|--total] [-sc|--success] [-d|--days] [--since|-S] [--until|-U]";
+        return "g lb [-t|--total] [-sc|--success] [-d|--days <num>] [--since|-S <date>] [--until|-U <date>]";
     }
 
     @Override
