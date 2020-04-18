@@ -70,6 +70,7 @@ public class CommandListener extends ListenerAdapter {
 
         addCommand(new Find(bot));
         addCommand(new PlayerStats(bot));
+        addCommand(new NameHistoryCmd(bot));
 
         addCommand(new ItemView(bot));
         addCommand(new IdentifyItem(bot));
