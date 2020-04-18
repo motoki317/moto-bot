@@ -12,6 +12,7 @@ import db.repository.base.IgnoreChannelRepository;
 import db.repository.base.PrefixRepository;
 import log.DiscordSpamChecker;
 import log.Logger;
+import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import org.jetbrains.annotations.NotNull;
@@ -179,6 +180,23 @@ public class CommandListener extends ListenerAdapter {
         if (argLength < args.length && args[argLength].equalsIgnoreCase("help")) {
             event.getChannel().sendMessage(command.longHelp()).queue();
             return;
+        }
+
+        // Check permissions to execute the command
+        if (command.requirePermissions()) {
+            Member member = event.getMember();
+            if (member == null) {
+                event.getChannel().sendMessage(
+                        "You cannot execute this command in DM because it requires guild permissions."
+                ).queue();
+                return;
+            }
+            if (!command.hasPermissions(member)) {
+                event.getChannel().sendMessage(
+                        "You do not have enough permissions to execute this command!"
+                ).queue();
+                return;
+            }
         }
 
         // Process command

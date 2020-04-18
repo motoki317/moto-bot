@@ -1,6 +1,8 @@
 package commands.base;
 
 import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.Permission;
+import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
@@ -8,7 +10,9 @@ import org.jetbrains.annotations.NotNull;
 import utils.MinecraftColor;
 
 import java.time.Instant;
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.function.Consumer;
 
 public abstract class BotCommand {
@@ -53,7 +57,7 @@ public abstract class BotCommand {
      * Get base arguments length of this command.
      * Examples:
      * "help" command: 1,
-     * "g levelrank" command: 2
+     * "g levelRank" command: 2
      * @return Length of base arguments.
      */
     public int getArgumentsLength() {
@@ -82,6 +86,43 @@ public abstract class BotCommand {
      */
     @NotNull
     public abstract Message longHelp();
+
+    /**
+     * Get required guild permissions to execute this command.
+     * All permission given by this has to be satisfied by the member.
+     * If no permission is required, returns an empty list.
+     * @return List of permissions.
+     */
+    @NotNull
+    protected Permission[] getRequiredPermissions() {
+        return new Permission[]{};
+    }
+
+    /**
+     * Checks if this command requires any guild permissions.
+     * @return Returns {@code true} this command requires guild perms.
+     */
+    public boolean requirePermissions() {
+        return this.getRequiredPermissions().length > 0;
+    }
+
+    /**
+     * Checks if the given member has enough permissions to execute this command.
+     * Should check {@link BotCommand#requirePermissions()} first before calling this.
+     * @param member Guild member.
+     * @return {@code true} if
+     */
+    public boolean hasPermissions(@NotNull Member member) {
+        if (member.hasPermission(Permission.ADMINISTRATOR)) {
+            return true;
+        }
+        for (Permission p : this.getRequiredPermissions()) {
+            if (!member.hasPermission(p)) {
+                return false;
+            }
+        }
+        return true;
+    }
 
     /**
      * Process a command.

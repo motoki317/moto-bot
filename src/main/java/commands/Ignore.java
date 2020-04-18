@@ -4,6 +4,7 @@ import commands.base.GenericCommand;
 import db.model.ignoreChannel.IgnoreChannel;
 import db.repository.base.IgnoreChannelRepository;
 import net.dv8tion.jda.api.MessageBuilder;
+import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import org.jetbrains.annotations.NotNull;
@@ -34,6 +35,12 @@ public class Ignore extends GenericCommand {
     @Override
     public @NotNull Message longHelp() {
         return new MessageBuilder(this.shortHelp()).build();
+    }
+
+    @NotNull
+    @Override
+    protected Permission[] getRequiredPermissions() {
+        return new Permission[]{Permission.MANAGE_CHANNEL};
     }
 
     @Override

@@ -6,6 +6,8 @@ import db.model.prefix.PrefixId;
 import db.repository.base.PrefixRepository;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.MessageBuilder;
+import net.dv8tion.jda.api.Permission;
+import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import org.jetbrains.annotations.NotNull;
@@ -62,6 +64,27 @@ public class PrefixCmd extends GenericCommand {
 
     private static final int PREFIX_MAX_LENGTH = 10;
 
+    /**
+     * Checks if the member has enough permissions to change the given type prefix.
+     * @param type Prefix type.
+     * @param member Guild member.
+     * @return {@code true} if the guild member has enough permissions.
+     */
+    private static boolean hasPermissions(Type type, @NotNull Member member) {
+        if (member.hasPermission(Permission.ADMINISTRATOR)) {
+            return true;
+        }
+        switch (type) {
+            case User:
+                return true;
+            case Channel:
+                return member.hasPermission(Permission.MANAGE_CHANNEL);
+            case Guild:
+                return member.hasPermission(Permission.MANAGE_SERVER);
+            default:
+                return false;
+        }
+    }
 
     @Override
     public void process(@NotNull MessageReceivedEvent event, @NotNull String[] args) {
@@ -92,6 +115,18 @@ public class PrefixCmd extends GenericCommand {
         if (type == Type.Guild && !event.isFromGuild()) {
             respond(event, "You cannot set a guild settings from a DM.");
             return;
+        }
+
+        if (event.isFromGuild()) {
+            Member member = event.getMember();
+            if (member == null) {
+                respondError(event, "Something went wrong while retrieving your permissions...");
+                return;
+            }
+            if (!hasPermissions(type, member)) {
+                respond(event, "You do not have enough permissions to change this prefix.");
+                return;
+            }
         }
 
         String newPrefix = args[1];

@@ -14,6 +14,7 @@ import db.repository.base.TrackChannelRepository;
 import log.Logger;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.MessageBuilder;
+import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import org.jetbrains.annotations.NotNull;
@@ -126,6 +127,12 @@ public class Track extends GuildCommand {
                         false)
                 .build()
         ).build();
+    }
+
+    @NotNull
+    @Override
+    protected Permission[] getRequiredPermissions() {
+        return new Permission[]{Permission.MANAGE_CHANNEL};
     }
 
     @Override
