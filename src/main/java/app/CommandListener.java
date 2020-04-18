@@ -69,6 +69,7 @@ public class CommandListener extends ListenerAdapter {
         addCommand(new SetPage(bot));
 
         addCommand(new CatCmd(bot));
+        addCommand(new DiscordIdInfo(bot));
 
         addCommand(new Find(bot));
         addCommand(new PlayerStats(bot));
