@@ -4,19 +4,19 @@ import app.Bot;
 import commands.base.GenericCommand;
 import db.model.dateFormat.CustomDateFormat;
 import db.model.guildLeaderboard.GuildLeaderboard;
+import db.model.guildList.GuildListEntry;
 import db.model.guildXpLeaderboard.GuildXpLeaderboard;
 import db.model.timezone.CustomTimeZone;
-import db.repository.base.DateFormatRepository;
-import db.repository.base.GuildLeaderboardRepository;
-import db.repository.base.GuildXpLeaderboardRepository;
-import db.repository.base.TimeZoneRepository;
+import db.repository.base.*;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import update.multipage.MultipageHandler;
 import update.reaction.ReactionManager;
+import utils.ArgumentParser;
 import utils.FormatUtils;
 
 import java.math.BigDecimal;
@@ -31,6 +31,7 @@ public class GuildLevelRank extends GenericCommand {
     private final GuildXpLeaderboardRepository guildXpLeaderboardRepository;
     private final DateFormatRepository dateFormatRepository;
     private final TimeZoneRepository timeZoneRepository;
+    private final GuildListRepository guildListRepository;
 
     public GuildLevelRank(Bot bot) {
         this.reactionManager = bot.getReactionManager();
@@ -38,6 +39,7 @@ public class GuildLevelRank extends GenericCommand {
         this.guildXpLeaderboardRepository = bot.getDatabase().getGuildXpLeaderboardRepository();
         this.dateFormatRepository = bot.getDatabase().getDateFormatRepository();
         this.timeZoneRepository = bot.getDatabase().getTimeZoneRepository();
+        this.guildListRepository = bot.getDatabase().getGuildListRepository();
     }
 
     @NotNull
@@ -48,13 +50,13 @@ public class GuildLevelRank extends GenericCommand {
 
     @Override
     public @NotNull String syntax() {
-        return "g levelrank";
+        return "g levelRank [-cl <list name>]";
     }
 
     @Override
     public @NotNull String shortHelp() {
-        return "Guilds ranking by level and XP.";
-        // TODO: Append your custom guild list name to arguments to view the rank of guilds in the list.
+        return "Guilds ranking by level and XP. " +
+                "Append your custom guild list name to arguments to view the rank of guilds in the list.";
     }
 
     @Override
@@ -63,6 +65,7 @@ public class GuildLevelRank extends GenericCommand {
                 new EmbedBuilder()
                         .setAuthor("Guild Level Rank command help")
                         .setDescription("Shows guilds ranking by their level and current XP.")
+                        .addField("Syntax", this.syntax(), false)
                         .addField("Why is it that only about 90 guilds are displayed?",
                                 "The bot is using leaderboard retrieved from the Wynncraft API to make level rank " +
                                         "leaderboard. Since leaderboard retrieved from the API is sorted by territory " +
@@ -74,6 +77,17 @@ public class GuildLevelRank extends GenericCommand {
                                 false)
                         .build()
         ).build();
+    }
+
+    /**
+     * Parses the command args and returns non-null list name if custom guild list was specified.
+     * @param args Command args.
+     * @return List name if specified.
+     */
+    @Nullable
+    private static String parseListName(String[] args) {
+        ArgumentParser parser = new ArgumentParser(args);
+        return parser.getArgumentMap().getOrDefault("cl", null);
     }
 
     @Override
@@ -88,7 +102,11 @@ public class GuildLevelRank extends GenericCommand {
         Map<String, GuildXpLeaderboard> xpGainedMap = xpGained.stream()
                 .collect(Collectors.toMap(GuildXpLeaderboard::getName, g -> g));
 
-        trimAndSortLB(lb);
+        String listName = parseListName(args);
+        List<GuildListEntry> list = listName != null
+                ? this.guildListRepository.getList(event.getAuthor().getIdLong(), listName)
+                : null;
+        trimAndSortLB(lb, list);
 
         CustomDateFormat customDateFormat = this.dateFormatRepository.getDateFormat(event);
         CustomTimeZone customTimeZone = this.timeZoneRepository.getTimeZone(event);
@@ -120,6 +138,7 @@ public class GuildLevelRank extends GenericCommand {
 
         if (maxPage(lb) == 0) {
             respond(event, pages.apply(0));
+            return;
         }
 
         respond(event, pages.apply(0), message -> {
@@ -144,11 +163,18 @@ public class GuildLevelRank extends GenericCommand {
      * Since leaderboard retrieved from the API is sorted by territory number first and then levels,
      * discarding all entries below the lowest level guild with 0 territories will make an accurate level rank leaderboard.
      * @param lb Original leaderboard retrieved from the Wynncraft API.
+     * @param list If specified, custom guild list of the user.
      */
-    private static void trimAndSortLB(List<GuildLeaderboard> lb) {
+    private static void trimAndSortLB(List<GuildLeaderboard> lb, @Nullable List<GuildListEntry> list) {
         GuildLeaderboard threshold = lb.stream().filter(g -> g.getTerritories() == 0)
                 .min(GuildLeaderboard::compareLevelAndXP)
                 .orElse(null);
+
+        if (list != null) {
+            Set<String> guildNames = list.stream().map(GuildListEntry::getGuildName).collect(Collectors.toSet());
+            lb.removeIf(g -> !guildNames.contains(g.getName()));
+        }
+
         if (threshold == null) {
             return;
         }

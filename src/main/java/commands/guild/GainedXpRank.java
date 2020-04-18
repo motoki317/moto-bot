@@ -3,25 +3,26 @@ package commands.guild;
 import app.Bot;
 import commands.base.GenericCommand;
 import db.model.dateFormat.CustomDateFormat;
+import db.model.guildList.GuildListEntry;
 import db.model.guildXpLeaderboard.GuildXpLeaderboard;
 import db.model.timezone.CustomTimeZone;
-import db.repository.base.DateFormatRepository;
-import db.repository.base.GuildXpLeaderboardRepository;
-import db.repository.base.TerritoryRepository;
-import db.repository.base.TimeZoneRepository;
+import db.repository.base.*;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import update.multipage.MultipageHandler;
 import update.reaction.ReactionManager;
+import utils.ArgumentParser;
 import utils.FormatUtils;
 
 import java.math.BigDecimal;
 import java.text.DateFormat;
 import java.util.*;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 public class GainedXpRank extends GenericCommand {
     private final ReactionManager reactionManager;
@@ -29,6 +30,7 @@ public class GainedXpRank extends GenericCommand {
     private final DateFormatRepository dateFormatRepository;
     private final TimeZoneRepository timeZoneRepository;
     private final TerritoryRepository territoryRepository;
+    private final GuildListRepository guildListRepository;
 
     public GainedXpRank(Bot bot) {
         this.reactionManager = bot.getReactionManager();
@@ -36,6 +38,7 @@ public class GainedXpRank extends GenericCommand {
         this.dateFormatRepository = bot.getDatabase().getDateFormatRepository();
         this.timeZoneRepository = bot.getDatabase().getTimeZoneRepository();
         this.territoryRepository = bot.getDatabase().getTerritoryRepository();
+        this.guildListRepository = bot.getDatabase().getGuildListRepository();
     }
 
     @NotNull
@@ -46,13 +49,13 @@ public class GainedXpRank extends GenericCommand {
 
     @Override
     public @NotNull String syntax() {
-        return "g xp";
+        return "g xp [-cl <list name>]";
     }
 
     @Override
     public @NotNull String shortHelp() {
-        return "Shows top guilds in order of amount of XP gained in last 24 hours.";
-        // TODO: Append your custom guild list name to arguments to view the rank of guilds in the list.
+        return "Shows top guilds in order of amount of XP gained in last 24 hours. " +
+                "Append your custom guild list name to arguments to view the rank of guilds in the list.";
     }
 
     @Override
@@ -61,15 +64,56 @@ public class GainedXpRank extends GenericCommand {
                 new EmbedBuilder()
                 .setAuthor("Gained XP Command Help")
                 .setDescription(this.shortHelp())
+                .addField("Syntax", this.syntax(), false)
                 .build()
         ).build();
     }
 
+    /**
+     * Parses the command args and returns non-null list name if custom guild list was specified.
+     * @param args Command args.
+     * @return List name if specified.
+     */
+    @Nullable
+    private static String parseListName(String[] args) {
+        ArgumentParser parser = new ArgumentParser(args);
+        return parser.getArgumentMap().getOrDefault("cl", null);
+    }
+
+    @Nullable
+    private List<GuildXpLeaderboard> getLeaderboard(@Nullable List<GuildListEntry> list) {
+        List<GuildXpLeaderboard> lb = this.guildXpLeaderboardRepository.findAll();
+        if (lb != null && list != null) {
+            // If custom guild list is specified, filter only to the guilds inside the leaderboard
+            Set<String> guildNames = list.stream().map(GuildListEntry::getGuildName).collect(Collectors.toSet());
+            lb.removeIf(g -> !guildNames.contains(g.getName()));
+        }
+        return lb;
+    }
+
     @Override
     public void process(@NotNull MessageReceivedEvent event, @NotNull String[] args) {
-        List<GuildXpLeaderboard> xpLeaderboard = this.guildXpLeaderboardRepository.findAll();
-        if (xpLeaderboard == null || xpLeaderboard.size() == 0) {
+        String listName = parseListName(args);
+        List<GuildListEntry> list = null;
+        if (listName != null) {
+            list = this.guildListRepository.getList(event.getAuthor().getIdLong(), listName);
+            if (list == null) {
+                respondError(event, "Something went wrong while retrieving data...");
+                return;
+            }
+            if (list.isEmpty()) {
+                respond(event, String.format("You don't seem to have a custom guild list called `%s`.", listName));
+                return;
+            }
+        }
+
+        List<GuildXpLeaderboard> xpLeaderboard = getLeaderboard(list);
+        if (xpLeaderboard == null) {
             respondError(event, "Something went wrong while getting XP leaderboard...");
+            return;
+        }
+        if (xpLeaderboard.size() == 0) {
+            respond(event, "Somehow, there were no guilds to display on the leaderboard.");
             return;
         }
 
