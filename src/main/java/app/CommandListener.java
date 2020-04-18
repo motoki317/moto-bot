@@ -68,6 +68,8 @@ public class CommandListener extends ListenerAdapter {
         addCommand(new Ignore(bot.getDatabase().getIgnoreChannelRepository()));
         addCommand(new SetPage(bot));
 
+        addCommand(new CatCmd(bot));
+
         addCommand(new Find(bot));
         addCommand(new PlayerStats(bot));
         addCommand(new NameHistoryCmd(bot));
