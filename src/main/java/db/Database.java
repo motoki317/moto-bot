@@ -44,4 +44,6 @@ public interface Database {
     TerritoryListRepository getTerritoryListRepository();
     @NotNull
     GuildListRepository getGuildListRepository();
+    @NotNull
+    ServerLogRepository getServerLogRepository();
 }

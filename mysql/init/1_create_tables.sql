@@ -469,3 +469,9 @@ CREATE TABLE IF NOT EXISTS `territory_list` (
     `territory_name` VARCHAR(100) NOT NULL,
     PRIMARY KEY (`user_id`, `list_name`, `territory_name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+# Server log channels for each guild
+CREATE TABLE IF NOT EXISTS `server_log` (
+    `guild_id` BIGINT PRIMARY KEY,
+    `channel_id` BIGINT NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
