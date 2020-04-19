@@ -10,16 +10,16 @@ import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.CheckReturnValue;
 import javax.annotation.Nullable;
-import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 class MariaTerritoryRepository extends TerritoryRepository {
     private static final DateFormat dbFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
@@ -254,123 +254,33 @@ class MariaTerritoryRepository extends TerritoryRepository {
         );
     }
 
-    /**
-     * Creates entity using given connection.
-     * @param connection SQL connection.
-     * @param entity Territory entity.
-     * @return {@code true} if success.
-     */
-    private boolean create(Connection connection, Territory entity) {
-        Territory.Location location = entity.getLocation();
-        return this.execute(connection,
-                "INSERT INTO `territory` (name, guild_name, acquired, attacker, start_x, start_z, end_x, end_z) VALUES " +
-                        "(?, ?, ?, ?, ?, ?, ?, ?)",
-                entity.getName(),
-                entity.getGuild(),
-                dbFormat.format(entity.getAcquired()),
-                entity.getAttacker(),
-                location.getStartX(),
-                location.getStartZ(),
-                location.getEndX(),
-                location.getEndZ()
-        );
-    }
-
-    /**
-     * Updates entity using given connection.
-     * @param connection SQL connection.
-     * @param entity Territory entity.
-     * @return {@code true} if success.
-     */
-    private boolean update(Connection connection, Territory entity) {
-        Territory.Location location = entity.getLocation();
-        return this.execute(connection,
-                "UPDATE `territory` SET `guild_name` = ?, `acquired` = ?, `attacker` = ?, `start_x` = ?, `start_z` = ?, `end_x` = ?, `end_z` = ? WHERE `name` = ?",
-                entity.getGuild(),
-                dbFormat.format(entity.getAcquired()),
-                entity.getAttacker(),
-                location.getStartX(),
-                location.getStartZ(),
-                location.getEndX(),
-                location.getEndZ(),
-                entity.getName()
-        );
-    }
-
-    /**
-     * Deletes entity using given connection.
-     * @param connection SQL connection.
-     * @param entity Territory entity.
-     * @return {@code true} if success.
-     */
-    private boolean delete(Connection connection, TerritoryId entity) {
-        return this.execute(connection,
-                "DELETE FROM `territory` WHERE `name` = ?",
-                entity.getName()
-        );
-    }
-
     @CheckReturnValue
     public boolean updateAll(@NotNull List<Territory> territories) {
-        Connection connection = this.db.getConnection();
-        if (connection == null) {
-            return false;
-        }
-
-        try {
-            connection.setAutoCommit(false);
-
-            Map<String, Territory> newTerritories = territories.stream().collect(Collectors.toMap(Territory::getName, t -> t));
-            List<Territory> oldTerritoryList = this.findAll();
-            if (oldTerritoryList == null) return false;
-            Map<String, Territory> oldTerritories = oldTerritoryList.stream().collect(Collectors.toMap(Territory::getName, t -> t));
-
-            int added = 0;
-            int removed = 0;
-            for (Territory territory : newTerritories.values()) {
-                if (!oldTerritories.containsKey(territory.getName())) {
-                    this.logger.debug("Adding new territory: " + territory.getName());
-                    added++;
-                    boolean res = this.create(connection, territory);
-                    if (!res) throw new SQLException("Insert failed");
-                } else {
-                    boolean res = this.update(connection, territory);
-                    if (!res) throw new SQLException("Update failed");
-                }
-            }
-            for (Territory territory : oldTerritories.values()) {
-                if (!newTerritories.containsKey(territory.getName())) {
-                    this.logger.debug("Removing territory: " + territory.getName());
-                    removed++;
-                    boolean res = this.delete(connection, territory);
-                    if (!res) throw new SQLException("Delete failed");
-                }
-            }
-
-            connection.commit();
-
-            if (added != 0 || removed != 0) {
-                this.logger.log(0, String.format("Added %s, and removed %s territories.", added, removed));
-            }
-
+        // assume no territory deletion
+        if (territories.isEmpty()) {
             return true;
-        } catch (SQLException e) {
-            this.logger.logException("an exception occurred while updating territories.", e);
-            this.logger.log(0, "Rolling back territory update changes.");
-            try {
-                connection.rollback();
-            } catch (SQLException ex) {
-                this.logger.logException("an exception occurred while rolling back changes.", ex);
-            }
-            return false;
-        } finally {
-            try {
-                connection.setAutoCommit(true);
-            } catch (SQLException e) {
-                this.logger.logException("an exception occurred while setting back auto commit to on.", e);
-            }
-            this.db.releaseConnection(connection);
         }
+
+        String placeHolder = "(?, ?, ?, ?, ?, ?, ?, ?)";
+        return this.execute(
+                "INSERT INTO `territory` (`name`, `guild_name`, `acquired`, `attacker`, `start_x`, `start_z`, `end_x`, `end_z`) " +
+                        "VALUES " + String.join(", ", Collections.nCopies(territories.size(), placeHolder)) +
+                        " ON DUPLICATE KEY UPDATE `guild_name` = VALUES(`guild_name`), `acquired` = VALUES(`acquired`), `attacker` = VALUES(`attacker`), " +
+                        "`start_x` = VALUES(`start_x`), `start_z` = VALUES(`start_z`), `end_x` = VALUES(`end_x`), `end_z` = VALUES(`end_z`)",
+                territories.stream().flatMap(t -> {
+                    Territory.Location location = t.getLocation();
+                    return Stream.of(
+                            t.getName(),
+                            t.getGuild(),
+                            dbFormat.format(t.getAcquired()),
+                            t.getAttacker(),
+                            location.getStartX(),
+                            location.getStartZ(),
+                            location.getEndX(),
+                            location.getEndZ()
+                    );
+                }).toArray()
+        );
     }
 
     @Nullable

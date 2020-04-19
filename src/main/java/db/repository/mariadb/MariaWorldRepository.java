@@ -9,13 +9,11 @@ import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.CheckReturnValue;
 import javax.annotation.Nullable;
-import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 class MariaWorldRepository extends WorldRepository {
     MariaWorldRepository(ConnectionPool db, Logger logger) {
@@ -106,6 +104,32 @@ class MariaWorldRepository extends WorldRepository {
         return null;
     }
 
+    /**
+     * Retrieves all world names.
+     * @return Set of world names.
+     */
+    @Nullable
+    private Set<String> findAllWorldNames() {
+        ResultSet res = this.executeQuery(
+                "SELECT `name` FROM `world`"
+        );
+
+        if (res == null) {
+            return null;
+        }
+
+        try {
+            Set<String> worldNames = new HashSet<>();
+            while (res.next()) {
+                worldNames.add(res.getString(1));
+            }
+            return worldNames;
+        } catch (SQLException e) {
+            this.logResponseException(e);
+            return null;
+        }
+    }
+
     @Nullable
     public List<World> findAllMainWorlds() {
         ResultSet res = this.executeQuery("SELECT * FROM `world` WHERE `name` LIKE 'WC%' OR `name` LIKE 'EU%'");
@@ -148,62 +172,34 @@ class MariaWorldRepository extends WorldRepository {
 
     @CheckReturnValue
     public boolean updateAll(Collection<World> worlds) {
-        Connection connection = this.db.getConnection();
-        if (connection == null) {
-            return false;
+        Set<String> oldWorldNames = this.findAllWorldNames();
+        if (oldWorldNames == null) return false;
+
+        Set<String> newWorldNames = worlds.stream().map(World::getName).collect(Collectors.toSet());
+        Set<String> deletedWorldNames = oldWorldNames.stream().filter(w -> !newWorldNames.contains(w))
+                .collect(Collectors.toSet());
+        if (!deletedWorldNames.isEmpty()) {
+            boolean res = this.execute(
+                    "DELETE FROM `world` WHERE `name` IN (" +
+                            String.join(", ", Collections.nCopies(deletedWorldNames.size(), "?")) +
+                            ")",
+                    deletedWorldNames.toArray()
+            );
+            if (!res) {
+                return false;
+            }
         }
 
-        try {
-            connection.setAutoCommit(false);
-
-            Map<String, World> currentWorlds = worlds.stream().collect(Collectors.toMap(World::getName, w -> w));
-            List<World> prevWorldList = this.findAll();
-            if (prevWorldList == null) return false;
-            Map<String, World> prevWorlds = prevWorldList.stream().collect(Collectors.toMap(World::getName, w -> w));
-
-            for (World currentWorld : currentWorlds.values()) {
-                if (!prevWorlds.containsKey(currentWorld.getName())) {
-                    boolean res = this.execute(connection,
-                            "INSERT INTO `world` (`name`, `players`) VALUES (?, ?)",
-                            currentWorld.getName(),
-                            currentWorld.getPlayers());
-                    if (!res) throw new SQLException("Insert failed");
-                } else {
-                    boolean res = this.execute(connection,
-                            "UPDATE `world` SET `players` = ?, `updated_at` = NOW() WHERE `name` = ?",
-                            currentWorld.getPlayers(),
-                            currentWorld.getName());
-                    if (!res) throw new SQLException("Update failed");
-                }
-            }
-            for (World prevWorld : prevWorlds.values()) {
-                if (!currentWorlds.containsKey(prevWorld.getName())) {
-                    boolean res = this.execute(connection,
-                            "DELETE FROM `world` WHERE `name` = ?",
-                            prevWorld.getName());
-                    if (!res) throw new SQLException("Delete failed");
-                }
-            }
-
-            connection.commit();
-            return true;
-        } catch (SQLException e) {
-            this.logger.logException("an exception occurred while updating worlds.", e);
-            this.logger.log(0, "Rolling back world update changes.");
-            try {
-                connection.rollback();
-            } catch (SQLException ex) {
-                this.logger.logException("an exception occurred while rolling back changes.", ex);
-            }
-            return false;
-        } finally {
-            try {
-                connection.setAutoCommit(true);
-            } catch (SQLException e) {
-                this.logger.logException("an exception occurred while setting back auto commit to on.", e);
-            }
-            this.db.releaseConnection(connection);
-        }
+        String placeHolder = "(?, ?)";
+        return this.execute(
+                "INSERT INTO `world` (name, players) VALUES " +
+                        String.join(", ", Collections.nCopies(worlds.size(), placeHolder)) +
+                        " ON DUPLICATE KEY UPDATE players = VALUES(players)",
+                worlds.stream().flatMap(w -> Stream.of(
+                        w.getName(),
+                        w.getPlayers()
+                )).toArray()
+        );
     }
 
     @Override
