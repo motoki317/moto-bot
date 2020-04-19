@@ -169,7 +169,7 @@ public class App implements Runnable, Bot {
 
     private void addEventListeners() {
         this.manager.addEventListener(new CommandListener(this));
-        this.manager.addEventListener(new UpdaterListener(this.responseManager, this.reactionManager));
+        this.manager.addEventListener(new UpdaterListener(this));
         this.logger.debug("Added event listeners.");
     }
 

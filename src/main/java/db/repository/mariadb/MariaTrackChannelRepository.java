@@ -159,6 +159,22 @@ class MariaTrackChannelRepository extends TrackChannelRepository {
         }
     }
 
+    @Override
+    public boolean deleteAllOfGuild(long guildId) {
+        return this.execute(
+                "DELETE FROM `track_channel` WHERE `guild_id` = ?",
+                guildId
+        );
+    }
+
+    @Override
+    public boolean deleteAllOfChannel(long channelId) {
+        return this.execute(
+                "DELETE FROM `track_channel` WHERE `channel_id` = ?",
+                channelId
+        );
+    }
+
     @Nullable
     @Override
     public List<TrackChannel> findAll() {

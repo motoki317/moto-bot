@@ -46,4 +46,18 @@ public abstract class TrackChannelRepository extends Repository<TrackChannel, Tr
      */
     @Nullable
     public abstract List<TrackChannel> findAllOfPlayerUUIDAndType(String playerUUID, TrackType type);
+
+    /**
+     * Deletes all tracking of the specified guild.
+     * @param guildId Guild ID
+     * @return {@code true} if success.
+     */
+    public abstract boolean deleteAllOfGuild(long guildId);
+
+    /**
+     * Deletes all tracking of the specified channel.
+     * @param channelId Channel ID
+     * @return {@code true} if success.
+     */
+    public abstract boolean deleteAllOfChannel(long channelId);
 }
