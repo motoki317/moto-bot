@@ -58,6 +58,7 @@ public class CommandListener extends ListenerAdapter {
         this.spamChecker = new DiscordSpamChecker();
 
         addCommand(new Help(bot, this.commands, this.commandNameMap, () -> this.maxArgumentsLength));
+        addCommand(new CommandAliases(this.commandNameMap, () -> this.maxArgumentsLength));
         addCommand(new Ping(bot));
         addCommand(new Info(bot));
         addCommand(new ServerList(bot));

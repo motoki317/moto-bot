@@ -59,7 +59,6 @@ public class Help extends GenericCommand {
     @Override
     public void process(@NotNull MessageReceivedEvent event, @NotNull String[] args) {
         if (args.length == 1) {
-
             if (this.maxPage() == 0) {
                 respond(event, this.getPage(0));
                 return;
@@ -74,9 +73,7 @@ public class Help extends GenericCommand {
 
         // Supports nested command help (e.g. ">help guild levelRank")
         args = Arrays.copyOfRange(args, 1, args.length);
-        for (int argLength = 1; argLength <= this.maxArgumentsLength.get(); argLength++) {
-            if (args.length < argLength) return;
-
+        for (int argLength = Math.min(this.maxArgumentsLength.get(), args.length); argLength > 0; argLength--) {
             String cmdBase = String.join(" ", Arrays.copyOfRange(args, 0, argLength));
             if (this.commandNameMap.containsKey(cmdBase.toLowerCase())) {
                 BotCommand cmd = this.commandNameMap.get(cmdBase.toLowerCase());
@@ -84,6 +81,8 @@ public class Help extends GenericCommand {
                 return;
             }
         }
+
+        respond(event, "Command not found, try `help`.");
     }
 
     private static final int COMMANDS_PER_PAGE = 5;
