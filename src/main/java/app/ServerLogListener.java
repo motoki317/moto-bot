@@ -733,7 +733,8 @@ public class ServerLogListener extends ListenerAdapter {
                     false);
         }
 
-        // TODO: might want to delete cache
+        // delete cache
+        messageCache.delete(messageId);
 
         long elapsedSeconds = (System.currentTimeMillis() - BotUtils.getIdCreationTime(messageId)) / 1000L;
 

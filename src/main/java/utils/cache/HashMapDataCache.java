@@ -69,6 +69,13 @@ public class HashMapDataCache<K, T> implements DataCache<K, T> {
         }
     }
 
+    @Override
+    public void delete(K key) {
+        synchronized (this.dataLock) {
+            this.dataMap.remove(key);
+        }
+    }
+
     private void clearUpExceedingData() {
         synchronized (this.dataLock) {
             int toDelete = this.dataMap.size() - this.maxRecords;
