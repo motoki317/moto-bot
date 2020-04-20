@@ -170,6 +170,7 @@ public class App implements Runnable, Bot {
     private void addEventListeners() {
         this.manager.addEventListener(new CommandListener(this));
         this.manager.addEventListener(new UpdaterListener(this));
+        this.manager.addEventListener(new ServerLogListener(this));
         this.logger.debug("Added event listeners.");
     }
 

@@ -10,6 +10,8 @@ import org.jetbrains.annotations.NotNull;
 import javax.annotation.Nullable;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 public class MariaServerLogRepository extends ServerLogRepository {
@@ -89,6 +91,27 @@ public class MariaServerLogRepository extends ServerLogRepository {
             this.logResponseException(e);
         }
         return null;
+    }
+
+    @Override
+    public List<ServerLogEntry> findAllIn(long... guildIDs) {
+        ResultSet res = this.executeQuery(
+                "SELECT * FROM `server_log` WHERE `guild_id` IN (" +
+                        String.join(", ", Collections.nCopies(guildIDs.length, "?")) +
+                        ")",
+                Arrays.stream(guildIDs).boxed().toArray()
+        );
+
+        if (res == null) {
+            return null;
+        }
+
+        try {
+            return bindAll(res);
+        } catch (SQLException e) {
+            this.logResponseException(e);
+            return null;
+        }
     }
 
     @Nullable
