@@ -776,6 +776,10 @@ public class ServerLogListener extends ListenerAdapter {
 
     @Override
     public void onGuildMessageReceived(@Nonnull GuildMessageReceivedEvent event) {
+        // Do not keep messages of guilds that does not have a server log channel set
+        if (!this.serverLogRepository.exists(() -> event.getGuild().getIdLong())) {
+            return;
+        }
         messageCache.add(event.getMessageIdLong(),
                 new MessageCache(event.getMessage().getContentRaw(), event.getAuthor().getIdLong()));
     }
