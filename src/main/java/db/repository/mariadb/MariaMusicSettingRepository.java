@@ -5,6 +5,7 @@ import db.model.musicSetting.MusicSetting;
 import db.model.musicSetting.MusicSettingId;
 import db.repository.base.MusicSettingRepository;
 import log.Logger;
+import music.RepeatState;
 import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
@@ -23,7 +24,7 @@ class MariaMusicSettingRepository extends MusicSettingRepository {
         return new MusicSetting(
                 res.getLong(1),
                 res.getInt(2),
-                res.getString(3),
+                RepeatState.valueOf(res.getString(3)),
                 res.getBoolean(4),
                 (restrictChannel = res.getLong(5)) != 0 ? restrictChannel : null
         );
@@ -84,7 +85,7 @@ class MariaMusicSettingRepository extends MusicSettingRepository {
     @Override
     public MusicSetting findOne(@NotNull MusicSettingId musicSettingId) {
         ResultSet res = this.executeQuery(
-                "SELECT COUNT(*) FROM `music_setting` WHERE `guild_id` = ?",
+                "SELECT * FROM `music_setting` WHERE `guild_id` = ?",
                 musicSettingId.getGuildId()
         );
 
@@ -105,7 +106,7 @@ class MariaMusicSettingRepository extends MusicSettingRepository {
     @Override
     public List<MusicSetting> findAll() {
         ResultSet res = this.executeQuery(
-                "SELECT COUNT(*) FROM `music_setting`"
+                "SELECT * FROM `music_setting`"
         );
 
         if (res == null) {

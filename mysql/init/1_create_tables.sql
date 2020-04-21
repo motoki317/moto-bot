@@ -484,3 +484,14 @@ CREATE TABLE IF NOT EXISTS `music_setting` (
     `show_np` BOOLEAN NOT NULL,
     `restrict_channel` BIGINT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+# Music queue cache
+CREATE TABLE IF NOT EXISTS `music_queue` (
+    `guild_id` BIGINT NOT NULL,
+    # index inside queue, 0-indexed
+    `index` INT NOT NULL,
+    `user_id` BIGINT NOT NULL,
+    `url` VARCHAR(500) NOT NULL,
+    `position` BIGINT NOT NULL,
+    UNIQUE KEY `guild_id_index_idx` (`guild_id`, `index`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

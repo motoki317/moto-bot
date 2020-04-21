@@ -12,6 +12,7 @@ import db.repository.base.IgnoreChannelRepository;
 import db.repository.base.PrefixRepository;
 import log.DiscordSpamChecker;
 import log.Logger;
+import music.Music;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
@@ -103,6 +104,8 @@ public class CommandListener extends ListenerAdapter {
 
         addCommand(new CustomTerritoryListCmd(bot));
         addCommand(new CustomGuildListCmd(bot));
+
+        addCommand(new Music(bot));
     }
 
     private void addCommand(BotCommand command) {

@@ -48,4 +48,6 @@ public interface Database {
     ServerLogRepository getServerLogRepository();
     @NotNull
     MusicSettingRepository getMusicSettingRepository();
+    @NotNull
+    MusicQueueRepository getMusicQueueRepository();
 }
