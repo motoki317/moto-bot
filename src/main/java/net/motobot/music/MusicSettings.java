@@ -65,15 +65,15 @@ public class MusicSettings implements Serializable {
         return new MusicSettings();
     }
 
-    int getVolume() {
+    public int getVolume() {
         return volume;
     }
 
-    void setVolume(int volume) {
+    public void setVolume(int volume) {
         this.volume = volume;
     }
 
-    RepeatState getRepeat() {
+    public RepeatState getRepeat() {
         return repeat;
     }
 
@@ -81,39 +81,39 @@ public class MusicSettings implements Serializable {
         this.repeat = repeat;
     }
 
-    boolean isSaveQueue() {
+    public boolean isSaveQueue() {
         return saveQueue;
     }
 
-    boolean isVoteMode() {
+    public boolean isVoteMode() {
         return voteMode;
     }
 
-    boolean isDJMode() {
+    public boolean isDJMode() {
         return DJMode;
     }
 
-    List<Long> getDJRoleID() {
+    public List<Long> getDJRoleID() {
         return DJRoleID;
     }
 
-    boolean isShowNp() {
+    public boolean isShowNp() {
         return showNp;
     }
 
-    int getVoteNeeded() {
+    public int getVoteNeeded() {
         return voteNeeded;
     }
 
-    boolean isRetainVolume() {
+    public boolean isRetainVolume() {
         return retainVolume;
     }
 
-    boolean isRetainRepeat() {
+    public boolean isRetainRepeat() {
         return retainRepeat;
     }
 
-    long getRestrictChannel() {
+    public long getRestrictChannel() {
         return restrictChannel;
     }
 }
