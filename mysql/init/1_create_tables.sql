@@ -475,3 +475,12 @@ CREATE TABLE IF NOT EXISTS `server_log` (
     `guild_id` BIGINT PRIMARY KEY,
     `channel_id` BIGINT NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+# Music setting for each guild
+CREATE TABLE IF NOT EXISTS `music_setting` (
+    `guild_id` BIGINT PRIMARY KEY,
+    `volume` INT NOT NULL,
+    `repeat` VARCHAR(30) NOT NULL,
+    `show_np` BOOLEAN NOT NULL,
+    `restrict_channel` BIGINT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

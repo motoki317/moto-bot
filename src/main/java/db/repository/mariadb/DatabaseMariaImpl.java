@@ -45,6 +45,7 @@ public class DatabaseMariaImpl implements Database {
     private TerritoryListRepository territoryListRepository;
     private GuildListRepository guildListRepository;
     private ServerLogRepository serverLogRepository;
+    private MusicSettingRepository musicSettingRepository;
 
     public DatabaseMariaImpl(Logger logger) {
         this.logger = logger;
@@ -220,5 +221,13 @@ public class DatabaseMariaImpl implements Database {
             this.serverLogRepository = new MariaServerLogRepository(this.connectionPool, this.logger);
         }
         return this.serverLogRepository;
+    }
+
+    @Override
+    public @NotNull MusicSettingRepository getMusicSettingRepository() {
+        if (this.musicSettingRepository == null) {
+            this.musicSettingRepository = new MariaMusicSettingRepository(this.connectionPool, this.logger);
+        }
+        return this.musicSettingRepository;
     }
 }

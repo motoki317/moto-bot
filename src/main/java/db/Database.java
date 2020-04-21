@@ -46,4 +46,6 @@ public interface Database {
     GuildListRepository getGuildListRepository();
     @NotNull
     ServerLogRepository getServerLogRepository();
+    @NotNull
+    MusicSettingRepository getMusicSettingRepository();
 }
