@@ -19,7 +19,7 @@ import net.dv8tion.jda.api.events.guild.GenericGuildEvent;
 import net.dv8tion.jda.api.events.guild.GuildBanEvent;
 import net.dv8tion.jda.api.events.guild.GuildUnbanEvent;
 import net.dv8tion.jda.api.events.guild.member.GuildMemberJoinEvent;
-import net.dv8tion.jda.api.events.guild.member.GuildMemberLeaveEvent;
+import net.dv8tion.jda.api.events.guild.member.GuildMemberRemoveEvent;
 import net.dv8tion.jda.api.events.guild.member.GuildMemberRoleAddEvent;
 import net.dv8tion.jda.api.events.guild.member.GuildMemberRoleRemoveEvent;
 import net.dv8tion.jda.api.events.guild.member.update.GuildMemberUpdateNicknameEvent;
@@ -198,12 +198,6 @@ public class ServerLogListener extends ListenerAdapter {
                     .addField("Before", String.valueOf(event.getOldPosition()), false)
                     .addField("After", String.valueOf(event.getNewPosition()), false);
         });
-        addHandler(TextChannelUpdatePermissionsEvent.class, (event, eb) ->
-                eb.setColor(MinecraftColor.DARK_AQUA.getColor())
-                        .setDescription(
-                                "Channel Permission Updated: " + event.getChannel().getAsMention()
-                        )
-        );
         addHandler(TextChannelUpdateNSFWEvent.class, (event, eb) ->
                 eb.setColor(MinecraftColor.DARK_AQUA.getColor())
                         .setDescription(
@@ -223,6 +217,14 @@ public class ServerLogListener extends ListenerAdapter {
                         .addField("After",
                                 event.getNewParent() == null ? "" : event.getNewParent().getName(),
                                 false)
+        );
+        addHandler(TextChannelUpdateSlowmodeEvent.class, (event, eb) ->
+                eb.setColor(MinecraftColor.DARK_AQUA.getColor())
+                        .setDescription(
+                                "Channel Slow Mode Updated: " + event.getChannel().getAsMention()
+                        )
+                        .addField("Before", String.valueOf(event.getOldSlowmode()), false)
+                        .addField("After", String.valueOf(event.getNewSlowmode()), false)
         );
         addHandler(TextChannelCreateEvent.class, (event, eb) ->
                 eb.setColor(MinecraftColor.DARK_GREEN.getColor())
@@ -273,12 +275,6 @@ public class ServerLogListener extends ListenerAdapter {
                         )
                         .addField("Before", new DecimalFormat("#,###").format(event.getOldBitrate()) + " bps", false)
                         .addField("After", new DecimalFormat("#,###").format(event.getNewBitrate()) + " bps", false)
-        );
-        addHandler(VoiceChannelUpdatePermissionsEvent.class, (event, eb) ->
-                eb.setColor(MinecraftColor.DARK_AQUA.getColor())
-                        .setDescription(
-                                "Voice Channel Permission Updated: #" + event.getChannel().getName()
-                        )
         );
         addHandler(VoiceChannelUpdateParentEvent.class, (event, eb) ->
                 eb.setColor(MinecraftColor.DARK_AQUA.getColor())
@@ -470,7 +466,7 @@ public class ServerLogListener extends ListenerAdapter {
                                             : "")
                     );
         });
-        addGuildEventHandler(GuildMemberLeaveEvent.class, (event, eb, getFormattedTime, getUser) -> {
+        addGuildEventHandler(GuildMemberRemoveEvent.class, (event, eb, getFormattedTime, getUser) -> {
             String nameWithDiscriminator = event.getUser().getName() + "#" + event.getUser().getDiscriminator();
 
             return eb.setColor(MinecraftColor.RED.getColor())

@@ -9,6 +9,7 @@ import log.DiscordLogger;
 import log.Logger;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Activity;
+import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.dv8tion.jda.api.sharding.DefaultShardManagerBuilder;
 import net.dv8tion.jda.api.sharding.ShardManager;
 import net.dv8tion.jda.api.utils.SessionControllerAdapter;
@@ -101,8 +102,9 @@ public class App implements Runnable, Bot {
         this.reactionManager = updaterFactory.getReactionManager();
         this.responseManager = updaterFactory.getResponseManager();
 
-        this.manager = new DefaultShardManagerBuilder()
-                .setToken(this.properties.botAccessToken)
+        this.manager = DefaultShardManagerBuilder.createDefault(this.properties.botAccessToken)
+                // For server log feature
+                .enableIntents(GatewayIntent.GUILD_MEMBERS)
                 .setSessionController(new SessionControllerAdapter())
                 .setShardsTotal(this.properties.shards)
                 .setShards(0, this.properties.shards - 1)
