@@ -58,6 +58,11 @@ public class CommandListener extends ListenerAdapter {
 
         this.spamChecker = new DiscordSpamChecker();
 
+        registerCommands(bot);
+    }
+
+    @SuppressWarnings({"OverlyLongMethod", "OverlyCoupledMethod"})
+    private void registerCommands(Bot bot) {
         addCommand(new Help(bot, this.commands, this.commandNameMap, () -> this.maxArgumentsLength));
         addCommand(new CommandAliases(this.commandNameMap, () -> this.maxArgumentsLength));
         addCommand(new Ping(bot));
