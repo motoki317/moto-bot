@@ -66,7 +66,7 @@ public class MusicAutoLeaveChecker {
         // Number of people listening
         long listeningCount = channel.getMembers().stream().filter(m -> {
             GuildVoiceState vs = m.getVoiceState();
-            return vs != null && !vs.isDeafened();
+            return !m.getUser().isBot() && vs != null && !vs.isDeafened();
         }).count();
 
         return listeningCount == 0;

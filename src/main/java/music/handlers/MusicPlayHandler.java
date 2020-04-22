@@ -106,6 +106,7 @@ public class MusicPlayHandler {
         if (guilds == null) {
             return;
         }
+        this.interruptedGuildRepository.deleteAll();
 
         for (MusicInterruptedGuild guild : guilds) {
             long guildId = guild.getGuildId();
