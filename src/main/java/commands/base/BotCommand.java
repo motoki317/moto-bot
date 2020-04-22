@@ -131,22 +131,22 @@ public abstract class BotCommand {
      */
     public abstract void process(@NotNull MessageReceivedEvent event, @NotNull String[] args);
 
-    protected static void respond(MessageReceivedEvent event, CharSequence message) {
+    public static void respond(MessageReceivedEvent event, CharSequence message) {
         event.getChannel().sendMessage(message).queue();
     }
     protected static void respond(MessageReceivedEvent event, Message message) {
         event.getChannel().sendMessage(message).queue();
     }
-    protected static void respond(MessageReceivedEvent event, MessageEmbed message) {
+    public static void respond(MessageReceivedEvent event, MessageEmbed message) {
         event.getChannel().sendMessage(message).queue();
     }
-    protected static void respond(MessageReceivedEvent event, CharSequence message, Consumer<? super Message> onSuccess) {
+    public static void respond(MessageReceivedEvent event, CharSequence message, Consumer<? super Message> onSuccess) {
         event.getChannel().sendMessage(message).queue(onSuccess);
     }
     protected static void respond(MessageReceivedEvent event, Message message, Consumer<? super Message> onSuccess) {
         event.getChannel().sendMessage(message).queue(onSuccess);
     }
-    protected static void respond(MessageReceivedEvent event, MessageEmbed message, Consumer<? super Message> onSuccess) {
+    public static void respond(MessageReceivedEvent event, MessageEmbed message, Consumer<? super Message> onSuccess) {
         event.getChannel().sendMessage(message).queue(onSuccess);
     }
 
@@ -155,7 +155,7 @@ public abstract class BotCommand {
      * @param event Message received event.
      * @param message Description of the exception.
      */
-    protected static void respondException(MessageReceivedEvent event, CharSequence message) {
+    public static void respondException(MessageReceivedEvent event, CharSequence message) {
         respond(event,
                 new EmbedBuilder()
                         .setColor(MinecraftColor.RED.getColor())

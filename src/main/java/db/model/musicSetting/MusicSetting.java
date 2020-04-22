@@ -3,6 +3,7 @@ package db.model.musicSetting;
 import music.RepeatState;
 
 import javax.annotation.Nullable;
+import java.util.Objects;
 
 public class MusicSetting {
     private final long guildId;
@@ -49,5 +50,22 @@ public class MusicSetting {
     @Nullable
     public Long getRestrictChannel() {
         return restrictChannel;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        MusicSetting that = (MusicSetting) o;
+        return guildId == that.guildId &&
+                volume == that.volume &&
+                showNp == that.showNp &&
+                repeat == that.repeat &&
+                Objects.equals(restrictChannel, that.restrictChannel);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(guildId, volume, repeat, showNp, restrictChannel);
     }
 }

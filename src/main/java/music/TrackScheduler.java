@@ -5,7 +5,6 @@ import com.sedmelluq.discord.lavaplayer.player.event.AudioEventAdapter;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackEndReason;
-import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
 import db.model.musicSetting.MusicSetting;
 import music.exception.DuplicateTrackException;
 import music.exception.QueueFullException;
@@ -17,13 +16,12 @@ import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
 import java.awt.*;
-import java.time.Instant;
 import java.util.List;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import static music.MusicUtils.formatLength;
-import static music.MusicUtils.getThumbnailURL;
+import static music.MusicUtils.formatNowPlaying;
 
 /**
  * Handles track queue.
@@ -75,7 +73,7 @@ public class TrackScheduler extends AudioEventAdapter {
 
     private final SchedulerGateway gateway;
 
-    TrackScheduler(SchedulerGateway gateway) {
+    public TrackScheduler(SchedulerGateway gateway) {
         this.queue = new ArrayDeque<>();
         this.gateway = gateway;
     }
@@ -83,7 +81,7 @@ public class TrackScheduler extends AudioEventAdapter {
     /**
      * Shuffles the queue. Retains the position of the current playing track (first element in the queue).
      */
-    private void shuffleQueue() {
+    void shuffleQueue() {
         QueueEntry first = this.queue.poll();
         List<QueueEntry> others = new ArrayList<>(this.queue);
         Collections.shuffle(others);
@@ -114,15 +112,29 @@ public class TrackScheduler extends AudioEventAdapter {
         }
     }
 
+    /**
+     * Purges all waiting songs in the queue.
+     * Does NOT remove the current song.
+     */
+    void purgeWaitingQueue() {
+        if (this.queue.isEmpty() || this.queue.size() == 1) {
+            return;
+        }
+
+        QueueEntry first = this.queue.poll();
+        this.queue.clear();
+        this.queue.add(first);
+    }
+
     void clearQueue() {
         this.queue.clear();
     }
 
-    Deque<QueueEntry> getCurrentQueue() {
-        return new ArrayDeque<>(this.queue);
+    List<QueueEntry> getCurrentQueue() {
+        return new ArrayList<>(this.queue);
     }
 
-    long getRemainingLength() {
+    long getQueueLength() {
         return this.queue.stream().mapToLong(q -> q.getTrack().getDuration()).sum();
     }
 
@@ -151,24 +163,12 @@ public class TrackScheduler extends AudioEventAdapter {
         }
 
         MusicSetting setting = this.gateway.getSetting();
-        RepeatState repeat = setting.getRepeat();
-        AudioTrackInfo info = track.getInfo();
-        String title = info.title;
         User user = queue.peek() != null ? this.gateway.getUser(queue.peek().getUserId()) : null;
 
+        boolean showPosition = track.getPosition() > TimeUnit.SECONDS.toMillis(1);
+
         Message message = new MessageBuilder(
-                new EmbedBuilder()
-                        .setAuthor(String.format("♪ Now playing%s", repeat == RepeatState.OFF ? "" : " (" + repeat.getMessage() + ")"),
-                                null, this.gateway.getBotAvatarURL())
-                        .setTitle("".equals(title) ? "(No title)" : title, track.getInfo().uri)
-                        .addField("Length", info.isStream ? "LIVE" : formatLength(info.length), true)
-                        .addField("Player volume", setting.getVolume() + "%", true)
-                        .setThumbnail(getThumbnailURL(info.uri))
-                        .setFooter(String.format("Requested by %s",
-                                user != null ? user.getName() + "#" + user.getDiscriminator() : "Unknown User"),
-                                user != null ? user.getEffectiveAvatarUrl() : null)
-                        .setTimestamp(Instant.now())
-                        .build()
+                formatNowPlaying(track, user, setting, this.gateway.getBotAvatarURL(), showPosition)
         ).build();
 
         this.gateway.sendMessage(message);
@@ -188,18 +188,19 @@ public class TrackScheduler extends AudioEventAdapter {
 
     @Override
     public void onTrackEnd(AudioPlayer player, AudioTrack track, AudioTrackEndReason endReason) {
-        playNextTrack(track, endReason != AudioTrackEndReason.FINISHED);
-    }
+        if (!endReason.mayStartNext) {
+            return;
+        }
 
-    private void playNextTrack(AudioTrack finishedTrack, boolean isManualSkip) {
-        QueueEntry track = this.queue.poll();
-        if (track == null) {
+        // Get the finished track
+        QueueEntry entry = this.queue.poll();
+        if (entry == null) {
             // indicates the queue has been cleared by other means
             return;
         }
 
-        // Poll the queue, re-queue the song depending on repeat state,
-        QueueEntry next = getQueueEntry(finishedTrack, isManualSkip, track);
+        // Get the next track depending on the repeat state
+        QueueEntry next = getQueueEntry(track, false, entry);
         if (next == null) {
             this.sendEmptyQueueMessage();
             return;
@@ -207,45 +208,64 @@ public class TrackScheduler extends AudioEventAdapter {
         playTrack(next.getTrack());
     }
 
+    /**
+     * Skips specified amount of tracks.
+     * @param amount Amount.
+     */
+    void skip(int amount) {
+        QueueEntry next = null;
+        for (int i = 0; i < amount; i++) {
+            QueueEntry prev = this.queue.poll();
+            if (prev == null) {
+                this.sendEmptyQueueMessage();
+                return;
+            }
+            next = getQueueEntry(prev.getTrack(), true, prev);
+        }
+        if (next == null) {
+            this.sendEmptyQueueMessage();
+            return;
+        }
+        playTrack(next.getTrack());
+    }
+
+    /**
+     * Retrieves the next track depending on the repeat state.
+     * If repeating, re-enqueues (and shuffles) inside this.
+     * @param finishedTrack Finished track.
+     * @param isManualSkip {@code true} if manual skip.
+     * @param track Finished track.
+     * @return Next track.
+     */
     @Nullable
     private QueueEntry getQueueEntry(AudioTrack finishedTrack, boolean isManualSkip, QueueEntry track) {
-        QueueEntry next = null;
         switch (this.gateway.getSetting().getRepeat()) {
             case OFF:
-                next = queue.peek();
                 break;
             case ONE:
                 // If this was a manual skip (or an unexpected finish), forcefully skip to the next track
-                if (isManualSkip) {
-                    next = queue.peek();
-                } else {
+                if (!isManualSkip) {
                     // Re-add the cloned track
                     QueueEntry newEntry = new QueueEntry(finishedTrack.makeClone(), track.getUserId());
                     this.queue.addFirst(newEntry);
-                    next = newEntry;
                 }
                 break;
             case QUEUE:
                 // Re-add the cloned track
                 QueueEntry newEntry = new QueueEntry(finishedTrack.makeClone(), track.getUserId());
                 this.queue.add(newEntry);
-
-                next = queue.peek();
                 break;
             case RANDOM:
-                next = queue.peek();
                 shuffleQueue();
                 break;
             case RANDOM_REPEAT:
                 // Re-add the cloned track
                 newEntry = new QueueEntry(finishedTrack.makeClone(), track.getUserId());
                 this.queue.add(newEntry);
-
-                next = newEntry;
                 shuffleQueue();
                 break;
         }
-        return next;
+        return queue.peek();
     }
 
     private void playTrack(@NotNull AudioTrack track) {

@@ -1,0 +1,590 @@
+package music.handlers;
+
+import app.Bot;
+import com.sedmelluq.discord.lavaplayer.player.AudioLoadResultHandler;
+import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
+import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
+import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
+import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
+import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
+import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
+import db.model.musicQueue.MusicQueueEntry;
+import db.model.musicSetting.MusicSetting;
+import db.repository.base.MusicQueueRepository;
+import db.repository.base.MusicSettingRepository;
+import log.Logger;
+import music.*;
+import music.exception.DuplicateTrackException;
+import music.exception.QueueFullException;
+import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.entities.*;
+import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import net.dv8tion.jda.api.exceptions.InsufficientPermissionException;
+import net.dv8tion.jda.api.managers.AudioManager;
+import net.dv8tion.jda.api.sharding.ShardManager;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import update.response.Response;
+import update.response.ResponseManager;
+import utils.MinecraftColor;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+
+import static commands.base.BotCommand.*;
+import static music.MusicUtils.formatLength;
+import static music.MusicUtils.getThumbnailURL;
+
+public class MusicPlayHandler {
+    private final Map<Long, MusicState> states;
+    private final AudioPlayerManager playerManager;
+
+    private final ShardManager manager;
+    private final Logger logger;
+    private final MusicSettingRepository musicSettingRepository;
+    private final MusicQueueRepository musicQueueRepository;
+    private final ResponseManager responseManager;
+
+    public MusicPlayHandler(Bot bot, Map<Long, MusicState> states, AudioPlayerManager playerManager) {
+        this.states = states;
+        this.playerManager = playerManager;
+        this.manager = bot.getManager();
+        this.logger = bot.getLogger();
+        this.musicSettingRepository = bot.getDatabase().getMusicSettingRepository();
+        this.musicQueueRepository = bot.getDatabase().getMusicQueueRepository();
+        this.responseManager = bot.getResponseManager();
+    }
+
+    /**
+     * Retrieves voice channel the user is in.
+     * @param event Event.
+     * @return Voice channel. null if not found.
+     */
+    @Nullable
+    private static VoiceChannel getVoiceChannel(@NotNull MessageReceivedEvent event) {
+        Member member = event.getMember();
+        if (member == null) {
+            return null;
+        }
+        GuildVoiceState voiceState = member.getVoiceState();
+        if (voiceState == null) {
+            return null;
+        }
+        return voiceState.getChannel();
+    }
+
+    /**
+     * Get music setting for the guild.
+     * @param guildId Guild ID.
+     * @return Music setting. Default setting if not found.
+     */
+    @NotNull
+    private MusicSetting getSetting(long guildId) {
+        MusicSetting setting = this.musicSettingRepository.findOne(() -> guildId);
+        if (setting != null) {
+            return setting;
+        }
+        return MusicSetting.getDefault(guildId);
+    }
+
+    /**
+     * Prepares music state for the guild.
+     * (Sets up audio players, but does not join the VC)
+     * @param event Event.
+     * @return Music state
+     */
+    @NotNull
+    private MusicState prepareMusicState(@NotNull MessageReceivedEvent event) {
+        long guildId = event.getGuild().getIdLong();
+        long channelId = event.getChannel().getIdLong();
+        Logger logger = this.logger;
+        ShardManager manager = this.manager;
+
+        MusicSetting setting = getSetting(guildId);
+
+        AudioPlayer player = playerManager.createPlayer();
+        player.setVolume(setting.getVolume());
+
+        TrackScheduler scheduler = new TrackScheduler(new TrackScheduler.SchedulerGateway() {
+            @Override
+            public void sendMessage(Message message) {
+                TextChannel channel = manager.getTextChannelById(channelId);
+                if (channel == null) {
+                    logger.log(-1, "Music: Failed to retrieve text channel for id " + channelId);
+                    return;
+                }
+                channel.sendMessage(message).queue();
+            }
+
+            @Override
+            public @NotNull MusicSetting getSetting() {
+                return setting;
+            }
+
+            @Override
+            public String getBotAvatarURL() {
+                return event.getJDA().getSelfUser().getEffectiveAvatarUrl();
+            }
+
+            @Nullable
+            @Override
+            public User getUser(long userId) {
+                return manager.getUserById(userId);
+            }
+
+            @Override
+            public void setLastInteract() {
+                MusicState state = states.getOrDefault(guildId, null);
+                if (state != null) {
+                    state.setLastInteract(System.currentTimeMillis());
+                }
+            }
+
+            @Override
+            public void playTrack(AudioTrack track) {
+                player.playTrack(track);
+            }
+        });
+        player.addListener(scheduler);
+
+        MusicState state = new MusicState(player, scheduler, setting, System.currentTimeMillis());
+        states.put(guildId, state);
+
+        // TODO: enqueue all saved musics on player setup
+        enqueueSavedQueue(event, guildId, state);
+        return state;
+    }
+
+    /**
+     * Enqueues all saved previous queue.
+     * @param guildId Guild ID.
+     * @param state State.
+     */
+    private void enqueueSavedQueue(MessageReceivedEvent event, long guildId, MusicState state) {
+        List<MusicQueueEntry> queue = this.musicQueueRepository.getGuildMusicQueue(guildId);
+        if (queue == null || queue.isEmpty()) {
+            return;
+        }
+
+        respond(event, new EmbedBuilder()
+                .setColor(MinecraftColor.DARK_GREEN.getColor())
+                .setDescription(String.format("Loading `%s` song(s) from the previous queue...\n" +
+                        "This might take a while. `m purge` or `m clear` to stop loading.", queue.size()))
+                .build());
+
+        List<Future<Void>> futures = new ArrayList<>(queue.size());
+
+        String firstURL = queue.get(0).getUrl();
+        long position = queue.get(0).getPosition();
+        long userId = event.getAuthor().getIdLong();
+        for (MusicQueueEntry e : queue) {
+            Future<Void> f = playerManager.loadItemOrdered(state.getPlayer(), e.getUrl(), new AudioLoadResultHandler() {
+                @Override
+                public void trackLoaded(AudioTrack audioTrack) {
+                    // If it's the first one, set the position
+                    if (audioTrack.getInfo().uri.equals(firstURL)) {
+                        audioTrack.setPosition(position);
+                    }
+                    try {
+                        state.enqueue(new QueueEntry(audioTrack, userId));
+                    } catch (DuplicateTrackException | QueueFullException ex) {
+                        ex.printStackTrace();
+                    }
+                }
+
+                @Override
+                public void playlistLoaded(AudioPlaylist audioPlaylist) {
+                    // Should probably not be reached because we're supplying a URL for each song
+                    for (AudioTrack track : audioPlaylist.getTracks()) {
+                        try {
+                            state.enqueue(new QueueEntry(track, userId));
+                        } catch (DuplicateTrackException | QueueFullException ex) {
+                            ex.printStackTrace();
+                        }
+                    }
+                }
+
+                @Override
+                public void noMatches() {
+                    MusicPlayHandler.this.logger.debug("Music: Loading old queue: No match for URL " + e.getUrl());
+                }
+
+                @Override
+                public void loadFailed(FriendlyException e) {
+                    e.getMessage();
+                }
+            });
+            futures.add(f);
+        }
+
+        // Use asynchronous logic to cancel loading in case the user wants it
+        CompletableFuture<Void> all = CompletableFuture.runAsync(() -> {
+            for (Future<Void> f : futures) {
+                try {
+                    f.get();
+                } catch (InterruptedException | ExecutionException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+
+        all.thenRun(() -> respond(event, new EmbedBuilder()
+                .setColor(MinecraftColor.DARK_GREEN.getColor())
+                .setDescription(String.format("Finished loading `%s` songs from the previous queue!", queue.size()))
+                .build()));
+
+        state.setOnStopLoadingCache(() -> {
+            if (all.isDone()) {
+                return;
+            }
+            all.cancel(false);
+            futures.forEach(f -> {
+                if (f.isDone()) return;
+                f.cancel(false);
+            });
+            respondException(event, "Cancelled loading songs from the previous queue.");
+        });
+    }
+
+    /**
+     * Tries to connect to the VC the user is in.
+     * @param event Event.
+     * @return {@code true} if success.
+     */
+    private boolean connect(MessageReceivedEvent event) {
+        VoiceChannel channel = getVoiceChannel(event);
+        if (channel == null) {
+            respondException(event, "Please join in a voice channel before you use this command!");
+            return false;
+        }
+
+        // Prepare whole music logic state
+        MusicState state = prepareMusicState(event);
+
+        try {
+            // Join the Discord VC and prepare audio send handler
+            AudioManager audioManager = channel.getGuild().getAudioManager();
+            audioManager.openAudioConnection(channel);
+            // AudioPlayerSendHandler handles audio sending from LavaPlayer to Discord (JDA)
+            audioManager.setSendingHandler(new AudioPlayerSendHandler(state.getPlayer()));
+        } catch (InsufficientPermissionException e) {
+            respondException(event, "The bot couldn't join your voice channel. Please make sure the bot has sufficient permissions to do so!");
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Retrieves music state if the guild already has a music player set up,
+     * or creates a new state if the guild doesn't.
+     * @param event Event.
+     * @return Music state. null if failed to join in a vc.
+     */
+    @Nullable
+    private MusicState getStateOrConnect(MessageReceivedEvent event) {
+        long guildId = event.getGuild().getIdLong();
+        MusicState state = states.getOrDefault(guildId, null);
+        if (state != null) {
+            return state;
+        }
+        boolean res = connect(event);
+        if (!res) {
+            return null;
+        }
+        return states.get(guildId);
+    }
+
+    /**
+     * Handles "join" command.
+     * @param event Event.
+     */
+    public void handleJoin(MessageReceivedEvent event) {
+        if (!connect(event)) {
+            return;
+        }
+
+        respond(event, new EmbedBuilder()
+                .setColor(MinecraftColor.DARK_GREEN.getColor())
+                .setDescription("Successfully connected to your voice channel!")
+                .build());
+    }
+
+    /**
+     * handles "leave" command.
+     * @param event Event.
+     * @param saveQueue {@code true} if the bot should save the current queue, and use it next time.
+     */
+    public void handleLeave(@NotNull MessageReceivedEvent event, boolean saveQueue) {
+        long guildId = event.getGuild().getIdLong();
+        MusicState state = states.getOrDefault( guildId, null);
+        if (state == null) {
+            respond(event, "This guild doesn't seem to have a music player set up.");
+            return;
+        }
+
+        state.stopLoadingCache();
+
+        boolean deleteRes = this.musicQueueRepository.deleteGuildMusicQueue(guildId);
+        if (!deleteRes) {
+            this.logger.log(0, "Music: Failed to delete guild music cache");
+        }
+        boolean saveResult = !saveQueue || saveQueue(guildId, state);
+
+        state.stopPlaying();
+        state.getPlayer().destroy();
+        event.getGuild().getAudioManager().closeAudioConnection();
+
+        if (!saveResult) {
+            respondError(event, "Something went wrong while saving the queue...");
+            return;
+        }
+
+        // Save setting
+        boolean saveSetting = true;
+        if (!state.getSetting().equals(MusicSetting.getDefault(guildId))) {
+            saveSetting = this.musicSettingRepository.exists(() -> guildId)
+                    ? this.musicSettingRepository.update(state.getSetting())
+                    : this.musicSettingRepository.create(state.getSetting());
+        }
+
+        if (!saveSetting) {
+            respondError(event, "Something went wrong while saving settings for this guild...");
+            return;
+        }
+
+        respond(event, new EmbedBuilder()
+                .setDescription(String.format("Player stopped. (%s)",
+                        saveQueue ? "Saved the queue" : "Queue cleared"))
+                .build());
+    }
+
+    /**
+     * Saves the current queue.
+     * @param guildId Guild ID.
+     * @param state Music state.
+     * @return {@code true} if success.
+     */
+    private boolean saveQueue(long guildId, @NotNull MusicState state) {
+        QueueState queue = state.getCurrentQueue();
+        List<QueueEntry> tracks = new ArrayList<>(queue.getQueue());
+        if (tracks.isEmpty()) {
+            return true;
+        }
+
+        List<MusicQueueEntry> toSave = new ArrayList<>(tracks.size());
+        for (int i = 0; i < tracks.size(); i++) {
+            QueueEntry track = tracks.get(i);
+            toSave.add(new MusicQueueEntry(
+                    guildId,
+                    i,
+                    track.getUserId(),
+                    track.getTrack().getInfo().uri,
+                    i == 0 ? queue.getPosition() : 0L
+            ));
+        }
+        return this.musicQueueRepository.saveGuildMusicQueue(toSave);
+    }
+
+    private static boolean isURL(@NotNull String possibleURL) {
+        return possibleURL.startsWith("http://") || possibleURL.startsWith("https://");
+    }
+
+    /**
+     * Handles "play" command.
+     * @param event Event.
+     * @param args Command arguments.
+     * @param playAll If the bot should enqueue all the search results directly.
+     * @param site Which site to search from.
+     */
+    public void handlePlay(MessageReceivedEvent event, String[] args, boolean playAll, SearchSite site) {
+        if (args.length <= 2) {
+            respond(event, "Please input a keyword or URL you want to search or play!");
+            return;
+        }
+
+        // Delete message if possible
+        try {
+            event.getMessage().delete().queue();
+        } catch (Exception ignored) {
+        }
+
+        String input = String.join(" ", Arrays.copyOfRange(args, 2, args.length));
+        if (isURL(input)) {
+            playAll = true;
+        } else {
+            input = site.getPrefix() + input;
+        }
+
+        MusicState state = getStateOrConnect(event);
+        if (state == null) {
+            return;
+        }
+
+        boolean finalPlayAll = playAll;
+        playerManager.loadItem(input, new AudioLoadResultHandler() {
+            @Override
+            public void trackLoaded(AudioTrack audioTrack) {
+                enqueueSong(event, state, audioTrack);
+            }
+
+            @Override
+            public void playlistLoaded(AudioPlaylist audioPlaylist) {
+                if (audioPlaylist.getTracks().isEmpty()) {
+                    respondException(event, "Received an empty play list.");
+                    return;
+                }
+
+                if (audioPlaylist.getTracks().size() == 1) {
+                    enqueueSong(event, state, audioPlaylist.getTracks().get(0));
+                    return;
+                }
+
+                if (!audioPlaylist.isSearchResult() || finalPlayAll) {
+                    enqueueMultipleSongs(event, state, audioPlaylist.getTracks());
+                    return;
+                }
+
+                selectSong(event, state, audioPlaylist);
+            }
+
+            @Override
+            public void noMatches() {
+                respond(event, "No results found.");
+            }
+
+            @Override
+            public void loadFailed(FriendlyException e) {
+                respondException(event, "Something went wrong while loading tracks:\n" + e.getMessage());
+            }
+        });
+    }
+
+    private void selectSong(MessageReceivedEvent event, MusicState state, AudioPlaylist playlist) {
+        List<AudioTrack> tracks = playlist.getTracks();
+        List<String> desc = new ArrayList<>();
+        int max = Math.min(10, tracks.size());
+        for (int i = 0; i < max; i++) {
+            AudioTrack track = tracks.get(i);
+            AudioTrackInfo info = track.getInfo();
+            desc.add(String.format("%s. %s `[%s]`",
+                    i + 1,
+                    info.title,
+                    info.isStream ? "LIVE" : formatLength(info.length)));
+        }
+        desc.add("");
+        desc.add(String.format("all: Play all (%s songs)", tracks.size()));
+        desc.add("");
+        desc.add("c: Cancel");
+
+        MessageEmbed eb = new EmbedBuilder()
+                .setAuthor(String.format("%s, Select a song!", event.getAuthor().getName()),
+                        null, event.getAuthor().getEffectiveAvatarUrl())
+                .setDescription(String.join("\n", desc))
+                .setFooter(String.format("Type '1' ~ '%s', 'all' to play all, or 'c' to cancel.", max))
+                .build();
+        respond(event, eb, message -> {
+            Response handler = new Response(event.getChannel().getIdLong(), event.getAuthor().getIdLong(),
+                    res -> chooseTrack(event, message, state, tracks, res)
+            );
+            this.responseManager.addEventListener(handler);
+        });
+    }
+
+    private boolean chooseTrack(MessageReceivedEvent event, Message botMsg,
+                                MusicState state, List<AudioTrack> tracks, MessageReceivedEvent res) {
+        String msg = res.getMessage().getContentRaw();
+        if ("all".equalsIgnoreCase(msg)) {
+            this.enqueueMultipleSongs(event, state, tracks);
+            return true;
+        }
+        if ("c".equalsIgnoreCase(msg)) {
+            respond(event, "Cancelled.", m -> m.delete().queueAfter(3, TimeUnit.SECONDS));
+            return false;
+        }
+
+        try {
+            int max = Math.min(10, tracks.size());
+            int index = Integer.parseInt(msg);
+            if (index < 1 || max < index) {
+                respond(event, String.format("Please input a number between 1 and %s!", max),
+                        m -> m.delete().queueAfter(3, TimeUnit.SECONDS));
+                return false;
+            }
+            // Delete bot and response message if possible
+            try {
+                botMsg.delete().queue();
+                res.getMessage().delete().queue();
+            } catch (Exception ignored) {
+            }
+            this.enqueueSong(event, state, tracks.get(index - 1));
+            return true;
+        } catch (NumberFormatException ignored) {
+            return false;
+        }
+    }
+
+    private void enqueueSong(MessageReceivedEvent event, MusicState state, AudioTrack audioTrack) {
+        long userId = event.getAuthor().getIdLong();
+        boolean toShowQueuedMsg = !state.getCurrentQueue().getQueue().isEmpty();
+        int queueSize = state.getCurrentQueue().getQueue().size();
+        long remainingLength = state.getRemainingLength();
+
+        try {
+            state.enqueue(new QueueEntry(audioTrack, userId));
+        } catch (DuplicateTrackException | QueueFullException e) {
+            respondException(event, e.getMessage());
+            return;
+        }
+
+        if (toShowQueuedMsg) {
+            AudioTrackInfo info = audioTrack.getInfo();
+            respond(event, new EmbedBuilder()
+                    .setColor(MinecraftColor.DARK_GREEN.getColor())
+                    .setAuthor("✔ Queued 1 song.", null, event.getAuthor().getEffectiveAvatarUrl())
+                    .setTitle(("".equals(info.title) ? "(No title)" : info.title), info.uri)
+                    .setThumbnail(getThumbnailURL(info.uri))
+                    .addField("Length", info.isStream ? "LIVE" : formatLength(info.length), true)
+                    .addField("Position in queue", String.valueOf(queueSize), true)
+                    .addField("Estimated time until playing", formatLength(remainingLength), true)
+                    .build());
+        }
+    }
+
+    private void enqueueMultipleSongs(MessageReceivedEvent event, MusicState state, List<AudioTrack> tracks) {
+        long userId = event.getAuthor().getIdLong();
+        long remainingLength = state.getRemainingLength();
+        int queueSize = state.getCurrentQueue().getQueue().size();
+
+        int success = 0;
+        long queuedLength = 0;
+        for (AudioTrack track : tracks) {
+            try {
+                state.enqueue(new QueueEntry(track, userId));
+                success++;
+                queuedLength += track.getDuration();
+            } catch (DuplicateTrackException | QueueFullException ignored) {
+            }
+        }
+
+        respond(event, new EmbedBuilder()
+                .setColor(MinecraftColor.DARK_GREEN.getColor())
+                .setAuthor(String.format("✔ Queued %s song%s.", success, success == 1 ? "" : "s"),
+                        null, event.getAuthor().getEffectiveAvatarUrl())
+                .addField("Length", formatLength(queuedLength), true)
+                .addField("Position in queue", String.valueOf(queueSize), true)
+                .addField("Estimated time until playing", formatLength(remainingLength), true)
+                .build());
+
+        if (success != tracks.size()) {
+            respondException(event, String.format("Failed to queue %s song%s due to duplicated track(s) or queue being full.",
+                    tracks.size() - success, (tracks.size() - success) == 1 ? "" : "s"));
+        }
+    }
+}
