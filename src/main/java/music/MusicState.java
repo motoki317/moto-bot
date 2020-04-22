@@ -12,7 +12,6 @@ public class MusicState {
     private final AudioPlayer player;
     private final TrackScheduler scheduler;
     private final MusicSetting setting;
-    // TODO: automatically leave vc after some inactivity
     private long lastInteract;
     private Runnable onStopLoadingCache;
     private final long boundChannelId;
