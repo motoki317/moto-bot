@@ -4,6 +4,7 @@ import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
+import net.dv8tion.jda.api.entities.MessageChannel;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import org.jetbrains.annotations.NotNull;
@@ -134,16 +135,25 @@ public abstract class BotCommand {
     public static void respond(MessageReceivedEvent event, CharSequence message) {
         event.getChannel().sendMessage(message).queue();
     }
-    protected static void respond(MessageReceivedEvent event, Message message) {
+    public static void respond(MessageReceivedEvent event, Message message) {
         event.getChannel().sendMessage(message).queue();
     }
     public static void respond(MessageReceivedEvent event, MessageEmbed message) {
         event.getChannel().sendMessage(message).queue();
     }
+    public static void respond(MessageChannel channel, CharSequence message) {
+        channel.sendMessage(message).queue();
+    }
+    public static void respond(MessageChannel channel, Message message) {
+        channel.sendMessage(message).queue();
+    }
+    public static void respond(MessageChannel channel, MessageEmbed message) {
+        channel.sendMessage(message).queue();
+    }
     public static void respond(MessageReceivedEvent event, CharSequence message, Consumer<? super Message> onSuccess) {
         event.getChannel().sendMessage(message).queue(onSuccess);
     }
-    protected static void respond(MessageReceivedEvent event, Message message, Consumer<? super Message> onSuccess) {
+    public static void respond(MessageReceivedEvent event, Message message, Consumer<? super Message> onSuccess) {
         event.getChannel().sendMessage(message).queue(onSuccess);
     }
     public static void respond(MessageReceivedEvent event, MessageEmbed message, Consumer<? super Message> onSuccess) {
@@ -157,6 +167,20 @@ public abstract class BotCommand {
      */
     public static void respondException(MessageReceivedEvent event, CharSequence message) {
         respond(event,
+                new EmbedBuilder()
+                        .setColor(MinecraftColor.RED.getColor())
+                        .setDescription(message)
+                        .build()
+        );
+    }
+
+    /**
+     * Respond exception in red embed message.
+     * @param channel Message channel.
+     * @param message Description of the exception.
+     */
+    public static void respondException(MessageChannel channel, CharSequence message) {
+        respond(channel,
                 new EmbedBuilder()
                         .setColor(MinecraftColor.RED.getColor())
                         .setDescription(message)

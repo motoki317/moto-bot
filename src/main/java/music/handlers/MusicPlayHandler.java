@@ -8,8 +8,10 @@ import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
+import db.model.musicInterruptedGuild.MusicInterruptedGuild;
 import db.model.musicQueue.MusicQueueEntry;
 import db.model.musicSetting.MusicSetting;
+import db.repository.base.MusicInterruptedGuildRepository;
 import db.repository.base.MusicQueueRepository;
 import db.repository.base.MusicSettingRepository;
 import log.Logger;
@@ -36,6 +38,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import static commands.base.BotCommand.*;
 import static music.MusicUtils.formatLength;
@@ -49,6 +52,7 @@ public class MusicPlayHandler {
     private final Logger logger;
     private final MusicSettingRepository musicSettingRepository;
     private final MusicQueueRepository musicQueueRepository;
+    private final MusicInterruptedGuildRepository interruptedGuildRepository;
     private final ResponseManager responseManager;
 
     public MusicPlayHandler(Bot bot, Map<Long, MusicState> states, AudioPlayerManager playerManager) {
@@ -58,6 +62,7 @@ public class MusicPlayHandler {
         this.logger = bot.getLogger();
         this.musicSettingRepository = bot.getDatabase().getMusicSettingRepository();
         this.musicQueueRepository = bot.getDatabase().getMusicQueueRepository();
+        this.interruptedGuildRepository = bot.getDatabase().getMusicInterruptedGuildRepository();
         this.responseManager = bot.getResponseManager();
     }
 
@@ -94,15 +99,37 @@ public class MusicPlayHandler {
     }
 
     /**
+     * Rejoin to all interrupted guilds.
+     */
+    public void rejoinInterruptedGuilds() {
+        List<MusicInterruptedGuild> guilds = this.interruptedGuildRepository.findAll();
+        if (guilds == null) {
+            return;
+        }
+
+        for (MusicInterruptedGuild guild : guilds) {
+            long channelId = guild.getChannelId();
+
+            TextChannel channel = this.manager.getTextChannelById(channelId);
+            if (channel == null) {
+                this.logger.log(0, "Music rejoin: Failed to retrieve text channel for ID: " + channelId);
+                continue;
+            }
+
+            prepareMusicState(channel);
+        }
+    }
+
+    /**
      * Prepares music state for the guild.
      * (Sets up audio players, but does not join the VC)
-     * @param event Event.
+     * @param channel Guild text channel.
      * @return Music state
      */
     @NotNull
-    private MusicState prepareMusicState(@NotNull MessageReceivedEvent event) {
-        long guildId = event.getGuild().getIdLong();
-        long channelId = event.getChannel().getIdLong();
+    private MusicState prepareMusicState(@NotNull TextChannel channel) {
+        long guildId = channel.getGuild().getIdLong();
+        long channelId = channel.getIdLong();
         Logger logger = this.logger;
         ShardManager manager = this.manager;
 
@@ -129,7 +156,7 @@ public class MusicPlayHandler {
 
             @Override
             public String getBotAvatarURL() {
-                return event.getJDA().getSelfUser().getEffectiveAvatarUrl();
+                return channel.getJDA().getSelfUser().getEffectiveAvatarUrl();
             }
 
             @Nullable
@@ -161,7 +188,7 @@ public class MusicPlayHandler {
             states.put(guildId, state);
         }
 
-        enqueueSavedQueue(event, guildId, state);
+        enqueueSavedQueue(channel, guildId, state);
         return state;
     }
 
@@ -170,13 +197,13 @@ public class MusicPlayHandler {
      * @param guildId Guild ID.
      * @param state State.
      */
-    private void enqueueSavedQueue(MessageReceivedEvent event, long guildId, MusicState state) {
+    private void enqueueSavedQueue(MessageChannel channel, long guildId, MusicState state) {
         List<MusicQueueEntry> queue = this.musicQueueRepository.getGuildMusicQueue(guildId);
         if (queue == null || queue.isEmpty()) {
             return;
         }
 
-        respond(event, new EmbedBuilder()
+        respond(channel, new EmbedBuilder()
                 .setColor(MinecraftColor.DARK_GREEN.getColor())
                 .setDescription(String.format("Loading `%s` song(s) from the previous queue...\n" +
                         "This might take a while. `m purge` or `m clear` to stop loading.", queue.size()))
@@ -186,17 +213,21 @@ public class MusicPlayHandler {
 
         String firstURL = queue.get(0).getUrl();
         long position = queue.get(0).getPosition();
-        long userId = event.getAuthor().getIdLong();
+
+        Map<String, MusicQueueEntry> urlMap = queue.stream().collect(Collectors.toMap(MusicQueueEntry::getUrl, q -> q));
+
         for (MusicQueueEntry e : queue) {
             Future<Void> f = playerManager.loadItemOrdered(state.getPlayer(), e.getUrl(), new AudioLoadResultHandler() {
                 @Override
                 public void trackLoaded(AudioTrack audioTrack) {
                     // If it's the first one, set the position
-                    if (audioTrack.getInfo().uri.equals(firstURL)) {
+                    AudioTrackInfo info = audioTrack.getInfo();
+                    if (info.uri.equals(firstURL)) {
                         audioTrack.setPosition(position);
                     }
+                    MusicQueueEntry e = urlMap.getOrDefault(info.uri, null);
                     try {
-                        state.enqueue(new QueueEntry(audioTrack, userId));
+                        state.enqueue(new QueueEntry(audioTrack, e != null ? e.getUserId() : 0L));
                     } catch (DuplicateTrackException | QueueFullException ex) {
                         ex.printStackTrace();
                     }
@@ -207,7 +238,9 @@ public class MusicPlayHandler {
                     // Should probably not be reached because we're supplying a URL for each song
                     for (AudioTrack track : audioPlaylist.getTracks()) {
                         try {
-                            state.enqueue(new QueueEntry(track, userId));
+                            AudioTrackInfo info = track.getInfo();
+                            MusicQueueEntry e = urlMap.getOrDefault(info.uri, null);
+                            state.enqueue(new QueueEntry(track, e != null ? e.getUserId() : 0L));
                         } catch (DuplicateTrackException | QueueFullException ex) {
                             ex.printStackTrace();
                         }
@@ -238,7 +271,7 @@ public class MusicPlayHandler {
             }
         });
 
-        all.thenRun(() -> respond(event, new EmbedBuilder()
+        all.thenRun(() -> respond(channel, new EmbedBuilder()
                 .setColor(MinecraftColor.DARK_GREEN.getColor())
                 .setDescription(String.format("Finished loading `%s` songs from the previous queue!", queue.size()))
                 .build()));
@@ -252,7 +285,7 @@ public class MusicPlayHandler {
                 if (f.isDone()) return;
                 f.cancel(false);
             });
-            respondException(event, "Cancelled loading songs from the previous queue.");
+            respondException(channel, "Cancelled loading songs from the previous queue.");
         });
     }
 
@@ -269,7 +302,7 @@ public class MusicPlayHandler {
         }
 
         // Prepare whole music logic state
-        MusicState state = prepareMusicState(event);
+        MusicState state = prepareMusicState(event.getTextChannel());
 
         try {
             // Join the Discord VC and prepare audio send handler
@@ -350,6 +383,10 @@ public class MusicPlayHandler {
         } catch (RuntimeException e) {
             respondError(event, e.getMessage());
             return;
+        }
+
+        synchronized (states) {
+            states.remove(guildId);
         }
 
         respond(event, new EmbedBuilder()

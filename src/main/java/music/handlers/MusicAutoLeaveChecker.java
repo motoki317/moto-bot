@@ -1,6 +1,8 @@
 package music.handlers;
 
 import app.Bot;
+import db.model.musicInterruptedGuild.MusicInterruptedGuild;
+import db.repository.base.MusicInterruptedGuildRepository;
 import log.Logger;
 import music.MusicState;
 import net.dv8tion.jda.api.EmbedBuilder;
@@ -11,6 +13,9 @@ import net.dv8tion.jda.api.entities.VoiceChannel;
 import net.dv8tion.jda.api.sharding.ShardManager;
 import utils.MinecraftColor;
 
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -19,6 +24,7 @@ public class MusicAutoLeaveChecker {
 
     private final ShardManager manager;
     private final Logger logger;
+    private final MusicInterruptedGuildRepository interruptedGuildRepository;
 
     private final MusicPlayHandler playHandler;
 
@@ -26,6 +32,7 @@ public class MusicAutoLeaveChecker {
         this.states = states;
         this.manager = bot.getManager();
         this.logger = bot.getLogger();
+        this.interruptedGuildRepository = bot.getDatabase().getMusicInterruptedGuildRepository();
         this.playHandler = playHandler;
     }
 
@@ -67,28 +74,62 @@ public class MusicAutoLeaveChecker {
 
     public void checkAllGuilds() {
         synchronized (states) {
+            for (Iterator<Map.Entry<Long, MusicState>> iterator = states.entrySet().iterator(); iterator.hasNext(); ) {
+                Map.Entry<Long, MusicState> entry = iterator.next();
+                long guildId = entry.getKey();
+                MusicState state = entry.getValue();
+
+                if (!canSafelyLeave(guildId, state)) {
+                    continue;
+                }
+
+                shutdownGuild(guildId, state);
+                iterator.remove();
+            }
+        }
+    }
+
+    private void shutdownGuild(long guildId, MusicState state) {
+        TextChannel channel = this.manager.getTextChannelById(state.getBoundChannelId());
+        if (channel == null) {
+            this.logger.log(0, "Music auto leave: Failed to retrieve channel for ID: " + state.getBoundChannelId());
+            return;
+        }
+        try {
+            this.playHandler.shutdownPlayer(true, guildId, state);
+        } catch (RuntimeException e) {
+            channel.sendMessage("Something went wrong while leaving channel: " + e.getMessage()).queue();
+            return;
+        }
+        channel.sendMessage(new EmbedBuilder()
+                .setColor(MinecraftColor.RED.getColor())
+                .setDescription("Left the voice channel due to inactivity.")
+                .build()).queue();
+    }
+
+    /**
+     * Shuts down all music players.
+     * To be used on bot shutdown.
+     */
+    public void forceShutdownAllGuilds() {
+        synchronized (states) {
+            List<MusicInterruptedGuild> toSave = new ArrayList<>(states.size());
+
             for (Map.Entry<Long, MusicState> entry : states.entrySet()) {
                 long guildId = entry.getKey();
                 MusicState state = entry.getValue();
 
-                if (canSafelyLeave(guildId, state)) {
-                    TextChannel channel = this.manager.getTextChannelById(state.getBoundChannelId());
-                    if (channel == null) {
-                        this.logger.log(0, "Music auto leave: Failed to retrieve channel for ID: " + state.getBoundChannelId());
-                        continue;
-                    }
-                    try {
-                        this.playHandler.shutdownPlayer(true, guildId, state);
-                    } catch (RuntimeException e) {
-                        channel.sendMessage("Something went wrong while leaving channel: " + e.getMessage()).queue();
-                        continue;
-                    }
-                    channel.sendMessage(new EmbedBuilder()
-                            .setColor(MinecraftColor.RED.getColor())
-                            .setDescription("Left the voice channel due to inactivity.")
-                            .build()).queue();
-                }
+                shutdownGuild(guildId, state);
+
+                toSave.add(new MusicInterruptedGuild(guildId, state.getBoundChannelId()));
             }
+
+            boolean res = this.interruptedGuildRepository.createAll(toSave);
+            if (!res) {
+                this.logger.log(0, "Music leave: Failed to insert into interrupted guilds");
+            }
+
+            states.clear();
         }
     }
 }

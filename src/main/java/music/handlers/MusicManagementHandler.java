@@ -248,8 +248,8 @@ public class MusicManagementHandler {
             }
         }
 
+        respond(event, String.format("Skipping %s song%s.", skipAmount, skipAmount == 1 ? "" : "s"));
         state.skip(skipAmount);
-        respond(event, String.format("Skipped %s song(s).", skipAmount));
     }
 
     /**

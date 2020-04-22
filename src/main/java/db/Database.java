@@ -50,4 +50,6 @@ public interface Database {
     MusicSettingRepository getMusicSettingRepository();
     @NotNull
     MusicQueueRepository getMusicQueueRepository();
+    @NotNull
+    MusicInterruptedGuildRepository getMusicInterruptedGuildRepository();
 }

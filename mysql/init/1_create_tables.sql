@@ -495,3 +495,9 @@ CREATE TABLE IF NOT EXISTS `music_queue` (
     `position` BIGINT NOT NULL,
     UNIQUE KEY `guild_id_index_idx` (`guild_id`, `index`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+# Temporary table to hold list of guilds that were interrupted music
+CREATE TABLE IF NOT EXISTS `music_interrupted_guild` (
+    `guild_id` BIGINT PRIMARY KEY,
+    `channel_id` BIGINT NOT NULL
+) ENGINE=InnodB DEFAULT CHARSET=utf8mb4;

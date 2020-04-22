@@ -58,12 +58,18 @@ public class Music extends GuildCommand {
 
         this.registerCommands();
 
+        // Rejoin interrupted guilds on shutdown
+        this.playHandler.rejoinInterruptedGuilds();
+
         new Timer().scheduleAtFixedRate(new TimerTask() {
             @Override
             public void run() {
                 Music.this.autoLeaveChecker.checkAllGuilds();
             }
         }, AUTO_LEAVE_CHECK_INTERVAL, AUTO_LEAVE_CHECK_INTERVAL);
+
+        // Save all players on shutdown to be re-joined above
+        Runtime.getRuntime().addShutdownHook(new Thread(this.autoLeaveChecker::forceShutdownAllGuilds));
     }
 
     @SuppressWarnings("OverlyLongMethod")
