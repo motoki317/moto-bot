@@ -499,5 +499,6 @@ CREATE TABLE IF NOT EXISTS `music_queue` (
 # Temporary table to hold list of guilds that were interrupted music
 CREATE TABLE IF NOT EXISTS `music_interrupted_guild` (
     `guild_id` BIGINT PRIMARY KEY,
-    `channel_id` BIGINT NOT NULL
+    `channel_id` BIGINT NOT NULL,
+    `voice_channel_id` BIGINT NOT NULL
 ) ENGINE=InnodB DEFAULT CHARSET=utf8mb4;

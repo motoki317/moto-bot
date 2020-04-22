@@ -21,15 +21,16 @@ class MariaMusicInterruptedGuildRepository extends MusicInterruptedGuildReposito
 
     @Override
     protected MusicInterruptedGuild bind(@NotNull ResultSet res) throws SQLException {
-        return new MusicInterruptedGuild(res.getLong(1), res.getLong(2));
+        return new MusicInterruptedGuild(res.getLong(1), res.getLong(2), res.getLong(3));
     }
 
     @Override
     public <S extends MusicInterruptedGuild> boolean create(@NotNull S entity) {
         return this.execute(
-                "INSERT INTO `music_interrupted_guild` (guild_id, channel_id) VALUES (?, ?)",
+                "INSERT INTO `music_interrupted_guild` (guild_id, channel_id, voice_channel_id) VALUES (?, ?, ?)",
                 entity.getGuildId(),
-                entity.getChannelId()
+                entity.getChannelId(),
+                entity.getVoiceChannelId()
         );
     }
 
@@ -39,11 +40,12 @@ class MariaMusicInterruptedGuildRepository extends MusicInterruptedGuildReposito
             return true;
         }
         return this.execute(
-                "INSERT INTO `music_interrupted_guild` (guild_id, channel_id) VALUES " +
-                        String.join(", ", Collections.nCopies(guilds.size(), "(?, ?)")),
+                "INSERT INTO `music_interrupted_guild` (guild_id, channel_id, voice_channel_id) VALUES " +
+                        String.join(", ", Collections.nCopies(guilds.size(), "(?, ?, ?)")),
                 guilds.stream().flatMap(g -> Stream.of(
                         g.getGuildId(),
-                        g.getChannelId()
+                        g.getChannelId(),
+                        g.getVoiceChannelId()
                 )).toArray()
         );
     }
@@ -137,8 +139,9 @@ class MariaMusicInterruptedGuildRepository extends MusicInterruptedGuildReposito
     @Override
     public boolean update(@NotNull MusicInterruptedGuild entity) {
         return this.execute(
-                "UPDATE `music_interrupted_guild` SET `channel_id` = ? WHERE `guild_id` = ?",
+                "UPDATE `music_interrupted_guild` SET `channel_id` = ?, `voice_channel_id` = ? WHERE `guild_id` = ?",
                 entity.getChannelId(),
+                entity.getVoiceChannelId(),
                 entity.getGuildId()
         );
     }

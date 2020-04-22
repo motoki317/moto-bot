@@ -117,11 +117,22 @@ public class MusicAutoLeaveChecker {
 
             for (Map.Entry<Long, MusicState> entry : states.entrySet()) {
                 long guildId = entry.getKey();
+                Guild guild = this.manager.getGuildById(guildId);
+                if (guild == null) {
+                    this.logger.log(0, "Music leave: Failed to get guild for ID: " + guildId);
+                    continue;
+                }
+
                 MusicState state = entry.getValue();
 
                 shutdownGuild(guildId, state);
 
-                toSave.add(new MusicInterruptedGuild(guildId, state.getBoundChannelId()));
+                VoiceChannel vc = guild.getAudioManager().getConnectedChannel();
+                if (vc == null) {
+                    this.logger.log(0, "Music leave: Failed to get vc for guild ID: " + guildId);
+                    continue;
+                }
+                toSave.add(new MusicInterruptedGuild(guildId, state.getBoundChannelId(), vc.getIdLong()));
             }
 
             boolean res = this.interruptedGuildRepository.createAll(toSave);

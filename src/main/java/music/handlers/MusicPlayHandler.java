@@ -108,15 +108,33 @@ public class MusicPlayHandler {
         }
 
         for (MusicInterruptedGuild guild : guilds) {
+            long guildId = guild.getGuildId();
             long channelId = guild.getChannelId();
+            long vcId = guild.getVoiceChannelId();
 
             TextChannel channel = this.manager.getTextChannelById(channelId);
-            if (channel == null) {
-                this.logger.log(0, "Music rejoin: Failed to retrieve text channel for ID: " + channelId);
+            VoiceChannel vc = this.manager.getVoiceChannelById(vcId);
+            if (channel == null || vc == null) {
+                this.logger.log(0, String.format(
+                        "Music rejoin: Failed to retrieve text channel or voice channel for ID: %d, %d", channelId, vcId));
                 continue;
             }
 
-            prepareMusicState(channel);
+            MusicState state = prepareMusicState(channel);
+
+            try {
+                // Join the Discord VC and prepare audio send handler
+                AudioManager audioManager = channel.getGuild().getAudioManager();
+                audioManager.openAudioConnection(vc);
+                // AudioPlayerSendHandler handles audio sending from LavaPlayer to Discord (JDA)
+                audioManager.setSendingHandler(new AudioPlayerSendHandler(state.getPlayer()));
+            } catch (InsufficientPermissionException e) {
+                respondException(channel, "The bot couldn't join your voice channel. " +
+                        "Please make sure the bot has sufficient permissions to do so!");
+                synchronized (states) {
+                    states.remove(guildId);
+                }
+            }
         }
     }
 
@@ -312,6 +330,9 @@ public class MusicPlayHandler {
             audioManager.setSendingHandler(new AudioPlayerSendHandler(state.getPlayer()));
         } catch (InsufficientPermissionException e) {
             respondException(event, "The bot couldn't join your voice channel. Please make sure the bot has sufficient permissions to do so!");
+            synchronized (states) {
+                states.remove(event.getGuild().getIdLong());
+            }
             return false;
         }
 
