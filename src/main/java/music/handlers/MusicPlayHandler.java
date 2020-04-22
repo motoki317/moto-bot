@@ -30,10 +30,7 @@ import update.response.Response;
 import update.response.ResponseManager;
 import utils.MinecraftColor;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -82,6 +79,16 @@ public class MusicPlayHandler {
             return null;
         }
         return voiceState.getChannel();
+    }
+
+    private static final long QUEUE_MAX_AGE = TimeUnit.DAYS.toMillis(7);
+
+    public void removeOldQueues() {
+        Date threshold = new Date(System.currentTimeMillis() - QUEUE_MAX_AGE);
+        boolean res = this.musicQueueRepository.deleteAllOlderThan(threshold);
+        if (!res) {
+            this.logger.log(0, "Music queue cache: failed to delete old queues");
+        }
     }
 
     /**
@@ -219,7 +226,8 @@ public class MusicPlayHandler {
      */
     private void enqueueSavedQueue(MessageChannel channel, long guildId, MusicState state) {
         List<MusicQueueEntry> queue = this.musicQueueRepository.getGuildMusicQueue(guildId);
-        if (queue == null || queue.isEmpty()) {
+        boolean deleteRes = this.musicQueueRepository.deleteGuildMusicQueue(guildId);
+        if (queue == null || queue.isEmpty() || !deleteRes) {
             return;
         }
 
@@ -433,10 +441,6 @@ public class MusicPlayHandler {
 
         state.stopLoadingCache();
 
-        boolean deleteRes = this.musicQueueRepository.deleteGuildMusicQueue(guildId);
-        if (!deleteRes) {
-            throw new RuntimeException("Failed to delete previous music cache");
-        }
         boolean saveResult = !saveQueue || saveQueue(guildId, state);
 
         state.stopPlaying();
@@ -474,6 +478,7 @@ public class MusicPlayHandler {
         }
 
         List<MusicQueueEntry> toSave = new ArrayList<>(tracks.size());
+        long now = System.currentTimeMillis();
         for (int i = 0; i < tracks.size(); i++) {
             QueueEntry track = tracks.get(i);
             toSave.add(new MusicQueueEntry(
@@ -481,7 +486,8 @@ public class MusicPlayHandler {
                     i,
                     track.getUserId(),
                     track.getTrack().getInfo().uri,
-                    i == 0 ? queue.getPosition() : 0L
+                    i == 0 ? queue.getPosition() : 0L,
+                    new Date(now)
             ));
         }
         return this.musicQueueRepository.saveGuildMusicQueue(toSave);

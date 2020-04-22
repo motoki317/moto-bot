@@ -493,6 +493,7 @@ CREATE TABLE IF NOT EXISTS `music_queue` (
     `user_id` BIGINT NOT NULL,
     `url` VARCHAR(500) NOT NULL,
     `position` BIGINT NOT NULL,
+    `updated_at` DATETIME DEFAULT NOW() ON UPDATE NOW(),
     UNIQUE KEY `guild_id_index_idx` (`guild_id`, `index`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 

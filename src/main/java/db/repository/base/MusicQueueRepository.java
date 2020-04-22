@@ -6,6 +6,7 @@ import db.model.musicQueue.MusicQueueEntryId;
 import log.Logger;
 
 import javax.annotation.Nullable;
+import java.util.Date;
 import java.util.List;
 
 public abstract class MusicQueueRepository extends Repository<MusicQueueEntry, MusicQueueEntryId> {
@@ -34,4 +35,11 @@ public abstract class MusicQueueRepository extends Repository<MusicQueueEntry, M
      */
     @Nullable
     public abstract List<MusicQueueEntry> getGuildMusicQueue(long guildId);
+
+    /**
+     * Deletes all entries older than the specified date.
+     * @param threshold Deletes if older than this date.
+     * @return {@code true} if success.
+     */
+    public abstract boolean deleteAllOlderThan(Date threshold);
 }

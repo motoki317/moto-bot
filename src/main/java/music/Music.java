@@ -29,6 +29,7 @@ public class Music extends GuildCommand {
     private static final AudioPlayerManager playerManager;
 
     private static final long AUTO_LEAVE_CHECK_INTERVAL = TimeUnit.MINUTES.toMillis(1);
+    private static final long OLD_QUEUE_CHECK_INTERVAL = TimeUnit.MINUTES.toMillis(60);
 
     static {
         states = new HashMap<>();
@@ -67,6 +68,12 @@ public class Music extends GuildCommand {
                 Music.this.autoLeaveChecker.checkAllGuilds();
             }
         }, AUTO_LEAVE_CHECK_INTERVAL, AUTO_LEAVE_CHECK_INTERVAL);
+        new Timer().scheduleAtFixedRate(new TimerTask() {
+            @Override
+            public void run() {
+                Music.this.playHandler.removeOldQueues();
+            }
+        }, OLD_QUEUE_CHECK_INTERVAL, OLD_QUEUE_CHECK_INTERVAL);
 
         // Save all players on shutdown to be re-joined above
         Runtime.getRuntime().addShutdownHook(new Thread(this.autoLeaveChecker::forceShutdownAllGuilds));

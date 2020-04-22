@@ -10,11 +10,16 @@ import org.jetbrains.annotations.NotNull;
 import javax.annotation.Nullable;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.stream.Stream;
 
 class MariaMusicQueueRepository extends MusicQueueRepository {
+    private static final DateFormat dbFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+
     MariaMusicQueueRepository(ConnectionPool db, Logger logger) {
         super(db, logger);
     }
@@ -26,19 +31,21 @@ class MariaMusicQueueRepository extends MusicQueueRepository {
                 res.getInt(2),
                 res.getLong(3),
                 res.getString(4),
-                res.getInt(5)
+                res.getInt(5),
+                res.getTimestamp(6)
         );
     }
 
     @Override
     public <S extends MusicQueueEntry> boolean create(@NotNull S entity) {
         return this.execute(
-                "INSERT INTO `music_queue` (guild_id, `index`, user_id, url, position) VALUES (?, ?, ?, ?, ?)",
+                "INSERT INTO `music_queue` (guild_id, `index`, user_id, url, position, updated_at) VALUES (?, ?, ?, ?, ?, ?)",
                 entity.getGuildId(),
                 entity.getIndex(),
                 entity.getUserId(),
                 entity.getUrl(),
-                entity.getPosition()
+                entity.getPosition(),
+                dbFormat.format(entity.getUpdatedAt())
         );
     }
 
@@ -146,7 +153,8 @@ class MariaMusicQueueRepository extends MusicQueueRepository {
                         q.getIndex(),
                         q.getUserId(),
                         q.getUrl(),
-                        q.getPosition()
+                        q.getPosition(),
+                        dbFormat.format(q.getUpdatedAt())
                 )).toArray()
         );
     }
@@ -172,12 +180,21 @@ class MariaMusicQueueRepository extends MusicQueueRepository {
     }
 
     @Override
+    public boolean deleteAllOlderThan(Date threshold) {
+        return this.execute(
+                "DELETE FROM `music_queue` WHERE `updated_at` < ?",
+                dbFormat.format(threshold)
+        );
+    }
+
+    @Override
     public boolean update(@NotNull MusicQueueEntry entity) {
         return this.execute(
-                "UPDATE `music_queue` SET `user_id` = ?, `url` = ?, `position` = ? WHERE `guild_id` = ? AND `index` = ?",
+                "UPDATE `music_queue` SET `user_id` = ?, `url` = ?, `position` = ?, `updated_at` = ? WHERE `guild_id` = ? AND `index` = ?",
                 entity.getUserId(),
                 entity.getUrl(),
                 entity.getPosition(),
+                dbFormat.format(entity.getUpdatedAt()),
                 entity.getGuildId(),
                 entity.getIndex()
         );
