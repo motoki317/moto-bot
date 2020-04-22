@@ -312,6 +312,13 @@ public class MusicPlayHandler {
      * @param event Event.
      */
     public void handleJoin(MessageReceivedEvent event) {
+        synchronized (states) {
+            if (states.containsKey(event.getGuild().getIdLong())) {
+                respond(event, "This guild already has a music player set up!");
+                return;
+            }
+        }
+
         if (!connect(event)) {
             return;
         }
