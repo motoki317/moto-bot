@@ -120,7 +120,7 @@ public class MusicPlayHandler {
                 continue;
             }
 
-            MusicState state = prepareMusicState(channel);
+            MusicState state = prepareMusicState(channel, vc.getIdLong());
 
             try {
                 // Join the Discord VC and prepare audio send handler
@@ -142,10 +142,11 @@ public class MusicPlayHandler {
      * Prepares music state for the guild.
      * (Sets up audio players, but does not join the VC)
      * @param channel Guild text channel.
+     * @param voiceChannelId Voice channel ID. For data cache.
      * @return Music state
      */
     @NotNull
-    private MusicState prepareMusicState(@NotNull TextChannel channel) {
+    private MusicState prepareMusicState(@NotNull TextChannel channel, long voiceChannelId) {
         long guildId = channel.getGuild().getIdLong();
         long channelId = channel.getIdLong();
         Logger logger = this.logger;
@@ -201,7 +202,7 @@ public class MusicPlayHandler {
         });
         player.addListener(scheduler);
 
-        MusicState state = new MusicState(player, scheduler, setting, System.currentTimeMillis(), channelId);
+        MusicState state = new MusicState(player, scheduler, setting, channelId, voiceChannelId);
         synchronized (states) {
             states.put(guildId, state);
         }
@@ -320,7 +321,7 @@ public class MusicPlayHandler {
         }
 
         // Prepare whole music logic state
-        MusicState state = prepareMusicState(event.getTextChannel());
+        MusicState state = prepareMusicState(event.getTextChannel(), channel.getIdLong());
 
         try {
             // Join the Discord VC and prepare audio send handler

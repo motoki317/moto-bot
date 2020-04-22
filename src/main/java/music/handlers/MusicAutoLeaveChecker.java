@@ -83,28 +83,31 @@ public class MusicAutoLeaveChecker {
                     continue;
                 }
 
+                TextChannel channel = this.manager.getTextChannelById(state.getBoundChannelId());
+                if (channel == null) {
+                    this.logger.log(0, "Music auto leave: Failed to retrieve channel for ID: " + state.getBoundChannelId());
+                }
+
                 shutdownGuild(guildId, state);
+
+                if (channel != null) {
+                    channel.sendMessage(new EmbedBuilder()
+                            .setColor(MinecraftColor.RED.getColor())
+                            .setDescription("Left the voice channel due to inactivity.")
+                            .build()).queue();
+                }
+
                 iterator.remove();
             }
         }
     }
 
     private void shutdownGuild(long guildId, MusicState state) {
-        TextChannel channel = this.manager.getTextChannelById(state.getBoundChannelId());
-        if (channel == null) {
-            this.logger.log(0, "Music auto leave: Failed to retrieve channel for ID: " + state.getBoundChannelId());
-            return;
-        }
         try {
             this.playHandler.shutdownPlayer(true, guildId, state);
         } catch (RuntimeException e) {
-            channel.sendMessage("Something went wrong while leaving channel: " + e.getMessage()).queue();
-            return;
+            this.logger.logException("Something went wrong while shutting down guild music", e);
         }
-        channel.sendMessage(new EmbedBuilder()
-                .setColor(MinecraftColor.RED.getColor())
-                .setDescription("Left the voice channel due to inactivity.")
-                .build()).queue();
     }
 
     /**
@@ -117,22 +120,12 @@ public class MusicAutoLeaveChecker {
 
             for (Map.Entry<Long, MusicState> entry : states.entrySet()) {
                 long guildId = entry.getKey();
-                Guild guild = this.manager.getGuildById(guildId);
-                if (guild == null) {
-                    this.logger.log(0, "Music leave: Failed to get guild for ID: " + guildId);
-                    continue;
-                }
 
                 MusicState state = entry.getValue();
 
                 shutdownGuild(guildId, state);
 
-                VoiceChannel vc = guild.getAudioManager().getConnectedChannel();
-                if (vc == null) {
-                    this.logger.log(0, "Music leave: Failed to get vc for guild ID: " + guildId);
-                    continue;
-                }
-                toSave.add(new MusicInterruptedGuild(guildId, state.getBoundChannelId(), vc.getIdLong()));
+                toSave.add(new MusicInterruptedGuild(guildId, state.getBoundChannelId(), state.getVoiceChannelId()));
             }
 
             boolean res = this.interruptedGuildRepository.createAll(toSave);

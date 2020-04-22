@@ -16,14 +16,16 @@ public class MusicState {
     private long lastInteract;
     private Runnable onStopLoadingCache;
     private final long boundChannelId;
+    private final long voiceChannelId;
 
-    public MusicState(AudioPlayer player, TrackScheduler scheduler, MusicSetting setting, long lastInteract, long boundChannelId) {
+    public MusicState(AudioPlayer player, TrackScheduler scheduler, MusicSetting setting, long boundChannelId, long voiceChannelId) {
         this.player = player;
         this.scheduler = scheduler;
         this.setting = setting;
-        this.lastInteract = lastInteract;
+        this.lastInteract = System.currentTimeMillis();
         this.onStopLoadingCache = () -> {};
         this.boundChannelId = boundChannelId;
+        this.voiceChannelId = voiceChannelId;
     }
 
     public void setLastInteract(long lastInteract) {
@@ -57,6 +59,10 @@ public class MusicState {
 
     public long getLastInteract() {
         return lastInteract;
+    }
+
+    public long getVoiceChannelId() {
+        return voiceChannelId;
     }
 
     public void stopPlaying() {
