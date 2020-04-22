@@ -156,7 +156,6 @@ public class MusicPlayHandler {
         MusicState state = new MusicState(player, scheduler, setting, System.currentTimeMillis());
         states.put(guildId, state);
 
-        // TODO: enqueue all saved musics on player setup
         enqueueSavedQueue(event, guildId, state);
         return state;
     }

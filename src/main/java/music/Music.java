@@ -18,6 +18,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.BiConsumer;
 
 public class Music extends GuildCommand {
     private static final Map<Long, MusicState> states;
@@ -29,6 +30,8 @@ public class Music extends GuildCommand {
         AudioSourceManagers.registerRemoteSources(playerManager);
     }
 
+    private final Map<String, BiConsumer<MessageReceivedEvent, String[]>> commands;
+
     // Command handlers
     private final MusicPlayHandler playHandler;
     private final MusicManagementHandler managementHandler;
@@ -36,9 +39,55 @@ public class Music extends GuildCommand {
     private final ShardManager manager;
 
     public Music(Bot bot) {
+        this.commands = new HashMap<>();
         this.manager = bot.getManager();
         this.playHandler = new MusicPlayHandler(bot, states, playerManager);
         this.managementHandler = new MusicManagementHandler(bot, states);
+
+        this.registerCommands();
+    }
+
+    private void registerCommands() {
+        // Join and leave handlers
+        commands.put("j", (event, args) -> this.playHandler.handleJoin(event));
+        commands.put("join", (event, args) -> this.playHandler.handleJoin(event));
+
+        commands.put("l", (event, args) -> this.playHandler.handleLeave(event, true));
+        commands.put("leave", (event, args) -> this.playHandler.handleLeave(event, true));
+        commands.put("stop", (event, args) -> this.playHandler.handleLeave(event, true));
+
+        commands.put("c", (event, args) -> this.playHandler.handleLeave(event, false));
+        commands.put("clear", (event, args) -> this.playHandler.handleLeave(event, false));
+
+        // Play handlers
+        commands.put("p", (event, args) -> this.playHandler.handlePlay(event, args, false, SearchSite.YouTube));
+        commands.put("play", (event, args) -> this.playHandler.handlePlay(event, args, false, SearchSite.YouTube));
+
+        commands.put("pa", (event, args) -> this.playHandler.handlePlay(event, args, true, SearchSite.YouTube));
+        commands.put("playall", (event, args) -> this.playHandler.handlePlay(event, args, true, SearchSite.YouTube));
+
+        commands.put("sc", (event, args) -> this.playHandler.handlePlay(event, args, false, SearchSite.SoundCloud));
+        commands.put("soundcloud", (event, args) -> this.playHandler.handlePlay(event, args, false, SearchSite.SoundCloud));
+
+        // Player management handlers
+        commands.put("np", (event, args) -> this.managementHandler.handleNowPlaying(event));
+        commands.put("nowplaying", (event, args) -> this.managementHandler.handleNowPlaying(event));
+
+        commands.put("q", (event, args) -> this.managementHandler.handleQueue(event));
+        commands.put("queue", (event, args) -> this.managementHandler.handleQueue(event));
+
+        commands.put("pause", (event, args) -> this.managementHandler.handlePause(event, true));
+
+        commands.put("resume", (event, args) -> this.managementHandler.handlePause(event, false));
+
+        commands.put("s", this.managementHandler::handleSkip);
+        commands.put("skip", this.managementHandler::handleSkip);
+
+        commands.put("seek", this.managementHandler::handleSeek);
+
+        commands.put("shuffle", (event, args) -> this.managementHandler.handleShuffle(event));
+
+        commands.put("purge", (event, args) -> this.managementHandler.handlePurge(event));
     }
 
     @NotNull
@@ -101,65 +150,12 @@ public class Music extends GuildCommand {
             return;
         }
 
-        switch (args[1].toLowerCase()) {
-            // Join and leave handlers
-            case "j":
-            case "join":
-                this.playHandler.handleJoin(event);
-                return;
-            case "l":
-            case "leave":
-            case "stop":
-                this.playHandler.handleLeave(event, true);
-                return;
-            case "c":
-            case "clear":
-                this.playHandler.handleLeave(event, false);
-                return;
-            // Play handlers
-            case "p":
-            case "play":
-                this.playHandler.handlePlay(event, args, false, SearchSite.YouTube);
-                return;
-            case "pa":
-            case "playall":
-                this.playHandler.handlePlay(event, args, true, SearchSite.YouTube);
-                return;
-            case "sc":
-            case "soundcloud":
-                this.playHandler.handlePlay(event, args, false, SearchSite.SoundCloud);
-                return;
-            // Player management handlers
-            case "np":
-            case "nowplaying":
-                this.managementHandler.handleNowPlaying(event);
-                return;
-            case "q":
-            case "queue":
-                this.managementHandler.handleQueue(event);
-                return;
-            case "pause":
-                this.managementHandler.handlePause(event, true);
-                return;
-            case "resume":
-                this.managementHandler.handlePause(event, false);
-                return;
-            case "s":
-            case "skip":
-                this.managementHandler.handleSkip(event, args);
-                return;
-            case "seek":
-                this.managementHandler.handleSeek(event, args);
-                return;
-            case "shuffle":
-                this.managementHandler.handleShuffle(event);
-                return;
-            case "purge":
-                this.managementHandler.handlePurge(event);
-                return;
+        BiConsumer<MessageReceivedEvent, String[]> handler = this.commands.getOrDefault(args[1], null);
+        if (handler != null) {
+            handler.accept(event, args);
+            return;
         }
 
         respond(event, "Unknown music command. Try `m help`!");
-        return;
     }
 }
