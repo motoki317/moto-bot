@@ -51,8 +51,12 @@ public class MusicState {
         return this.setting;
     }
 
-    long getBoundChannelId() {
+    public long getBoundChannelId() {
         return boundChannelId;
+    }
+
+    public long getLastInteract() {
+        return lastInteract;
     }
 
     public void stopPlaying() {

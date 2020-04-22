@@ -140,7 +140,10 @@ public class MusicPlayHandler {
 
             @Override
             public void setLastInteract() {
-                MusicState state = states.getOrDefault(guildId, null);
+                MusicState state;
+                synchronized (states) {
+                    state = states.getOrDefault(guildId, null);
+                }
                 if (state != null) {
                     state.setLastInteract(System.currentTimeMillis());
                 }
@@ -154,7 +157,9 @@ public class MusicPlayHandler {
         player.addListener(scheduler);
 
         MusicState state = new MusicState(player, scheduler, setting, System.currentTimeMillis(), channelId);
-        states.put(guildId, state);
+        synchronized (states) {
+            states.put(guildId, state);
+        }
 
         enqueueSavedQueue(event, guildId, state);
         return state;
@@ -289,15 +294,17 @@ public class MusicPlayHandler {
     @Nullable
     private MusicState getStateOrConnect(MessageReceivedEvent event) {
         long guildId = event.getGuild().getIdLong();
-        MusicState state = states.getOrDefault(guildId, null);
-        if (state != null) {
-            return state;
+        synchronized (states) {
+            MusicState state = states.getOrDefault(guildId, null);
+            if (state != null) {
+                return state;
+            }
+            boolean res = connect(event);
+            if (!res) {
+                return null;
+            }
+            return states.get(guildId);
         }
-        boolean res = connect(event);
-        if (!res) {
-            return null;
-        }
-        return states.get(guildId);
     }
 
     /**
@@ -322,27 +329,55 @@ public class MusicPlayHandler {
      */
     public void handleLeave(@NotNull MessageReceivedEvent event, boolean saveQueue) {
         long guildId = event.getGuild().getIdLong();
-        MusicState state = states.getOrDefault( guildId, null);
+        MusicState state;
+        synchronized (states) {
+            state = states.getOrDefault(guildId, null);
+        }
         if (state == null) {
             respond(event, "This guild doesn't seem to have a music player set up.");
             return;
+        }
+
+        try {
+            shutdownPlayer(saveQueue, guildId, state);
+        } catch (RuntimeException e) {
+            respondError(event, e.getMessage());
+            return;
+        }
+
+        respond(event, new EmbedBuilder()
+                .setDescription(String.format("Player stopped. (%s)",
+                        saveQueue ? "Saved the queue" : "Queue cleared"))
+                .build());
+    }
+
+    /**
+     * Shuts down the music player for the guild.
+     * @param saveQueue If the bot should save the current queue.
+     * @param guildId Guild ID.
+     * @param state Music state.
+     * @throws RuntimeException If something went wrong.
+     */
+    void shutdownPlayer(boolean saveQueue, long guildId, MusicState state) throws RuntimeException {
+        Guild guild = this.manager.getGuildById(guildId);
+        if (guild == null) {
+            throw new RuntimeException("Failed to retrieve guild info");
         }
 
         state.stopLoadingCache();
 
         boolean deleteRes = this.musicQueueRepository.deleteGuildMusicQueue(guildId);
         if (!deleteRes) {
-            this.logger.log(0, "Music: Failed to delete guild music cache");
+            throw new RuntimeException("Failed to delete previous music cache");
         }
         boolean saveResult = !saveQueue || saveQueue(guildId, state);
 
         state.stopPlaying();
         state.getPlayer().destroy();
-        event.getGuild().getAudioManager().closeAudioConnection();
+        guild.getAudioManager().closeAudioConnection();
 
         if (!saveResult) {
-            respondError(event, "Something went wrong while saving the queue...");
-            return;
+            throw new RuntimeException("Something went wrong while saving the queue...");
         }
 
         // Save setting
@@ -354,14 +389,8 @@ public class MusicPlayHandler {
         }
 
         if (!saveSetting) {
-            respondError(event, "Something went wrong while saving settings for this guild...");
-            return;
+            throw new RuntimeException("Something went wrong while saving settings for this guild...");
         }
-
-        respond(event, new EmbedBuilder()
-                .setDescription(String.format("Player stopped. (%s)",
-                        saveQueue ? "Saved the queue" : "Queue cleared"))
-                .build());
     }
 
     /**

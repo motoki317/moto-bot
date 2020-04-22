@@ -44,7 +44,10 @@ public class MusicManagementHandler {
      */
     public void handleNowPlaying(MessageReceivedEvent event) {
         long guildId = event.getGuild().getIdLong();
-        MusicState state = states.getOrDefault(guildId, null);
+        MusicState state;
+        synchronized (states) {
+            state = states.getOrDefault(guildId, null);
+        }
         if (state == null) {
             respond(event, "This guild doesn't seem to have a music player set up.");
             return;
@@ -72,7 +75,10 @@ public class MusicManagementHandler {
      */
     public void handleQueue(MessageReceivedEvent event) {
         long guildId = event.getGuild().getIdLong();
-        MusicState state = states.getOrDefault(guildId, null);
+        MusicState state;
+        synchronized (states) {
+            state = states.getOrDefault(guildId, null);
+        }
         if (state == null) {
             respond(event, "This guild doesn't seem to have a music player set up.");
             return;
@@ -179,7 +185,10 @@ public class MusicManagementHandler {
      * @param toStop If {@code true}, the bot should stop the player.
      */
     public void handlePause(MessageReceivedEvent event, boolean toStop) {
-        MusicState state = states.getOrDefault(event.getGuild().getIdLong(), null);
+        MusicState state;
+        synchronized (states) {
+            state = states.getOrDefault(event.getGuild().getIdLong(), null);
+        }
         if (state == null) {
             respond(event, "This guild doesn't seem to have a music player set up.");
             return;
@@ -207,7 +216,10 @@ public class MusicManagementHandler {
      * @param args Command arguments.
      */
     public void handleSkip(MessageReceivedEvent event, String[] args) {
-        MusicState state = states.getOrDefault(event.getGuild().getIdLong(), null);
+        MusicState state;
+        synchronized (states) {
+            state = states.getOrDefault(event.getGuild().getIdLong(), null);
+        }
         if (state == null) {
             respond(event, "This guild doesn't seem to have a music player set up.");
             return;
@@ -251,7 +263,10 @@ public class MusicManagementHandler {
             return;
         }
 
-        MusicState state = states.getOrDefault(event.getGuild().getIdLong(), null);
+        MusicState state;
+        synchronized (states) {
+            state = states.getOrDefault(event.getGuild().getIdLong(), null);
+        }
         if (state == null) {
             respond(event, "This guild doesn't seem to have a music player set up.");
             return;
@@ -295,7 +310,10 @@ public class MusicManagementHandler {
      * @param event Event.
      */
     public void handleShuffle(MessageReceivedEvent event) {
-        MusicState state = states.getOrDefault(event.getGuild().getIdLong(), null);
+        MusicState state;
+        synchronized (states) {
+            state = states.getOrDefault(event.getGuild().getIdLong(), null);
+        }
         if (state == null) {
             respond(event, "This guild doesn't seem to have a music player set up.");
             return;
@@ -316,7 +334,10 @@ public class MusicManagementHandler {
      * @param event Event.
      */
     public void handlePurge(MessageReceivedEvent event) {
-        MusicState state = states.getOrDefault(event.getGuild().getIdLong(), null);
+        MusicState state;
+        synchronized (states) {
+            state = states.getOrDefault(event.getGuild().getIdLong(), null);
+        }
         if (state == null) {
             respond(event, "This guild doesn't seem to have a music player set up.");
             return;

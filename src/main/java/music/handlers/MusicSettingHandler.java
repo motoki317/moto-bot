@@ -41,7 +41,10 @@ public class MusicSettingHandler {
      */
     @NotNull
     private MusicSetting getSetting(long guildId) {
-        MusicState state = states.getOrDefault(guildId, null);
+        MusicState state;
+        synchronized (states) {
+            state = states.getOrDefault(guildId, null);
+        }
         if (state != null) {
             return state.getSetting();
         }
@@ -78,7 +81,10 @@ public class MusicSettingHandler {
      */
     public void handleVolume(MessageReceivedEvent event, String[] args) {
         long guildId = event.getGuild().getIdLong();
-        MusicState state = states.getOrDefault(guildId, null);
+        MusicState state;
+        synchronized (states) {
+            state = states.getOrDefault(guildId, null);
+        }
         MusicSetting setting = state != null ? state.getSetting() : getSetting(guildId);
         int oldVolume = setting.getVolume();
 

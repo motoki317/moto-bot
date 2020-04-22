@@ -7,10 +7,7 @@ import com.sedmelluq.discord.lavaplayer.source.AudioSourceManagers;
 import commands.base.GuildCommand;
 import db.model.musicSetting.MusicSetting;
 import db.repository.base.MusicSettingRepository;
-import music.handlers.MusicManagementHandler;
-import music.handlers.MusicPlayHandler;
-import music.handlers.MusicSettingHandler;
-import music.handlers.SearchSite;
+import music.handlers.*;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.MessageBuilder;
@@ -22,11 +19,16 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 
 public class Music extends GuildCommand {
     private static final Map<Long, MusicState> states;
     private static final AudioPlayerManager playerManager;
+
+    private static final long AUTO_LEAVE_CHECK_INTERVAL = TimeUnit.MINUTES.toMillis(1);
 
     static {
         states = new HashMap<>();
@@ -40,6 +42,7 @@ public class Music extends GuildCommand {
     private final MusicPlayHandler playHandler;
     private final MusicManagementHandler managementHandler;
     private final MusicSettingHandler settingHandler;
+    private final MusicAutoLeaveChecker autoLeaveChecker;
 
     private final ShardManager manager;
     private final MusicSettingRepository musicSettingRepository;
@@ -51,8 +54,16 @@ public class Music extends GuildCommand {
         this.playHandler = new MusicPlayHandler(bot, states, playerManager);
         this.managementHandler = new MusicManagementHandler(bot, states);
         this.settingHandler = new MusicSettingHandler(bot, states);
+        this.autoLeaveChecker = new MusicAutoLeaveChecker(bot, states, this.playHandler);
 
         this.registerCommands();
+
+        new Timer().scheduleAtFixedRate(new TimerTask() {
+            @Override
+            public void run() {
+                Music.this.autoLeaveChecker.checkAllGuilds();
+            }
+        }, AUTO_LEAVE_CHECK_INTERVAL, AUTO_LEAVE_CHECK_INTERVAL);
     }
 
     @SuppressWarnings("OverlyLongMethod")
@@ -184,7 +195,10 @@ public class Music extends GuildCommand {
         // Check bound channel ID
         long guildId = event.getGuild().getIdLong();
         long channelId = event.getChannel().getIdLong();
-        MusicState state = states.getOrDefault(guildId, null);
+        MusicState state;
+        synchronized (states) {
+            state = states.getOrDefault(guildId, null);
+        }
         if (state != null && state.getBoundChannelId() != channelId) {
             TextChannel channel = this.manager.getTextChannelById(state.getBoundChannelId());
             respond(event, String.format("Music commands are currently bound to %s!",
