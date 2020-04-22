@@ -5,7 +5,7 @@ import music.RepeatState;
 import javax.annotation.Nullable;
 import java.util.Objects;
 
-public class MusicSetting {
+public class MusicSetting implements MusicSettingId {
     private final long guildId;
     private int volume;
     private RepeatState repeat;
@@ -50,6 +50,22 @@ public class MusicSetting {
     @Nullable
     public Long getRestrictChannel() {
         return restrictChannel;
+    }
+
+    public void setVolume(int volume) {
+        this.volume = volume;
+    }
+
+    public void setRepeat(RepeatState repeat) {
+        this.repeat = repeat;
+    }
+
+    public void setShowNp(boolean showNp) {
+        this.showNp = showNp;
+    }
+
+    public void setRestrictChannel(@Nullable Long restrictChannel) {
+        this.restrictChannel = restrictChannel;
     }
 
     @Override

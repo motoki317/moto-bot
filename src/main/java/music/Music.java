@@ -7,6 +7,7 @@ import com.sedmelluq.discord.lavaplayer.source.AudioSourceManagers;
 import commands.base.GuildCommand;
 import music.handlers.MusicManagementHandler;
 import music.handlers.MusicPlayHandler;
+import music.handlers.MusicSettingHandler;
 import music.handlers.SearchSite;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.JDA;
@@ -35,6 +36,7 @@ public class Music extends GuildCommand {
     // Command handlers
     private final MusicPlayHandler playHandler;
     private final MusicManagementHandler managementHandler;
+    private final MusicSettingHandler settingHandler;
 
     private final ShardManager manager;
 
@@ -43,10 +45,12 @@ public class Music extends GuildCommand {
         this.manager = bot.getManager();
         this.playHandler = new MusicPlayHandler(bot, states, playerManager);
         this.managementHandler = new MusicManagementHandler(bot, states);
+        this.settingHandler = new MusicSettingHandler(bot, states);
 
         this.registerCommands();
     }
 
+    @SuppressWarnings("OverlyLongMethod")
     private void registerCommands() {
         // Join and leave handlers
         commands.put("j", (event, args) -> this.playHandler.handleJoin(event));
@@ -88,6 +92,17 @@ public class Music extends GuildCommand {
         commands.put("shuffle", (event, args) -> this.managementHandler.handleShuffle(event));
 
         commands.put("purge", (event, args) -> this.managementHandler.handlePurge(event));
+
+        // Setting handlers
+        commands.put("v", this.settingHandler::handleVolume);
+        commands.put("vol", this.settingHandler::handleVolume);
+        commands.put("volume", this.settingHandler::handleVolume);
+
+        commands.put("r", this.settingHandler::handleRepeat);
+        commands.put("repeat", this.settingHandler::handleRepeat);
+
+        commands.put("setting", this.settingHandler::handleSetting);
+        commands.put("settings", this.settingHandler::handleSetting);
     }
 
     @NotNull
