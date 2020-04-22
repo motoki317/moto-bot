@@ -153,7 +153,7 @@ public class MusicPlayHandler {
         });
         player.addListener(scheduler);
 
-        MusicState state = new MusicState(player, scheduler, setting, System.currentTimeMillis());
+        MusicState state = new MusicState(player, scheduler, setting, System.currentTimeMillis(), channelId);
         states.put(guildId, state);
 
         enqueueSavedQueue(event, guildId, state);

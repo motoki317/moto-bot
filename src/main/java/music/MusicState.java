@@ -9,19 +9,21 @@ import music.exception.QueueFullException;
 import java.util.List;
 
 public class MusicState {
-    private AudioPlayer player;
-    private TrackScheduler scheduler;
-    private MusicSetting setting;
+    private final AudioPlayer player;
+    private final TrackScheduler scheduler;
+    private final MusicSetting setting;
     // TODO: automatically leave vc after some inactivity
     private long lastInteract;
     private Runnable onStopLoadingCache;
+    private final long boundChannelId;
 
-    public MusicState(AudioPlayer player, TrackScheduler scheduler, MusicSetting setting, long lastInteract) {
+    public MusicState(AudioPlayer player, TrackScheduler scheduler, MusicSetting setting, long lastInteract, long boundChannelId) {
         this.player = player;
         this.scheduler = scheduler;
         this.setting = setting;
         this.lastInteract = lastInteract;
         this.onStopLoadingCache = () -> {};
+        this.boundChannelId = boundChannelId;
     }
 
     public void setLastInteract(long lastInteract) {
@@ -47,6 +49,10 @@ public class MusicState {
 
     public MusicSetting getSetting() {
         return this.setting;
+    }
+
+    long getBoundChannelId() {
+        return boundChannelId;
     }
 
     public void stopPlaying() {

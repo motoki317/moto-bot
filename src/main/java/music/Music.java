@@ -5,6 +5,8 @@ import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.source.AudioSourceManagers;
 import commands.base.GuildCommand;
+import db.model.musicSetting.MusicSetting;
+import db.repository.base.MusicSettingRepository;
 import music.handlers.MusicManagementHandler;
 import music.handlers.MusicPlayHandler;
 import music.handlers.MusicSettingHandler;
@@ -13,6 +15,7 @@ import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.entities.Message;
+import net.dv8tion.jda.api.entities.TextChannel;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.sharding.ShardManager;
 import org.jetbrains.annotations.NotNull;
@@ -39,10 +42,12 @@ public class Music extends GuildCommand {
     private final MusicSettingHandler settingHandler;
 
     private final ShardManager manager;
+    private final MusicSettingRepository musicSettingRepository;
 
     public Music(Bot bot) {
         this.commands = new HashMap<>();
         this.manager = bot.getManager();
+        this.musicSettingRepository = bot.getDatabase().getMusicSettingRepository();
         this.playHandler = new MusicPlayHandler(bot, states, playerManager);
         this.managementHandler = new MusicManagementHandler(bot, states);
         this.settingHandler = new MusicSettingHandler(bot, states);
@@ -158,10 +163,41 @@ public class Music extends GuildCommand {
         ).build();
     }
 
+    /**
+     * Retrieves music setting for the guild.
+     * @param guildId Guild ID.
+     * @return Music setting. Default if not found.
+     */
+    @NotNull
+    private MusicSetting getSetting(long guildId) {
+        MusicSetting setting = this.musicSettingRepository.findOne(() -> guildId);
+        return setting != null ? setting : MusicSetting.getDefault(guildId);
+    }
+
     @Override
     public void process(@NotNull MessageReceivedEvent event, @NotNull String[] args) {
         if (args.length <= 1) {
             respond(event, this.longHelp());
+            return;
+        }
+
+        // Check bound channel ID
+        long guildId = event.getGuild().getIdLong();
+        long channelId = event.getChannel().getIdLong();
+        MusicState state = states.getOrDefault(guildId, null);
+        if (state != null && state.getBoundChannelId() != channelId) {
+            TextChannel channel = this.manager.getTextChannelById(state.getBoundChannelId());
+            respond(event, String.format("Music commands are currently bound to %s!",
+                    channel != null ? channel.getAsMention() : "ID: " + state.getBoundChannelId()));
+            return;
+        }
+
+        // Check music channel restriction setting
+        MusicSetting setting = state != null ? state.getSetting() : getSetting(guildId);
+        if (setting.getRestrictChannel() != null && setting.getRestrictChannel() != channelId) {
+            TextChannel channel = this.manager.getTextChannelById(setting.getRestrictChannel());
+            respond(event, String.format("Music commands are only allowed in %s!",
+                    channel != null ? channel.getAsMention() : "ID: " + setting.getRestrictChannel()));
             return;
         }
 
