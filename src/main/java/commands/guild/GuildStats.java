@@ -85,6 +85,7 @@ public class GuildStats extends GenericCommand {
         private final WorldRepository worldRepository;
         private final TerritoryRepository territoryRepository;
         private final GuildXpLeaderboardRepository guildXpLeaderboardRepository;
+        private final String guildBannerUrl;
 
         Handler(Bot bot) {
             this.wynnApi = new WynnApi(bot.getLogger(), bot.getProperties().wynnTimeZone);
@@ -98,6 +99,7 @@ public class GuildStats extends GenericCommand {
             this.worldRepository = bot.getDatabase().getWorldRepository();
             this.territoryRepository = bot.getDatabase().getTerritoryRepository();
             this.guildXpLeaderboardRepository = bot.getDatabase().getGuildXpLeaderboardRepository();
+            this.guildBannerUrl = bot.getProperties().guildBannerUrl;
         }
 
         public void handle(@NotNull MessageReceivedEvent event, @NotNull String guildName) {
@@ -240,9 +242,19 @@ public class GuildStats extends GenericCommand {
 
             ret.add("```");
 
-            return new MessageBuilder(
-                    String.join("\n", ret)
-            ).build();
+            MessageBuilder mb = new MessageBuilder(String.join("\n", ret));
+
+            if (guild.getBanner() != null) {
+                mb.setEmbed(
+                        new EmbedBuilder()
+                        .setAuthor("Guild Banner")
+                        .setDescription("Tier: " + guild.getBanner().getTier())
+                        .setThumbnail(this.guildBannerUrl + guild.getName().replace(" ", "%20"))
+                        .build()
+                );
+            }
+
+            return mb.build();
         }
 
         /**

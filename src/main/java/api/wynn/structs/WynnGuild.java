@@ -133,7 +133,7 @@ public class WynnGuild {
         }
     }
 
-    private static class Banner {
+    public static class Banner {
         private String base;
         private int tier;
         private List<Layer> layers;

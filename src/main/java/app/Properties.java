@@ -33,6 +33,7 @@ public class Properties {
     public final String botServerInviteUrl;
     public final String botInviteUrl;
     public final String wynnIconUrl;
+    public final String guildBannerUrl;
 
     public final TimeZone logTimeZone;
     public final TimeZone wynnTimeZone;
@@ -75,6 +76,7 @@ public class Properties {
                 this.botDiscordId
         );
         this.wynnIconUrl = getProperty("wynnIconUrl");
+        this.guildBannerUrl = getProperty("guildBannerUrl");
 
         this.logTimeZone = TimeZone.getTimeZone(getProperty("logTimeZone"));
         this.wynnTimeZone = TimeZone.getTimeZone(getProperty("wynnTimeZone"));
