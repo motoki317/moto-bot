@@ -144,7 +144,7 @@ class MariaMusicQueueRepository extends MusicQueueRepository {
             return true;
         }
 
-        String placeHolder = "(?, ?, ?, ?, ?)";
+        String placeHolder = "(?, ?, ?, ?, ?, ?)";
         return this.execute(
                 "INSERT INTO `music_queue` (guild_id, `index`, user_id, url, position) VALUES " +
                         String.join(", ", Collections.nCopies(queue.size(), placeHolder)),
