@@ -6,6 +6,7 @@ import api.wynn.WynnApi;
 import api.wynn.structs.OnlinePlayers;
 import api.wynn.structs.Player;
 import app.Bot;
+import db.model.playerNumber.PlayerNumber;
 import db.model.track.TrackChannel;
 import db.model.track.TrackType;
 import db.model.warLog.WarLog;
@@ -24,6 +25,7 @@ import utils.FormatUtils;
 import utils.UUID;
 
 import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
@@ -39,10 +41,13 @@ public class PlayerTracker implements TaskBase {
     private final WynnApi wynnApi;
     private final MojangApi mojangApi;
 
+    private final long playerTrackerChannelId;
+
     private final WorldRepository worldRepository;
     private final TrackChannelRepository trackChannelRepository;
     private final TimeZoneRepository timeZoneRepository;
     private final DateFormatRepository dateFormatRepository;
+    private final PlayerNumberRepository playerNumberRepository;
 
     private final WarLogRepository warLogRepository;
     private final WarTrackRepository warTrackRepository;
@@ -53,10 +58,12 @@ public class PlayerTracker implements TaskBase {
         this.manager = bot.getManager();
         this.wynnApi = new WynnApi(this.logger, bot.getProperties().wynnTimeZone);
         this.mojangApi = new MojangApi(this.logger);
+        this.playerTrackerChannelId = bot.getProperties().playerTrackerChannelId;
         this.worldRepository = bot.getDatabase().getWorldRepository();
         this.trackChannelRepository = bot.getDatabase().getTrackingChannelRepository();
         this.timeZoneRepository = bot.getDatabase().getTimeZoneRepository();
         this.dateFormatRepository = bot.getDatabase().getDateFormatRepository();
+        this.playerNumberRepository = bot.getDatabase().getPlayerNumberRepository();
         this.warLogRepository = bot.getDatabase().getWarLogRepository();
         this.warTrackRepository = bot.getDatabase().getWarTrackRepository();
     }
@@ -95,7 +102,10 @@ public class PlayerTracker implements TaskBase {
 
         Map<String, World> prevWorlds = prevWorldList.stream().collect(Collectors.toMap(World::getName, w -> w));
 
-        this.manager.setActivity(Activity.playing("Wynn " + countOnlinePlayers(currentWorlds.values()) + " online"));
+        Date apiRetrievalTime = new Date(players.getRequest().getTimestamp());
+        int onlinePlayers = countOnlinePlayers(currentWorlds.values());
+        this.manager.setActivity(Activity.playing("Wynn " + onlinePlayers + " online"));
+        this.handlePlayerNumberTracking(apiRetrievalTime, onlinePlayers);
 
         this.handleServerTracking(currentWorlds, prevWorlds);
         synchronized (this.dbLock) {
@@ -504,6 +514,63 @@ public class PlayerTracker implements TaskBase {
                      formatDate(now, ch) + " " + message
             ).queue();
         });
+    }
+
+    /**
+     * Handles player number tracking.
+     * @param dateTime Date at which this online players number was obtained.
+     * @param onlinePlayers Online players number.
+     */
+    private void handlePlayerNumberTracking(Date dateTime, int onlinePlayers) {
+        // Check if a new day has arrived
+        DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+        Date oldest = this.playerNumberRepository.oldestDate();
+        if (oldest != null && !dateFormat.format(oldest).equals(dateFormat.format(dateTime))) {
+            this.sendPlayerNumberTrack();
+            boolean res = this.playerNumberRepository.deleteAll();
+            if (!res) {
+                this.logger.log(0, "Player tracker: Failed to truncate table");
+                return;
+            }
+        }
+
+        // Save current number
+        boolean res = this.playerNumberRepository.create(new PlayerNumber(dateTime, onlinePlayers));
+        if (!res) {
+            this.logger.log(0, "Player tracker: Failed to save current online players number");
+        }
+    }
+
+    /**
+     * Sends player number track message to the #player-tracker channel.
+     */
+    private void sendPlayerNumberTrack() {
+        PlayerNumber max = this.playerNumberRepository.max();
+        PlayerNumber min = this.playerNumberRepository.min();
+        if (max == null || min == null) {
+            this.logger.log(0, "Player tracker: Failed to get max and min number of the day");
+            return;
+        }
+
+        TextChannel channel = this.manager.getTextChannelById(this.playerTrackerChannelId);
+        if (channel == null) {
+            this.logger.log(0, "Player tracker: Failed to get text channel to send message");
+            return;
+        }
+
+        DateFormat dateFormat = new SimpleDateFormat("EEE MMM d, yyyy");
+        DateFormat timeFormat = new SimpleDateFormat("HH:mm:ss");
+        String message = String.format("```ml\n" +
+                "%s\n" +
+                "Maximum : %s players online at %s UTC\n" +
+                "Minimum : %s players online at %s UTC\n" +
+                "```",
+                dateFormat.format(max.getDateTime()),
+                max.getPlayerNum(), timeFormat.format(max.getDateTime()),
+                min.getPlayerNum(), timeFormat.format(min.getDateTime())
+        );
+
+        channel.sendMessage(message).queue();
     }
 
     @NotNull

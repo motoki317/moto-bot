@@ -14,7 +14,6 @@ public class Properties {
     private final java.util.Properties properties;
 
     public final String version;
-    final String artifactId;
 
     public final String herokuReleaseVersion;
     public final Date releaseDate;
@@ -24,6 +23,7 @@ public class Properties {
     public final String botDiscordId;
 
     public final Map<Integer, Long> logChannelId;
+    public final long playerTrackerChannelId;
 
     public final String prefix;
     final int shards;
@@ -35,7 +35,7 @@ public class Properties {
     public final String wynnIconUrl;
     public final String guildBannerUrl;
 
-    public final TimeZone logTimeZone;
+    final TimeZone logTimeZone;
     public final TimeZone wynnTimeZone;
 
     public Properties() throws IOException, ParseException {
@@ -43,7 +43,7 @@ public class Properties {
         this.properties.load(this.getClass().getClassLoader().getResourceAsStream("project.properties"));
 
         this.version = getProperty("version");
-        this.artifactId = getProperty("artifactId");
+//        String artifactId = getProperty("artifactId");
 
         String herokuVersionEnv = getEnv("HEROKU_RELEASE_VERSION");
         this.herokuReleaseVersion = herokuVersionEnv == null ? "" : herokuVersionEnv;
@@ -63,6 +63,7 @@ public class Properties {
         for (int i = 0; i <= logChannelsMax; i++) {
             this.logChannelId.put(i, Long.parseLong(getEnv("BOT_LOG_CHANNEL_" + i)));
         }
+        this.playerTrackerChannelId = Long.parseLong(getEnv("PLAYER_TRACKER_CHANNEL"));
 
         this.prefix = getProperty("prefix");
         this.shards = getPropertyInt("shards");

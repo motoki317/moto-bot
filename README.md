@@ -38,6 +38,7 @@ Manual build and installation (does not use docker)
     - `DISCORD_ACCESS_TOKEN` ... Discord bot account access token
     - `BOT_DISCORD_ID` ... Bot's discord user ID
     - `BOT_LOG_CHANNEL_0` ~ `BOT_LOG_CHANNEL_4` ... Discord channel IDs to which bot sends logs
+    - `PLAYER_TRACKER_CHANNEL` ... Discord channel ID to which bot sends player number logs once a day
     - `MYSQL_HOST` ... MariaDB host name
     - `MYSQL_PORT` ... MariaDB port
     - `MYSQL_DATABASE` ... MariaDB database name

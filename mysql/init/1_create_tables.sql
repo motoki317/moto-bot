@@ -18,6 +18,12 @@ CREATE TABLE IF NOT EXISTS `track_channel` (
     KEY `player_uuid_type_idx` (`player_uuid`, `type`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+CREATE TABLE IF NOT EXISTS `player_number` (
+    `date_time` DATETIME PRIMARY KEY,
+    `player_num` INT NOT NULL,
+    KEY `player_num_idx` (`player_num`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 CREATE TABLE IF NOT EXISTS `world` (
     `name` VARCHAR(30) NOT NULL,
     `players` INT NOT NULL,
