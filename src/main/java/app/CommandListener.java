@@ -1,10 +1,6 @@
 package app;
 
-import commands.*;
 import commands.base.BotCommand;
-import commands.guild.*;
-import commands.guild.leaderboard.GuildWarLeaderboardCmd;
-import commands.guild.leaderboard.PlayerWarLeaderboardCmd;
 import db.model.commandLog.CommandLog;
 import db.model.prefix.Prefix;
 import db.repository.base.CommandLogRepository;
@@ -12,14 +8,12 @@ import db.repository.base.IgnoreChannelRepository;
 import db.repository.base.PrefixRepository;
 import log.DiscordSpamChecker;
 import log.Logger;
-import music.Music;
+import migrate.CommandLogMigration;
+import migrate.LoadPlayerData;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import org.jetbrains.annotations.NotNull;
-import migrate.CommandLogMigration;
-import migrate.LoadPlayerData;
-import migrate.WarsMigration;
 import utils.BotUtils;
 
 import javax.annotation.Nonnull;
@@ -66,56 +60,56 @@ public class CommandListener extends ListenerAdapter {
 
     @SuppressWarnings({"OverlyLongMethod", "OverlyCoupledMethod"})
     private void registerCommands(Bot bot) {
-        addCommand(new Help(bot, this.commands, this.commandNameMap, () -> this.maxArgumentsLength));
-        addCommand(new CommandAliases(this.commandNameMap, () -> this.maxArgumentsLength));
-        addCommand(new Ping(bot));
-        addCommand(new Info(bot));
-        addCommand(new ServerList(bot));
-
-        addCommand(new Track(bot));
-        addCommand(new TimeZoneCmd(bot.getDatabase().getTimeZoneRepository(), bot.getDatabase().getDateFormatRepository()));
-        addCommand(new PrefixCmd(bot.getProperties().prefix, bot.getDatabase().getPrefixRepository()));
-        addCommand(new DateFormatCmd(bot.getDatabase().getDateFormatRepository(), bot.getDatabase().getTimeZoneRepository()));
-        addCommand(new Ignore(bot.getDatabase().getIgnoreChannelRepository()));
-        addCommand(new SetPage(bot));
-
-        addCommand(new CatCmd(bot));
-        addCommand(new DiscordIdInfo(bot));
-        addCommand(new Purge());
-        addCommand(new ServerLogCmd(bot));
-
-        addCommand(new Find(bot));
-        addCommand(new PlayerStats(bot));
-        addCommand(new NameHistoryCmd(bot));
-
-        addCommand(new ItemView(bot));
-        addCommand(new IdentifyItem(bot));
-
-        addCommand(new GuildCmd(bot));
-        addCommand(new GuildStats(bot));
-
-        addCommand(new GuildRank(bot));
-        addCommand(new GuildLevelRank(bot));
-        addCommand(new GainedXpRank(bot));
-
-        addCommand(new TerritoryLogsCmd(bot));
-        addCommand(new TerritoryListCmd(bot));
-        addCommand(new TerritoryActivityCmd(bot));
-
-        addCommand(new CurrentWars(bot));
-
-        addCommand(new GuildWarStats(bot));
-        addCommand(new PlayerWarStats(bot));
-
-        addCommand(new GuildWarLeaderboardCmd(bot));
-        addCommand(new PlayerWarLeaderboardCmd(bot));
-
-        addCommand(new CustomTerritoryListCmd(bot));
-        addCommand(new CustomGuildListCmd(bot));
-
-        addCommand(new Music(bot));
-
-        addCommand(new WarsMigration(bot));
+//        addCommand(new Help(bot, this.commands, this.commandNameMap, () -> this.maxArgumentsLength));
+//        addCommand(new CommandAliases(this.commandNameMap, () -> this.maxArgumentsLength));
+//        addCommand(new Ping(bot));
+//        addCommand(new Info(bot));
+//        addCommand(new ServerList(bot));
+//
+//        addCommand(new Track(bot));
+//        addCommand(new TimeZoneCmd(bot.getDatabase().getTimeZoneRepository(), bot.getDatabase().getDateFormatRepository()));
+//        addCommand(new PrefixCmd(bot.getProperties().prefix, bot.getDatabase().getPrefixRepository()));
+//        addCommand(new DateFormatCmd(bot.getDatabase().getDateFormatRepository(), bot.getDatabase().getTimeZoneRepository()));
+//        addCommand(new Ignore(bot.getDatabase().getIgnoreChannelRepository()));
+//        addCommand(new SetPage(bot));
+//
+//        addCommand(new CatCmd(bot));
+//        addCommand(new DiscordIdInfo(bot));
+//        addCommand(new Purge());
+//        addCommand(new ServerLogCmd(bot));
+//
+//        addCommand(new Find(bot));
+//        addCommand(new PlayerStats(bot));
+//        addCommand(new NameHistoryCmd(bot));
+//
+//        addCommand(new ItemView(bot));
+//        addCommand(new IdentifyItem(bot));
+//
+//        addCommand(new GuildCmd(bot));
+//        addCommand(new GuildStats(bot));
+//
+//        addCommand(new GuildRank(bot));
+//        addCommand(new GuildLevelRank(bot));
+//        addCommand(new GainedXpRank(bot));
+//
+//        addCommand(new TerritoryLogsCmd(bot));
+//        addCommand(new TerritoryListCmd(bot));
+//        addCommand(new TerritoryActivityCmd(bot));
+//
+//        addCommand(new CurrentWars(bot));
+//
+//        addCommand(new GuildWarStats(bot));
+//        addCommand(new PlayerWarStats(bot));
+//
+//        addCommand(new GuildWarLeaderboardCmd(bot));
+//        addCommand(new PlayerWarLeaderboardCmd(bot));
+//
+//        addCommand(new CustomTerritoryListCmd(bot));
+//        addCommand(new CustomGuildListCmd(bot));
+//
+//        addCommand(new Music(bot));
+//
+//        addCommand(new WarsMigration(bot));
         addCommand(new CommandLogMigration(bot));
         addCommand(new LoadPlayerData(bot));
     }
