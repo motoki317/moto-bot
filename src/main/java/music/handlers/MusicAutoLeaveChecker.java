@@ -72,7 +72,7 @@ public class MusicAutoLeaveChecker {
         return listeningCount == 0;
     }
 
-    public void checkAllGuilds() {
+    void checkAllGuilds() {
         synchronized (states) {
             for (Iterator<Map.Entry<Long, MusicState>> iterator = states.entrySet().iterator(); iterator.hasNext(); ) {
                 Map.Entry<Long, MusicState> entry = iterator.next();

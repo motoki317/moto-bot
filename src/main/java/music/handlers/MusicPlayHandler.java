@@ -81,16 +81,6 @@ public class MusicPlayHandler {
         return voiceState.getChannel();
     }
 
-    private static final long QUEUE_MAX_AGE = TimeUnit.DAYS.toMillis(7);
-
-    public void removeOldQueues() {
-        Date threshold = new Date(System.currentTimeMillis() - QUEUE_MAX_AGE);
-        boolean res = this.musicQueueRepository.deleteAllOlderThan(threshold);
-        if (!res) {
-            this.logger.log(0, "Music queue cache: failed to delete old queues");
-        }
-    }
-
     /**
      * Get music setting for the guild.
      * @param guildId Guild ID.

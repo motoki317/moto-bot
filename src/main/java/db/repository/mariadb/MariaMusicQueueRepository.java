@@ -146,7 +146,7 @@ class MariaMusicQueueRepository extends MusicQueueRepository {
 
         String placeHolder = "(?, ?, ?, ?, ?, ?)";
         return this.execute(
-                "INSERT INTO `music_queue` (guild_id, `index`, user_id, url, position) VALUES " +
+                "INSERT INTO `music_queue` (guild_id, `index`, user_id, url, position, updated_at) VALUES " +
                         String.join(", ", Collections.nCopies(queue.size(), placeHolder)),
                 queue.stream().flatMap(q -> Stream.of(
                         q.getGuildId(),

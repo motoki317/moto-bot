@@ -7,6 +7,8 @@ import com.sedmelluq.discord.lavaplayer.source.AudioSourceManagers;
 import commands.base.GuildCommand;
 import db.model.musicSetting.MusicSetting;
 import db.repository.base.MusicSettingRepository;
+import heartbeat.HeartBeatTask;
+import log.Logger;
 import music.handlers.*;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.JDA;
@@ -19,17 +21,11 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 
 public class Music extends GuildCommand {
     private static final Map<Long, MusicState> states;
     private static final AudioPlayerManager playerManager;
-
-    private static final long AUTO_LEAVE_CHECK_INTERVAL = TimeUnit.MINUTES.toMillis(1);
-    private static final long OLD_QUEUE_CHECK_INTERVAL = TimeUnit.MINUTES.toMillis(60);
 
     static {
         states = new HashMap<>();
@@ -43,40 +39,41 @@ public class Music extends GuildCommand {
     private final MusicPlayHandler playHandler;
     private final MusicManagementHandler managementHandler;
     private final MusicSettingHandler settingHandler;
-    private final MusicAutoLeaveChecker autoLeaveChecker;
 
+    // Music related heartbeat
+    private final HeartBeatTask heartbeat;
+
+    private final Logger logger;
     private final ShardManager manager;
     private final MusicSettingRepository musicSettingRepository;
 
     public Music(Bot bot) {
         this.commands = new HashMap<>();
+        this.logger = bot.getLogger();
         this.manager = bot.getManager();
         this.musicSettingRepository = bot.getDatabase().getMusicSettingRepository();
         this.playHandler = new MusicPlayHandler(bot, states, playerManager);
         this.managementHandler = new MusicManagementHandler(bot, states);
         this.settingHandler = new MusicSettingHandler(bot, states);
-        this.autoLeaveChecker = new MusicAutoLeaveChecker(bot, states, this.playHandler);
+        MusicAutoLeaveChecker autoLeaveChecker = new MusicAutoLeaveChecker(bot, states, this.playHandler);
 
         this.registerCommands();
 
         // Rejoin interrupted guilds on shutdown
         this.playHandler.rejoinInterruptedGuilds();
 
-        new Timer().scheduleAtFixedRate(new TimerTask() {
-            @Override
-            public void run() {
-                Music.this.autoLeaveChecker.checkAllGuilds();
-            }
-        }, AUTO_LEAVE_CHECK_INTERVAL, AUTO_LEAVE_CHECK_INTERVAL);
-        new Timer().scheduleAtFixedRate(new TimerTask() {
-            @Override
-            public void run() {
-                Music.this.playHandler.removeOldQueues();
-            }
-        }, OLD_QUEUE_CHECK_INTERVAL, OLD_QUEUE_CHECK_INTERVAL);
+        // Register music related heartbeat
+        this.logger.debug("Starting music heartbeat...");
+        this.heartbeat = new HeartBeatTask(bot.getLogger(), new MusicHeartBeat(bot, autoLeaveChecker));
+        this.heartbeat.start();
 
         // Save all players on shutdown to be re-joined above
-        Runtime.getRuntime().addShutdownHook(new Thread(this.autoLeaveChecker::forceShutdownAllGuilds));
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            this.logger.log(-1, "Stopping music heartbeat and clearing up...");
+            this.heartbeat.clearUp();
+            autoLeaveChecker.forceShutdownAllGuilds();
+            this.logger.log(-1, "Cleared up music feature!");
+        }));
     }
 
     @SuppressWarnings("OverlyLongMethod")

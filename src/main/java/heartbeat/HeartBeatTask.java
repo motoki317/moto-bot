@@ -6,22 +6,22 @@ import log.Logger;
 import java.util.Timer;
 import java.util.TimerTask;
 
-class HeartBeatTask {
+public class HeartBeatTask {
     private final Timer timer;
     private final Logger logger;
     private final TaskBase task;
 
-    HeartBeatTask(Logger logger, TaskBase task) {
+    public HeartBeatTask(Logger logger, TaskBase task) {
         this.timer = new Timer();
         this.logger = logger;
         this.task = task;
     }
 
-    void start() {
+    public void start() {
         timer.schedule(this.getTimerTask(), this.task.getFirstDelay());
     }
 
-    void clearUp() {
+    public void clearUp() {
         timer.cancel();
     }
 
