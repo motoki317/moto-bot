@@ -156,6 +156,12 @@ public class LoadPlayerData extends GenericCommand {
                     0L,
                     expireDate
             );
+
+            if (this.trackChannelRepository.exists(newEntry)) {
+                this.logger.log(-1, "Skipping a track entry because it already exists");
+                continue;
+            }
+
             boolean res = this.trackChannelRepository.create(newEntry);
             if (!res) {
                 throw new RuntimeException("Failed to migrate track channels");
