@@ -9,6 +9,7 @@ import log.DiscordLogger;
 import log.Logger;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Activity;
+import net.dv8tion.jda.api.entities.TextChannel;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.dv8tion.jda.api.sharding.DefaultShardManagerBuilder;
 import net.dv8tion.jda.api.sharding.ShardManager;
@@ -162,11 +163,19 @@ public class App implements Runnable, Bot {
             long seconds = (new Date().getTime() - lastPlayerTracker.getTime()) / 1000L;
             downtime = FormatUtils.formatReadableTime(seconds, false, "s");
         }
-        this.logger.log(0, String.format(
+
+        String readyMessage = String.format(
                 "Bot is ready!\n" +
                         "Downtime: %s",
                 downtime
-        ));
+        );
+        this.logger.log(0, readyMessage);
+        TextChannel restartCh = this.manager.getTextChannelById(this.properties.botRestartChannelId);
+        if (restartCh == null) {
+            this.logger.log(0, "Failed to get restart text channel");
+            return;
+        }
+        restartCh.sendMessage(readyMessage).queue();
     }
 
     private void addEventListeners() {

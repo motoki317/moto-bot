@@ -24,6 +24,7 @@ public class Properties {
 
     public final Map<Integer, Long> logChannelId;
     public final long playerTrackerChannelId;
+    final long botRestartChannelId;
 
     public final String prefix;
     final int shards;
@@ -64,6 +65,7 @@ public class Properties {
             this.logChannelId.put(i, Long.parseLong(getEnv("BOT_LOG_CHANNEL_" + i)));
         }
         this.playerTrackerChannelId = Long.parseLong(getEnv("PLAYER_TRACKER_CHANNEL"));
+        this.botRestartChannelId = Long.parseLong(getEnv("BOT_RESTART_CHANNEL"));
 
         this.prefix = getProperty("prefix");
         this.shards = getPropertyInt("shards");
