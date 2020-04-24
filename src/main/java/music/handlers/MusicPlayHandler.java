@@ -205,6 +205,11 @@ public class MusicPlayHandler {
             states.put(guildId, state);
         }
 
+        Guild guild = channel.getGuild();
+        this.logger.log(3, String.format("Preparing music player (%s) for guild %s (%s members, ID: %s)",
+                states.size(), guild.getName(), guild.getMemberCount(), guild.getIdLong()
+        ));
+
         enqueueSavedQueue(channel, guildId, state);
         return state;
     }
@@ -448,6 +453,10 @@ public class MusicPlayHandler {
                     ? this.musicSettingRepository.update(state.getSetting())
                     : this.musicSettingRepository.create(state.getSetting());
         }
+
+        this.logger.log(3, String.format("Shutting down music player (%s) for guild %s (%s members, ID: %s)",
+                states.size(), guild.getName(), guild.getMemberCount(), guild.getIdLong()
+        ));
 
         if (!saveSetting) {
             throw new RuntimeException("Something went wrong while saving settings for this guild...");
