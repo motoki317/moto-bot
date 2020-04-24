@@ -102,7 +102,7 @@ public class PlayerTracker implements TaskBase {
 
         Map<String, World> prevWorlds = prevWorldList.stream().collect(Collectors.toMap(World::getName, w -> w));
 
-        Date apiRetrievalTime = new Date(players.getRequest().getTimestamp());
+        Date apiRetrievalTime = new Date(players.getRequest().getTimestamp() * 1000L);
         int onlinePlayers = countOnlinePlayers(currentWorlds.values());
         this.manager.setActivity(Activity.playing("Wynn " + onlinePlayers + " online"));
         this.handlePlayerNumberTracking(apiRetrievalTime, onlinePlayers);
