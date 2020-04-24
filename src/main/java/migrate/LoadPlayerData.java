@@ -1,5 +1,6 @@
 package migrate;
 
+import api.mojang.MojangApi;
 import app.Bot;
 import commands.base.GenericCommand;
 import db.model.dateFormat.CustomDateFormat;
@@ -26,6 +27,7 @@ import net.motobot.music.MusicSettings;
 import net.motobot.wrapper.CustomTimeFormat;
 import net.motobot.wrapper.TrackEntry;
 import org.jetbrains.annotations.NotNull;
+import utils.UUID;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -49,6 +51,8 @@ public class LoadPlayerData extends GenericCommand {
     private final ServerLogRepository serverLogRepository;
     private final MusicSettingRepository musicSettingRepository;
 
+    private final MojangApi mojangApi;
+
     public LoadPlayerData(Bot bot) {
         this.manager = bot.getManager();
         this.logger = bot.getLogger();
@@ -61,6 +65,7 @@ public class LoadPlayerData extends GenericCommand {
         this.guildListRepository = bot.getDatabase().getGuildListRepository();
         this.serverLogRepository = bot.getDatabase().getServerLogRepository();
         this.musicSettingRepository = bot.getDatabase().getMusicSettingRepository();
+        this.mojangApi = new MojangApi(bot.getLogger());
     }
 
     @NotNull
@@ -156,6 +161,19 @@ public class LoadPlayerData extends GenericCommand {
                     0L,
                     expireDate
             );
+
+            if (e.getGuildName() != null && !e.getGuildName().isEmpty()) {
+                newEntry.setGuildName(e.getGuildName());
+            }
+            if (e.getPlayerName() != null && !e.getPlayerName().isEmpty()) {
+                // Retrieve UUID
+                UUID uuid = this.mojangApi.mustGetUUIDAtTime(e.getPlayerName(), System.currentTimeMillis());
+                if (uuid == null) {
+                    this.logger.log(0, "Failed to get UUID for " + e.getPlayerName() + ", skipping");
+                    continue;
+                }
+                newEntry.setPlayerUUID(uuid.toStringWithHyphens());
+            }
 
             if (this.trackChannelRepository.exists(newEntry)) {
                 this.logger.log(-1, "Skipping a track entry because it already exists");
