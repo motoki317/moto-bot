@@ -111,35 +111,21 @@ public class LoadPlayerData extends GenericCommand {
                 migrateTracking(data);
                 respond(event, "Successfully migrated track channels!");
                 return;
-            case "timezone":
+            case "all":
                 migrateTimezone(data);
                 respond(event, "Successfully migrated timezones!");
-                return;
-            case "prefix":
                 migratePrefix(data);
                 respond(event, "Successfully migrated prefixes!");
-                return;
-            case "timeFormat":
                 migrateTimeFormat(data);
                 respond(event, "Successfully migrated date formats!");
-                return;
-            case "ignore":
                 migrateIgnoreChannels(data);
                 respond(event, "Successfully migrated ignore channels!");
-                return;
-            case "territoryList":
                 migrateTerritoryList(data);
                 respond(event, "Successfully migrated territory lists!");
-                return;
-            case "guildList":
                 migrateGuildList(data);
                 respond(event, "Successfully migrated guild lists!");
-                return;
-            case "serverLog":
                 migrateServerLog(data);
                 respond(event, "Successfully migrated server log channels!");
-                return;
-            case "musicSetting":
                 migrateMusicSettings(data);
                 respond(event, "Successfully migrated music settings!");
                 return;
