@@ -456,7 +456,7 @@ public class ServerLogListener extends ListenerAdapter {
                     .setFooter("User ID: " + event.getUser().getIdLong())
                     .setDescription(
                             String.format("Member Joined (%d): %s%s",
-                                    event.getGuild().getMembers().size(),
+                                    event.getGuild().getMemberCount(),
                                     nameWithDiscriminator,
                                     elapsedMillis < TimeUnit.DAYS.toMillis(1)
                                             ? String.format("\n\n**Account created %d hours ago**\n\n(At %s, %s)",
@@ -474,7 +474,7 @@ public class ServerLogListener extends ListenerAdapter {
                     .setFooter("User ID: " + event.getUser().getIdLong())
                     .setDescription(
                             String.format("Member Left (%d): %s",
-                                    event.getGuild().getMembers().size(),
+                                    event.getGuild().getMemberCount(),
                                     nameWithDiscriminator)
                     );
         });
