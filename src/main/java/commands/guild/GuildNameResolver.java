@@ -34,10 +34,10 @@ public class GuildNameResolver {
      * @param onFailure On error, reason is given.
      */
     public void resolve(@NotNull String guildName,
-                 TextChannel textChannel,
-                 User author,
-                 BiConsumer<@NotNull String, @Nullable String> onResolve,
-                 Consumer<@NotNull String> onFailure) {
+                        TextChannel textChannel,
+                        User author,
+                        BiConsumer<@NotNull String, @Nullable String> onResolve,
+                        Consumer<@NotNull String> onFailure) {
         List<Guild> guilds = findGuilds(guildName);
         if (guilds == null) {
             onFailure.accept("Something went wrong while retrieving guilds data...");

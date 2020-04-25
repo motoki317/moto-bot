@@ -13,11 +13,8 @@ import utils.MinecraftColor;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Timer;
-import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
-import java.util.function.Predicate;
 
 /**
  * Implements a response handler, choosing by number specified by user.
@@ -28,7 +25,7 @@ public class SelectionHandler extends Response {
     private Message askMessage;
 
     public SelectionHandler(long channelId, long userId, List<String> choiceList, Consumer<String> onChosen) {
-        super(channelId, userId, customOnResponse(choiceList, onChosen));
+        super(channelId, userId, event -> customOnResponse(event, choiceList, onChosen));
         this.choiceList = choiceList;
         this.setOnDestroy(customOnDestroy());
     }
@@ -73,67 +70,59 @@ public class SelectionHandler extends Response {
         };
     }
 
-    private static Predicate<MessageReceivedEvent> customOnResponse(List<String> choiceList, Consumer<String> onChosen) {
-        return event -> {
-            String messageRaw = event.getMessage().getContentRaw();
-            User user = event.getAuthor();
-            if (messageRaw.equalsIgnoreCase("cancel")) {
-                // Try to remove user message
-                try {
-                    event.getMessage().delete().queue();
-                } catch (Exception ignored) {
-                }
-
-                event.getTextChannel().sendMessage(
-                        new EmbedBuilder()
-                        .setColor(MinecraftColor.RED.getColor())
-                        .setDescription("Cancelled.")
-                        .setFooter(String.format("Command by %s#%s", user.getName(), user.getDiscriminator()))
-                        .setTimestamp(Instant.now())
-                        .build()
-                ).queue(msg -> new Timer().schedule(new TimerTask() {
-                    @Override
-                    public void run() {
-                        msg.delete().queue();
-                    }
-                }, TimeUnit.SECONDS.toMillis(5)));
-                return false;
-            }
-
-            int num;
-            try {
-                num = Integer.parseInt(messageRaw);
-            } catch (Exception e) {
-                return false;
-            }
-
+    private static boolean customOnResponse(MessageReceivedEvent event, List<String> choiceList, Consumer<String> onChosen) {
+        String messageRaw = event.getMessage().getContentRaw();
+        User user = event.getAuthor();
+        if (messageRaw.equalsIgnoreCase("cancel")) {
             // Try to remove user message
             try {
                 event.getMessage().delete().queue();
             } catch (Exception ignored) {
             }
 
-            if (num <= 0 || choiceList.size() < num) {
-                event.getTextChannel().sendMessage(
-                        new EmbedBuilder()
-                        .setColor(MinecraftColor.RED.getColor())
-                        .setDescription("That is not a valid input. " +
-                                "Please input a number between 1 and " + choiceList.size() + ".")
-                        .setFooter(String.format("Command by %s#%s", user.getName(), user.getDiscriminator()))
-                        .setTimestamp(Instant.now())
-                        .build()
-                ).queue(msg -> new Timer().schedule(new TimerTask() {
-                    @Override
-                    public void run() {
-                        msg.delete().queue();
-                    }
-                }, TimeUnit.SECONDS.toMillis(5)));
-                return false;
-            }
-
-            // valid input
-            onChosen.accept(choiceList.get(num - 1));
+            event.getTextChannel().sendMessage(
+                    new EmbedBuilder()
+                            .setColor(MinecraftColor.RED.getColor())
+                            .setDescription("Cancelled.")
+                            .setFooter(String.format("Command by %s#%s", user.getName(), user.getDiscriminator()))
+                            .setTimestamp(Instant.now())
+                            .build()
+            ).delay(5, TimeUnit.SECONDS)
+                    .flatMap(Message::delete)
+                    .queue();
             return true;
-        };
+        }
+
+        int num;
+        try {
+            num = Integer.parseInt(messageRaw);
+        } catch (Exception e) {
+            return false;
+        }
+
+        // Try to remove user message
+        try {
+            event.getMessage().delete().queue();
+        } catch (Exception ignored) {
+        }
+
+        if (num <= 0 || choiceList.size() < num) {
+            event.getTextChannel().sendMessage(
+                    new EmbedBuilder()
+                            .setColor(MinecraftColor.RED.getColor())
+                            .setDescription("That is not a valid input. " +
+                                    "Please input a number between 1 and " + choiceList.size() + ".")
+                            .setFooter(String.format("Command by %s#%s", user.getName(), user.getDiscriminator()))
+                            .setTimestamp(Instant.now())
+                            .build()
+            ).delay(5, TimeUnit.SECONDS)
+                    .flatMap(Message::delete)
+                    .queue();
+            return false;
+        }
+
+        // valid input
+        onChosen.accept(choiceList.get(num - 1));
+        return true;
     }
 }
