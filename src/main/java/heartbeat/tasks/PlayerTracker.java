@@ -373,6 +373,14 @@ public class PlayerTracker implements TaskBase {
                 }
                 channel.sendMessage(message).queue(success -> {
                     WarTrack warTrack = new WarTrack(warLog.getId(), t.getChannelId(), success.getIdLong());
+                    // Because this is asynchronous, it is possible that at the time the code reaches here,
+                    // two or more messages are queued to be sent for the same war id and same channel
+                    // if discord API is being slow (like over 30s~ response time).
+                    // If such event happens, skip the message that is sent and resolved later.
+                    if (this.warTrackRepository.exists(warTrack)) {
+                        this.logger.log(-1, "Player tracker: skipping a sent message, because the earlier queue has been resolved");
+                        return;
+                    }
                     if (!this.warTrackRepository.create(warTrack)) {
                         this.logger.log(0, "Player tracker: failed to create a new track record in db");
                     }
