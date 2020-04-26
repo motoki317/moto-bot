@@ -31,6 +31,12 @@ public class TrackingManager implements TaskBase {
         return "Tracking Manager";
     }
 
+    private void delete(TrackChannel track) {
+        if (!this.trackChannelRepository.delete(track)) {
+            this.logger.log(0, "Something went wrong while trying to remove expired track:\n" + track.toString());
+        }
+    }
+
     @Override
     public void run() {
         long now = System.currentTimeMillis();
@@ -42,13 +48,26 @@ public class TrackingManager implements TaskBase {
         }
 
         for (TrackChannel track : tracks) {
+            // Check if the channel still exists and the bot can send messages
+            TextChannel channel = this.shardManager.getTextChannelById(track.getChannelId());
+            if (channel == null) {
+                this.logger.log(0,
+                        "Tracking Manager: Failed to get text channel for a track entry, removing.\n" + track.toString());
+
+                this.delete(track);
+                continue;
+            }
+            if (!channel.canTalk()) {
+                this.logger.log(0,
+                        "Tracking Manager: Cannot talk in a track entry, removing.\n" + track.toString());
+
+                this.delete(track);
+                continue;
+            }
+
+            // Check if the track expired, if so delete the track and send message
             if (track.getExpiresAt().getTime() <= now) {
-                // track expired, delete the track and send message
                 if (this.trackChannelRepository.delete(track)) {
-                    TextChannel channel = this.shardManager.getTextChannelById(track.getChannelId());
-                    if (channel == null) {
-                        continue;
-                    }
                     channel.sendMessage(
                             ":exclamation: Disabled the following tracking in this channel because it has expired. " +
                             "Use the same command to enable the tracking again, and use `track <update|refresh>` command " +
@@ -58,7 +77,8 @@ public class TrackingManager implements TaskBase {
 
                     this.logger.log(0, ":mute: A tracking has expired:\n" + track.toString());
                 } else {
-                    this.logger.log(0, "Something went wrong while trying to remove expired track: " + track.toString());
+                    this.logger.log(0,
+                            "Something went wrong while trying to remove expired track:\n" + track.toString());
                 }
             }
         }
@@ -71,6 +91,6 @@ public class TrackingManager implements TaskBase {
 
     @Override
     public long getInterval() {
-        return TimeUnit.HOURS.toMillis(1);
+        return TimeUnit.MINUTES.toMillis(15);
     }
 }
