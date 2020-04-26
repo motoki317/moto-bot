@@ -186,7 +186,7 @@ public class TerritoryLogsCmd extends GenericCommand {
             Date to = i == 0 ? new Date() : next.getAcquired();
             displays.add(new Display(
                     String.valueOf(num),
-                    log.getOldGuildName(),
+                    log.getNewGuildName(),
                     dateFormat.format(from),
                     dateFormat.format(to) + (num == 1 ? " (Now)" : ""),
                     FormatUtils.formatReadableTime((to.getTime() - from.getTime()) / 1000L, false, "s")
