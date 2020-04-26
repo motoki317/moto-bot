@@ -307,7 +307,7 @@ public class PlayerWarLeaderboardCmd extends GenericCommand {
             return;
         }
         if (wynnGuild == null) {
-            respondError(event, "Something went wrong while requesting Wynncraft API.");
+            respondException(event, "Something went wrong while requesting Wynncraft API.");
             return;
         }
         List<UUID> guildMemberUUIDs = wynnGuild.getMembers().stream()

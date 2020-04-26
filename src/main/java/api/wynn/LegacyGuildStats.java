@@ -1,6 +1,7 @@
 package api.wynn;
 
 import api.wynn.structs.WynnGuild;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import log.Logger;
 import org.jetbrains.annotations.Nullable;
@@ -44,9 +45,8 @@ class LegacyGuildStats {
 
     @Nullable
     WynnGuild getGuildStats(String guildName) throws RateLimitException {
-        WynnGuild guild;
-        if ((guild = guildStatsCache.get(guildName)) != null) {
-            return guild;
+        if (guildStatsCache.exists(guildName)) {
+            return guildStatsCache.get(guildName);
         }
 
         this.rateLimiter.checkRequest();
@@ -65,10 +65,16 @@ class LegacyGuildStats {
 
             if (body == null) throw new Exception("returned body was null");
 
-            WynnGuild guild = mapper.readValue(body, WynnGuild.class);
-            if (guild == null) {
+            // Legacy Wynn API could return error with 200 codes
+            // check for "error" field
+            JsonNode node = mapper.readTree(body);
+            if (node.has("error")) {
+                this.logger.debug(String.format("Wynn API: Guild %s not found: %s", guildName, node.get("error").asText()));
+                guildStatsCache.add(guildName, null);
                 return null;
             }
+
+            WynnGuild guild = mapper.readValue(body, WynnGuild.class);
             guildStatsCache.add(guildName, guild);
             return guild;
         } catch (Exception e) {

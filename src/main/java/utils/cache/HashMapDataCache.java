@@ -1,17 +1,16 @@
 package utils.cache;
 
-import org.jetbrains.annotations.NotNull;
-
 import javax.annotation.Nullable;
 import java.util.*;
 import java.util.stream.Collectors;
 
 public class HashMapDataCache<K, T> implements DataCache<K, T> {
     private static class Record<T> {
+        @Nullable
         private T data;
         private long createdAt;
 
-        Record(T data, long createdAt) {
+        Record(@Nullable T data, long createdAt) {
             this.data = data;
             this.createdAt = createdAt;
         }
@@ -45,7 +44,7 @@ public class HashMapDataCache<K, T> implements DataCache<K, T> {
         }, clearInterval, clearInterval);
     }
 
-    public void add(K key, @NotNull T value) {
+    public void add(K key, @Nullable T value) {
         boolean clearUp = false;
 
         synchronized (this.dataLock) {
@@ -57,6 +56,13 @@ public class HashMapDataCache<K, T> implements DataCache<K, T> {
 
         if (clearUp) {
             this.clearUpExceedingData();
+        }
+    }
+
+    @Override
+    public boolean exists(K key) {
+        synchronized (this.dataLock) {
+            return this.dataMap.containsKey(key);
         }
     }
 
