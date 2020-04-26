@@ -1,6 +1,5 @@
 package db.repository.mariadb;
 
-
 import db.ConnectionPool;
 import db.Database;
 import db.SimpleConnectionPool;
