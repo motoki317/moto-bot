@@ -118,8 +118,8 @@ public class DiscordLogger implements Logger {
         String formatted = message + "\n" + e.getMessage();
         // Print short version
         this.log(0, formatted);
-        String fullStackTrace = formatted;
-        fullStackTrace += Arrays.stream(e.getStackTrace()).map(elt -> "    " + elt.toString()).collect(Collectors.joining("\n"));
+        String fullStackTrace = formatted + "\n";
+        fullStackTrace += Arrays.stream(e.getStackTrace()).map(elt -> "    at " + elt.toString()).collect(Collectors.joining("\n"));
         // Full stack trace to another channel
         this.log(2, fullStackTrace);
     }
