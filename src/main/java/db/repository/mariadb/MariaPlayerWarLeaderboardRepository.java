@@ -405,6 +405,62 @@ class MariaPlayerWarLeaderboardRepository extends PlayerWarLeaderboardRepository
     }
 
     @Override
+    public List<PlayerWarLeaderboard> getGuildScoped(String guildName) {
+        ResultSet res = this.executeQuery(
+                "SELECT wp.player_uuid, wp.player_name, " +
+                        "COUNT(*) AS `total_wars`, " +
+                        "SUM(g.territory_log_id IS NOT NULL) AS `success_wars`, " +
+                        "SUM(g.territory_log_id IS NOT NULL AND NOT wp.exited) AS `survived_wars` " +
+                        "FROM `guild_war_log` g " +
+                        "JOIN `war_player` wp ON g.guild_name = ? AND g.war_log_id = wp.war_log_id " +
+                        "GROUP BY wp.player_uuid ORDER BY `total_wars` DESC, wp.player_uuid DESC",
+                guildName
+        );
+
+        if (res == null) {
+            return null;
+        }
+
+        try {
+            return bindAll(res);
+        } catch (SQLException e) {
+            this.logResponseException(e);
+            return null;
+        }
+    }
+
+    @Override
+    public List<PlayerWarLeaderboard> getGuildScoped(String guildName, @NotNull Date start, @NotNull Date end) {
+        int first = getFirstWarLogIdAfter(start);
+        int last = getFirstWarLogIdAfter(end);
+        if (first == -1 || last == -1) {
+            return null;
+        }
+
+        ResultSet res = this.executeQuery(
+                "SELECT wp.player_uuid, wp.player_name, " +
+                        "COUNT(*) AS `total_wars`, " +
+                        "SUM(g.territory_log_id IS NOT NULL) AS `success_wars`, " +
+                        "SUM(g.territory_log_id IS NOT NULL AND NOT wp.exited) AS `survived_wars` FROM `guild_war_log` g " +
+                        "JOIN `war_player` wp ON g.guild_name = ? AND g.war_log_id = wp.war_log_id " +
+                        "AND g.war_log_id >= ? AND g.war_log_id < ? " +
+                        "GROUP BY wp.player_uuid ORDER BY `total_wars` DESC, wp.player_uuid DESC",
+                guildName, first, last
+        );
+
+        if (res == null) {
+            return null;
+        }
+
+        try {
+            return bindAll(res);
+        } catch (SQLException e) {
+            this.logResponseException(e);
+            return null;
+        }
+    }
+
+    @Override
     public boolean update(@NotNull PlayerWarLeaderboard entity) {
         return this.execute(
                 "UPDATE `player_war_leaderboard` SET `last_name` = ?, `total_war` = ?, `success_war` = ?, `survived_war` = ? WHERE `uuid` = ?",

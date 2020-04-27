@@ -77,6 +77,7 @@ public class PlayerWarStats extends GenericCommand {
     public @NotNull Message longHelp() {
         return new MessageBuilder(
                 new EmbedBuilder()
+                        // TODO: guild scoped
                         .setAuthor("Player War Stats Help")
                         .setDescription("Shows war activities of a player.")
                         .addField("Syntax",

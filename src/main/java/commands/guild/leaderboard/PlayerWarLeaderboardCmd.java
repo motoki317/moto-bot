@@ -94,6 +94,7 @@ public class PlayerWarLeaderboardCmd extends GenericCommand {
                 .addField("Optional Arguments",
                         String.join("\n",
                                 "**-g|--guild <guild name>** : Specifies a guild, and display leaderboard for that guild.",
+                                "**--scoped|-s** : When used with guild name specified, only counts wars in the guild for each player.",
                                 "**-t --total** : Sorts in order of # of total wars.",
                                 "**-sc --success** : Sorts in order of # of success wars.",
                                 "**-sr --survived** : Sorts in order of # of survived wars.",
@@ -107,7 +108,7 @@ public class PlayerWarLeaderboardCmd extends GenericCommand {
                 .addField("Examples",
                         String.join("\n",
                                 ">g plb : Displays leaderboard of all players ordered by # of success wars.",
-                                ">g plb -g UXs -t : Displays leaderboard of players in the guild UXs ordered by # of total wars.",
+                                ">g plb -g UXs -t -s : Displays leaderboard of players in the guild UXs ordered by # of total wars.",
                                 ">g plb -sc -d 7 : Displays leaderboard of all players, in last 7 days, and in order of # of success rate.",
                                 ">g plb --since 3 days ago --until 1 day ago : Displays leaderboard from 3 days ago to 1 day ago."
                         ),
@@ -264,9 +265,10 @@ public class PlayerWarLeaderboardCmd extends GenericCommand {
             String specifiedName = parsedArgs.containsKey("g")
                     ? parsedArgs.get("g")
                     : parsedArgs.get("-guild");
+            boolean scoped = parsedArgs.containsKey("s") || parsedArgs.containsKey("-scoped");
 
             this.guildNameResolver.resolve(specifiedName, event.getTextChannel(), event.getAuthor(),
-                    (guildName, prefix) -> processGuildPlayerLeaderboard(event, sortType, range, customDateFormat, customTimeZone, guildName, prefix),
+                    (guildName, prefix) -> processGuildPlayerLeaderboard(event, sortType, range, scoped, customDateFormat, customTimeZone, guildName, prefix),
                     error -> respondError(event, error)
             );
             return;
@@ -292,56 +294,58 @@ public class PlayerWarLeaderboardCmd extends GenericCommand {
         });
     }
 
+    @Nullable
+    private List<PlayerWarLeaderboard> getGuildPlayerLeaderboard(String guildName, boolean scoped, @Nullable Range range) throws RuntimeException, RateLimitException {
+        if (scoped) {
+            return range == null
+                    ? this.playerWarLeaderboardRepository.getGuildScoped(guildName)
+                    : this.playerWarLeaderboardRepository.getGuildScoped(guildName, range.start, range.end);
+        } else {
+            WynnGuild wynnGuild;
+            wynnGuild = this.wynnApi.getGuildStats(guildName);
+            if (wynnGuild == null) {
+                throw new RuntimeException(String.format("Couldn't find a guild with name `%s`", guildName));
+            }
+
+            List<UUID> guildMemberUUIDs = wynnGuild.getMembers().stream()
+                    .map(m -> new UUID(m.getUuid()))
+                    .collect(Collectors.toList());
+            return range == null
+                    ? this.playerWarLeaderboardRepository.getRecordsOf(guildMemberUUIDs)
+                    : this.playerWarLeaderboardRepository.getRecordsOf(guildMemberUUIDs, range.start, range.end);
+        }
+    }
+
     private void processGuildPlayerLeaderboard(@NotNull MessageReceivedEvent event,
                                                SortType sortType,
                                                @Nullable Range range,
+                                               boolean scoped,
                                                CustomDateFormat customDateFormat,
                                                CustomTimeZone customTimeZone,
                                                @NotNull String guildName,
                                                @Nullable String prefix) {
-        WynnGuild wynnGuild;
+        List<PlayerWarLeaderboard> guildLeaderboard;
         try {
-            wynnGuild = this.wynnApi.getGuildStats(guildName);
-        } catch (RateLimitException e) {
+            guildLeaderboard = getGuildPlayerLeaderboard(guildName, scoped, range);
+        } catch (RateLimitException | RuntimeException e) {
             respondException(event, e.getMessage());
             return;
         }
-        if (wynnGuild == null) {
-            respondException(event, "Something went wrong while requesting Wynncraft API.");
-            return;
-        }
-        List<UUID> guildMemberUUIDs = wynnGuild.getMembers().stream()
-                .map(m -> new UUID(m.getUuid()))
-                .collect(Collectors.toList());
-
-        List<PlayerWarLeaderboard> guildLeaderboard;
-        if (range == null) {
-            guildLeaderboard = this.playerWarLeaderboardRepository.getRecordsOf(guildMemberUUIDs);
-        } else {
-            guildLeaderboard = this.playerWarLeaderboardRepository.getRecordsOf(guildMemberUUIDs, range.start, range.end);
-        }
-
         if (guildLeaderboard == null) {
             respondError(event, "Something went wrong while retrieving leaderboard.");
             return;
         }
         if (guildLeaderboard.isEmpty()) {
-            respond(event, String.format("No war logs found for members of guild `%s` `[%s]` (within the provided time frame). (%s members)",
-                    guildName, prefix, wynnGuild.getMembers().size()));
+            respond(event, String.format("No war logs found for members of guild `%s` `[%s]` (within the provided time frame).",
+                    guildName, prefix));
             return;
         }
 
         Date updatedAt = new Date();
-        Function<Integer, Message> pageSupplier = guildPageSupplier(
-                guildName,
-                prefix,
-                guildLeaderboard,
-                sortType,
-                range,
-                customDateFormat,
-                customTimeZone,
-                updatedAt
+        GuildPlayerLeaderboard glb = new GuildPlayerLeaderboard(
+                guildName, prefix, guildLeaderboard, sortType, range, scoped, updatedAt
         );
+        Function<Integer, Message> pageSupplier = guildPageSupplier(glb, customDateFormat, customTimeZone);
         Supplier<Integer> maxPage = () -> (guildLeaderboard.size() - 1) / PLAYERS_PER_PAGE;
         respondLeaderboard(event, maxPage, pageSupplier);
     }
@@ -378,54 +382,80 @@ public class PlayerWarLeaderboardCmd extends GenericCommand {
         }
     }
 
-    // Page supplier for guild leaderboard
-    private Function<Integer, Message> guildPageSupplier(String guildName,
-                                                         String prefix,
-                                                         List<PlayerWarLeaderboard> guildLeaderboard,
-                                                         SortType sortType,
-                                                         @Nullable Range range,
-                                                         CustomDateFormat customDateFormat,
-                                                         CustomTimeZone customTimeZone,
-                                                         Date updatedAt) {
-        int maxPage = (guildLeaderboard.size() - 1) / PLAYERS_PER_PAGE;
+    private static class GuildPlayerLeaderboard {
+        @NotNull
+        private final String guildName;
+        @Nullable
+        private final String prefix;
+        private final List<PlayerWarLeaderboard> lb;
+        private final SortType sortType;
+        @Nullable
+        private final Range range;
+        private final boolean scoped;
+        private final Date updatedAt;
 
-        sortType.sort(guildLeaderboard);
+        private GuildPlayerLeaderboard(@NotNull String guildName, @Nullable String prefix, List<PlayerWarLeaderboard> lb,
+                               SortType sortType, @Nullable Range range, boolean scoped, Date updatedAt) {
+            this.guildName = guildName;
+            this.prefix = prefix;
+            this.lb = lb;
+            this.sortType = sortType;
+            this.range = range;
+            this.scoped = scoped;
+            this.updatedAt = updatedAt;
+        }
+    }
+
+    // Page supplier for guild leaderboard
+    private Function<Integer, Message> guildPageSupplier(GuildPlayerLeaderboard glb,
+                                                         CustomDateFormat customDateFormat,
+                                                         CustomTimeZone customTimeZone) {
+        int maxPage = (glb.lb.size() - 1) / PLAYERS_PER_PAGE;
+
+        glb.sortType.sort(glb.lb);
 
         List<Display> displays = new ArrayList<>();
-        for (int i = 0; i < guildLeaderboard.size(); i++) {
-            PlayerWarLeaderboard l = guildLeaderboard.get(i);
+        for (int i = 0; i < glb.lb.size(); i++) {
+            PlayerWarLeaderboard l = glb.lb.get(i);
             displays.add(new Display(
                     (i + 1) + ".",
                     l.getLastName(),
-                    String.valueOf(sortType.getWarNumber(l)),
+                    String.valueOf(glb.sortType.getWarNumber(l)),
                     String.valueOf(l.getTotalWar()),
-                    sortType.getWarRate(l)
+                    glb.sortType.getWarRate(l)
             ));
         }
 
-        int successWars = this.getSuccessWars(range, guildName);
-        int totalWars = this.getTotalWars(range, guildName);
+        int successWars = glb.scoped
+                ? this.getSuccessWars(glb.range, glb.guildName)
+                : this.getSuccessWarSum(glb.range);
+        int totalWars = glb.scoped
+                ? this.getTotalWars(glb.range, glb.guildName)
+                : this.getTotalWarSum(glb.range);
         String totalRate = String.format("%.2f%%", (double) successWars / (double) totalWars * 100d);
 
         Justify justify = getSpaceJustify(displays, successWars, totalWars, totalRate);
 
-        String rateMessage = sortType.getWarNumbersMessage() + " Rate";
-        String typeDescription = getTypeDescription(sortType, range, customTimeZone, customDateFormat);
-        String warNumbers = "Wars: " + sortType.getWarNumbersMessage() + " / Total";
+        String rateMessage = glb.sortType.getWarNumbersMessage() + " Rate";
+        String typeDescription = getTypeDescription(glb.sortType, glb.range, customTimeZone, customDateFormat);
+        String warNumbers = "Wars: " + glb.sortType.getWarNumbersMessage() + " / Total";
 
         return page -> {
             List<String> ret = new ArrayList<>();
             ret.add("```ml");
             ret.add("---- Player War Leaderboard ----");
             ret.add("");
-            ret.add(String.format("%s [%s]", guildName, prefix));
+            ret.add(String.format("%s [%s]", glb.guildName, glb.prefix != null ? glb.prefix : "???"));
+            if (glb.scoped) {
+                ret.add("Guild-Scoped War Counts");
+            }
             ret.add("");
             ret.add(typeDescription);
             ret.add(warNumbers);
             ret.add("");
 
             int begin = page * PLAYERS_PER_PAGE;
-            int end = Math.min((page + 1) * PLAYERS_PER_PAGE, guildLeaderboard.size());
+            int end = Math.min((page + 1) * PLAYERS_PER_PAGE, glb.lb.size());
             ret.add(formatTableDisplays(displays, begin, end, justify, rateMessage, successWars, totalWars, totalRate));
 
             ret.add("");
@@ -437,10 +467,10 @@ public class PlayerWarLeaderboardCmd extends GenericCommand {
 
             DateFormat dateFormat = customDateFormat.getDateFormat().getSecondFormat();
             dateFormat.setTimeZone(customTimeZone.getTimeZoneInstance());
-            long elapsedSeconds = (new Date().getTime() - updatedAt.getTime()) / 1000L;
+            long elapsedSeconds = (new Date().getTime() - glb.updatedAt.getTime()) / 1000L;
             ret.add(String.format(
                     "Updated At: %s (%s), %s ago",
-                    dateFormat.format(updatedAt),
+                    dateFormat.format(glb.updatedAt),
                     customTimeZone.getFormattedTime(),
                     FormatUtils.formatReadableTime(elapsedSeconds, false, "s")
             ));

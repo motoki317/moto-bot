@@ -107,4 +107,21 @@ public abstract class PlayerWarLeaderboardRepository extends Repository<PlayerWa
     @Nullable
     public abstract List<PlayerWarLeaderboard> getRecordsOf(List<UUID> playerUUIDs,
                                                             @NotNull Date start, @NotNull Date end);
+
+    /**
+     * Retrieves guild-scoped player war leaderboard for the specified guild.
+     * @param guildName Guild name.
+     * @return List of records.
+     */
+    public abstract List<PlayerWarLeaderboard> getGuildScoped(String guildName);
+
+    /**
+     * Retrieves guild-scoped player war leaderboard for the specified guild.
+     * @param guildName Guild name.
+     * @param start Start date (inclusive).
+     * @param end End date (exclusive).
+     * @return List of records.
+     */
+    public abstract List<PlayerWarLeaderboard> getGuildScoped(String guildName,
+                                                              @NotNull Date start, @NotNull Date end);
 }
