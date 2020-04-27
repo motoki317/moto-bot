@@ -13,16 +13,20 @@ import db.repository.base.PrefixRepository;
 import log.DiscordSpamChecker;
 import log.Logger;
 import music.Music;
+import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Member;
+import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import org.jetbrains.annotations.NotNull;
 import utils.BotUtils;
+import utils.MinecraftColor;
 
 import javax.annotation.Nonnull;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 public class CommandListener extends ListenerAdapter {
     private final List<BotCommand> commands;
@@ -182,7 +186,14 @@ public class CommandListener extends ListenerAdapter {
         this.logger.logEvent(event, isSpam);
         if (isSpam) {
             String message = "You are requesting commands too quickly! Please wait at least 1 second between each commands.";
-            event.getChannel().sendMessage(message).queue();
+            event.getChannel().sendMessage(
+                    new EmbedBuilder()
+                            .setColor(MinecraftColor.RED.getColor())
+                            .setDescription(message)
+                            .build()
+            ).delay(3, TimeUnit.SECONDS)
+                    .flatMap(Message::delete)
+                    .queue();
             return;
         }
 

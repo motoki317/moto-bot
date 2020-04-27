@@ -20,7 +20,7 @@ public class DiscordSpamChecker {
         this.messages = new HashMap<>();
     }
 
-    public boolean isSpam(MessageReceivedEvent event) {
+    public synchronized boolean isSpam(MessageReceivedEvent event) {
         long userId = event.getAuthor().getIdLong();
         long time = BotUtils.getIdCreationTime(event.getMessageIdLong());
         long lastMessageTime = this.messages.getOrDefault(userId, -1L);
@@ -31,10 +31,13 @@ public class DiscordSpamChecker {
         }
 
         long diff = time - lastMessageTime;
+        if (diff < 0) {
+            return false;
+        }
         if (diff < SPAM_PREVENTION) {
             return true;
         }
-        this.messages.put(userId, lastMessageTime);
+        this.messages.put(userId, time);
 
         this.removeOldMessageCache(time);
         return false;
