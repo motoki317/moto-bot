@@ -22,6 +22,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import update.multipage.MultipageHandler;
 import update.reaction.ReactionManager;
+import utils.ArgumentParser;
 import utils.UUID;
 import utils.rateLimit.RateLimitException;
 
@@ -44,6 +45,8 @@ public class PlayerWarStats extends GenericCommand {
     private final DateFormatRepository dateFormatRepository;
     private final TimeZoneRepository timeZoneRepository;
 
+    private final GuildNameResolver guildNameResolver;
+
     public PlayerWarStats(Bot bot) {
         this.mojangApi = new MojangApi(bot.getLogger());
         this.wynnApi = new WynnApi(bot.getLogger(), bot.getProperties().wynnTimeZone);
@@ -55,6 +58,8 @@ public class PlayerWarStats extends GenericCommand {
         this.guildRepository = bot.getDatabase().getGuildRepository();
         this.dateFormatRepository = bot.getDatabase().getDateFormatRepository();
         this.timeZoneRepository = bot.getDatabase().getTimeZoneRepository();
+
+        this.guildNameResolver = new GuildNameResolver(bot.getResponseManager(), this.guildRepository);
     }
 
     @NotNull
@@ -65,7 +70,7 @@ public class PlayerWarStats extends GenericCommand {
 
     @Override
     public @NotNull String syntax() {
-        return "g playerWarStats <player name|uuid>";
+        return "g playerWarStats <player name|uuid> [-g <guild name>]";
     }
 
     @Override
@@ -77,13 +82,15 @@ public class PlayerWarStats extends GenericCommand {
     public @NotNull Message longHelp() {
         return new MessageBuilder(
                 new EmbedBuilder()
-                        // TODO: guild scoped
-                        .setAuthor("Player War Stats Help")
-                        .setDescription("Shows war activities of a player.")
-                        .addField("Syntax",
-                                "`" + this.syntax() + "`",
-                                false
-                        )
+                .setAuthor("Player War Stats Help")
+                .setDescription("Shows war activities of a player.")
+                .addField("Syntax",
+                        "`" + this.syntax() + "`",
+                        false
+                ).addField("Optional arguments", String.join("\n",
+                        "**-g <guild name>** : Specify a guild name to retrieve a guild-scoped logs of the player."
+                ), false)
+                .build()
         ).build();
     }
 
@@ -153,20 +160,34 @@ public class PlayerWarStats extends GenericCommand {
             return;
         }
 
-        CustomTimeZone customTimeZone = this.timeZoneRepository.getTimeZone(event);
-        CustomDateFormat customDateFormat = this.dateFormatRepository.getDateFormat(event);
-
-        if (maxPage(uuid) == 0) {
-            respond(event, format(uuid, playerNameDisplay,0, customTimeZone, customDateFormat));
+        Map<String, String> parsedArgs = new ArgumentParser(args).getArgumentMap();
+        if (parsedArgs.containsKey("g")) {
+            this.guildNameResolver.resolve(
+                    parsedArgs.get("g"), event.getTextChannel(), event.getAuthor(),
+                    (guildName, prefix) -> respondLeaderboard(event, uuid, playerNameDisplay, guildName),
+                    reason -> respondError(event, reason)
+            );
             return;
         }
 
-        respond(event, format(uuid, playerNameDisplay, 0, customTimeZone, customDateFormat), msg -> {
+        respondLeaderboard(event, uuid, playerNameDisplay, null);
+    }
+
+    private void respondLeaderboard(@NotNull MessageReceivedEvent event, UUID uuid, String playerNameDisplay, String guildName) {
+        CustomTimeZone customTimeZone = this.timeZoneRepository.getTimeZone(event);
+        CustomDateFormat customDateFormat = this.dateFormatRepository.getDateFormat(event);
+
+        if (maxPage(uuid, guildName) == 0) {
+            respond(event, format(0, uuid, playerNameDisplay, guildName, customTimeZone, customDateFormat));
+            return;
+        }
+
+        respond(event, format(0, uuid, playerNameDisplay, guildName, customTimeZone, customDateFormat), msg -> {
             MultipageHandler handler = new MultipageHandler(
                     msg,
                     event.getAuthor().getIdLong(),
-                    page -> new MessageBuilder(format(uuid, playerNameDisplay, page, customTimeZone, customDateFormat)).build(),
-                    () -> maxPage(uuid)
+                    page -> new MessageBuilder(format(page, uuid, playerNameDisplay, guildName, customTimeZone, customDateFormat)).build(),
+                    () -> maxPage(uuid, guildName)
             );
             this.reactionManager.addEventListener(handler);
         });
@@ -174,12 +195,26 @@ public class PlayerWarStats extends GenericCommand {
 
     private static final int LOGS_PER_PAGE = 5;
 
-    private int getLogCount(UUID playerUUID) {
-        return this.warPlayerRepository.countOfPlayer(playerUUID);
+    private int getTotalWars(@NotNull UUID playerUUID, @Nullable String guildName) {
+        return guildName == null
+                ? this.warPlayerRepository.countOfPlayer(playerUUID)
+                : this.warPlayerRepository.countOfPlayer(playerUUID, guildName);
     }
 
-    private int maxPage(UUID playerUUID) {
-        return (getLogCount(playerUUID) - 1) / LOGS_PER_PAGE;
+    private int getSuccessWars(@NotNull UUID playerUUID, @Nullable String guildName) {
+        return guildName == null
+                ? this.warPlayerRepository.countSuccessWars(playerUUID)
+                : this.warPlayerRepository.countSuccessWars(playerUUID, guildName);
+    }
+
+    private int getSurvivedWars(@NotNull UUID playerUUID, @Nullable String guildName) {
+        return guildName == null
+                ? this.warPlayerRepository.countSurvivedWars(playerUUID)
+                : this.warPlayerRepository.countSurvivedWars(playerUUID, guildName);
+    }
+
+    private int maxPage(@NotNull UUID playerUUID, @Nullable String guildName) {
+        return (getTotalWars(playerUUID, guildName) - 1) / LOGS_PER_PAGE;
     }
 
     private static class PlayerWarLogPortion {
@@ -194,9 +229,11 @@ public class PlayerWarStats extends GenericCommand {
         }
     }
 
-    private PlayerWarLogPortion getPlayerWarLogPortion(@NotNull UUID playerUUID, int page) {
-        int min = page * LOGS_PER_PAGE;
-        List<WarPlayer> logs = this.warPlayerRepository.getLogsOfPlayer(playerUUID, LOGS_PER_PAGE, min);
+    private PlayerWarLogPortion getPlayerWarLogPortion(int page, @NotNull UUID playerUUID, @Nullable String guildName) {
+        int offset = page * LOGS_PER_PAGE;
+        List<WarPlayer> logs = guildName == null
+                ? this.warPlayerRepository.getLogsOfPlayer(playerUUID, LOGS_PER_PAGE, offset)
+                : this.warPlayerRepository.getLogsOfPlayer(playerUUID, guildName, LOGS_PER_PAGE, offset);
         if (logs == null) {
             throw new RuntimeException("Something went wrong while retrieving data...");
         }
@@ -226,21 +263,22 @@ public class PlayerWarStats extends GenericCommand {
     }
 
     @NotNull
-    private String format(@NotNull UUID playerUUID,
+    private String format(int page,
+                          UUID playerUUID,
                           String playerNameDisplay,
-                          int page,
-                          @NotNull CustomTimeZone timeZone,
-                          @NotNull CustomDateFormat dateFormat) {
+                          @Nullable String guildName,
+                          CustomTimeZone timeZone,
+                          CustomDateFormat dateFormat) {
         PlayerWarLogPortion pwl;
         try {
-            pwl = getPlayerWarLogPortion(playerUUID, page);
+            pwl = getPlayerWarLogPortion(page, playerUUID, guildName);
         } catch (RuntimeException e) {
             return e.getMessage();
         }
 
-        int count = getLogCount(playerUUID);
-        int success = this.warPlayerRepository.countSuccessWars(playerUUID);
-        int survived = this.warPlayerRepository.countSurvivedWars(playerUUID);
+        int count = this.getTotalWars(playerUUID, guildName);
+        int success = this.getSuccessWars(playerUUID, guildName);
+        int survived = this.getSurvivedWars(playerUUID, guildName);
         if (count == -1 || success == -1 || survived == -1) {
             return "Something went wrong while retrieving data...";
         }
@@ -251,6 +289,10 @@ public class PlayerWarStats extends GenericCommand {
         ret.add("");
         ret.add(playerNameDisplay);
         ret.add("");
+        if (guildName != null) {
+            ret.add("Guild Scoped: " + guildName);
+            ret.add("");
+        }
 
         // success bar
         ret.add(createBar("Success", "Success", success, count));

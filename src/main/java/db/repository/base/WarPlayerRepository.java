@@ -24,28 +24,52 @@ public abstract class WarPlayerRepository extends Repository<WarPlayer, WarPlaye
     public abstract List<WarPlayer> findAllOfWarLogId(int warLogId);
 
     /**
-     * Returns the count this player has participated in the war.
-     * @param playerUUID UUID to search with.
+     * Retrieves the count this player has participated in wars.
+     * @param playerUUID Player UUID.
      * @return Count. -1 if something went wrong.
      */
     public abstract int countOfPlayer(UUID playerUUID);
 
     /**
-     * Gets count of success wars by this player.
+     * Retrieves the count this player has participated in wars in the guild.
+     * @param playerUUID Player UUID.
+     * @param guildName Guild name.
+     * @return Count. -1 if something went wrong.
+     */
+    public abstract int countOfPlayer(UUID playerUUID, String guildName);
+
+    /**
+     * Retrieves count of success wars by this player.
      * @param playerUUID Player UUID.
      * @return Count of success wars. -1 if something went wrong.
      */
     public abstract int countSuccessWars(UUID playerUUID);
 
     /**
-     * Gets count of survived wars by this player.
+     * Retrieves count of success wars by this player in the guild.
+     * @param playerUUID Player UUID.
+     * @param guildName Guild name.
+     * @return Count of success wars. -1 if something went wrong.
+     */
+    public abstract int countSuccessWars(UUID playerUUID, String guildName);
+
+    /**
+     * Retrieves count of survived wars by this player.
      * @param playerUUID Player UUID.
      * @return Count of survived wars. -1 if something went wrong.
      */
     public abstract int countSurvivedWars(UUID playerUUID);
 
     /**
-     * Retrieves player logs in this table by descending order of war_log_id.
+     * Retrieves count of survived wars by this player.
+     * @param playerUUID Player UUID.
+     * @param guildName Guild name.
+     * @return Count of survived wars. -1 if something went wrong.
+     */
+    public abstract int countSurvivedWars(UUID playerUUID, String guildName);
+
+    /**
+     * Retrieves player logs by descending order of war_log_id.
      * @param playerUUID Player UUID.
      * @param limit Retrieval limit.
      * @param offset Retrieval offset.
@@ -53,6 +77,17 @@ public abstract class WarPlayerRepository extends Repository<WarPlayer, WarPlaye
      */
     @Nullable
     public abstract List<WarPlayer> getLogsOfPlayer(UUID playerUUID, int limit, int offset);
+
+    /**
+     * Retrieves player logs in the guild by descending order of war_log_id.
+     * @param playerUUID Player UUID.
+     * @param guildName Guild name.
+     * @param limit Retrieval limit.
+     * @param offset Retrieval offset.
+     * @return List of logs. null if something went wrong.
+     */
+    @Nullable
+    public abstract List<WarPlayer> getLogsOfPlayer(UUID playerUUID, String guildName, int limit, int offset);
 
     /**
      * Retrieves single player whose logged UUID is null.

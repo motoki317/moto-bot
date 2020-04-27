@@ -160,10 +160,60 @@ class MariaWarPlayerRepository extends WarPlayerRepository {
         return -1;
     }
 
+    @Override
+    public int countOfPlayer(UUID playerUUID, String guildName) {
+        ResultSet res = this.executeQuery(
+                "SELECT COUNT(*) AS `total_wars` FROM `guild_war_log` g " +
+                        "JOIN `war_player` wp " +
+                        "ON g.guild_name = ? " +
+                        "AND g.war_log_id = wp.war_log_id " +
+                        "AND wp.player_uuid = ?",
+                guildName,
+                playerUUID.toStringWithHyphens()
+        );
+
+        if (res == null) {
+            return -1;
+        }
+
+        try {
+            if (res.next())
+                return res.getInt(1);
+        } catch (SQLException e) {
+            this.logResponseException(e);
+        }
+        return -1;
+    }
+
     public int countSuccessWars(UUID playerUUID) {
         ResultSet res = this.executeQuery(
                 "SELECT COUNT(*) FROM `war_player` p JOIN `guild_war_log` gwl ON p.player_uuid = ?" +
                         " AND p.war_log_id = gwl.war_log_id WHERE gwl.territory_log_id IS NOT NULL",
+                playerUUID.toStringWithHyphens()
+        );
+
+        if (res == null) {
+            return -1;
+        }
+
+        try {
+            if (res.next())
+                return res.getInt(1);
+        } catch (SQLException e) {
+            this.logResponseException(e);
+        }
+        return -1;
+    }
+
+    @Override
+    public int countSuccessWars(UUID playerUUID, String guildName) {
+        ResultSet res = this.executeQuery(
+                "SELECT SUM(g.territory_log_id IS NOT NULL) AS `total_wars` FROM `guild_war_log` g " +
+                        "JOIN `war_player` wp " +
+                        "ON g.guild_name = ? " +
+                        "AND g.war_log_id = wp.war_log_id " +
+                        "AND wp.player_uuid = ?",
+                guildName,
                 playerUUID.toStringWithHyphens()
         );
 
@@ -200,10 +250,61 @@ class MariaWarPlayerRepository extends WarPlayerRepository {
         return -1;
     }
 
+    @Override
+    public int countSurvivedWars(UUID playerUUID, String guildName) {
+        ResultSet res = this.executeQuery(
+                "SELECT SUM(g.territory_log_id IS NOT NULL AND NOT wp.exited) AS `total_wars` FROM `guild_war_log` g " +
+                        "JOIN `war_player` wp " +
+                        "ON g.guild_name = ? " +
+                        "AND g.war_log_id = wp.war_log_id " +
+                        "AND wp.player_uuid = ?",
+                guildName,
+                playerUUID.toStringWithHyphens()
+        );
+
+        if (res == null) {
+            return -1;
+        }
+
+        try {
+            if (res.next())
+                return res.getInt(1);
+        } catch (SQLException e) {
+            this.logResponseException(e);
+        }
+        return -1;
+    }
+
     @Nullable
     public List<WarPlayer> getLogsOfPlayer(UUID playerUUID, int limit, int offset) {
         ResultSet res = this.executeQuery(
                 "SELECT * FROM `war_player` WHERE `player_uuid` = ? ORDER BY `war_log_id` DESC LIMIT " + limit + " OFFSET " + offset,
+                playerUUID.toStringWithHyphens()
+        );
+
+        if (res == null) {
+            return null;
+        }
+
+        try {
+            return bindAll(res);
+        } catch (SQLException e) {
+            this.logResponseException(e);
+            return null;
+        }
+    }
+
+    @Nullable
+    @Override
+    public List<WarPlayer> getLogsOfPlayer(UUID playerUUID, String guildName, int limit, int offset) {
+        ResultSet res = this.executeQuery(
+                "SELECT wp.* FROM `guild_war_log` g " +
+                        "JOIN `war_player` wp " +
+                        "ON g.guild_name = ? " +
+                        "AND g.war_log_id = wp.war_log_id " +
+                        "AND wp.player_uuid = ? " +
+                        "ORDER BY g.id DESC LIMIT " + limit + " OFFSET " + offset,
+                guildName,
                 playerUUID.toStringWithHyphens()
         );
 
