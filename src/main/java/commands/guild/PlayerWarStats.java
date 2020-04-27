@@ -65,7 +65,7 @@ public class PlayerWarStats extends GenericCommand {
 
     @Override
     public @NotNull String syntax() {
-        return "g playerwarstats <player name|uuid>";
+        return "g playerWarStats <player name|uuid>";
     }
 
     @Override
@@ -87,6 +87,37 @@ public class PlayerWarStats extends GenericCommand {
         ).build();
     }
 
+    @NotNull
+    private String getPlayerNameDisplay(@NotNull UUID uuid, @Nullable String playerName) throws RateLimitException {
+        Player player = this.wynnApi.getPlayerStats(uuid.toStringWithHyphens(),  false);
+        String guildPrefix;
+        if (player != null && player.getGuildInfo().getName() != null) {
+            Guild guild = this.guildRepository.findOne(() -> player.getGuildInfo().getName());
+            guildPrefix = guild != null ? guild.getPrefix() : null;
+        } else {
+            guildPrefix = null;
+        }
+
+        if (player != null) {
+            if (player.getGuildInfo().getName() != null) {
+                // Player is in a guild
+                return String.format("%s - %s [%s] (%s)\nUUID: %s",
+                        player.getUsername(), player.getGuildInfo().getName(),
+                        guildPrefix != null ? guildPrefix : "???", player.getGuildInfo().getRank(),
+                        uuid.toStringWithHyphens()
+                );
+            } else {
+                // Player is not in a guild
+                return String.format("%s\nUUID: %s", player.getUsername(), uuid.toStringWithHyphens());
+            }
+        } else if (playerName != null) {
+            // Failed to get player data from Wynn API
+            return String.format("%s\nUUID: %s", playerName, uuid.toStringWithHyphens());
+        }
+
+        return String.format("UUID: %s", uuid.toStringWithHyphens());
+    }
+
     @Override
     public void process(@NotNull MessageReceivedEvent event, @NotNull String[] args) {
         if (args.length <= 2) {
@@ -101,10 +132,8 @@ public class PlayerWarStats extends GenericCommand {
             uuid = new UUID(specified);
             playerName = null;
         } else {
-            List<String> toGet = new ArrayList<>();
             playerName = specified;
-            toGet.add(specified);
-            Map<String, NullableUUID> retrieved = mojangApi.getUUIDsIterative(toGet);
+            Map<String, NullableUUID> retrieved = mojangApi.getUUIDsIterative(Collections.singletonList(specified));
             if (retrieved == null) {
                 respondError(event, "Something went wrong while retrieving player UUID...");
                 return;
@@ -116,34 +145,27 @@ public class PlayerWarStats extends GenericCommand {
             }
         }
 
-        Player player;
+        String playerNameDisplay;
         try {
-            player = this.wynnApi.getPlayerStats(uuid.toStringWithHyphens(),  false);
+            playerNameDisplay = getPlayerNameDisplay(uuid, playerName);
         } catch (RateLimitException e) {
             respondException(event, e.getMessage());
             return;
-        }
-        String guildPrefix;
-        if (player != null && player.getGuildInfo().getName() != null) {
-            Guild guild = this.guildRepository.findOne(() -> player.getGuildInfo().getName());
-            guildPrefix = guild != null ? guild.getPrefix() : null;
-        } else {
-            guildPrefix = null;
         }
 
         CustomTimeZone customTimeZone = this.timeZoneRepository.getTimeZone(event);
         CustomDateFormat customDateFormat = this.dateFormatRepository.getDateFormat(event);
 
         if (maxPage(uuid) == 0) {
-            respond(event, format(uuid, playerName, player, guildPrefix,0, customTimeZone, customDateFormat));
+            respond(event, format(uuid, playerNameDisplay,0, customTimeZone, customDateFormat));
             return;
         }
 
-        respond(event, format(uuid, playerName, player, guildPrefix, 0, customTimeZone, customDateFormat), msg -> {
+        respond(event, format(uuid, playerNameDisplay, 0, customTimeZone, customDateFormat), msg -> {
             MultipageHandler handler = new MultipageHandler(
                     msg,
                     event.getAuthor().getIdLong(),
-                    page -> new MessageBuilder(format(uuid, playerName, player, guildPrefix, page, customTimeZone, customDateFormat)).build(),
+                    page -> new MessageBuilder(format(uuid, playerNameDisplay, page, customTimeZone, customDateFormat)).build(),
                     () -> maxPage(uuid)
             );
             this.reactionManager.addEventListener(handler);
@@ -160,18 +182,23 @@ public class PlayerWarStats extends GenericCommand {
         return (getLogCount(playerUUID) - 1) / LOGS_PER_PAGE;
     }
 
-    @NotNull
-    private String format(@NotNull UUID playerUUID,
-                          @Nullable String playerName,
-                          @Nullable Player player,
-                          @Nullable String guildPrefix,
-                          int page,
-                          @NotNull CustomTimeZone timeZone,
-                          @NotNull CustomDateFormat dateFormat) {
+    private static class PlayerWarLogPortion {
+        private final List<WarLog> warLogs;
+        private final Map<Integer, GuildWarLog> guildWarLogMap;
+        private final Map<Integer, TerritoryLog> territoryLogMap;
+
+        private PlayerWarLogPortion(List<WarLog> warLogs, Map<Integer, GuildWarLog> guildWarLogMap, Map<Integer, TerritoryLog> territoryLogMap) {
+            this.warLogs = warLogs;
+            this.guildWarLogMap = guildWarLogMap;
+            this.territoryLogMap = territoryLogMap;
+        }
+    }
+
+    private PlayerWarLogPortion getPlayerWarLogPortion(@NotNull UUID playerUUID, int page) {
         int min = page * LOGS_PER_PAGE;
         List<WarPlayer> logs = this.warPlayerRepository.getLogsOfPlayer(playerUUID, LOGS_PER_PAGE, min);
         if (logs == null) {
-            return "Something went wrong while retrieving data...";
+            throw new RuntimeException("Something went wrong while retrieving data...");
         }
         List<Integer> warLogIds = logs.stream().map(WarPlayer::getWarLogId).collect(Collectors.toList());
 
@@ -179,20 +206,37 @@ public class PlayerWarStats extends GenericCommand {
         List<GuildWarLog> guildWarLogs = this.guildWarLogRepository.findAllOfWarLogIdIn(warLogIds);
         List<WarLog> warLogs = this.warLogRepository.findAllIn(warLogIds);
         if (guildWarLogs == null || warLogs == null) {
-            return "Something went wrong while retrieving data...";
+            throw new RuntimeException("Something went wrong while retrieving data...");
         }
 
         List<Integer> territoryLogIds = guildWarLogs.stream().filter(l -> l.getTerritoryLogId() != null)
                 .map(GuildWarLog::getTerritoryLogId).collect(Collectors.toList());
         List<TerritoryLog> territoryLogs = this.territoryLogRepository.findAllIn(territoryLogIds);
         if (territoryLogs == null) {
-            return "Something went wrong while retrieving data...";
+            throw new RuntimeException("Something went wrong while retrieving data...");
         }
 
+        // war logs to guild war log / territory log map
         Map<Integer, GuildWarLog> guildWarLogMap = guildWarLogs.stream().filter(l -> l.getWarLogId() != null)
                 .collect(Collectors.toMap(GuildWarLog::getWarLogId, l -> l));
         Map<Integer, TerritoryLog> territoryLogMap = territoryLogs.stream()
                 .collect(Collectors.toMap(TerritoryLog::getId, l -> l));
+
+        return new PlayerWarLogPortion(warLogs, guildWarLogMap, territoryLogMap);
+    }
+
+    @NotNull
+    private String format(@NotNull UUID playerUUID,
+                          String playerNameDisplay,
+                          int page,
+                          @NotNull CustomTimeZone timeZone,
+                          @NotNull CustomDateFormat dateFormat) {
+        PlayerWarLogPortion pwl;
+        try {
+            pwl = getPlayerWarLogPortion(playerUUID, page);
+        } catch (RuntimeException e) {
+            return e.getMessage();
+        }
 
         int count = getLogCount(playerUUID);
         int success = this.warPlayerRepository.countSuccessWars(playerUUID);
@@ -201,32 +245,11 @@ public class PlayerWarStats extends GenericCommand {
             return "Something went wrong while retrieving data...";
         }
 
-        // actual format starts here
-
         List<String> ret = new ArrayList<>();
         ret.add("```ml");
         ret.add("---- Player War History ----");
         ret.add("");
-        if (player != null) {
-            if (player.getGuildInfo().getName() != null) {
-                if (guildPrefix != null) {
-                    ret.add(String.format("%s - %s [%s] (%s)",
-                            player.getUsername(), player.getGuildInfo().getName(),
-                            guildPrefix, player.getGuildInfo().getRank()
-                    ));
-                } else {
-                    ret.add(String.format("%s - %s (%s)",
-                            player.getUsername(), player.getGuildInfo().getName(),
-                            player.getGuildInfo().getRank()
-                    ));
-                }
-            } else {
-                ret.add(player.getUsername());
-            }
-        } else if (playerName != null) {
-            ret.add(playerName);
-        }
-        ret.add("UUID: " + playerUUID.toStringWithHyphens());
+        ret.add(playerNameDisplay);
         ret.add("");
 
         // success bar
@@ -237,32 +260,35 @@ public class PlayerWarStats extends GenericCommand {
         ret.add(createBar("Survived", "Survive", survived, count));
         ret.add("");
 
-        warLogs.sort((l1, l2) -> l2.getId() - l1.getId());
-        int seq = min;
-        for (WarLog warLog : warLogs) {
+        pwl.warLogs.sort((l1, l2) -> l2.getId() - l1.getId());
+        int seq = page * LOGS_PER_PAGE;
+        for (WarLog warLog : pwl.warLogs) {
             seq++;
 
-            GuildWarLog guildWarLog = guildWarLogMap.getOrDefault(warLog.getId(), null);
+            GuildWarLog guildWarLog = pwl.guildWarLogMap.getOrDefault(warLog.getId(), null);
             TerritoryLog territoryLog = guildWarLog != null && guildWarLog.getTerritoryLogId() != null
-                    ? territoryLogMap.getOrDefault(guildWarLog.getTerritoryLogId(), null)
+                    ? pwl.territoryLogMap.getOrDefault(guildWarLog.getTerritoryLogId(), null)
                     : null;
             ret.add(formatSingleLog(seq, warLog, territoryLog, dateFormat, timeZone));
             ret.add("");
         }
 
-        int maxPage = (count - 1) / LOGS_PER_PAGE;
-        ret.add(String.format("< showing page %s of %s >", page + 1, maxPage + 1));
-        ret.add("");
-
-        Date now = new Date();
-        DateFormat formatter = dateFormat.getDateFormat().getSecondFormat();
-        formatter.setTimeZone(timeZone.getTimeZoneInstance());
-        ret.add(String.format("Current Time: %s", formatter.format(now)));
-        ret.add(String.format("Timezone Offset: %s", timeZone.getTimezone()));
+        makeFooter(page, timeZone, dateFormat, count, ret);
 
         ret.add("```");
 
         return String.join("\n", ret);
+    }
+
+    private static void makeFooter(int page, @NotNull CustomTimeZone timeZone, @NotNull CustomDateFormat dateFormat,
+                                   int count, List<String> ret) {
+        int maxPage = (count - 1) / LOGS_PER_PAGE;
+        ret.add(String.format("< page %s of %s >", page + 1, maxPage + 1));
+        ret.add("");
+
+        DateFormat formatter = dateFormat.getDateFormat().getSecondFormat();
+        formatter.setTimeZone(timeZone.getTimeZoneInstance());
+        ret.add(String.format("Current Time: %s (%s)", formatter.format(new Date()), timeZone.getFormattedTime()));
     }
 
     private static String createBar(String namePP, String name, int targetCount, int totalCount) {
