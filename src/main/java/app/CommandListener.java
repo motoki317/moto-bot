@@ -35,7 +35,6 @@ public class CommandListener extends ListenerAdapter {
 
     private final ExecutorService threadPool;
 
-    private final Bot bot;
     private final Logger logger;
     private final String defaultPrefix;
 
@@ -52,7 +51,6 @@ public class CommandListener extends ListenerAdapter {
 
         this.threadPool = Executors.newFixedThreadPool(5);
 
-        this.bot = bot;
         this.logger = bot.getLogger();
         this.defaultPrefix = bot.getProperties().prefix;
 
@@ -134,10 +132,6 @@ public class CommandListener extends ListenerAdapter {
 
     @Override
     public void onMessageReceived(@Nonnull MessageReceivedEvent event) {
-        // Do not process if the shard is not loaded
-        int shardId = this.bot.getShardId(event.getJDA());
-        if (!bot.isConnected(shardId)) return;
-
         // Do not respond to webhook/bot messages
         if (event.isWebhookMessage() || event.getAuthor().isBot()) return;
 

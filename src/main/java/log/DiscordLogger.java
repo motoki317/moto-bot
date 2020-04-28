@@ -3,7 +3,6 @@ package log;
 import app.Bot;
 import net.dv8tion.jda.api.entities.TextChannel;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
-import utils.BotUtils;
 import utils.FormatUtils;
 
 import java.text.DateFormat;
@@ -12,6 +11,7 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.Map;
 import java.util.TimeZone;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.stream.Collectors;
 
 /**
@@ -58,12 +58,26 @@ public class DiscordLogger implements Logger {
             return;
         }
 
-        int shardId = this.bot.getShardId(ch.getJDA());
-        if (!this.bot.isConnected(shardId)) {
-            return;
-        }
+        sendLongMessage(msgTimeAppended, ch);
+    }
 
-        BotUtils.sendLongMessage(msgTimeAppended, ch);
+    /**
+     * Sends long message (supports string longer than 2000 chars) to text channel.
+     * Splits the message into parts to send to discord.
+     * @param message Message to send.
+     * @param ch Text channel to post on.
+     */
+    private void sendLongMessage(String message, TextChannel ch) {
+        double length = message.length();
+        for (int i = 0; i < Math.ceil(length / 2000D); i++) {
+            int start = i * 2000;
+            int end = Math.min((i + 1) * 2000, (int) length);
+            try {
+                ch.sendMessage(message.substring(start, end)).queue();
+            } catch (RejectedExecutionException e) {
+                this.debug("Logger: Failed to send message:\n" + e.getMessage());
+            }
+        }
     }
 
     @Override

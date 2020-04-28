@@ -37,8 +37,6 @@ public class App implements Runnable, Bot {
 
     private final ResponseManager responseManager;
 
-    private final boolean[] isConnected;
-
     private final StoppableThread heartBeat;
 
     @Override
@@ -83,23 +81,9 @@ public class App implements Runnable, Bot {
         return -1;
     }
 
-    @Override
-    public boolean isConnected(int shardId) {
-        return this.isConnected[shardId];
-    }
-
-    @Override
-    public boolean isAllConnected() {
-        for (boolean shardConnected : this.isConnected) {
-            if (!shardConnected) return false;
-        }
-        return true;
-    }
-
     public App(Properties properties, UpdaterFactory updaterFactory) throws LoginException {
         this.properties = properties;
         this.logger = new ConsoleLogger(this.properties.logTimeZone);
-        this.isConnected = new boolean[this.properties.shards];
         this.reactionManager = updaterFactory.getReactionManager();
         this.responseManager = updaterFactory.getResponseManager();
 
@@ -147,7 +131,6 @@ public class App implements Runnable, Bot {
                     e.printStackTrace();
                 }
             }
-            isConnected[i] = true;
             this.logger.debug("JDA Sharding: Shard ID " + i + " is loaded!");
         }
         this.logger.log(-1, "JDA Sharding: All shards loaded!");
