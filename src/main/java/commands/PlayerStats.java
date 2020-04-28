@@ -17,7 +17,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import utils.FormatUtils;
 import utils.InputChecker;
-import utils.MinecraftColor;
 import utils.rateLimit.RateLimitException;
 
 import java.awt.*;
@@ -117,33 +116,29 @@ public class PlayerStats extends GenericCommand {
         ret.add("---- Player Stats ----");
         ret.add("");
         ret.add("Name: " + player.getUsername());
-        ret.add(
-                String.format("Joined: %s (%s)",
-                        dateFormat.format(new Date(player.getMetaInfo().getFirstJoin())),
-                        formattedTimeZone
-                )
-        );
-        ret.add("Rank: " + player.getRank());
+        ret.add(String.format(
+                "Joined: %s (%s)",
+                dateFormat.format(new Date(player.getMetaInfo().getFirstJoin())),
+                formattedTimeZone
+        ));
+        ret.add("Rank: " + getFormattedRank(player));
         if (player.getGuildInfo().getName() != null) {
-            ret.add(
-                    String.format("Guild: %s (%s)",
-                            player.getGuildInfo().getName(),
-                            player.getGuildInfo().getRank()
-                    )
-            );
+            ret.add(String.format(
+                    "Guild: %s (%s)",
+                    player.getGuildInfo().getName(),
+                    player.getGuildInfo().getRank()
+            ));
         }
 
         ret.add("");
 
         String world = this.wynnApi.mustFindPlayer(player.getUsername());
         if (world == null) {
-            ret.add(
-                    String.format(
-                        "Last Seen: %s (%s)",
-                        dateFormat.format(new Date(player.getMetaInfo().getLastJoin())),
-                        formattedTimeZone
-                    )
-            );
+            ret.add(String.format(
+                    "Last Seen: %s (%s)",
+                    dateFormat.format(new Date(player.getMetaInfo().getLastJoin())),
+                    formattedTimeZone
+            ));
         } else {
             ret.add("Current World: " + world);
         }
@@ -199,26 +194,23 @@ public class PlayerStats extends GenericCommand {
         int pvpKills = player.getGlobalInfo().getPvpKills();
         int pvpDeaths = player.getGlobalInfo().getPvpDeaths();
         displays.add(
-                new Display(
-                        "PvP",
-                        String.format("%,d kills / %,d deaths (%.2f)",
-                                pvpKills,
-                                pvpDeaths,
-                                (double) pvpKills / (double) pvpDeaths
-                        )
-                )
+                new Display("PvP", String.format(
+                        "%,d kills / %,d deaths (%.2f)",
+                        pvpKills,
+                        pvpDeaths,
+                        (double) pvpKills / (double) pvpDeaths
+                ))
         );
 
         int justifyLength = displays.stream().mapToInt(d -> d.left.length() + 2 + d.right.length())
                 .max().orElse(2);
         for (Display display : displays) {
-            ret.add(
-                    String.format("%s: %s%s",
-                            display.left,
-                            nSpaces(justifyLength - display.left.length() - display.right.length() - 2),
-                            display.right
-                    )
-            );
+            ret.add(String.format(
+                    "%s: %s%s",
+                    display.left,
+                    nSpaces(justifyLength - display.left.length() - display.right.length() - 2),
+                    display.right
+            ));
         }
 
         ret.add("```");
@@ -271,6 +263,21 @@ public class PlayerStats extends GenericCommand {
                 .setContent(String.join("\n", ret))
                 .setEmbed(eb.build())
                 .build();
+    }
+
+    private static String getFormattedRank(Player player) {
+        @Nullable
+        String donorRank = player.getMetaInfo().getTag();
+        // Default = "Player"
+        // Ranks such as Builder, Moderator, Hybrid etc.
+        String specialRank = player.getRank();
+        if (donorRank == null) {
+            return specialRank;
+        }
+        if ("Player".equals(specialRank)) {
+            return donorRank;
+        }
+        return donorRank + ", " + specialRank;
     }
 
     @Nullable
