@@ -130,7 +130,8 @@ public class ItemView extends GenericCommand {
     static EmbedBuilder getEmbed(Item item, String imageURLBase) {
         EmbedBuilder eb = new EmbedBuilder();
         eb.setTitle(String.format("Lv. %s %s, %s %s",
-                item.getLevel(), item.getName(), item.getTier(), item.getType()));
+                item.getLevel(), item.getName(), item.getTier(),
+                "accessory".equals(item.getCategory()) ? item.getAccessoryType() : item.getType()));
 
         eb.setThumbnail(imageURLBase + getImageName(item));
 
