@@ -169,7 +169,11 @@ public class Track extends GuildCommand {
 
         // Resolve guild name or player UUID
         try {
-            resolveGuildOrPlayer(event, args, entity, () -> saveTrackData(event, entity));
+            resolveGuildOrPlayer(
+                    event, args, entity,
+                    () -> saveTrackData(event, entity, true),
+                    () -> saveTrackData(event, entity, false)
+            );
         } catch (IllegalArgumentException e) {
             respondException(event, e.getMessage());
         }
@@ -179,11 +183,21 @@ public class Track extends GuildCommand {
      * Saves the final track channel entity.
      * @param event Message received event.
      * @param entity Track entity.
+     * @param safeGuildResolve {@code true} if the guild name was safely resolved.
+     *                         If {@code false}, only tries to delete the existing track.
      */
-    private void saveTrackData(MessageReceivedEvent event, TrackChannel entity) {
+    private void saveTrackData(MessageReceivedEvent event, TrackChannel entity, boolean safeGuildResolve) {
         if (this.trackChannelRepository.exists(entity)) {
             disableTracking(event, entity);
         } else {
+            // Prevent the track from being registered if an unknown guild has been resolved.
+            if (!safeGuildResolve) {
+                respondException(event, String.format(
+                        "Guild with name `%s` not found. Check the spells, or try again later.",
+                        entity.getGuildName()
+                ));
+                return;
+            }
             enableTracking(event, entity);
         }
     }
@@ -194,9 +208,10 @@ public class Track extends GuildCommand {
      * @param args Command arguments.
      * @param entity Track channel entity.
      * @param onResolve To be called on successful resolve.
+     * @param unknownGuildResolved To be called on unknown guild name resolve.
      * @throws IllegalArgumentException On bad user input.
      */
-    private void resolveGuildOrPlayer(MessageReceivedEvent event, @NotNull String[] args, TrackChannel entity, Runnable onResolve) throws IllegalArgumentException {
+    private void resolveGuildOrPlayer(MessageReceivedEvent event, @NotNull String[] args, TrackChannel entity, Runnable onResolve, Runnable unknownGuildResolved) throws IllegalArgumentException {
         switch (entity.getType()) {
             case WAR_SPECIFIC:
             case TERRITORY_SPECIFIC:
@@ -207,12 +222,12 @@ public class Track extends GuildCommand {
                 this.guildNameResolver.resolve(
                         specified, event.getTextChannel(), event.getAuthor(),
                         (guildName, prefix) -> {
-                            if (prefix == null) {
-                                respondException(event, String.format("Guild with name `%s` not found. Check the spells, or try again later.", specified));
-                                return;
-                            }
                             entity.setGuildName(guildName);
-                            onResolve.run();
+                            if (prefix == null) {
+                                unknownGuildResolved.run();
+                            } else {
+                                onResolve.run();
+                            }
                         },
                         reason -> respondException(event, reason)
                 );
