@@ -11,29 +11,36 @@ import javax.annotation.CheckReturnValue;
 import javax.annotation.Nullable;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 class MariaWorldRepository extends WorldRepository {
+    private static final DateFormat dbFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+
     MariaWorldRepository(ConnectionPool db, Logger logger) {
         super(db, logger);
     }
 
     @Override
     protected World bind(@NotNull ResultSet res) throws SQLException {
-        World instance = new World(res.getString(1), res.getInt(2));
-        instance.setCreatedAt(res.getTimestamp(3));
-        instance.setUpdatedAt(res.getTimestamp(4));
-        return instance;
+        return new World(
+                res.getString(1), res.getInt(2),
+                res.getTimestamp(3),
+                res.getTimestamp(4)
+        );
     }
 
     @Override
     public <S extends World> boolean create(@NotNull S entity) {
         return this.execute(
-                "INSERT INTO `world` (`name`, `players`) VALUES (?, ?)",
+                "INSERT INTO `world` (`name`, `players`, `created_at`, `updated_at`) VALUES (?, ?, ?, ?)",
                 entity.getName(),
-                entity.getPlayers()
+                entity.getPlayers(),
+                dbFormat.format(entity.getCreatedAt()),
+                dbFormat.format(entity.getUpdatedAt())
         );
     }
 
@@ -164,8 +171,10 @@ class MariaWorldRepository extends WorldRepository {
     @Override
     public boolean update(@NotNull World entity) {
         return this.execute(
-                "UPDATE `world` SET `players` = ?, `updated_at` = NOW() WHERE `name` = ?",
+                "UPDATE `world` SET `players` = ?, `created_at` = ?, `updated_at` = ? WHERE `name` = ?",
                 entity.getPlayers(),
+                dbFormat.format(entity.getCreatedAt()),
+                dbFormat.format(entity.getUpdatedAt()),
                 entity.getName()
         );
     }
@@ -176,7 +185,8 @@ class MariaWorldRepository extends WorldRepository {
         if (oldWorldNames == null) return false;
 
         Set<String> newWorldNames = worlds.stream().map(World::getName).collect(Collectors.toSet());
-        Set<String> deletedWorldNames = oldWorldNames.stream().filter(w -> !newWorldNames.contains(w))
+        Set<String> deletedWorldNames = oldWorldNames.stream()
+                .filter(w -> !newWorldNames.contains(w))
                 .collect(Collectors.toSet());
         if (!deletedWorldNames.isEmpty()) {
             boolean res = this.execute(
@@ -190,14 +200,16 @@ class MariaWorldRepository extends WorldRepository {
             }
         }
 
-        String placeHolder = "(?, ?)";
+        String placeHolder = "(?, ?, ?, ?)";
         return this.execute(
-                "INSERT INTO `world` (name, players) VALUES " +
+                "INSERT INTO `world` (`name`, `players`, `created_at`, `updated_at`) VALUES " +
                         String.join(", ", Collections.nCopies(worlds.size(), placeHolder)) +
-                        " ON DUPLICATE KEY UPDATE players = VALUES(players)",
+                        " ON DUPLICATE KEY UPDATE `players` = VALUES(`players`), `updated_at` = VALUES(`updated_at`)",
                 worlds.stream().flatMap(w -> Stream.of(
                         w.getName(),
-                        w.getPlayers()
+                        w.getPlayers(),
+                        dbFormat.format(w.getCreatedAt()),
+                        dbFormat.format(w.getUpdatedAt())
                 )).toArray()
         );
     }

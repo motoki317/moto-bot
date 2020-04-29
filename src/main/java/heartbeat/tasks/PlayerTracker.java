@@ -24,6 +24,7 @@ import org.jetbrains.annotations.Nullable;
 import utils.FormatUtils;
 import utils.UUID;
 
+import java.sql.Timestamp;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -91,8 +92,9 @@ public class PlayerTracker implements TaskBase {
             return;
         }
 
+        Timestamp retrievedAt = new Timestamp(players.getRequest().getTimestamp() * 1000L);
         Map<String, World> currentWorlds = players.getWorlds().entrySet().stream()
-                .collect(Collectors.toMap(Map.Entry::getKey, e -> new World(e.getKey(), e.getValue().size())));
+                .collect(Collectors.toMap(Map.Entry::getKey, e -> new World(e.getKey(), e.getValue().size(), retrievedAt, retrievedAt)));
         synchronized (this.dbLock) {
             // Update DB
             if (!this.worldRepository.updateAll(currentWorlds.values())) {

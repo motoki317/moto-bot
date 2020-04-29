@@ -6,6 +6,7 @@ import db.repository.base.WorldRepository;
 import org.jetbrains.annotations.TestOnly;
 import org.junit.jupiter.api.Test;
 
+import java.sql.Timestamp;
 import java.util.List;
 
 class TestWorldRepository {
@@ -31,8 +32,9 @@ class TestWorldRepository {
         clearTable();
         WorldRepository repo = getRepository();
 
-        World wc1 = new World("WC1", 30);
-        World lobby1 = new World("lobby1", 10);
+        Timestamp now = new Timestamp(System.currentTimeMillis());
+        World wc1 = new World("WC1", 30, now, now);
+        World lobby1 = new World("lobby1", 10, now, now);
 
         assert repo.count() == 0;
         assert !repo.exists(wc1);
@@ -63,7 +65,8 @@ class TestWorldRepository {
     void testNonIdFields() {
         clearTable();
         WorldRepository repo = getRepository();
-        World wc5 = new World("WC5", 50);
+        Timestamp now = new Timestamp(System.currentTimeMillis());
+        World wc5 = new World("WC5", 50, now, now);
 
         assert !repo.exists(wc5);
 

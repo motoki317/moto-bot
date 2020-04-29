@@ -13,9 +13,11 @@ public class World implements WorldId {
 
     private Timestamp updatedAt;
 
-    public World(String name, int players) {
+    public World(String name, int players, Timestamp createdAt, Timestamp updatedAt) {
         this.name = name;
         this.players = players;
+        this.createdAt = createdAt;
+        this.updatedAt = updatedAt;
     }
 
     @NotNull
@@ -31,15 +33,7 @@ public class World implements WorldId {
         return createdAt;
     }
 
-    public void setCreatedAt(Timestamp createdAt) {
-        this.createdAt = createdAt;
-    }
-
     public Timestamp getUpdatedAt() {
         return updatedAt;
-    }
-
-    public void setUpdatedAt(Timestamp updatedAt) {
-        this.updatedAt = updatedAt;
     }
 }

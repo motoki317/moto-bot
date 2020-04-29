@@ -31,6 +31,7 @@ public abstract class WorldRepository extends Repository<World, WorldId> {
 
     /**
      * Updates all worlds to the given worlds, and removes all worlds not in the given worlds.
+     * Only updates
      * @param worlds Current list of worlds.
      * @return {@code true} if success.
      */
