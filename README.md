@@ -20,7 +20,7 @@ Some useful shortcuts for development are written in `Makefile`.
 For debugging:
 - `make db-up` to launch only the DB container.
 - `make db` to connect to DB (password: `password`).
-- `make test` to run tests. DB container needs to be launched.
+- `mvn test` to run tests. DB container needs to be launched.
 
 ## Production
 

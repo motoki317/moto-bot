@@ -118,7 +118,11 @@
                 <version>3.0.0-M4</version>
                 <configuration>
                     <environmentVariables>
+                        <MYSQL_HOST>localhost</MYSQL_HOST>
                         <MYSQL_DATABASE>moto-bot_test</MYSQL_DATABASE>
+                        <MYSQL_USER>moto-bot</MYSQL_USER>
+                        <MYSQL_PASSWORD>password</MYSQL_PASSWORD>
+                        <MYSQL_PORT>3306</MYSQL_PORT>
                         <DEBUG>1</DEBUG>
                     </environmentVariables>
                 </configuration>
