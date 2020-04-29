@@ -3,6 +3,7 @@ package commands;
 import api.mojang.MojangApi;
 import app.Bot;
 import commands.base.GuildCommand;
+import commands.guild.GuildNameResolver;
 import db.Database;
 import db.model.dateFormat.CustomDateFormat;
 import db.model.timezone.CustomTimeZone;
@@ -31,6 +32,7 @@ public class Track extends GuildCommand {
     private final DateFormatRepository dateFormatRepository;
     private final TimeZoneRepository timeZoneRepository;
     private final MojangApi mojangApi;
+    private final GuildNameResolver guildNameResolver;
 
     public Track(Bot bot) {
         this.logger = bot.getLogger();
@@ -39,6 +41,7 @@ public class Track extends GuildCommand {
         this.dateFormatRepository = db.getDateFormatRepository();
         this.timeZoneRepository = db.getTimeZoneRepository();
         this.mojangApi = new MojangApi(bot.getLogger());
+        this.guildNameResolver = new GuildNameResolver(bot.getResponseManager(), db.getGuildRepository());
     }
 
     @NotNull
@@ -74,7 +77,7 @@ public class Track extends GuildCommand {
                                 "`" + this.syntax() + "`",
                                 "First argument specifies the type of action. " +
                                         "Use without arguments to view all tracking enabled in this channel."
-                                ),
+                        ),
                         false)
                 .addField("Server Tracking Syntax",
                         String.join("\n",
@@ -85,7 +88,7 @@ public class Track extends GuildCommand {
                                 "`[all]` : On which server start/close the bot should send messages.",
                                 "Without all argument, the bot sends messages only when main servers (WC and EU) start/close.",
                                 "With all argument, the bot sends messages when every server, but excluding WAR servers, start/close."
-                                ),
+                        ),
                         false)
                 .addField("Guild Creation/Deletion Tracking Syntax",
                         String.join("\n",
@@ -110,7 +113,7 @@ public class Track extends GuildCommand {
                                 "\"all\" : When any guild acquires a territory.",
                                 "\"guild\" : When a specified guild acquires a territory.",
                                 "`[name]` : Must be specified if you choose guild track type."
-                                ),
+                        ),
                         false)
                 .addField("Update the Expiration Time",
                         String.join("\n",
@@ -123,7 +126,7 @@ public class Track extends GuildCommand {
                                 "`track server start`",
                                 "`track war guild WynnContentTeam`",
                                 "`track territory all`"
-                                ),
+                        ),
                         false)
                 .build()
         ).build();
@@ -157,73 +160,125 @@ public class Track extends GuildCommand {
             return;
         }
 
+        // Expiry date = current time + default duration for each track type
         Date expiresAt = new Date(System.currentTimeMillis() + type.getDefaultExpireTime());
         TrackChannel entity = new TrackChannel(
                 type, event.getGuild().getIdLong(), event.getChannel().getIdLong(),
                 event.getAuthor().getIdLong(), expiresAt
         );
 
-        switch (type) {
+        // Resolve guild name or player UUID
+        try {
+            resolveGuildOrPlayer(event, args, entity, () -> saveTrackData(event, entity));
+        } catch (IllegalArgumentException e) {
+            respondException(event, e.getMessage());
+        }
+    }
+
+    /**
+     * Saves the final track channel entity.
+     * @param event Message received event.
+     * @param entity Track entity.
+     */
+    private void saveTrackData(MessageReceivedEvent event, TrackChannel entity) {
+        if (this.trackChannelRepository.exists(entity)) {
+            disableTracking(event, entity);
+        } else {
+            enableTracking(event, entity);
+        }
+    }
+
+    /**
+     * Resolves guild name or player UUID depending on the track type.
+     * @param event Message Received event.
+     * @param args Command arguments.
+     * @param entity Track channel entity.
+     * @param onResolve To be called on successful resolve.
+     * @throws IllegalArgumentException On bad user input.
+     */
+    private void resolveGuildOrPlayer(MessageReceivedEvent event, @NotNull String[] args, TrackChannel entity, Runnable onResolve) throws IllegalArgumentException {
+        switch (entity.getType()) {
             case WAR_SPECIFIC:
             case TERRITORY_SPECIFIC:
-                String guildName = getName(args);
-                if (guildName == null) {
-                    respond(event, "Invalid arguments: guild name was not specified.");
-                    return;
+                String specified = getName(args);
+                if (specified == null) {
+                    throw new IllegalArgumentException("Invalid arguments: guild name was not specified.");
                 }
-
-                entity.setGuildName(guildName);
-                break;
+                this.guildNameResolver.resolve(
+                        specified, event.getTextChannel(), event.getAuthor(),
+                        (guildName, prefix) -> {
+                            if (prefix == null) {
+                                respondException(event, String.format("Guild with name `%s` not found. Check the spells, or try again later.", specified));
+                                return;
+                            }
+                            entity.setGuildName(guildName);
+                            onResolve.run();
+                        },
+                        reason -> respondException(event, reason)
+                );
+                return;
             case WAR_PLAYER:
                 String playerName = getName(args);
                 if (playerName == null) {
-                    respond(event, "Invalid arguments: player name was not specified.");
-                    return;
+                    throw new IllegalArgumentException("Invalid arguments: player name was not specified.");
                 }
 
                 UUID uuid = this.mojangApi.mustGetUUIDAtTime(playerName, new Date().getTime());
                 if (uuid == null) {
-                    respond(event, String.format("Failed to retrieve player UUID for `%s`... " +
+                    throw new IllegalArgumentException(String.format("Failed to retrieve player UUID for `%s`... " +
                             "Check the spelling, and make sure the player with that name exists.", playerName));
-                    return;
                 }
 
                 entity.setPlayerUUID(uuid.toStringWithHyphens());
-                break;
+                onResolve.run();
+                return;
+            default:
+                onResolve.run();
         }
+    }
 
-        if (this.trackChannelRepository.exists(entity)) {
-            // Disable tracking
-            if (this.trackChannelRepository.delete(entity)) {
-                respond(event, ":mute: Successfully **disabled** " + entity.getDisplayName() + " for this channel.");
-                this.logger.log(0, ":mute: Tracking has been **disabled**:\n" + entity.toString());
-            } else {
-                respondError(event, "Something went wrong while saving data.");
-            }
+    private void disableTracking(@NotNull MessageReceivedEvent event, TrackChannel entity) {
+        if (this.trackChannelRepository.delete(entity)) {
+            respond(event, ":mute: Successfully **disabled** " + entity.getDisplayName() + " for this channel.");
+            this.logger.log(0, ":mute: Tracking has been **disabled**:\n" + entity.toString());
         } else {
-            // Enable tracking
-
-            // Check conflicting types
-            List<TrackChannel> conflicting = getConflictingEntities(type, event);
-            if (conflicting == null) {
-                respondError(event, "Something went wrong while retrieving data.");
-                return;
-            }
-            if (!conflicting.isEmpty()) {
-                String message = "You have conflicting type of tracking enabled in this channel to enable the one you just specified.\n" +
-                        "Below is the list of that.\n";
-                message += conflicting.stream().map(TrackChannel::getDisplayName).collect(Collectors.joining("\n"));
-                respond(event, message);
-                return;
-            }
-
-            if (this.trackChannelRepository.create(entity)) {
-                respond(event, ":loud_sound: Successfully **enabled** " + entity.getDisplayName() + " for this channel!");
-                this.logger.log(0, ":loud_sound: Tracking has been **enabled**:\n" + entity.toString());
-            } else {
-                respondError(event, "Something went wrong while saving data.");
-            }
+            respondError(event, "Something went wrong while saving data.");
         }
+    }
+
+    private void enableTracking(@NotNull MessageReceivedEvent event, TrackChannel entity) {
+        // Check conflicting types
+        List<TrackChannel> conflicting = getConflictingEntities(entity.getType(), event);
+        if (conflicting == null) {
+            respondError(event, "Something went wrong while retrieving data.");
+            return;
+        }
+        if (!conflicting.isEmpty()) {
+            String message = "You have conflicting type of tracking enabled in this channel." +
+                    " Use a different channel, or remove the below before enabling the one you just specified:\n" +
+                    conflicting.stream().map(TrackChannel::getDisplayName).collect(Collectors.joining("\n"));
+            respond(event, message);
+            return;
+        }
+
+        if (this.trackChannelRepository.create(entity)) {
+            respond(event, ":loud_sound: Successfully **enabled** " + entity.getDisplayName() + " for this channel!");
+            this.logger.log(0, ":loud_sound: Tracking has been **enabled**:\n" + entity.toString());
+        } else {
+            respondError(event, "Something went wrong while saving data.");
+        }
+    }
+
+    @Nullable
+    private List<TrackChannel> getConflictingEntities(TrackType type, MessageReceivedEvent event) {
+        long guildId = event.getGuild().getIdLong();
+        long channelId = event.getChannel().getIdLong();
+        Set<TrackType> conflictTypes = type.getConflictTypes();
+        List<TrackChannel> possible = this.trackChannelRepository.findAllOf(guildId, channelId);
+        if (possible == null) {
+            return null;
+        }
+        return possible.stream().filter(e -> conflictTypes.contains(e.getType())).collect(Collectors.toList());
     }
 
     /**
@@ -301,18 +356,7 @@ public class Track extends GuildCommand {
         return true;
     }
 
-    @Nullable
-    private List<TrackChannel> getConflictingEntities(TrackType type, MessageReceivedEvent event) {
-        long guildId = event.getGuild().getIdLong();
-        long channelId = event.getChannel().getIdLong();
-        Set<TrackType> conflictTypes = type.getConflictTypes();
-        List<TrackChannel> possible = this.trackChannelRepository.findAllOf(guildId, channelId);
-        if (possible == null) {
-            return null;
-        }
-        return possible.stream().filter(e -> conflictTypes.contains(e.getType())).collect(Collectors.toList());
-    }
-
+    @SuppressWarnings({"OverlyComplexMethod", "OverlyLongMethod"})
     @Nullable
     private static TrackType getCorrespondingTrackType(String[] args) {
         if (args.length <= 2) {
