@@ -31,10 +31,7 @@ import update.response.ResponseManager;
 import utils.MinecraftColor;
 
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.stream.Collectors;
 
 import static commands.base.BotCommand.*;
@@ -296,7 +293,7 @@ public class MusicPlayHandler {
 
         all.thenRun(() -> respond(channel, new EmbedBuilder()
                 .setColor(MinecraftColor.DARK_GREEN.getColor())
-                .setDescription(String.format("Finished loading `%s` songs from the previous queue!", queue.size()))
+                .setDescription(String.format("Finished loading `%s` song(s) from the previous queue!", queue.size()))
                 .build()));
 
         state.setOnStopLoadingCache(() -> {
@@ -308,7 +305,7 @@ public class MusicPlayHandler {
                 if (f.isDone()) return;
                 f.cancel(false);
             });
-            respondException(channel, "Cancelled loading songs from the previous queue.");
+            respondException(channel, "Cancelled loading song(s) from the previous queue.");
         });
     }
 
@@ -405,7 +402,7 @@ public class MusicPlayHandler {
         }
 
         try {
-            shutdownPlayer(saveQueue, guildId, state);
+            this.shutdownPlayer(saveQueue, guildId, state);
         } catch (RuntimeException e) {
             respondError(event, e.getMessage());
             return;
@@ -429,35 +426,46 @@ public class MusicPlayHandler {
      * @throws RuntimeException If something went wrong.
      */
     void shutdownPlayer(boolean saveQueue, long guildId, MusicState state) throws RuntimeException {
-        Guild guild = this.manager.getGuildById(guildId);
-        if (guild == null) {
-            throw new RuntimeException("Failed to retrieve guild info");
-        }
-
+        // Stop loading from cache if it was running
         state.stopLoadingCache();
 
-        boolean saveResult = !saveQueue || saveQueue(guildId, state);
+        // Retrieve the current queue before it is cleared
+        QueueState queue = state.getCurrentQueue();
 
+        // Stop playing, and destroy LavaPlayer audio player (this call clears the queue inside MusicState)
         state.stopPlaying();
         state.getPlayer().destroy();
-        guild.getAudioManager().closeAudioConnection();
 
+        // Try to disconnect from the Discord voice channel
+        try {
+            Guild guild = this.manager.getGuildById(guildId);
+            if (guild != null) {
+                this.logger.log(3, String.format("Shutting down music player (%s) for guild %s (%s members, ID: %s)",
+                        states.size(), guild.getName(), guild.getMemberCount(), guild.getIdLong()
+                ));
+
+                guild.getAudioManager().closeAudioConnection();
+            } else {
+                this.logger.log(0, "Failed to get guild info for id: " + guildId);
+            }
+        } catch (RejectedExecutionException e) {
+            // Expected to be thrown on shutdown, because JDA is no longer connected
+            this.logger.logException("Failed to close audio connection for guild id " + guildId, e);
+        }
+
+        // Save the current queue
+        boolean saveResult = !saveQueue || saveQueue(guildId, queue);
         if (!saveResult) {
             throw new RuntimeException("Something went wrong while saving the queue...");
         }
 
-        // Save setting
+        // Save setting if the current differs from the default
         boolean saveSetting = true;
         if (!state.getSetting().equals(MusicSetting.getDefault(guildId))) {
             saveSetting = this.musicSettingRepository.exists(() -> guildId)
                     ? this.musicSettingRepository.update(state.getSetting())
                     : this.musicSettingRepository.create(state.getSetting());
         }
-
-        this.logger.log(3, String.format("Shutting down music player (%s) for guild %s (%s members, ID: %s)",
-                states.size(), guild.getName(), guild.getMemberCount(), guild.getIdLong()
-        ));
-
         if (!saveSetting) {
             throw new RuntimeException("Something went wrong while saving settings for this guild...");
         }
@@ -466,11 +474,10 @@ public class MusicPlayHandler {
     /**
      * Saves the current queue.
      * @param guildId Guild ID.
-     * @param state Music state.
+     * @param queue Music queue.
      * @return {@code true} if success.
      */
-    private boolean saveQueue(long guildId, @NotNull MusicState state) {
-        QueueState queue = state.getCurrentQueue();
+    private boolean saveQueue(long guildId, @NotNull QueueState queue) {
         List<QueueEntry> tracks = new ArrayList<>(queue.getQueue());
         if (tracks.isEmpty()) {
             return true;

@@ -72,6 +72,14 @@ public class MusicAutoLeaveChecker {
         return listeningCount == 0;
     }
 
+    private void shutdownGuild(long guildId, MusicState state) {
+        try {
+            this.playHandler.shutdownPlayer(true, guildId, state);
+        } catch (RuntimeException e) {
+            this.logger.logException("Something went wrong while shutting down guild music", e);
+        }
+    }
+
     void checkAllGuilds() {
         synchronized (states) {
             for (Iterator<Map.Entry<Long, MusicState>> iterator = states.entrySet().iterator(); iterator.hasNext(); ) {
@@ -99,14 +107,6 @@ public class MusicAutoLeaveChecker {
 
                 iterator.remove();
             }
-        }
-    }
-
-    private void shutdownGuild(long guildId, MusicState state) {
-        try {
-            this.playHandler.shutdownPlayer(true, guildId, state);
-        } catch (RuntimeException e) {
-            this.logger.logException("Something went wrong while shutting down guild music", e);
         }
     }
 
