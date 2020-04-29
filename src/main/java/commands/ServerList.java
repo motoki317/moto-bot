@@ -103,7 +103,7 @@ public class ServerList extends GenericCommand {
         int worldsPerPage = WORLDS_PER_PAGE_DEFAULT;
         if (args.length > 1) {
             for (String arg : args) {
-                if ("getAll".equals(arg.toLowerCase())) {
+                if ("all".equals(arg.toLowerCase())) {
                     getAll = true;
                 } else if (arg.matches("\\d+")) {
                     worldsPerPage = Integer.parseInt(arg);
