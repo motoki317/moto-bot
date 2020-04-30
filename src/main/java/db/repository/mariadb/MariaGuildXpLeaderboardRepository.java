@@ -69,9 +69,9 @@ class MariaGuildXpLeaderboardRepository extends GuildXpLeaderboardRepository {
     }
 
     @Override
-    public int getRank(@NotNull String guildName) {
+    public int getXPRank(@NotNull String guildName) {
         ResultSet res = this.executeQuery(
-                "SELECT t.`rank` FROM (SELECT `name`, RANK() OVER (ORDER BY `level` DESC, `xp` DESC) AS `rank` FROM `guild_xp_leaderboard`) AS t WHERE t.`name` = ?",
+                "SELECT t.`rank` FROM (SELECT `name`, RANK() OVER (ORDER BY `xp_diff` DESC) AS `rank` FROM `guild_xp_leaderboard`) AS t WHERE t.`name` = ?",
                 guildName
         );
 

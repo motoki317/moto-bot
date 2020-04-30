@@ -5,6 +5,8 @@ import api.wynn.structs.WynnGuild;
 import app.Bot;
 import commands.base.GenericCommand;
 import db.model.dateFormat.CustomDateFormat;
+import db.model.guildLeaderboard.GuildLeaderboard;
+import db.model.guildLeaderboard.GuildLeaderboardId;
 import db.model.guildXpLeaderboard.GuildXpLeaderboard;
 import db.model.timezone.CustomTimeZone;
 import db.model.world.World;
@@ -14,7 +16,6 @@ import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import update.multipage.MultipageHandler;
 import update.reaction.ReactionManager;
 import utils.FormatUtils;
@@ -84,6 +85,7 @@ public class GuildStats extends GenericCommand {
         private final TimeZoneRepository timeZoneRepository;
         private final WorldRepository worldRepository;
         private final TerritoryRepository territoryRepository;
+        private final GuildLeaderboardRepository guildLeaderboardRepository;
         private final GuildXpLeaderboardRepository guildXpLeaderboardRepository;
         private final String guildBannerUrl;
 
@@ -98,6 +100,7 @@ public class GuildStats extends GenericCommand {
             this.timeZoneRepository = bot.getDatabase().getTimeZoneRepository();
             this.worldRepository = bot.getDatabase().getWorldRepository();
             this.territoryRepository = bot.getDatabase().getTerritoryRepository();
+            this.guildLeaderboardRepository = bot.getDatabase().getGuildLeaderboardRepository();
             this.guildXpLeaderboardRepository = bot.getDatabase().getGuildXpLeaderboardRepository();
             this.guildBannerUrl = bot.getProperties().guildBannerUrl;
         }
@@ -157,18 +160,70 @@ public class GuildStats extends GenericCommand {
             return 6 + contributeExtraPages;
         }
 
-        // Returns entry of leaderboard info and rank inside the leaderboard
-        @Nullable
-        private Map.Entry<GuildXpLeaderboard, Integer> getGuildXpRanking(String guildName) {
-            GuildXpLeaderboard l = this.guildXpLeaderboardRepository.findOne(() -> guildName);
-            if (l == null) {
-                return null;
+        private void makeGuildInfo(List<String> view, WynnGuild guild) {
+            String guildName = guild.getName();
+
+            Date lastUpdatedAt = this.guildLeaderboardRepository.getNewestDate();
+            if (lastUpdatedAt == null) {
+                // Default view
+                view.add(String.format("Level %s | %s%%", guild.getLevel(), guild.getXp()));
+                return;
             }
-            int rank = this.guildXpLeaderboardRepository.getRank(guildName);
-            if (rank == -1) {
-                return null;
+            GuildLeaderboard lb = this.guildLeaderboardRepository.findOne(new GuildLeaderboardId() {
+                @Override
+                public String getName() {
+                    return guild.getName();
+                }
+
+                @Override
+                public Date getUpdatedAt() {
+                    return lastUpdatedAt;
+                }
+            });
+            int levelRank = this.guildLeaderboardRepository.getLevelRank(guildName);
+            // It is possible that the lb entry exists but couldn't safely get the level rank for the guild
+            String levelRankStr = levelRank != -1 ? String.format(" (#%s)", levelRank) : "";
+
+            // xp lb entry and xp rank are both expected to be returned safely
+            GuildXpLeaderboard xpLBEntry = this.guildXpLeaderboardRepository.findOne(() -> guildName);
+            int xpRank = this.guildXpLeaderboardRepository.getXPRank(guildName);
+            if (xpLBEntry != null && xpRank != -1 && lb != null) {
+                // The guild is in the leaderboard, and has earned at least 1 xp over the last 24h
+                view.add(String.format("Level %s | %s%%, %s XP%s", guild.getLevel(), guild.getXp(),
+                        FormatUtils.truncateNumber(BigDecimal.valueOf(xpLBEntry.getXp())),
+                        levelRankStr
+                ));
+                long seconds = (xpLBEntry.getTo().getTime() - xpLBEntry.getFrom().getTime()) / 1000L;
+                view.add(String.format("%s XP gained in last %s (#%s)",
+                        FormatUtils.truncateNumber(BigDecimal.valueOf(xpLBEntry.getXpDiff())),
+                        FormatUtils.formatReadableTime(seconds, false, "m"), xpRank));
+                return;
             }
-            return new AbstractMap.SimpleEntry<>(l, rank);
+
+            if (lb != null) {
+                // The guild is in the leaderboard so we can get exact xp,
+                // but it is NOT on the xp leaderboard i.e. hasn't earned a single xp over the last 24h
+                view.add(String.format("Level %s | %s%%, %s XP%s", guild.getLevel(), guild.getXp(),
+                        FormatUtils.truncateNumber(BigDecimal.valueOf(lb.getXp())),
+                        levelRankStr
+                ));
+                return;
+            }
+
+            if (xpLBEntry != null && xpRank != -1) {
+                // The guild is on the xp leaderboard, i.e. has earned at least 1 xp over the last 24h,
+                // but it is no longer on the current leaderboard so we can-NOT get the exact xp
+                view.add(String.format("Level %s | %s%%", guild.getLevel(), guild.getXp()));
+                long seconds = (xpLBEntry.getTo().getTime() - xpLBEntry.getFrom().getTime()) / 1000L;
+                // `to` time of the xp lb might not be the last updated time
+                view.add(String.format("%s XP gained in %s (#%s)",
+                        FormatUtils.truncateNumber(BigDecimal.valueOf(xpLBEntry.getXpDiff())),
+                        FormatUtils.formatReadableTime(seconds, false, "m"), xpRank));
+                return;
+            }
+
+            // Default view
+            view.add(String.format("Level %s | %s%%", guild.getLevel(), guild.getXp()));
         }
 
         private Message getPage(int page,
@@ -184,52 +239,13 @@ public class GuildStats extends GenericCommand {
             ret.add(String.format("%s [%s]", guild.getName(), guild.getPrefix()));
 
             ret.add("");
-
-            Map.Entry<GuildXpLeaderboard, Integer> xpRank = this.getGuildXpRanking(guild.getName());
-            if (xpRank == null) {
-                ret.add(String.format("Level %s | %s%%", guild.getLevel(), guild.getXp()));
-            } else {
-                GuildXpLeaderboard lb = xpRank.getKey();
-                int rank = xpRank.getValue();
-                ret.add(String.format("Level %s | %s%%, %s XP (#%s)", guild.getLevel(), guild.getXp(),
-                        FormatUtils.truncateNumber(BigDecimal.valueOf(lb.getXp())), rank));
-                long seconds = (lb.getTo().getTime() - lb.getFrom().getTime()) / 1000L;
-                ret.add(String.format("%s XP gained in last %s",
-                        FormatUtils.truncateNumber(BigDecimal.valueOf(lb.getXpDiff())),
-                        FormatUtils.formatReadableTime(seconds, false, "m")));
-            }
+            makeGuildInfo(ret, guild);
             int bars = (int) Math.round(Double.parseDouble(guild.getXp()) / 5.0d);
             ret.add(makeBar(bars));
 
             ret.add("");
 
-            switch (page) {
-                case 0:
-                    // main
-                    ret.add(getMainPage(guild, customDateFormat, customTimeZone));
-                    break;
-                case 1:
-                    // online players
-                    ret.add(getOnlinePlayers(guild));
-                    break;
-                case 2:
-                    // chiefs, captains, recruiters, recruits
-                    ret.add(getMembers(guild, Rank.CHIEF));
-                    break;
-                case 3:
-                    ret.add(getMembers(guild, Rank.CAPTAIN));
-                    break;
-                case 4:
-                    ret.add(getMembers(guild, Rank.RECRUITER));
-                    break;
-                case 5:
-                    ret.add(getMembers(guild, Rank.RECRUIT));
-                    break;
-                default:
-                    int contributePageNum = page - 6;
-                    ret.add(getContributePage(guild, contributePageNum));
-                    break;
-            }
+            ret.add(getMainView(page, guild, customDateFormat, customTimeZone));
 
             ret.add("");
 
@@ -257,6 +273,29 @@ public class GuildStats extends GenericCommand {
             return mb.build();
         }
 
+        private String getMainView(int page, @NotNull WynnGuild guild, @NotNull CustomDateFormat customDateFormat, @NotNull CustomTimeZone customTimeZone) {
+            switch (page) {
+                case 0:
+                    // main
+                    return getFirstPage(guild, customDateFormat, customTimeZone);
+                case 1:
+                    // online players
+                    return getOnlinePlayers(guild);
+                case 2:
+                    // chiefs, captains, recruiters, recruits
+                    return getMembers(guild, Rank.CHIEF);
+                case 3:
+                    return getMembers(guild, Rank.CAPTAIN);
+                case 4:
+                    return getMembers(guild, Rank.RECRUITER);
+                case 5:
+                    return getMembers(guild, Rank.RECRUIT);
+                default:
+                    int contributePageNum = page - 6;
+                    return getContributePage(guild, contributePageNum);
+            }
+        }
+
         /**
          * Make a gauge of max 20 bars.
          * @param bars Number of bars.
@@ -281,9 +320,9 @@ public class GuildStats extends GenericCommand {
         }
 
         @NotNull
-        private String getMainPage(@NotNull WynnGuild guild,
-                                   @NotNull CustomDateFormat customDateFormat,
-                                   @NotNull CustomTimeZone customTimeZone) {
+        private String getFirstPage(@NotNull WynnGuild guild,
+                                    @NotNull CustomDateFormat customDateFormat,
+                                    @NotNull CustomTimeZone customTimeZone) {
             List<String> ret = new ArrayList<>();
             ret.add("---- Guild Information ----");
 

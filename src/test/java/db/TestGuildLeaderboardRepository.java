@@ -37,7 +37,7 @@ class TestGuildLeaderboardRepository {
         Date old = new Date(now.getTime() - 3600_000L);
         GuildLeaderboard g = new GuildLeaderboard("Kingdom Foxes", "Fox", 30000000000L, 79, 1, 56, 77, old);
         GuildLeaderboard g1 = new GuildLeaderboard("Kingdom Foxes", "Fox", 30609497711L, 79, 1, 56, 77, now);
-        GuildLeaderboard g2 = new GuildLeaderboard("Imperial", "Imp", 22008615363L, 75, 2, 51, 77, now);
+        GuildLeaderboard g2 = new GuildLeaderboard("Imperial", "Imp", 22008615363L, 75, 2, 0, 77, now);
         List<GuildLeaderboard> list = new ArrayList<>();
         list.add(g);
         list.add(g1);
@@ -60,6 +60,10 @@ class TestGuildLeaderboardRepository {
         last.sort(Comparator.comparingInt(GuildLeaderboard::getNum));
         assert last.get(0).getName().equals("Kingdom Foxes");
         assert last.get(0).getXp() == 30609497711L;
+
+        // Level Rank
+        assert repo.getLevelRank("Kingdom Foxes") == 1;
+        assert repo.getLevelRank("Imperial") == 2;
 
         assert repo.delete(g1);
 

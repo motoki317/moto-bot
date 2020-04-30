@@ -25,7 +25,7 @@ public abstract class GuildXpLeaderboardRepository extends Repository<GuildXpLea
      * @param guildName Guild name.
      * @return Rank of the guild. -1 if the guild is not in, or something went wrong.
      */
-    public abstract int getRank(@NotNull String guildName);
+    public abstract int getXPRank(@NotNull String guildName);
 
     /**
      * Truncates table and deletes all data.

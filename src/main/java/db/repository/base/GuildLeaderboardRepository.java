@@ -53,6 +53,13 @@ public abstract class GuildLeaderboardRepository extends Repository<GuildLeaderb
     public abstract Date getNewestDateBetween(@NotNull Date old, @NotNull Date newer);
 
     /**
+     * Retrieves level rank of the guild from the leaderboard.
+     * @param guildName Guild name.
+     * @return Level rank. -1 if something went wrong.
+     */
+    public abstract int getLevelRank(String guildName);
+
+    /**
      * Deletes all entries older than the given date.
      * @param date Date. Exclusive.
      * @return true if success.

@@ -209,6 +209,59 @@ class MariaGuildLeaderboardRepository extends GuildLeaderboardRepository {
     }
 
     @Nullable
+    private GuildLeaderboard getLevelRankThresholdEntry() {
+        ResultSet res = this.executeQuery(
+                "SELECT * FROM guild_leaderboard WHERE `updated_at` = (SELECT MAX(`updated_at`) FROM `guild_leaderboard`) AND `territories` = 0 ORDER BY level, xp LIMIT 1"
+        );
+
+        if (res == null) {
+            return null;
+        }
+
+        try {
+            if (res.next())
+                return bind(res);
+        } catch (SQLException e) {
+            this.logResponseException(e);
+        }
+        return null;
+    }
+
+    @Override
+    public int getLevelRank(String guildName) {
+        ResultSet res = this.executeQuery(
+                "SELECT t.name, prefix, xp, level, num, territories, member_count, updated_at, `rank` FROM " +
+                        "(SELECT *, RANK() OVER " +
+                        "(ORDER BY `level` DESC, `xp` DESC)" +
+                        " AS `rank` FROM `guild_leaderboard` WHERE `updated_at` = " +
+                        "(SELECT MAX(`updated_at`) FROM `guild_leaderboard`)) AS t WHERE t.`name` = ?",
+                guildName
+        );
+
+        if (res == null) {
+            return -1;
+        }
+
+        try {
+            if (!res.next()) {
+                return -1;
+            }
+            int rank = res.getInt(res.findColumn("rank"));
+            GuildLeaderboard entry = bind(res);
+            // It is possible that the threshold doesn't exist (every guild in the LB has at least 1 territory, although extremely unlikely)
+            GuildLeaderboard threshold = getLevelRankThresholdEntry();
+            // The entry is lower the level rank threshold, we cannot safely return the level rank
+            if (threshold != null && entry.compareLevelAndXP(threshold) < 0) {
+                return -1;
+            }
+            return rank;
+        } catch (SQLException e) {
+            this.logResponseException(e);
+        }
+        return -1;
+    }
+
+    @Nullable
     @Override
     public List<GuildLeaderboard> findAll() {
         ResultSet res = this.executeQuery(

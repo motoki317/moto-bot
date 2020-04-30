@@ -33,8 +33,8 @@ class TestGuildXpLeaderboardRepository {
         clearTable();
         GuildXpLeaderboardRepository repo = getRepository();
 
-        GuildXpLeaderboard g1 = new GuildXpLeaderboard("Kingdom Foxes", "Fox", 79, 32027567867L, 1_000_000L, new Date(), new Date());
-        GuildXpLeaderboard g2 = new GuildXpLeaderboard("Imperial", "Imp", 75, 22384594269L, 500_000L, new Date(), new Date());
+        GuildXpLeaderboard g1 = new GuildXpLeaderboard("Kingdom Foxes", "Fox", 79, 32027567867L, 500_000L, new Date(), new Date());
+        GuildXpLeaderboard g2 = new GuildXpLeaderboard("Imperial", "Imp", 75, 22384594269L, 1_000_000L, new Date(), new Date());
 
         List<GuildXpLeaderboard> list = new ArrayList<>();
         list.add(g1);
@@ -50,8 +50,9 @@ class TestGuildXpLeaderboardRepository {
         assert repo.exists(g1);
         assert repo.exists(g2);
 
-        assert repo.getRank("Kingdom Foxes") == 1;
-        assert repo.getRank("Imperial") == 2;
+        // Gained XP Rank
+        assert repo.getXPRank("Kingdom Foxes") == 2;
+        assert repo.getXPRank("Imperial") == 1;
 
         assert repo.delete(g1);
 
