@@ -144,6 +144,14 @@ public class ItemView extends GenericCommand {
         eb.addField("Requirements", getRequirements(item), true);
         eb.addField("Misc.", getMiscStatus(item), true);
 
+        List<String> majorIDs = item.getMajorIds();
+        if (majorIDs != null && !majorIDs.isEmpty()) {
+            eb.addField("Major ID",
+                    String.join("\n",
+                            majorIDs.stream().map(id -> "**" + id + "**").toArray(String[]::new)),
+                    false);
+        }
+
         if (item.getAddedLore() != null) {
             eb.addField("Lore", item.getAddedLore(), false);
         }
@@ -545,6 +553,8 @@ public class ItemView extends GenericCommand {
                 return new Color(255, 85, 255);
             case "Legendary":
                 return new Color(85, 255, 255);
+            case "Fabled":
+                return new Color(255, 85, 85);
             case "Mythic":
                 return new Color(170, 0, 170);
             case "Set":
