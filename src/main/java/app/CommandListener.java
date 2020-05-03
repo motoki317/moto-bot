@@ -146,7 +146,7 @@ public class CommandListener extends ListenerAdapter {
         if (!rawMessage.startsWith(prefix)) return;
 
         String commandMessage = rawMessage.substring(prefix.length());
-        String[] args = commandMessage.split(" ");
+        String[] args = commandMessage.split("\\s+");
 
         // Do not process command for ignored channel, unless it was ignore command itself
         if (channelIsIgnored && !commandMessage.toLowerCase().startsWith("ignore")) {
