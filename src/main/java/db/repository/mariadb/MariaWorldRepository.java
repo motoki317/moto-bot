@@ -200,6 +200,10 @@ class MariaWorldRepository extends WorldRepository {
             }
         }
 
+        if (worlds.isEmpty()) {
+            return true;
+        }
+
         String placeHolder = "(?, ?, ?, ?)";
         return this.execute(
                 "INSERT INTO `world` (`name`, `players`, `created_at`, `updated_at`) VALUES " +
