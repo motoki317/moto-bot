@@ -157,7 +157,7 @@ public class MusicSettingHandler {
         RepeatState newState;
         try {
             newState = RepeatState.valueOf(args[2].toUpperCase());
-        } catch (IllegalStateException e) {
+        } catch (IllegalArgumentException e) {
             respondException(event, "Invalid repeat type.");
             return;
         }
