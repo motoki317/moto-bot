@@ -42,5 +42,9 @@ public class OnlinePlayers {
             List<String> players = mapper.readValue(e.getValue().toString(), new TypeReference<List<String>>(){});
             this.worlds.put(e.getKey(), players);
         }
+
+        if (request == null) {
+            throw new RuntimeException("Request field is null");
+        }
     }
 }

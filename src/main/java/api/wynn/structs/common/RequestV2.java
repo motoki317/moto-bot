@@ -34,10 +34,15 @@ public class RequestV2 {
                     break;
                 case "timestamp":
                     this.timestamp = e.getValue().asLong();
+                    break;
                 case "version":
                     this.version = e.getValue().asText();
                     break;
             }
+        }
+
+        if (this.kind == null || this.code == 0 || this.message == null || this.timestamp == 0L || this.version == null) {
+            throw new RuntimeException("Some fields are missing in response");
         }
     }
 

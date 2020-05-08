@@ -38,6 +38,13 @@ public class TerritoryList {
                 this.territories = parseTerritories(e.getValue());
             }
         }
+
+        if (this.request == null) {
+            throw new RuntimeException("Request field is null");
+        }
+        if (this.territories == null) {
+            throw new RuntimeException("Territories field is null");
+        }
     }
 
     private static Map<String, Territory> parseTerritories(JsonNode json) throws JsonProcessingException {
