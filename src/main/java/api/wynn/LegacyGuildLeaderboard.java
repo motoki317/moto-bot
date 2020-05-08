@@ -8,18 +8,16 @@ import utils.rateLimit.RateLimiter;
 
 import javax.annotation.Nullable;
 
-/**
- * Legacy API
- * GET https://api.wynncraft.com/public_api.php?action=statsLeaderboard&type=guild&timeframe=alltime
- */
 class LegacyGuildLeaderboard {
-    private static final String guildLeaderboardUrl = "https://api.wynncraft.com/public_api.php?action=statsLeaderboard&type=guild&timeframe=alltime";
+    private static final String guildLeaderboardPath = "/public_api.php?action=statsLeaderboard&type=guild&timeframe=alltime";
     private static final ObjectMapper mapper = new ObjectMapper();
 
+    private final String baseURL;
     private final RateLimiter rateLimiter;
     private final Logger logger;
 
-    LegacyGuildLeaderboard(RateLimiter rateLimiter, Logger logger) {
+    LegacyGuildLeaderboard(String baseURL, RateLimiter rateLimiter, Logger logger) {
+        this.baseURL = baseURL;
         this.rateLimiter = rateLimiter;
         this.logger = logger;
     }
@@ -30,7 +28,7 @@ class LegacyGuildLeaderboard {
             this.rateLimiter.checkRequest();
 
             long start = System.nanoTime();
-            String body = HttpUtils.get(guildLeaderboardUrl);
+            String body = HttpUtils.get(this.baseURL + guildLeaderboardPath);
             long end = System.nanoTime();
             this.logger.debug(String.format("Wynn API: Requested guild leaderboard, took %s ms.", (double) (end - start) / 1_000_000d));
 

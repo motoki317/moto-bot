@@ -8,18 +8,16 @@ import utils.rateLimit.RateLimiter;
 
 import javax.annotation.Nullable;
 
-/**
- * Legacy API
- * GET https://api.wynncraft.com/public_api.php?action=guildList
- */
 class LegacyGuilds {
-    private static final String guildListUrl = "https://api.wynncraft.com/public_api.php?action=guildList";
+    private static final String guildListPath = "/public_api.php?action=guildList";
     private static final ObjectMapper mapper = new ObjectMapper();
 
+    private final String baseURL;
     private final RateLimiter rateLimiter;
     private final Logger logger;
 
-    LegacyGuilds(RateLimiter rateLimiter, Logger logger) {
+    LegacyGuilds(String baseURL, RateLimiter rateLimiter, Logger logger) {
+        this.baseURL = baseURL;
         this.rateLimiter = rateLimiter;
         this.logger = logger;
     }
@@ -30,7 +28,7 @@ class LegacyGuilds {
 
         try {
             long start = System.nanoTime();
-            String body = HttpUtils.get(guildListUrl);
+            String body = HttpUtils.get(this.baseURL + guildListPath);
             long end = System.nanoTime();
             this.logger.debug(String.format("Wynn API: Requested guild list, took %s ms.", (double) (end - start) / 1_000_000d));
 

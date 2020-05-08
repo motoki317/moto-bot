@@ -8,16 +8,18 @@ import utils.HttpUtils;
 import utils.rateLimit.RateLimiter;
 
 class LegacyItemDB {
-    private static final String ITEM_DB_URL = "https://api.wynncraft.com/public_api.php?action=itemDB&category=all";
+    private static final String ITEM_DB_PATH = "/public_api.php?action=itemDB&category=all";
     private static final ObjectMapper mapper = new ObjectMapper();
 
     @Nullable
     private static ItemDB cache;
 
+    private final String baseURL;
     private final RateLimiter rateLimiter;
     private final Logger logger;
 
-    LegacyItemDB(RateLimiter rateLimiter, Logger logger) {
+    LegacyItemDB(String baseURL, RateLimiter rateLimiter, Logger logger) {
+        this.baseURL = baseURL;
         this.rateLimiter = rateLimiter;
         this.logger = logger;
     }
@@ -37,7 +39,7 @@ class LegacyItemDB {
 
         try {
             long start = System.nanoTime();
-            String body = HttpUtils.get(ITEM_DB_URL);
+            String body = HttpUtils.get(this.baseURL + ITEM_DB_PATH);
             long end = System.nanoTime();
             this.logger.debug(String.format("Wynn API: Requested item list, took %s ms.", (double) (end - start) / 1_000_000d));
 

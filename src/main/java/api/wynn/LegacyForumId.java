@@ -17,16 +17,18 @@ import java.util.concurrent.TimeUnit;
  * GET https://api.wynncraft.com/forums/getForumId/:playerName
  */
 class LegacyForumId {
-    private static final String forumIdUrl = "https://api.wynncraft.com/forums/getForumId/%s";
+    private static final String forumIdPath = "/forums/getForumId/%s";
     private static final ObjectMapper mapper = new ObjectMapper();
     private static final DataCache<String, ForumId> forumIdCache = new HashMapDataCache<>(
             100, TimeUnit.MINUTES.toMillis(10), TimeUnit.MINUTES.toMillis(10)
     );
 
+    private final String baseURL;
     private final RateLimiter rateLimiter;
     private final Logger logger;
 
-    LegacyForumId(RateLimiter rateLimiter, Logger logger) {
+    LegacyForumId(String baseURL, RateLimiter rateLimiter, Logger logger) {
+        this.baseURL = baseURL;
         this.rateLimiter = rateLimiter;
         this.logger = logger;
     }
@@ -43,7 +45,7 @@ class LegacyForumId {
         try {
             long start = System.nanoTime();
             String body = HttpUtils.get(
-                    String.format(forumIdUrl, playerName)
+                    String.format(this.baseURL + forumIdPath, playerName)
             );
             long end = System.nanoTime();
             this.logger.debug(String.format("Wynn API: Requested forum id for %s, took %s ms.", playerName, (double) (end - start) / 1_000_000d));

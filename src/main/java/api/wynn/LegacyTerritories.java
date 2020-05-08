@@ -8,18 +8,16 @@ import utils.rateLimit.RateLimiter;
 import javax.annotation.Nullable;
 import java.util.TimeZone;
 
-/**
- * Legacy API
- * GET https://api.wynncraft.com/public_api.php?action=territoryList
- */
 class LegacyTerritories {
-    private static final String territoryListUrl = "https://api.wynncraft.com/public_api.php?action=territoryList";
+    private static final String territoryListPath = "/public_api.php?action=territoryList";
 
+    private final String baseURL;
     private final RateLimiter rateLimiter;
     private final Logger logger;
     private final TimeZone wynnTimeZone;
 
-    LegacyTerritories(RateLimiter rateLimiter, Logger logger, TimeZone wynnTimeZone) {
+    LegacyTerritories(String baseURL, RateLimiter rateLimiter, Logger logger, TimeZone wynnTimeZone) {
+        this.baseURL = baseURL;
         this.rateLimiter = rateLimiter;
         this.logger = logger;
         this.wynnTimeZone = wynnTimeZone;
@@ -31,7 +29,7 @@ class LegacyTerritories {
 
         try {
             long start = System.nanoTime();
-            String body = HttpUtils.get(territoryListUrl);
+            String body = HttpUtils.get(this.baseURL + territoryListPath);
             long end = System.nanoTime();
             this.logger.debug(String.format("Wynn API: Requested territory list, took %s ms.", (double) (end - start) / 1_000_000d));
 

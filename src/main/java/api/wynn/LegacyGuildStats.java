@@ -13,21 +13,19 @@ import utils.rateLimit.RateLimiter;
 
 import java.util.concurrent.TimeUnit;
 
-/**
- * Legacy API
- * GET https://api.wynncraft.com/public_api.php?action=guildStats&command=:guildName
- */
 class LegacyGuildStats {
-    private static final String guildStatsUrl = "https://api.wynncraft.com/public_api.php?action=guildStats&command=%s";
+    private static final String guildStatsPath = "/public_api.php?action=guildStats&command=%s";
     private static final ObjectMapper mapper = new ObjectMapper();
     private static final DataCache<String, WynnGuild> guildStatsCache = new HashMapDataCache<>(
             100, TimeUnit.MINUTES.toMillis(10), TimeUnit.MINUTES.toMillis(10)
     );
 
+    private final String baseURL;
     private final RateLimiter rateLimiter;
     private final Logger logger;
 
-    LegacyGuildStats(RateLimiter rateLimiter, Logger logger) {
+    LegacyGuildStats(String baseURL, RateLimiter rateLimiter, Logger logger) {
+        this.baseURL = baseURL;
         this.rateLimiter = rateLimiter;
         this.logger = logger;
     }
@@ -58,7 +56,7 @@ class LegacyGuildStats {
         try {
             long start = System.nanoTime();
             String body = HttpUtils.get(
-                    String.format(guildStatsUrl, HttpUtils.encodeValue(guildName))
+                    String.format(this.baseURL + guildStatsPath, HttpUtils.encodeValue(guildName))
             );
             long end = System.nanoTime();
             this.logger.debug(String.format("Wynn API: Requested guild stats for %s, took %s ms.", guildName, (double) (end - start) / 1_000_000d));

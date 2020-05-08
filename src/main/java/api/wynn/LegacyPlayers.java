@@ -11,12 +11,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Legacy API
- * GET https://api.wynncraft.com/public_api.php?action=onlinePlayers
- */
 class LegacyPlayers {
-    private static final String onlinePlayersUrl = "https://api.wynncraft.com/public_api.php?action=onlinePlayers";
+    private static final String onlinePlayersPath = "/public_api.php?action=onlinePlayers";
 
     // Caches for the find player method
     private static final Object onlinePlayersCacheLock = new Object();
@@ -25,10 +21,12 @@ class LegacyPlayers {
     @Nullable
     private static Map<String, String> onlinePlayersMap;
 
+    private final String baseURL;
     private final RateLimiter rateLimiter;
     private final Logger logger;
 
-    LegacyPlayers(RateLimiter rateLimiter, Logger logger) {
+    LegacyPlayers(String baseURL, RateLimiter rateLimiter, Logger logger) {
+        this.baseURL = baseURL;
         this.rateLimiter = rateLimiter;
         this.logger = logger;
     }
@@ -39,7 +37,7 @@ class LegacyPlayers {
 
         try {
             long start = System.nanoTime();
-            String body = HttpUtils.get(onlinePlayersUrl);
+            String body = HttpUtils.get(this.baseURL + onlinePlayersPath);
             long end = System.nanoTime();
             this.logger.debug(String.format("Wynn API: Requested online players list, took %s ms.", (double) (end - start) / 1_000_000d));
 
