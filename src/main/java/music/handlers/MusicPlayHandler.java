@@ -223,12 +223,6 @@ public class MusicPlayHandler {
             return;
         }
 
-        respond(channel, new EmbedBuilder()
-                .setColor(MinecraftColor.DARK_GREEN.getColor())
-                .setDescription(String.format("Loading `%s` song(s) from the previous queue...\n" +
-                        "This might take a while. `m purge` or `m clear` to stop loading.", queue.size()))
-                .build());
-
         List<Future<Void>> futures = new ArrayList<>(queue.size());
 
         String firstURL = queue.get(0).getUrl();
@@ -281,6 +275,9 @@ public class MusicPlayHandler {
         }
 
         // Use asynchronous logic to cancel loading in case the user wants it
+        String desc = String.format("Loading `%s` song%s from the previous queue...",
+                queue.size(), queue.size() == 1 ? "" : "s");
+
         CompletableFuture<Void> all = CompletableFuture.runAsync(() -> {
             for (Future<Void> f : futures) {
                 try {
@@ -291,10 +288,23 @@ public class MusicPlayHandler {
             }
         });
 
-        all.thenRun(() -> respond(channel, new EmbedBuilder()
+        respond(channel,
+                new EmbedBuilder()
                 .setColor(MinecraftColor.DARK_GREEN.getColor())
-                .setDescription(String.format("Finished loading `%s` song(s) from the previous queue!", queue.size()))
-                .build()));
+                .setDescription(desc + "\nThis might take a while. `m purge` or `m clear` to stop loading.")
+                .build(),
+                message -> sendFinishEnqueueSaved(message, state, futures, all, desc)
+        );
+    }
+
+    private void sendFinishEnqueueSaved(Message message, MusicState state, List<Future<Void>> futures,
+                                        CompletableFuture<Void> all, String desc) {
+        all.thenRun(() -> message.editMessage(
+                new EmbedBuilder()
+                .setColor(MinecraftColor.DARK_GREEN.getColor())
+                .setDescription(desc + "\nFinished loading!")
+                .build()
+        ).queue());
 
         state.setOnStopLoadingCache(() -> {
             if (all.isDone()) {
@@ -305,7 +315,12 @@ public class MusicPlayHandler {
                 if (f.isDone()) return;
                 f.cancel(false);
             });
-            respondException(channel, "Cancelled loading song(s) from the previous queue.");
+            message.editMessage(
+                    new EmbedBuilder()
+                    .setColor(MinecraftColor.RED.getColor())
+                    .setDescription(desc + "\nCancelled loading.")
+                    .build()
+            ).queue();
         });
     }
 

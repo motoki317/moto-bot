@@ -159,6 +159,15 @@ public abstract class BotCommand {
     public static void respond(MessageReceivedEvent event, MessageEmbed message, Consumer<? super Message> onSuccess) {
         event.getChannel().sendMessage(message).queue(onSuccess);
     }
+    public static void respond(MessageChannel channel, CharSequence message, Consumer<? super Message> onSuccess) {
+        channel.sendMessage(message).queue(onSuccess);
+    }
+    public static void respond(MessageChannel channel, Message message, Consumer<? super Message> onSuccess) {
+        channel.sendMessage(message).queue(onSuccess);
+    }
+    public static void respond(MessageChannel channel, MessageEmbed message, Consumer<? super Message> onSuccess) {
+        channel.sendMessage(message).queue(onSuccess);
+    }
 
     /**
      * Respond exception in red embed message.
