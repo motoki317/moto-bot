@@ -331,7 +331,7 @@ public class GuildStats extends GenericCommand {
             ret.add("Owner: " + guild.getOwnerName());
 
             long onlineMembers = guild.getMembers().stream()
-                    .filter(m -> this.wynnApi.mustFindPlayer(m.getName()) != null).count();
+                    .filter(m -> this.wynnApi.findPlayer(m.getName()) != null).count();
             ret.add(String.format(
                     "Members: %s / %s (Online: %s)",
                     guild.getMembers().size(),
@@ -377,7 +377,7 @@ public class GuildStats extends GenericCommand {
             }
 
             List<Member> onlineMembers = guild.getMembers().stream()
-                    .map(m -> new Member(m.getName(), Rank.valueOf(m.getRank()), this.wynnApi.mustFindPlayer(m.getName())))
+                    .map(m -> new Member(m.getName(), Rank.valueOf(m.getRank()), this.wynnApi.findPlayer(m.getName())))
                     .filter(m -> m.server != null)
                     .sorted((m1, m2) -> m2.rank.rank - m1.rank.rank).collect(Collectors.toList());
 
@@ -426,7 +426,7 @@ public class GuildStats extends GenericCommand {
             }
             List<Member> members = guild.getMembers().stream()
                     .filter(m -> m.getRank().equals(rank.name()))
-                    .map(m -> new Member(m.getName(), this.wynnApi.mustFindPlayer(m.getName())))
+                    .map(m -> new Member(m.getName(), this.wynnApi.findPlayer(m.getName())))
                     .sorted(Comparator.comparing(m -> m.name))
                     .collect(Collectors.toList());
 
