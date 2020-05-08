@@ -56,7 +56,7 @@ public class PlayerWarLeaderboardCmd extends GenericCommand {
 
         this.reactionManager = bot.getReactionManager();
 
-        this.wynnApi = new WynnApi(bot.getLogger(), bot.getProperties().wynnTimeZone);
+        this.wynnApi = new WynnApi(bot.getLogger());
         this.guildNameResolver = new GuildNameResolver(bot.getResponseManager(), bot.getDatabase().getGuildRepository());
     }
 

@@ -11,7 +11,7 @@ class TestWynnApi {
     @NotNull
     @TestOnly
     private WynnApi getWynnApi() {
-        return new WynnApi(TestUtils.getLogger(), TestUtils.getWynnTimeZone());
+        return new WynnApi(TestUtils.getLogger());
     }
 
     @Test

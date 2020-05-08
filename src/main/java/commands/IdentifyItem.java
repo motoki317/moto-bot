@@ -29,7 +29,7 @@ public class IdentifyItem extends GenericCommand {
     private final ReactionManager reactionManager;
 
     public IdentifyItem(Bot bot) {
-        this.wynnApi = new WynnApi(bot.getLogger(), bot.getProperties().wynnTimeZone);
+        this.wynnApi = new WynnApi(bot.getLogger());
         this.imageURLBase = bot.getProperties().githubImagesUrl;
         this.reactionManager = bot.getReactionManager();
     }

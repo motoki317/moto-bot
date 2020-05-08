@@ -23,7 +23,7 @@ public class ItemView extends GenericCommand {
     private final String imageURLBase;
 
     public ItemView(Bot bot) {
-        this.wynnApi = new WynnApi(bot.getLogger(), bot.getProperties().wynnTimeZone);
+        this.wynnApi = new WynnApi(bot.getLogger());
         this.imageURLBase = bot.getProperties().githubImagesUrl;
     }
 

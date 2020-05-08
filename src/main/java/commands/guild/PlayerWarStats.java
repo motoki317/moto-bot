@@ -49,7 +49,7 @@ public class PlayerWarStats extends GenericCommand {
 
     public PlayerWarStats(Bot bot) {
         this.mojangApi = new MojangApi(bot.getLogger());
-        this.wynnApi = new WynnApi(bot.getLogger(), bot.getProperties().wynnTimeZone);
+        this.wynnApi = new WynnApi(bot.getLogger());
         this.warPlayerRepository = bot.getDatabase().getWarPlayerRepository();
         this.warLogRepository = bot.getDatabase().getWarLogRepository();
         this.territoryLogRepository = bot.getDatabase().getTerritoryLogRepository();

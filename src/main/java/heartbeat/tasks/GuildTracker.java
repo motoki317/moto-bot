@@ -38,7 +38,7 @@ public class GuildTracker implements TaskBase {
     public GuildTracker(Bot bot) {
         this.logger = bot.getLogger();
         this.manager = bot.getManager();
-        this.wynnApi = new WynnApi(bot.getLogger(), bot.getProperties().wynnTimeZone);
+        this.wynnApi = new WynnApi(bot.getLogger());
         this.guildRepository = bot.getDatabase().getGuildRepository();
         this.trackChannelRepository = bot.getDatabase().getTrackingChannelRepository();
         this.dateFormatRepository = bot.getDatabase().getDateFormatRepository();

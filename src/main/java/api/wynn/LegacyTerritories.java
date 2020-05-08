@@ -6,7 +6,6 @@ import utils.HttpUtils;
 import utils.rateLimit.RateLimiter;
 
 import javax.annotation.Nullable;
-import java.util.TimeZone;
 
 class LegacyTerritories {
     private static final String territoryListPath = "/public_api.php?action=territoryList";
@@ -14,13 +13,11 @@ class LegacyTerritories {
     private final String baseURL;
     private final RateLimiter rateLimiter;
     private final Logger logger;
-    private final TimeZone wynnTimeZone;
 
-    LegacyTerritories(String baseURL, RateLimiter rateLimiter, Logger logger, TimeZone wynnTimeZone) {
+    LegacyTerritories(String baseURL, RateLimiter rateLimiter, Logger logger) {
         this.baseURL = baseURL;
         this.rateLimiter = rateLimiter;
         this.logger = logger;
-        this.wynnTimeZone = wynnTimeZone;
     }
 
     @Nullable
@@ -34,7 +31,7 @@ class LegacyTerritories {
             this.logger.debug(String.format("Wynn API: Requested territory list, took %s ms.", (double) (end - start) / 1_000_000d));
 
             if (body == null) throw new Exception("returned body was null");
-            return new TerritoryList(body, this.wynnTimeZone);
+            return new TerritoryList(body);
         } catch (Exception e) {
             this.logger.logException("an exception occurred while requesting / parsing territory list", e);
             return null;

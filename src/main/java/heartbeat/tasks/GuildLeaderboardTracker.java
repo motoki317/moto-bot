@@ -23,7 +23,7 @@ public class GuildLeaderboardTracker implements TaskBase {
 
     public GuildLeaderboardTracker(Bot bot) {
         this.logger = bot.getLogger();
-        this.wynnApi = new WynnApi(bot.getLogger(), bot.getProperties().wynnTimeZone);
+        this.wynnApi = new WynnApi(bot.getLogger());
         this.guildLeaderboardRepository = bot.getDatabase().getGuildLeaderboardRepository();
         this.guildXpLeaderboardRepository = bot.getDatabase().getGuildXpLeaderboardRepository();
     }

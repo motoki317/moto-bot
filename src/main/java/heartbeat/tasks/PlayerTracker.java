@@ -57,7 +57,7 @@ public class PlayerTracker implements TaskBase {
         this.logger = bot.getLogger();
         this.dbLock = dbLock;
         this.manager = bot.getManager();
-        this.wynnApi = new WynnApi(this.logger, bot.getProperties().wynnTimeZone);
+        this.wynnApi = new WynnApi(this.logger);
         this.mojangApi = new MojangApi(this.logger);
         this.playerTrackerChannelId = bot.getProperties().playerTrackerChannelId;
         this.worldRepository = bot.getDatabase().getWorldRepository();

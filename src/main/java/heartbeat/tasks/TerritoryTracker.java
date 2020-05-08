@@ -36,7 +36,7 @@ public class TerritoryTracker implements TaskBase {
         this.logger = bot.getLogger();
         this.dbLock = dbLock;
         this.manager = bot.getManager();
-        this.wynnApi = new WynnApi(this.logger, bot.getProperties().wynnTimeZone);
+        this.wynnApi = new WynnApi(this.logger);
         this.territoryRepository = bot.getDatabase().getTerritoryRepository();
         this.territoryLogRepository = bot.getDatabase().getTerritoryLogRepository();
         this.trackChannelRepository = bot.getDatabase().getTrackingChannelRepository();

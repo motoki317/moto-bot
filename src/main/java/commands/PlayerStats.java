@@ -34,7 +34,7 @@ public class PlayerStats extends GenericCommand {
     private final TimeZoneRepository timeZoneRepository;
 
     public PlayerStats(Bot bot) {
-        this.wynnApi = new WynnApi(bot.getLogger(), bot.getProperties().wynnTimeZone);
+        this.wynnApi = new WynnApi(bot.getLogger());
         this.dateFormatRepository = bot.getDatabase().getDateFormatRepository();
         this.timeZoneRepository = bot.getDatabase().getTimeZoneRepository();
     }
@@ -132,7 +132,7 @@ public class PlayerStats extends GenericCommand {
 
         ret.add("");
 
-        String world = this.wynnApi.mustFindPlayer(player.getUsername());
+        String world = this.wynnApi.findPlayer(player.getUsername());
         if (world == null) {
             ret.add(String.format(
                     "Last Seen: %s (%s)",

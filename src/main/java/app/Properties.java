@@ -37,7 +37,6 @@ public class Properties {
     public final String guildBannerUrl;
 
     final TimeZone logTimeZone;
-    public final TimeZone wynnTimeZone;
 
     public Properties() throws IOException, ParseException {
         this.properties = new java.util.Properties();
@@ -82,7 +81,8 @@ public class Properties {
         this.guildBannerUrl = getProperty("guildBannerUrl");
 
         this.logTimeZone = TimeZone.getTimeZone(getProperty("logTimeZone"));
-        this.wynnTimeZone = TimeZone.getTimeZone(getProperty("wynnTimeZone"));
+        // No longer needed because the territoryList route now returns as UTC instead of EST?
+        // this.wynnTimeZone = TimeZone.getTimeZone(getProperty("wynnTimeZone"));
     }
 
     private String getEnv(String name) {

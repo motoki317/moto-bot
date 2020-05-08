@@ -9,7 +9,6 @@ import utils.rateLimit.WaitableRateLimiter;
 
 import javax.annotation.CheckReturnValue;
 import javax.annotation.Nullable;
-import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
 
 public class WynnApi {
@@ -50,9 +49,9 @@ public class WynnApi {
     // ----- V2 Routes -----
     private final V2PlayerStats v2PlayerStats;
 
-    public WynnApi(Logger logger, TimeZone wynnTimeZone) {
+    public WynnApi(Logger logger) {
         this.legacyPlayers = new LegacyPlayers(legacyBaseURL, rateLimiterLegacy, logger);
-        this.legacyTerritories = new LegacyTerritories(legacyBaseURL, rateLimiterLegacy, logger, wynnTimeZone);
+        this.legacyTerritories = new LegacyTerritories(legacyBaseURL, rateLimiterLegacy, logger);
         this.legacyGuilds = new LegacyGuilds(legacyBaseURL, rateLimiterLegacy, logger);
         this.legacyGuildStats = new LegacyGuildStats(legacyBaseURL, rateLimiterLegacy, logger);
         this.legacyForumId = new LegacyForumId(legacyBaseURL, rateLimiterLegacy, logger);
@@ -78,14 +77,29 @@ public class WynnApi {
 
     /**
      * Finds the world in which player is logged.
-     * <br>"must" as in it does not throw {@link RateLimitException}.
      * @param playerName Player name.
      * @return World name. null if the player was not online.
+     * @throws RuntimeException If the cache hasn't been made.
      */
     @Nullable
     @CheckReturnValue
     public String mustFindPlayer(@NotNull String playerName) {
         return this.legacyPlayers.mustFindPlayer(playerName);
+    }
+
+    /**
+     * Finds the world in which player is logged.
+     * @param playerName Player name.
+     * @return World name. null if the player was not online, OR the cache hasn't been made.
+     */
+    @Nullable
+    public String findPlayer(@NotNull String playerName) {
+        try {
+            return this.legacyPlayers.mustFindPlayer(playerName);
+        } catch (RuntimeException e) {
+            e.printStackTrace();
+            return null;
+        }
     }
 
     /**

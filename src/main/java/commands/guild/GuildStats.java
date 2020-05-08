@@ -90,7 +90,7 @@ public class GuildStats extends GenericCommand {
         private final String guildBannerUrl;
 
         Handler(Bot bot) {
-            this.wynnApi = new WynnApi(bot.getLogger(), bot.getProperties().wynnTimeZone);
+            this.wynnApi = new WynnApi(bot.getLogger());
             this.reactionManager = bot.getReactionManager();
             this.guildNameResolver = new GuildNameResolver(
                     bot.getResponseManager(),

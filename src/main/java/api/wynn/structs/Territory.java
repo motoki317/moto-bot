@@ -10,13 +10,11 @@ import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.TimeZone;
 
 public class Territory {
     private static final ObjectMapper mapper = new ObjectMapper();
 
     private static final DateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-    private static boolean timezoneSet = false;
 
     private String territory;
     private String guild;
@@ -76,11 +74,7 @@ public class Territory {
     }
 
     @NotNull
-    static Territory parse(String body, TimeZone wynnTimeZone) throws JsonProcessingException {
-        if (!timezoneSet) {
-            format.setTimeZone(wynnTimeZone);
-            timezoneSet = true;
-        }
+    static Territory parse(String body) throws JsonProcessingException {
         return mapper.readValue(body, Territory.class);
     }
 

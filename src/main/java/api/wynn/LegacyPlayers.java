@@ -66,7 +66,7 @@ class LegacyPlayers {
     @Nullable
     String mustFindPlayer(@NotNull String playerName) {
         if (onlinePlayersCache == null) {
-            mustGetOnlinePlayers();
+            throw new RuntimeException("The cache is null");
         }
 
         synchronized (onlinePlayersCacheLock) {

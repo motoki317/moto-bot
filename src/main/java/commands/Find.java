@@ -15,7 +15,7 @@ public class Find extends GenericCommand {
     private final WynnApi wynnApi;
 
     public Find(Bot bot) {
-        this.wynnApi = new WynnApi(bot.getLogger(), bot.getProperties().wynnTimeZone);
+        this.wynnApi = new WynnApi(bot.getLogger());
     }
 
     @NotNull
