@@ -80,6 +80,7 @@ public class PlayerTracker implements TaskBase {
         OnlinePlayers players = this.wynnApi.mustGetOnlinePlayers();
         if (players == null) {
             this.logger.log(0, "Player Tracker: Failed to retrieve online players list");
+            this.manager.setActivity(Activity.playing("API Error: onlinePlayers"));
             return;
         }
 

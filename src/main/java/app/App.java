@@ -95,7 +95,7 @@ public class App implements Runnable, Bot {
                 .setShards(0, this.properties.shards - 1)
                 .build();
 
-        manager.setActivity(Activity.playing("Bot restarting..."));
+        this.manager.setActivity(Activity.playing("Bot restarting..."));
 
         this.waitJDALoading();
 
