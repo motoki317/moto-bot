@@ -142,7 +142,7 @@ public class DiscordLogger implements Logger {
         Date now = new Date();
         String msgTimeAppended = String.format(
                 "%s %s\n%s",
-                this.logFormat.format(now), message, e.getMessage()
+                this.logFormat.format(now), message, e.toString()
         );
         // Print short version to Discord channel 0
         this.logToDiscord(0, msgTimeAppended);
