@@ -38,7 +38,8 @@ public class DiscordLogger implements Logger {
     }
 
     /**
-     * Logs normal message.
+     * Appends time to the given message and logs to discord channels.
+     * Also prints to the std out.
      * @param botLogCh Channel to log.
      * @param message Message to log.
      */
@@ -46,9 +47,18 @@ public class DiscordLogger implements Logger {
         Date now = new Date();
         String msgTimeAppended = this.logFormat.format(now) + " " + message;
 
+        // To standard out
         System.out.println(msgTimeAppended);
+        // To Discord channel
+        this.logToDiscord(botLogCh, msgTimeAppended);
+    }
 
-        // Log to discord channels
+    /**
+     * Logs to discord channel.
+     * @param botLogCh Channel to log.
+     * @param message Raw message.
+     */
+    private void logToDiscord(int botLogCh, String message) {
         if (!this.logChannels.containsKey(botLogCh)) {
             return;
         }
@@ -58,7 +68,7 @@ public class DiscordLogger implements Logger {
             return;
         }
 
-        sendLongMessage(msgTimeAppended, ch);
+        sendLongMessage(message, ch);
     }
 
     /**
@@ -75,6 +85,7 @@ public class DiscordLogger implements Logger {
             try {
                 ch.sendMessage(message.substring(start, end)).queue();
             } catch (RejectedExecutionException e) {
+                // Expected to be thrown on JDA shutdown
                 this.debug("Logger: Failed to send message:\n" + e.getMessage());
             }
         }
@@ -128,13 +139,16 @@ public class DiscordLogger implements Logger {
 
     @Override
     public void logException(CharSequence message, Throwable e) {
-        e.printStackTrace();
-        String formatted = message + "\n" + e.getMessage();
-        // Print short version
-        this.log(0, formatted);
-        String fullStackTrace = formatted + "\n";
+        Date now = new Date();
+        String msgTimeAppended = String.format(
+                "%s %s\n%s",
+                this.logFormat.format(now), message, e.getMessage()
+        );
+        // Print short version to Discord channel 0
+        this.logToDiscord(0, msgTimeAppended);
+        String fullStackTrace = msgTimeAppended + "\n";
         fullStackTrace += Arrays.stream(e.getStackTrace()).map(elt -> "    at " + elt.toString()).collect(Collectors.joining("\n"));
-        // Full stack trace to another channel
+        // Full stack trace to standard out, and to Discord channel 2
         this.log(2, fullStackTrace);
     }
 }

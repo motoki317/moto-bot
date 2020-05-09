@@ -26,16 +26,14 @@ public class ConsoleLogger implements Logger {
     public void log(int botLogCh, CharSequence message) {
         Date now = new Date();
         String msg = this.logFormat.format(now) + " " + message;
-
         System.out.println(msg);
     }
 
     @Override
     public void debug(CharSequence message) {
         if (!debug) return;
-        Date now = new Date();
-        String msg = this.logFormat.format(now) + " " + message;
-        System.out.println(msg);
+
+        this.log(-1, message);
     }
 
     @Override
