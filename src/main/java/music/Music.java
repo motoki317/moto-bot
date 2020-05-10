@@ -55,7 +55,6 @@ public class Music extends GuildCommand {
         this.playHandler = new MusicPlayHandler(bot, states, playerManager);
         this.managementHandler = new MusicManagementHandler(bot, states);
         this.settingHandler = new MusicSettingHandler(bot, states);
-        MusicAutoLeaveChecker autoLeaveChecker = new MusicAutoLeaveChecker(bot, states, this.playHandler);
 
         this.registerCommands();
 
@@ -64,6 +63,7 @@ public class Music extends GuildCommand {
 
         // Register music related heartbeat
         this.logger.debug("Starting music heartbeat...");
+        MusicAutoLeaveChecker autoLeaveChecker = new MusicAutoLeaveChecker(bot, states, this.playHandler);
         this.heartbeat = new HeartBeatTask(bot.getLogger(), new MusicHeartBeat(bot, autoLeaveChecker));
         this.heartbeat.start();
 

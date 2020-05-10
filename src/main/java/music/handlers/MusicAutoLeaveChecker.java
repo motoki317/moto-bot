@@ -99,10 +99,14 @@ public class MusicAutoLeaveChecker {
                 shutdownGuild(guildId, state);
 
                 if (channel != null) {
-                    channel.sendMessage(new EmbedBuilder()
-                            .setColor(MinecraftColor.RED.getColor())
-                            .setDescription("Left the voice channel due to inactivity.")
-                            .build()).queue();
+                    try {
+                        channel.sendMessage(new EmbedBuilder()
+                                .setColor(MinecraftColor.RED.getColor())
+                                .setDescription("Left the voice channel due to inactivity.")
+                                .build()).queue();
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
                 }
 
                 iterator.remove();
