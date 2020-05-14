@@ -139,24 +139,6 @@ public class TrackScheduler extends AudioEventAdapter {
     }
 
     @Override
-    public void onPlayerPause(AudioPlayer player) {
-        this.gateway.sendMessage(
-                new MessageBuilder(
-                        "Player paused."
-                ).build()
-        );
-    }
-
-    @Override
-    public void onPlayerResume(AudioPlayer player) {
-        this.gateway.sendMessage(
-                new MessageBuilder(
-                        "Player resumed."
-                ).build()
-        );
-    }
-
-    @Override
     public void onTrackStart(AudioPlayer player, AudioTrack track) {
         if (!this.gateway.getSetting().isShowNp()) {
             return;
