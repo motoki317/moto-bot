@@ -623,12 +623,24 @@ public class MusicPlayHandler {
                                 MusicState state, List<AudioTrack> tracks, MessageReceivedEvent res) {
         String msg = res.getMessage().getContentRaw();
         if ("all".equalsIgnoreCase(msg)) {
+            try {
+                // Delete bot and response message if possible
+                botMsg.delete().queue();
+                res.getMessage().delete().queue();
+            } catch (Exception ignored) {
+            }
             this.enqueueMultipleSongs(event, state, tracks);
             return true;
         }
         if ("c".equalsIgnoreCase(msg)) {
+            try {
+                // Delete bot and response message if possible
+                botMsg.delete().queue();
+                res.getMessage().delete().queue();
+            } catch (Exception ignored) {
+            }
             respond(event, "Cancelled.", m -> m.delete().queueAfter(3, TimeUnit.SECONDS));
-            return false;
+            return true;
         }
 
         try {
@@ -648,6 +660,7 @@ public class MusicPlayHandler {
             this.enqueueSong(event, state, tracks.get(index - 1));
             return true;
         } catch (NumberFormatException ignored) {
+            // Ignore normal messages
             return false;
         }
     }
