@@ -12,7 +12,6 @@ public class RequestV2 {
 
     private String kind;
     private int code;
-    private String message;
     private long timestamp;
     private String version;
 
@@ -29,9 +28,6 @@ public class RequestV2 {
                 case "code":
                     this.code = e.getValue().asInt();
                     break;
-                case "message":
-                    this.message = e.getValue().asText();
-                    break;
                 case "timestamp":
                     this.timestamp = e.getValue().asLong();
                     break;
@@ -41,7 +37,7 @@ public class RequestV2 {
             }
         }
 
-        if (this.kind == null || this.code == 0 || this.message == null || this.timestamp == 0L || this.version == null) {
+        if (this.kind == null || this.code == 0 || this.timestamp == 0L || this.version == null) {
             throw new RuntimeException("Some fields are missing in response");
         }
     }
@@ -52,10 +48,6 @@ public class RequestV2 {
 
     public int getCode() {
         return code;
-    }
-
-    public String getMessage() {
-        return message;
     }
 
     public long getTimestamp() {
