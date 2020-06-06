@@ -12,28 +12,18 @@ import javax.annotation.Nullable;
 import java.util.concurrent.TimeUnit;
 
 public class WynnApi {
-    private static final String legacyBaseURL = "https://api-legacy.wynncraft.com";
+    private static final String legacyBaseURL = "https://api.wynncraft.com";
 
-    private static final RateLimiter rateLimiterLegacy;
-    private static final RateLimiter rateLimiterV2Player;
+    private static final RateLimiter rateLimiter;
 
     static {
         final int maxRequestStack = 5;
 
-        // As of Jan 15th, 2020: rate limit for legacy (including all routes) is 1200 requests / 20 minutes.
-        long waitBetweenRequests = TimeUnit.MINUTES.toMillis(20) / 1200;
-        System.out.printf("Wynn API: for legacy resources setting wait between requests to %s ms\n",
-                waitBetweenRequests);
-        rateLimiterLegacy = new WaitableRateLimiter(
-                "Wynn Legacy", waitBetweenRequests, maxRequestStack
-        );
-
-        // As of Mar 20th, 2020: V2 Player (wynncraft/player) : 500 per 30 minutes
-        waitBetweenRequests = TimeUnit.MINUTES.toMillis(30) / 500;
-        System.out.printf("Wynn API v2: for player resources setting wait between requests to %s ms\n",
-                waitBetweenRequests);
-        rateLimiterV2Player = new WaitableRateLimiter(
-                "Wynn V2 Player", waitBetweenRequests, maxRequestStack
+        // As of June 6th, 2020: rate limit for all endpoints (including legacy and V2) is 180 requests / 1 minute.
+        long waitBetweenRequests = TimeUnit.MINUTES.toMillis(1) / 180;
+        System.out.printf("Wynn API: setting wait between requests to %s ms\n", waitBetweenRequests);
+        rateLimiter = new WaitableRateLimiter(
+                "Wynn", waitBetweenRequests, maxRequestStack
         );
     }
 
@@ -50,18 +40,17 @@ public class WynnApi {
     private final V2PlayerStats v2PlayerStats;
 
     public WynnApi(Logger logger) {
-        this.legacyPlayers = new LegacyPlayers(legacyBaseURL, rateLimiterLegacy, logger);
-        this.legacyTerritories = new LegacyTerritories(legacyBaseURL, rateLimiterLegacy, logger);
-        this.legacyGuilds = new LegacyGuilds(legacyBaseURL, rateLimiterLegacy, logger);
-        this.legacyGuildStats = new LegacyGuildStats(legacyBaseURL, rateLimiterLegacy, logger);
-        this.legacyForumId = new LegacyForumId(legacyBaseURL, rateLimiterLegacy, logger);
-        this.legacyGuildLeaderboard = new LegacyGuildLeaderboard(legacyBaseURL, rateLimiterLegacy, logger);
-        this.legacyItemDB = new LegacyItemDB(legacyBaseURL, rateLimiterLegacy, logger);
+        rateLimiter.setLogger(logger);
 
-        this.v2PlayerStats = new V2PlayerStats(rateLimiterV2Player, logger);
+        this.legacyPlayers = new LegacyPlayers(legacyBaseURL, rateLimiter, logger);
+        this.legacyTerritories = new LegacyTerritories(legacyBaseURL, rateLimiter, logger);
+        this.legacyGuilds = new LegacyGuilds(legacyBaseURL, rateLimiter, logger);
+        this.legacyGuildStats = new LegacyGuildStats(legacyBaseURL, rateLimiter, logger);
+        this.legacyForumId = new LegacyForumId(legacyBaseURL, rateLimiter, logger);
+        this.legacyGuildLeaderboard = new LegacyGuildLeaderboard(legacyBaseURL, rateLimiter, logger);
+        this.legacyItemDB = new LegacyItemDB(legacyBaseURL, rateLimiter, logger);
 
-        rateLimiterLegacy.setLogger(logger);
-        rateLimiterV2Player.setLogger(logger);
+        this.v2PlayerStats = new V2PlayerStats(rateLimiter, logger);
     }
 
     /**
