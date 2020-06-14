@@ -141,7 +141,8 @@ public class PlayerTracker implements TaskBase {
         long old = prevWorldList.get(0).getUpdatedAt().getTime() / 1000;
         long retrieved = newData.getRequest().getTimestamp();
 
-        return old <= retrieved;
+        // Process only if the timestamp is newer; do not process if the timestamp is the same as before
+        return old < retrieved;
     }
 
     /**
