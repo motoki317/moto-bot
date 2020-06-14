@@ -161,10 +161,10 @@ public class CustomTerritoryListCmd extends GenericCommand {
     }
 
     private static class Display {
-        private String num;
-        private String territory;
-        private String owner;
-        private String heldTime;
+        private final String num;
+        private final String territory;
+        private final String owner;
+        private final String heldTime;
 
         private Display(String num, String territory, String owner, String heldTime) {
             this.num = num;
@@ -279,29 +279,31 @@ public class CustomTerritoryListCmd extends GenericCommand {
             return;
         }
 
-        for (Territory t : territories) {
-            TerritoryListEntry e = new TerritoryListEntry(
-                    event.getAuthor().getIdLong(),
-                    listName,
-                    t.getName()
-            );
-            if (this.territoryListRepository.exists(e)) {
-                continue;
-            }
+        boolean success = territories.stream()
+                .map(territory -> new TerritoryListEntry(
+                        event.getAuthor().getIdLong(),
+                        listName,
+                        territory.getName()
+                ))
+                .filter(e -> !this.territoryListRepository.exists(e))
+                .map(this.territoryListRepository::create)
+                .reduce(true, (acc, elt) -> acc && elt);
 
-            boolean res = this.territoryListRepository.create(e);
-            if (!res) {
-                respondError(event, "Something went wrong while saving data...");
-                return;
-            }
+        if (!success) {
+            respondError(event, "Something went wrong while saving data...");
+            return;
         }
 
-        respond(event, String.format("Successfully added %s %s!\n%s",
-                territories.size(), territories.size() == 1 ? "territory" : "territories",
+        respond(event, String.format("Successfully added %s %s to list `%s`!\n%s",
+                territories.size(), territories.size() == 1 ? "territory" : "territories", listName,
                 territories.stream().map(t -> "`" + t.getName() + "`").collect(Collectors.joining(", "))));
     }
 
     private void removeFromList(MessageReceivedEvent event, String[] args) {
+        if (args.length <= 3) {
+            respond(event, "Please specify a list name (and list of territories) to remove from the list.");
+            return;
+        }
         String listName = args[3];
         List<String> territoryNames;
         if (args.length == 4) {
@@ -334,25 +336,23 @@ public class CustomTerritoryListCmd extends GenericCommand {
             territoryNames = territories.stream().map(Territory::getName).collect(Collectors.toList());
         }
 
-        for (String territoryName : territoryNames) {
-            TerritoryListEntry e = new TerritoryListEntry(
-                    event.getAuthor().getIdLong(),
-                    listName,
-                    territoryName
-            );
-            if (!this.territoryListRepository.exists(e)) {
-                continue;
-            }
+        boolean success = territoryNames.stream()
+                .map(territoryName -> new TerritoryListEntry(
+                        event.getAuthor().getIdLong(),
+                        listName,
+                        territoryName
+                ))
+                .filter(this.territoryListRepository::exists)
+                .map(this.territoryListRepository::delete)
+                .reduce(true, (acc, elt) -> acc && elt);
 
-            boolean res = this.territoryListRepository.delete(e);
-            if (!res) {
-                respondError(event, "Something went wrong while saving data...");
-                return;
-            }
+        if (!success) {
+            respondError(event, "Something went wrong while saving data...");
+            return;
         }
 
-        respond(event, String.format("Successfully removed %s %s!\n%s",
-                territoryNames.size(), territoryNames.size() == 1 ? "territory" : "territories",
+        respond(event, String.format("Successfully removed %s %s from list `%s`!\n%s",
+                territoryNames.size(), territoryNames.size() == 1 ? "territory" : "territories", listName,
                 territoryNames.stream().map(t -> "`" + t + "`").collect(Collectors.joining(", "))));
     }
 }
