@@ -268,7 +268,12 @@ public class PlayerWarLeaderboardCmd extends GenericCommand {
             boolean scoped = parsedArgs.containsKey("s") || parsedArgs.containsKey("-scoped");
 
             this.guildNameResolver.resolve(specifiedName, event.getTextChannel(), event.getAuthor(),
-                    (guildName, prefix) -> processGuildPlayerLeaderboard(event, sortType, range, scoped, customDateFormat, customTimeZone, guildName, prefix),
+                    (guildName, prefix) -> {
+                        GuildPlayerLeaderboard glb = new GuildPlayerLeaderboard(
+                                guildName, prefix, sortType, range, scoped, new Date()
+                        );
+                        processGuildPlayerLeaderboard(event, customDateFormat, customTimeZone, glb);
+                    },
                     error -> respondError(event, error)
             );
             return;
@@ -317,16 +322,12 @@ public class PlayerWarLeaderboardCmd extends GenericCommand {
     }
 
     private void processGuildPlayerLeaderboard(@NotNull MessageReceivedEvent event,
-                                               SortType sortType,
-                                               @Nullable Range range,
-                                               boolean scoped,
                                                CustomDateFormat customDateFormat,
                                                CustomTimeZone customTimeZone,
-                                               @NotNull String guildName,
-                                               @Nullable String prefix) {
+                                               @NotNull GuildPlayerLeaderboard glb) {
         List<PlayerWarLeaderboard> guildLeaderboard;
         try {
-            guildLeaderboard = getGuildPlayerLeaderboard(guildName, scoped, range);
+            guildLeaderboard = getGuildPlayerLeaderboard(glb.guildName, glb.scoped, glb.range);
         } catch (RateLimitException | RuntimeException e) {
             respondException(event, e.getMessage());
             return;
@@ -337,25 +338,22 @@ public class PlayerWarLeaderboardCmd extends GenericCommand {
         }
         if (guildLeaderboard.isEmpty()) {
             respond(event, String.format("No war logs found for members of guild `%s` `[%s]` (within the provided time frame).",
-                    guildName, prefix));
+                    glb.guildName, glb.prefix));
             return;
         }
+        glb.setLeaderboard(guildLeaderboard);
 
-        Date updatedAt = new Date();
-        GuildPlayerLeaderboard glb = new GuildPlayerLeaderboard(
-                guildName, prefix, guildLeaderboard, sortType, range, scoped, updatedAt
-        );
         Function<Integer, Message> pageSupplier = guildPageSupplier(glb, customDateFormat, customTimeZone);
         Supplier<Integer> maxPage = () -> (guildLeaderboard.size() - 1) / PLAYERS_PER_PAGE;
         respondLeaderboard(event, maxPage, pageSupplier);
     }
 
     private static class Display {
-        private String rank;
-        private String playerName;
-        private String firstWarNum;
-        private String totalWarNum;
-        private String rate;
+        private final String rank;
+        private final String playerName;
+        private final String firstWarNum;
+        private final String totalWarNum;
+        private final String rate;
 
         private Display(String rank, String playerName, String firstWarNum, String totalWarNum, String rate) {
             this.rank = rank;
@@ -367,11 +365,11 @@ public class PlayerWarLeaderboardCmd extends GenericCommand {
     }
 
     private static class Justify {
-        private int rank;
-        private int playerName;
-        private int firstWarNum;
-        private int totalWarNum;
-        private int rate;
+        private final int rank;
+        private final int playerName;
+        private final int firstWarNum;
+        private final int totalWarNum;
+        private final int rate;
 
         private Justify(int rank, int playerName, int firstWarNum, int totalWarNum, int rate) {
             this.rank = rank;
@@ -387,22 +385,25 @@ public class PlayerWarLeaderboardCmd extends GenericCommand {
         private final String guildName;
         @Nullable
         private final String prefix;
-        private final List<PlayerWarLeaderboard> lb;
+        private List<PlayerWarLeaderboard> lb;
         private final SortType sortType;
         @Nullable
         private final Range range;
         private final boolean scoped;
         private final Date updatedAt;
 
-        private GuildPlayerLeaderboard(@NotNull String guildName, @Nullable String prefix, List<PlayerWarLeaderboard> lb,
+        private GuildPlayerLeaderboard(@NotNull String guildName, @Nullable String prefix,
                                SortType sortType, @Nullable Range range, boolean scoped, Date updatedAt) {
             this.guildName = guildName;
             this.prefix = prefix;
-            this.lb = lb;
             this.sortType = sortType;
             this.range = range;
             this.scoped = scoped;
             this.updatedAt = updatedAt;
+        }
+
+        private void setLeaderboard(@NotNull List<PlayerWarLeaderboard> lb) {
+            this.lb = lb;
         }
     }
 
@@ -428,10 +429,10 @@ public class PlayerWarLeaderboardCmd extends GenericCommand {
 
         int successWars = glb.scoped
                 ? this.getSuccessWars(glb.range, glb.guildName)
-                : this.getSuccessWarSum(glb.range);
+                : glb.lb.stream().mapToInt(PlayerWarLeaderboard::getSuccessWar).sum();
         int totalWars = glb.scoped
                 ? this.getTotalWars(glb.range, glb.guildName)
-                : this.getTotalWarSum(glb.range);
+                : glb.lb.stream().mapToInt(PlayerWarLeaderboard::getTotalWar).sum();
         String totalRate = String.format("%.2f%%", (double) successWars / (double) totalWars * 100d);
 
         Justify justify = getSpaceJustify(displays, successWars, totalWars, totalRate);
