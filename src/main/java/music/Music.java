@@ -225,7 +225,11 @@ public class Music extends GuildCommand {
             return;
         }
 
-        BiConsumer<MessageReceivedEvent, String[]> handler = this.commands.getOrDefault(args[1], null);
+        BiConsumer<MessageReceivedEvent, String[]> handler = this.commands.getOrDefault(
+                // case insensitive sub commands
+                args[1].toLowerCase(),
+                null
+        );
         if (handler != null) {
             handler.accept(event, args);
             return;
