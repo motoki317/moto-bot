@@ -365,9 +365,9 @@ public class GuildStats extends GenericCommand {
             List<String> ret = new ArrayList<>();
 
             class Member {
-                private String name;
-                private Rank rank;
-                private String server;
+                private final String name;
+                private final Rank rank;
+                private final String server;
 
                 private Member(String name, Rank rank, String server) {
                     this.name = name;
@@ -394,7 +394,7 @@ public class GuildStats extends GenericCommand {
                 justifyName = Math.max(justifyName, 4);
 
                 ret.add(String.format("Name%s | Rank | Server", nCopies(" ", justifyName - 4)));
-                ret.add(String.format("%s+------+--------", nCopies("-", justifyName)));
+                ret.add(String.format("%s-+------+--------", nCopies("-", justifyName)));
 
                 for (Member onlineMember : onlineMembers) {
                     ret.add(String.format(
@@ -416,8 +416,8 @@ public class GuildStats extends GenericCommand {
             List<String> ret = new ArrayList<>();
 
             class Member {
-                private String name;
-                private String server;
+                private final String name;
+                private final String server;
 
                 private Member(String name, String server) {
                     this.name = name;
@@ -459,9 +459,9 @@ public class GuildStats extends GenericCommand {
             List<String> ret = new ArrayList<>();
 
             class Member {
-                private String name;
-                private Rank rank;
-                private String contributed;
+                private final String name;
+                private final Rank rank;
+                private final String contributed;
                 private String rankNum;
 
                 private Member(String name, Rank rank, String contributed) {
@@ -529,8 +529,8 @@ public class GuildStats extends GenericCommand {
         RECRUITER(1, "Recruiter"),
         RECRUIT(0, "Recruit");
 
-        private int rank;
-        private String readableName;
+        private final int rank;
+        private final String readableName;
 
         Rank(int rank, String readableName) {
             this.rank = rank;
