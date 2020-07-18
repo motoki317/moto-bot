@@ -50,34 +50,58 @@ public class SimpleConnectionPool implements ConnectionPool {
         return DriverManager.getConnection(url);
     }
 
+    private boolean isValid(Connection conn) {
+        try {
+            return conn.isValid(3);
+        } catch (SQLException e) {
+            this.logger.logException("an exception occurred while checking validity of the connection", e);
+        }
+        return false;
+    }
+
+    private void close(Connection conn) {
+        try {
+            if (!conn.isClosed()) {
+                conn.close();
+            }
+        } catch (SQLException e) {
+            this.logger.logException("an exception occurred while checking a connection is closed / closing a connection", e);
+        }
+    }
+
     @Override
     @Nullable
     public synchronized Connection getConnection() {
-        // If there are no available connections, and the open connections are not at max
-        if (this.availableConnections.isEmpty() && this.usedConnectionTime.size() < this.maxConnections) {
-            Connection newConn;
+        Connection conn = null;
+        // Either there are connections available, or all connections in the pool are currently used
+        // then retrieve a connection from the pool
+        if (!this.availableConnections.isEmpty() || this.usedConnectionTime.size() >= this.maxConnections) {
             try {
-                newConn = createConnection(this.url);
+                conn = this.availableConnections.poll(3, TimeUnit.SECONDS);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            if (conn == null) {
+                this.logger.log(0, "Connection Pool: Failed to retrieve connection");
+                return null;
+            }
+            // Check validity of the retrieved connection
+            if (!isValid(conn)) {
+                // If not valid, abort, and get a new connection
+                close(conn);
+                conn = null;
+            }
+        }
+
+        // If there are no available connections, and the open connections are not at max
+        // then open a new connection
+        if (conn == null) {
+            try {
+                conn = createConnection(this.url);
             } catch (SQLException e) {
                 this.logger.logException("Something went wrong while opening a connection to DB", e);
                 return null;
             }
-            synchronized (this.usedConnectionLock) {
-                this.usedConnectionTime.put(newConn, System.currentTimeMillis());
-            }
-            return newConn;
-        }
-
-        // Either there are connections available, or all connections are currently used
-        Connection conn = null;
-        try {
-            conn = this.availableConnections.poll(3, TimeUnit.SECONDS);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-        if (conn == null) {
-            this.logger.log(0, "Connection Pool: Failed to retrieve connection");
-            return null;
         }
 
         synchronized (this.usedConnectionLock) {
@@ -107,9 +131,11 @@ public class SimpleConnectionPool implements ConnectionPool {
             if (usedConnectionTime.containsKey(connection)) {
                 usedConnectionTime.remove(connection);
                 availableConnections.offer(connection);
+            } else {
+                // Else, this connection was discarded from pool by checkUnreleasedConnections()
+                // because it was not released for a long time
+                close(connection);
             }
-            // Else, this connection was discarded from pool by checkUnreleasedConnections()
-            // because it was not released for a long time
         }
     }
 }
