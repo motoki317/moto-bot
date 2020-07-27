@@ -10,9 +10,9 @@ public class CustomTimeZone implements CustomTimeZoneId {
         return new CustomTimeZone(0, "GMT+0");
     }
 
-    private long discordId;
+    private final long discordId;
     @NotNull
-    private String timezone;
+    private final String timezone;
 
     public CustomTimeZone(long discordId, @NotNull String timezone) {
         this.discordId = discordId;

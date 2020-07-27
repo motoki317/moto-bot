@@ -7,9 +7,9 @@ public class CustomDateFormat implements CustomDateFormatId {
         return new CustomDateFormat(0, CustomFormat.TWENTY_FOUR_HOUR);
     }
 
-    private long discordId;
+    private final long discordId;
     @NotNull
-    private CustomFormat dateFormat;
+    private final CustomFormat dateFormat;
 
     public CustomDateFormat(long discordId, @NotNull CustomFormat dateFormat) {
         this.discordId = discordId;

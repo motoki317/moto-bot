@@ -3,9 +3,9 @@ package db.model.prefix;
 import org.jetbrains.annotations.NotNull;
 
 public class Prefix implements PrefixId {
-    private long discordId;
+    private final long discordId;
     @NotNull
-    private String prefix;
+    private final String prefix;
 
     public Prefix(long discordId, @NotNull String prefix) {
         this.discordId = discordId;

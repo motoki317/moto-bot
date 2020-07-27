@@ -54,7 +54,7 @@ public class Ping extends GenericCommand {
         eb.setAuthor("Pong!", null, event.getAuthor().getEffectiveAvatarUrl());
 
         eb.setDescription("Here's some latency data. " +
-                "If discord API and/or message total ping are taking more than 250 ms, they may be considered slow.");
+                "If Discord API and/or message total ping are taking more than 250 ms, they may be considered slow.");
 
         eb.addField(
                 "Discord API Heartbeat",
@@ -79,9 +79,9 @@ public class Ping extends GenericCommand {
 
             eb.addField(
                     "Message",
-                    "Load (discord → bot)\n" +
+                    "Load (Discord → bot)\n" +
                             load + " ms\n" +
-                            "Send (bot → discord)\n" +
+                            "Send (bot → Discord)\n" +
                             send + " ms\n" +
                             "Total or Actual Ping (Load + Send)\n" +
                             total + " ms",
