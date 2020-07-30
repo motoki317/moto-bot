@@ -15,7 +15,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class MusicUtils {
-    private final static Pattern youtubeVideo = Pattern.compile("https://www\\.youtube\\.com/watch\\?v=(.+)");
+    private final static Pattern YOUTUBE_VIDEO = Pattern.compile("https://(www\\.)?youtube\\.com/watch\\?v=(.+)");
     private final static String YOUTUBE_THUMBNAIL = "http://i.ytimg.com/vi/%s/default.jpg";
 
     /**
@@ -25,9 +25,9 @@ public class MusicUtils {
      */
     @Nullable
     public static String getThumbnailURL(String sourceURL) {
-        Matcher m = youtubeVideo.matcher(sourceURL);
+        Matcher m = YOUTUBE_VIDEO.matcher(sourceURL);
         if (m.matches()) {
-            return String.format(YOUTUBE_THUMBNAIL, m.group(1));
+            return String.format(YOUTUBE_THUMBNAIL, m.group(2));
         }
         return null;
     }
