@@ -194,6 +194,7 @@ public class PlayerWarStats extends GenericCommand {
     }
 
     private static final int LOGS_PER_PAGE = 5;
+    private static final int PLAYERS_LIST_LENGTH = 1500 / LOGS_PER_PAGE;
 
     private int getTotalWars(@NotNull UUID playerUUID, @Nullable String guildName) {
         return guildName == null
@@ -401,7 +402,11 @@ public class PlayerWarStats extends GenericCommand {
     }
 
     private static String formatPlayers(List<WarPlayer> players) {
-        return players.stream().map(p -> p.hasExited() ? "(" + p.getPlayerName() + ")" : p.getPlayerName()).
+        String ret = players.stream().map(p -> p.hasExited() ? "(" + p.getPlayerName() + ")" : p.getPlayerName()).
                 collect(Collectors.joining(", "));
+        if (ret.length() > PLAYERS_LIST_LENGTH) {
+            return ret.substring(0, PLAYERS_LIST_LENGTH) + "...";
+        }
+        return ret;
     }
 }
