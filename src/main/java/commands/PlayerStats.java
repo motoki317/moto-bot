@@ -17,6 +17,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import utils.FormatUtils;
 import utils.InputChecker;
+import utils.UUID;
 import utils.rateLimit.RateLimitException;
 
 import java.awt.*;
@@ -78,10 +79,15 @@ public class PlayerStats extends GenericCommand {
         }
 
         String specified = args[1];
-        if (!InputChecker.isValidMinecraftUsername(specified)) {
-            respond(event, String.format("Given player name `%s` doesn't seem to be a valid minecraft username...",
+        if (!UUID.isUUID(specified) && !InputChecker.isValidMinecraftUsername(specified)) {
+            respond(event, String.format("Given name `%s` doesn't seem to be a valid Minecraft username or a UUID...",
                             specified));
             return;
+        }
+
+        if (UUID.isUUID(specified)) {
+            // Wynncraft API only accepts UUIDs with hyphens
+            specified = new UUID(specified).toStringWithHyphens();
         }
 
         Player player;
@@ -150,8 +156,8 @@ public class PlayerStats extends GenericCommand {
         ret.add("");
 
         class Display {
-            private String left;
-            private String right;
+            private final String left;
+            private final String right;
 
             private Display(String left, String right) {
                 this.left = left;
