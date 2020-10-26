@@ -194,7 +194,7 @@ public class CustomTerritoryListCmd extends GenericCommand {
                     String.valueOf(i + 1),
                     t.getName(),
                     t.getGuild(),
-                    FormatUtils.formatReadableTime((now - t.getAcquired().getTime()) / 1000L, false, "m")
+                    FormatUtils.formatReadableTime((now - t.getAcquired().getTime()) / 1000L, true, "m")
             ));
         }
 
