@@ -38,9 +38,9 @@ class TestMojangApi {
     @Test
     void testUUIDAtTime() {
         MojangApi api = getApi();
-        UUID uuid = api.mustGetUUIDAtTime("MidnightGoden", 1457572526000L);
+        UUID uuid = api.mustGetUUIDAtTime("d3keract", 1605752036000L);
         assert uuid != null;
-        assert uuid.toStringWithHyphens().equals("1d378fba-e8d2-44bc-b731-db5d42dfc791");
+        assert uuid.toStringWithHyphens().equals("db9b5cad-5785-48d3-be91-18a9876ec00e");
     }
 
     @Test
