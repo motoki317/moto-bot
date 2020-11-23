@@ -227,13 +227,16 @@ public class PlayerStats extends GenericCommand {
 
         ret.add("```");
 
+        // Start building embed (at the bottom of response)
         EmbedBuilder eb = new EmbedBuilder();
 
-        String officialStatsUrl = "https://wynncraft.com/stats/player/";
-        String headAvatarUrl = "https://minotar.net/avatar/";
-        eb.setAuthor("Official Stats Page",
-                officialStatsUrl + player.getUsername(),
-                headAvatarUrl + player.getUsername());
+        List<String> desc = new ArrayList<>();
+        String headAvatarUrl = "https://minotar.net/avatar/" + player.getUsername();
+        eb.setAuthor(player.getUsername(), null, headAvatarUrl);
+
+        // Add official stats page in description
+        String officialStatsUrl = "https://wynncraft.com/stats/player/" + player.getUsername();
+        desc.add("[Official Stats Page](" + officialStatsUrl + ")");
 
         // Retrieve forum id if possible
         ForumId forumId = null;
@@ -241,13 +244,11 @@ public class PlayerStats extends GenericCommand {
             forumId = this.wynnApi.getForumId(player.getUsername());
         } catch (RateLimitException ignored) {
         }
-
         if (forumId != null) {
             String username = forumId.getUsername();
-            int id = forumId.getId();
-            String forumPersonalPageUrl = "https://forums.wynncraft.com/members/";
-            eb.setTitle("Forum Page", forumPersonalPageUrl + id + "/");
-            eb.setDescription("Forum Name: " + username);
+            String forumPersonalPageUrl = "https://forums.wynncraft.com/members/" + forumId.getId() + "/";
+            desc.add("");
+            desc.add(String.format("[Forum Page](%s) (%s)", forumPersonalPageUrl, username));
         }
 
         // Tag (purchase-able rank) color
@@ -271,6 +272,7 @@ public class PlayerStats extends GenericCommand {
         eb.setFooter("Player Statistics Last Updated", wynnIconUrl);
         eb.setTimestamp(Instant.ofEpochMilli(player.getRequest().getTimestamp()));
 
+        eb.setDescription(String.join("\n", desc));
         return new MessageBuilder()
                 .setContent(String.join("\n", ret))
                 .setEmbed(eb.build())
