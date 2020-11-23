@@ -10,7 +10,6 @@ import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.TextChannel;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.sharding.ShardManager;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import utils.MinecraftColor;
 
@@ -32,24 +31,6 @@ public class MusicSettingHandler {
         this.states = states;
         this.manager = bot.getManager();
         this.musicSettingRepository = bot.getDatabase().getMusicSettingRepository();
-    }
-
-    /**
-     * Retrieves setting for the guild.
-     * @param guildId Guild ID.
-     * @return Music setting. Default if not found.
-     */
-    @NotNull
-    private MusicSetting getSetting(long guildId) {
-        MusicState state;
-        synchronized (states) {
-            state = states.getOrDefault(guildId, null);
-        }
-        if (state != null) {
-            return state.getSetting();
-        }
-        MusicSetting setting = this.musicSettingRepository.findOne(() -> guildId);
-        return setting != null ? setting : MusicSetting.getDefault(guildId);
     }
 
     /**
@@ -78,14 +59,10 @@ public class MusicSettingHandler {
      * Handles "volume" command.
      * @param event Event.
      * @param args Command arguments.
+     * @param setting Music setting.
+     * @param state Music state of the guild if it is up.
      */
-    public void handleVolume(MessageReceivedEvent event, String[] args) {
-        long guildId = event.getGuild().getIdLong();
-        MusicState state;
-        synchronized (states) {
-            state = states.getOrDefault(guildId, null);
-        }
-        MusicSetting setting = state != null ? state.getSetting() : getSetting(guildId);
+    public void handleVolume(MessageReceivedEvent event, String[] args, MusicSetting setting, @Nullable MusicState state) {
         int oldVolume = setting.getVolume();
 
         if (args.length <= 2) {
@@ -112,6 +89,7 @@ public class MusicSettingHandler {
         }
 
         setting.setVolume(newVolume);
+        // Directly set the volume for player as well, if it is currently up.
         if (state != null) {
             state.getPlayer().setVolume(newVolume);
         }
@@ -144,9 +122,9 @@ public class MusicSettingHandler {
      * Handles "repeat" command.
      * @param event Event.
      * @param args Command arguments.
+     * @param setting Music setting.
      */
-    public void handleRepeat(MessageReceivedEvent event, String[] args) {
-        MusicSetting setting = getSetting(event.getGuild().getIdLong());
+    public void handleRepeat(MessageReceivedEvent event, String[] args, MusicSetting setting) {
         RepeatState oldState = setting.getRepeat();
 
         if (args.length <= 2) {
@@ -197,10 +175,9 @@ public class MusicSettingHandler {
      * Handles "setting" command.
      * @param event Event.
      * @param args Command arguments.
+     * @param setting Music setting.
      */
-    public void handleSetting(MessageReceivedEvent event, String[] args) {
-        MusicSetting setting = getSetting(event.getGuild().getIdLong());
-
+    public void handleSetting(MessageReceivedEvent event, String[] args, MusicSetting setting) {
         if (args.length <= 2) {
             respond(event, settingHelp(setting, event.getJDA().getSelfUser().getEffectiveAvatarUrl()));
             return;

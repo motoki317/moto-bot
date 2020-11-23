@@ -14,15 +14,18 @@ public class MusicState {
     private final MusicSetting setting;
     private long lastInteract;
     private Runnable onStopLoadingCache;
+    private final long guildId;
     private final long boundChannelId;
     private final long voiceChannelId;
 
-    public MusicState(AudioPlayer player, TrackScheduler scheduler, MusicSetting setting, long boundChannelId, long voiceChannelId) {
+    public MusicState(AudioPlayer player, TrackScheduler scheduler, MusicSetting setting,
+                      long guildId, long boundChannelId, long voiceChannelId) {
         this.player = player;
         this.scheduler = scheduler;
         this.setting = setting;
         this.lastInteract = System.currentTimeMillis();
         this.onStopLoadingCache = () -> {};
+        this.guildId = guildId;
         this.boundChannelId = boundChannelId;
         this.voiceChannelId = voiceChannelId;
     }
@@ -50,6 +53,10 @@ public class MusicState {
 
     public MusicSetting getSetting() {
         return this.setting;
+    }
+
+    public long getGuildId() {
+        return guildId;
     }
 
     public long getBoundChannelId() {

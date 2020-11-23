@@ -12,6 +12,7 @@ import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.sharding.ShardManager;
+import org.jetbrains.annotations.NotNull;
 import update.multipage.MultipageHandler;
 import update.reaction.ReactionManager;
 import utils.MinecraftColor;
@@ -19,7 +20,6 @@ import utils.MinecraftColor;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import static commands.base.BotCommand.respond;
@@ -27,13 +27,10 @@ import static commands.base.BotCommand.respondException;
 import static music.MusicUtils.*;
 
 public class MusicManagementHandler {
-    private final Map<Long, MusicState> states;
-
     private final ShardManager manager;
     private final ReactionManager reactionManager;
 
-    public MusicManagementHandler(Bot bot, Map<Long, MusicState> states) {
-        this.states = states;
+    public MusicManagementHandler(Bot bot) {
         this.manager = bot.getManager();
         this.reactionManager = bot.getReactionManager();
     }
@@ -41,18 +38,9 @@ public class MusicManagementHandler {
     /**
      * Handles "nowPlaying" command.
      * @param event Event.
+     * @param state Music state of the guild.
      */
-    public void handleNowPlaying(MessageReceivedEvent event) {
-        long guildId = event.getGuild().getIdLong();
-        MusicState state;
-        synchronized (states) {
-            state = states.getOrDefault(guildId, null);
-        }
-        if (state == null) {
-            respond(event, "This guild doesn't seem to have a music player set up.");
-            return;
-        }
-
+    public void handleNowPlaying(MessageReceivedEvent event, @NotNull MusicState state) {
         QueueState queueState = state.getCurrentQueue();
         List<QueueEntry> entries = queueState.getQueue();
         if (entries.isEmpty()) {
@@ -72,18 +60,9 @@ public class MusicManagementHandler {
     /**
      * Handles "queue" command.
      * @param event Event.
+     * @param state Music state of the guild.
      */
-    public void handleQueue(MessageReceivedEvent event) {
-        long guildId = event.getGuild().getIdLong();
-        MusicState state;
-        synchronized (states) {
-            state = states.getOrDefault(guildId, null);
-        }
-        if (state == null) {
-            respond(event, "This guild doesn't seem to have a music player set up.");
-            return;
-        }
-
+    public void handleQueue(MessageReceivedEvent event, @NotNull MusicState state) {
         QueueState queueState = state.getCurrentQueue();
         if (queueState.getQueue().isEmpty()) {
             respond(event, "Nothing seems to be playing right now.");
@@ -182,18 +161,10 @@ public class MusicManagementHandler {
     /**
      * Handles "pause" and "resume" commands.
      * @param event Event.
+     * @param state Music state of the guild.
      * @param toStop If {@code true}, the bot should stop the player.
      */
-    public void handlePause(MessageReceivedEvent event, boolean toStop) {
-        MusicState state;
-        synchronized (states) {
-            state = states.getOrDefault(event.getGuild().getIdLong(), null);
-        }
-        if (state == null) {
-            respond(event, "This guild doesn't seem to have a music player set up.");
-            return;
-        }
-
+    public void handlePause(MessageReceivedEvent event, @NotNull MusicState state, boolean toStop) {
         AudioPlayer player = state.getPlayer();
         AudioTrack np = player.getPlayingTrack();
         if (np == null) {
@@ -214,17 +185,9 @@ public class MusicManagementHandler {
      * Handles "skip" command.
      * @param event Event.
      * @param args Command arguments.
+     * @param state Music state of the guild.
      */
-    public void handleSkip(MessageReceivedEvent event, String[] args) {
-        MusicState state;
-        synchronized (states) {
-            state = states.getOrDefault(event.getGuild().getIdLong(), null);
-        }
-        if (state == null) {
-            respond(event, "This guild doesn't seem to have a music player set up.");
-            return;
-        }
-
+    public void handleSkip(MessageReceivedEvent event, String[] args, @NotNull MusicState state) {
         QueueState queueState = state.getCurrentQueue();
         if (queueState.getQueue().isEmpty()) {
             respond(event, "Nothing seems to be playing right now.");
@@ -256,19 +219,11 @@ public class MusicManagementHandler {
      * Handles "seek" command.
      * @param event Event.
      * @param args Command arguments.
+     * @param state Music state of the guild.
      */
-    public void handleSeek(MessageReceivedEvent event, String[] args) {
+    public void handleSeek(MessageReceivedEvent event, String[] args, @NotNull MusicState state) {
         if (args.length <= 2) {
             respond(event, "Input the time you want to seek to. e.g. `m seek 1:02:03`, `m seek 4:33`");
-            return;
-        }
-
-        MusicState state;
-        synchronized (states) {
-            state = states.getOrDefault(event.getGuild().getIdLong(), null);
-        }
-        if (state == null) {
-            respond(event, "This guild doesn't seem to have a music player set up.");
             return;
         }
 
@@ -308,17 +263,9 @@ public class MusicManagementHandler {
     /**
      * Handles "shuffle" command.
      * @param event Event.
+     * @param state Music state of the guild.
      */
-    public void handleShuffle(MessageReceivedEvent event) {
-        MusicState state;
-        synchronized (states) {
-            state = states.getOrDefault(event.getGuild().getIdLong(), null);
-        }
-        if (state == null) {
-            respond(event, "This guild doesn't seem to have a music player set up.");
-            return;
-        }
-
+    public void handleShuffle(MessageReceivedEvent event, @NotNull MusicState state) {
         QueueState queueState = state.getCurrentQueue();
         if (queueState.getQueue().isEmpty()) {
             respond(event, "Nothing seems to be playing right now.");
@@ -332,19 +279,10 @@ public class MusicManagementHandler {
     /**
      * Handles "purge" command.
      * @param event Event.
+     * @param state Music state of the guild.
      */
-    public void handlePurge(MessageReceivedEvent event) {
-        MusicState state;
-        synchronized (states) {
-            state = states.getOrDefault(event.getGuild().getIdLong(), null);
-        }
-        if (state == null) {
-            respond(event, "This guild doesn't seem to have a music player set up.");
-            return;
-        }
-
+    public void handlePurge(MessageReceivedEvent event, @NotNull MusicState state) {
         state.stopLoadingCache();
-
         state.purgeWaitingQueue();
 
         respond(event, new EmbedBuilder()

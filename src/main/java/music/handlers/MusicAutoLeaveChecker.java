@@ -72,9 +72,9 @@ public class MusicAutoLeaveChecker {
         return listeningCount == 0;
     }
 
-    private void shutdownGuild(long guildId, MusicState state) {
+    private void shutdownGuild(MusicState state) {
         try {
-            this.playHandler.shutdownPlayer(true, guildId, state);
+            this.playHandler.shutdownPlayer(true, state);
         } catch (RuntimeException e) {
             this.logger.logException("Something went wrong while shutting down guild music", e);
         }
@@ -96,7 +96,7 @@ public class MusicAutoLeaveChecker {
                     this.logger.log(0, "Music auto leave: Failed to retrieve channel for ID: " + state.getBoundChannelId());
                 }
 
-                shutdownGuild(guildId, state);
+                shutdownGuild(state);
 
                 if (channel != null) {
                     try {
@@ -127,7 +127,7 @@ public class MusicAutoLeaveChecker {
 
                 MusicState state = entry.getValue();
 
-                shutdownGuild(guildId, state);
+                shutdownGuild(state);
 
                 toSave.add(new MusicInterruptedGuild(guildId, state.getBoundChannelId(), state.getVoiceChannelId()));
             }

@@ -197,7 +197,7 @@ public class MusicPlayHandler {
         });
         player.addListener(scheduler);
 
-        MusicState state = new MusicState(player, scheduler, setting, channelId, voiceChannelId);
+        MusicState state = new MusicState(player, scheduler, setting, guildId, channelId, voiceChannelId);
         synchronized (states) {
             states.put(guildId, state);
         }
@@ -263,12 +263,12 @@ public class MusicPlayHandler {
 
                 @Override
                 public void noMatches() {
-                    MusicPlayHandler.this.logger.debug("Music: Loading old queue: No match for URL " + e.getUrl());
+                    logger.debug("Music: Loading old queue: No match for URL " + e.getUrl());
                 }
 
                 @Override
                 public void loadFailed(FriendlyException e) {
-                    e.getMessage();
+                    logger.debug("Music: Loading old queue: Load failed :" + e.getMessage());
                 }
             });
             futures.add(f);
@@ -403,28 +403,19 @@ public class MusicPlayHandler {
     /**
      * handles "leave" command.
      * @param event Event.
+     * @param state Current music state of the guild.
      * @param saveQueue {@code true} if the bot should save the current queue, and use it next time.
      */
-    public void handleLeave(@NotNull MessageReceivedEvent event, boolean saveQueue) {
-        long guildId = event.getGuild().getIdLong();
-        MusicState state;
-        synchronized (states) {
-            state = states.getOrDefault(guildId, null);
-        }
-        if (state == null) {
-            respond(event, "This guild doesn't seem to have a music player set up.");
-            return;
-        }
-
+    public void handleLeave(@NotNull MessageReceivedEvent event, @NotNull MusicState state, boolean saveQueue) {
         try {
-            this.shutdownPlayer(saveQueue, guildId, state);
+            this.shutdownPlayer(saveQueue, state);
         } catch (RuntimeException e) {
             respondError(event, e.getMessage());
             return;
         }
 
         synchronized (states) {
-            states.remove(guildId);
+            states.remove(state.getGuildId());
         }
 
         respond(event, new EmbedBuilder()
@@ -436,11 +427,10 @@ public class MusicPlayHandler {
     /**
      * Shuts down the music player for the guild.
      * @param saveQueue If the bot should save the current queue.
-     * @param guildId Guild ID.
      * @param state Music state.
      * @throws RuntimeException If something went wrong.
      */
-    void shutdownPlayer(boolean saveQueue, long guildId, MusicState state) throws RuntimeException {
+    void shutdownPlayer(boolean saveQueue, MusicState state) throws RuntimeException {
         // Stop loading from cache if it was running
         state.stopLoadingCache();
 
@@ -452,6 +442,7 @@ public class MusicPlayHandler {
         state.getPlayer().destroy();
 
         // Try to disconnect from the Discord voice channel
+        long guildId = state.getGuildId();
         try {
             Guild guild = this.manager.getGuildById(guildId);
             if (guild != null) {
