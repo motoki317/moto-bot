@@ -15,6 +15,7 @@ import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 public class Info extends GenericCommand {
     private final Bot bot;
@@ -47,6 +48,11 @@ public class Info extends GenericCommand {
         return new MessageBuilder(
                 "Shows this bot's meta info, such as version, bot invite link and bot support server link."
         ).build();
+    }
+
+    @Override
+    public long getCoolDown() {
+        return TimeUnit.SECONDS.toMillis(1);
     }
 
     @Override

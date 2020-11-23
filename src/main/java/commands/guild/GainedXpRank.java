@@ -21,6 +21,7 @@ import utils.FormatUtils;
 import java.math.BigDecimal;
 import java.text.DateFormat;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -67,6 +68,11 @@ public class GainedXpRank extends GenericCommand {
                 .addField("Syntax", this.syntax(), false)
                 .build()
         ).build();
+    }
+
+    @Override
+    public long getCoolDown() {
+        return TimeUnit.SECONDS.toMillis(1);
     }
 
     /**
@@ -143,13 +149,13 @@ public class GainedXpRank extends GenericCommand {
     }
 
     private static class Display {
-        private String num;
+        private final String num;
         // [prefix] guild name
-        private String name;
-        private int lv;
-        private String xp;
-        private String gained;
-        private int territory;
+        private final String name;
+        private final int lv;
+        private final String xp;
+        private final String gained;
+        private final int territory;
 
         private Display(String num, String name, int lv, String xp, String gained, int territory) {
             this.num = num;

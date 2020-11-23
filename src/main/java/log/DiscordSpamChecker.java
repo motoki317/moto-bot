@@ -5,45 +5,44 @@ import utils.BotUtils;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 public class DiscordSpamChecker {
-    // 1 second
-    private static final long SPAM_PREVENTION = TimeUnit.SECONDS.toMillis(1);
-
-    private static final long CACHE_TIME = TimeUnit.MINUTES.toMillis(1);
-
-    // User ID to last message time
-    private final Map<Long, Long> messages;
+    // User ID to next cool-down expire time
+    private final Map<Long, Long> coolDowns;
 
     public DiscordSpamChecker() {
-        this.messages = new HashMap<>();
+        this.coolDowns = new HashMap<>();
     }
 
-    public synchronized boolean isSpam(MessageReceivedEvent event) {
+    public synchronized boolean isSpam(MessageReceivedEvent event, long nextCoolDown) {
         long userId = event.getAuthor().getIdLong();
-        long time = BotUtils.getIdCreationTime(event.getMessageIdLong());
-        long lastMessageTime = this.messages.getOrDefault(userId, -1L);
+        long now = System.currentTimeMillis();
+        long lastCoolDownExpire = this.coolDowns.getOrDefault(userId, -1L);
 
-        if (lastMessageTime == -1L) {
-            this.messages.put(userId, time);
-            return false;
-        }
-
-        long diff = time - lastMessageTime;
-        if (diff < 0) {
-            return false;
-        }
-        if (diff < SPAM_PREVENTION) {
+        // Still on cool-down
+        if (now < lastCoolDownExpire) {
             return true;
         }
-        this.messages.put(userId, time);
 
-        this.removeOldMessageCache(time);
+        // Register next cool-down expire time
+        long nextCoolDownExpire = BotUtils.getIdCreationTime(event.getMessageIdLong()) + nextCoolDown;
+        this.coolDowns.put(userId, nextCoolDownExpire);
+
+        this.removeOldMessageCache(now);
         return false;
     }
 
-    private void removeOldMessageCache(long currentTime) {
-        this.messages.entrySet().removeIf((e) -> CACHE_TIME < (currentTime - e.getValue()));
+    /**
+     * Returns how much time is remained until the cool-down is expired for this user, in milliseconds.
+     * @param userId User ID.
+     * @return Remaining cool-down in milliseconds.
+     */
+    public long nextCoolDownExpire(long userId) {
+        return this.coolDowns.get(userId) - System.currentTimeMillis();
+    }
+
+    private void removeOldMessageCache(long now) {
+        // Remove already expired cool-down
+        this.coolDowns.entrySet().removeIf((e) -> e.getValue() <= now);
     }
 }

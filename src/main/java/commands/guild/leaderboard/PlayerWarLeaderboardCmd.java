@@ -117,6 +117,11 @@ public class PlayerWarLeaderboardCmd extends GenericCommand {
         ).build();
     }
 
+    @Override
+    public long getCoolDown() {
+        return TimeUnit.SECONDS.toMillis(3);
+    }
+
     private enum SortType {
         Total,
         Success,

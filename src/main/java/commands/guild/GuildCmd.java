@@ -9,6 +9,7 @@ import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Arrays;
+import java.util.concurrent.TimeUnit;
 
 public class GuildCmd extends GenericCommand {
     private final GuildStats.Handler handler;
@@ -46,6 +47,11 @@ public class GuildCmd extends GenericCommand {
                         )
                         .build()
         ).build();
+    }
+
+    @Override
+    public long getCoolDown() {
+        return TimeUnit.SECONDS.toMillis(3);
     }
 
     @Override

@@ -22,6 +22,7 @@ import utils.FormatUtils;
 
 import java.text.DateFormat;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 public class TerritoryLogsCmd extends GenericCommand {
@@ -66,6 +67,11 @@ public class TerritoryLogsCmd extends GenericCommand {
                 }))
                 .build()
         ).build();
+    }
+
+    @Override
+    public long getCoolDown() {
+        return TimeUnit.SECONDS.toMillis(1);
     }
 
     @Override
@@ -146,11 +152,11 @@ public class TerritoryLogsCmd extends GenericCommand {
     }
 
     private static class Display {
-        private String num;
-        private String guildName;
-        private String dateFrom;
-        private String dateTo;
-        private String heldTime;
+        private final String num;
+        private final String guildName;
+        private final String dateFrom;
+        private final String dateTo;
+        private final String heldTime;
 
         private Display(String num, String guildName, String dateFrom, String dateTo, String heldTime) {
             this.num = num;

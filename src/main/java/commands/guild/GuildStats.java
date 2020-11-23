@@ -25,6 +25,7 @@ import utils.rateLimit.RateLimitException;
 import java.math.BigDecimal;
 import java.text.DateFormat;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -64,6 +65,11 @@ public class GuildStats extends GenericCommand {
                         )
                         .build()
         ).build();
+    }
+
+    @Override
+    public long getCoolDown() {
+        return TimeUnit.SECONDS.toMillis(3);
     }
 
     @Override

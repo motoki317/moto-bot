@@ -11,6 +11,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.Arrays;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -48,6 +49,11 @@ public class CommandAliases extends GenericCommand {
                 .addField("Syntax", this.syntax(), false)
                 .addField("Example", "`alias up`\n`alias g levelRank`", false)
         ).build();
+    }
+
+    @Override
+    public long getCoolDown() {
+        return TimeUnit.SECONDS.toMillis(1);
     }
 
     @Override

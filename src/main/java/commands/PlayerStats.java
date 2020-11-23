@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 public class PlayerStats extends GenericCommand {
     private final WynnApi wynnApi;
@@ -69,6 +70,11 @@ public class PlayerStats extends GenericCommand {
                         )
                         .build()
         ).build();
+    }
+
+    @Override
+    public long getCoolDown() {
+        return TimeUnit.SECONDS.toMillis(3);
     }
 
     @Override

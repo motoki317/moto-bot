@@ -14,6 +14,7 @@ import org.jetbrains.annotations.NotNull;
 import utils.MinecraftColor;
 
 import java.time.Instant;
+import java.util.concurrent.TimeUnit;
 
 public class PrefixCmd extends GenericCommand {
     private final String defaultPrefix;
@@ -60,6 +61,11 @@ public class PrefixCmd extends GenericCommand {
                                 false)
                         .build()
         ).build();
+    }
+
+    @Override
+    public long getCoolDown() {
+        return TimeUnit.SECONDS.toMillis(1);
     }
 
     private static final int PREFIX_MAX_LENGTH = 10;

@@ -14,6 +14,7 @@ import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
 public class Help extends GenericCommand {
@@ -54,6 +55,11 @@ public class Help extends GenericCommand {
         return new MessageBuilder(
                 "Use help command with arguments to view detailed help of each command. e.g. `help ping`"
         ).build();
+    }
+
+    @Override
+    public long getCoolDown() {
+        return TimeUnit.SECONDS.toMillis(1);
     }
 
     @Override

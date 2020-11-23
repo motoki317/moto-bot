@@ -14,6 +14,7 @@ import utils.BotUtils;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.concurrent.TimeUnit;
 
 public class DiscordIdInfo extends GenericCommand {
     private final TimeZoneRepository timeZoneRepository;
@@ -42,6 +43,11 @@ public class DiscordIdInfo extends GenericCommand {
     @Override
     public @NotNull Message longHelp() {
         return new MessageBuilder(this.shortHelp()).build();
+    }
+
+    @Override
+    public long getCoolDown() {
+        return TimeUnit.SECONDS.toMillis(1);
     }
 
     @Override

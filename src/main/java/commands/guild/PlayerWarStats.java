@@ -94,6 +94,11 @@ public class PlayerWarStats extends GenericCommand {
         ).build();
     }
 
+    @Override
+    public long getCoolDown() {
+        return TimeUnit.SECONDS.toMillis(3);
+    }
+
     @NotNull
     private String getPlayerNameDisplay(@NotNull UUID uuid, @Nullable String playerName) throws RateLimitException {
         Player player = this.wynnApi.getPlayerStats(uuid.toStringWithHyphens(),  false);

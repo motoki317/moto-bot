@@ -22,6 +22,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 
@@ -302,6 +303,11 @@ public class Music extends GuildCommand {
                                 "**m settings** : Other settings. Settings will be saved per guild if changed."
                 ), false)
         ).build();
+    }
+
+    @Override
+    public long getCoolDown() {
+        return TimeUnit.SECONDS.toMillis(1);
     }
 
     /**

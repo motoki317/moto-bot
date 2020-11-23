@@ -49,6 +49,11 @@ public class SetPage extends GenericCommand {
     }
 
     @Override
+    public long getCoolDown() {
+        return TimeUnit.SECONDS.toMillis(1);
+    }
+
+    @Override
     public void process(@NotNull MessageReceivedEvent event, @NotNull String[] args) {
         if (args.length < 2) {
             respond(event, this.longHelp());

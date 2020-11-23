@@ -22,6 +22,7 @@ import utils.FormatUtils;
 import java.math.BigDecimal;
 import java.text.DateFormat;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -77,6 +78,11 @@ public class GuildLevelRank extends GenericCommand {
                                 false)
                         .build()
         ).build();
+    }
+
+    @Override
+    public long getCoolDown() {
+        return TimeUnit.SECONDS.toMillis(1);
     }
 
     /**
@@ -183,12 +189,12 @@ public class GuildLevelRank extends GenericCommand {
     }
 
     private static class Display {
-        private String num;
-        private String guildName;
-        private String lv;
-        private String xp;
-        private String gainedXp;
-        private String territory;
+        private final String num;
+        private final String guildName;
+        private final String lv;
+        private final String xp;
+        private final String gainedXp;
+        private final String territory;
 
         private Display(String num, String guildName, String lv, String xp, String gainedXp, String territory) {
             this.num = num;
@@ -224,11 +230,11 @@ public class GuildLevelRank extends GenericCommand {
     }
 
     private static class LBDisplay {
-        private int maxPage;
-        private String lbDuration;
-        private String totalXPGained;
-        private String totalTerritories;
-        private Date lastUpdate;
+        private final int maxPage;
+        private final String lbDuration;
+        private final String totalXPGained;
+        private final String totalTerritories;
+        private final Date lastUpdate;
 
         private LBDisplay(int maxPage, String lbDuration, String totalXPGained, String totalTerritories, Date lastUpdate) {
             this.maxPage = maxPage;

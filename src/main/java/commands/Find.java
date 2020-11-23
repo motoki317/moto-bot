@@ -11,6 +11,8 @@ import org.jetbrains.annotations.NotNull;
 import utils.InputChecker;
 import utils.MinecraftColor;
 
+import java.util.concurrent.TimeUnit;
+
 public class Find extends GenericCommand {
     private final WynnApi wynnApi;
 
@@ -37,6 +39,11 @@ public class Find extends GenericCommand {
     @Override
     public @NotNull Message longHelp() {
         return new MessageBuilder(this.shortHelp()).build();
+    }
+
+    @Override
+    public long getCoolDown() {
+        return TimeUnit.SECONDS.toMillis(1);
     }
 
     @Override

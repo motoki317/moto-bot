@@ -16,6 +16,7 @@ import utils.MinecraftColor;
 import java.text.DateFormat;
 import java.time.Instant;
 import java.util.Date;
+import java.util.concurrent.TimeUnit;
 
 public class DateFormatCmd extends GenericCommand {
     private final DateFormatRepository dateFormatRepository;
@@ -58,6 +59,11 @@ public class DateFormatCmd extends GenericCommand {
                 )
                 .build()
         ).build();
+    }
+
+    @Override
+    public long getCoolDown() {
+        return TimeUnit.SECONDS.toMillis(1);
     }
 
     private enum Type {

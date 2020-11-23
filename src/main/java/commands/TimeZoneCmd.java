@@ -16,6 +16,7 @@ import java.text.DateFormat;
 import java.time.Instant;
 import java.util.Date;
 import java.util.TimeZone;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -69,6 +70,11 @@ public class TimeZoneCmd extends GenericCommand {
                                 false)
                         .build()
         ).build();
+    }
+
+    @Override
+    public long getCoolDown() {
+        return TimeUnit.SECONDS.toMillis(1);
     }
 
     @Override

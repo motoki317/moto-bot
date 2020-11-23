@@ -20,6 +20,7 @@ import utils.FormatUtils;
 
 import java.text.DateFormat;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 public class TerritoryListCmd extends GenericCommand {
@@ -70,6 +71,11 @@ public class TerritoryListCmd extends GenericCommand {
     }
 
     @Override
+    public long getCoolDown() {
+        return TimeUnit.SECONDS.toMillis(1);
+    }
+
+    @Override
     public void process(@NotNull MessageReceivedEvent event, @NotNull String[] args) {
         if (args.length <= 2) {
             // No guild specified
@@ -98,9 +104,9 @@ public class TerritoryListCmd extends GenericCommand {
 
     private static class Guild {
         @NotNull
-        private String name;
+        private final String name;
         @Nullable
-        private String prefix;
+        private final String prefix;
 
         private Guild(@NotNull String name, @Nullable String prefix) {
             this.name = name;
@@ -151,11 +157,11 @@ public class TerritoryListCmd extends GenericCommand {
     }
 
     private static class Display {
-        private String num;
-        private String territoryName;
-        private Guild guild;
-        private String acquired;
-        private String heldTime;
+        private final String num;
+        private final String territoryName;
+        private final Guild guild;
+        private final String acquired;
+        private final String heldTime;
 
         private Display(String num, String territoryName, Guild guild, String acquired, String heldTime) {
             this.num = num;

@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -78,6 +79,11 @@ public class ServerList extends GenericCommand {
                         false)
                 .build()
         ).build();
+    }
+
+    @Override
+    public long getCoolDown() {
+        return TimeUnit.SECONDS.toMillis(1);
     }
 
     /**
@@ -156,10 +162,10 @@ public class ServerList extends GenericCommand {
     }
 
     private static class WorldDisplay {
-        private String num;
-        private String name;
-        private String players;
-        private String uptime;
+        private final String num;
+        private final String name;
+        private final String players;
+        private final String uptime;
 
         private WorldDisplay(int num, String name, int players, String uptime) {
             this.num = String.valueOf(num);

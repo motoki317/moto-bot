@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
 class TestBotCommand {
@@ -39,6 +40,11 @@ class TestBotCommand {
             @Override
             public @NotNull Message longHelp() {
                 return new MessageBuilder("test").build();
+            }
+
+            @Override
+            public long getCoolDown() {
+                return TimeUnit.SECONDS.toMillis(1);
             }
 
             @Override
@@ -79,6 +85,11 @@ class TestBotCommand {
             }
 
             @Override
+            public long getCoolDown() {
+                return TimeUnit.SECONDS.toMillis(1);
+            }
+
+            @Override
             public void process(@NotNull MessageReceivedEvent event, @NotNull String[] args) {}
         };
 
@@ -111,10 +122,10 @@ class TestBotCommand {
 
     @Test
     void testSupplierReference() {
-        TestClass i = new TestClass(0);
-        Supplier<Integer> supplier = i.getSupplier();
+        TestClass instance = new TestClass(0);
+        Supplier<Integer> supplier = instance.getSupplier();
         assert supplier.get() == 0;
-        i.setValue(1);
+        instance.setValue(1);
         assert supplier.get() == 1;
     }
 }

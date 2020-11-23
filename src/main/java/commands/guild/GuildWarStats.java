@@ -79,6 +79,11 @@ public class GuildWarStats extends GenericCommand {
         ).build();
     }
 
+    @Override
+    public long getCoolDown() {
+        return TimeUnit.SECONDS.toMillis(1);
+    }
+
     private static final int LOGS_PER_PAGE = 5;
     private static final int PLAYERS_LIST_LENGTH = 1500 / LOGS_PER_PAGE;
 

@@ -176,16 +176,21 @@ public class CommandListener extends ListenerAdapter {
         }
 
         // Check spam and log event
-        boolean isSpam = this.spamChecker.isSpam(event);
+        boolean isSpam = this.spamChecker.isSpam(event, command.getCoolDown());
         this.logger.logEvent(event, isSpam);
         if (isSpam) {
-            String message = "You are requesting commands too quickly! Please wait at least 1 second between each commands.";
+            long userId = event.getAuthor().getIdLong();
+            long remainingCoolDown = this.spamChecker.nextCoolDownExpire(userId);
             event.getChannel().sendMessage(
                     new EmbedBuilder()
                             .setColor(MinecraftColor.RED.getColor())
-                            .setDescription(message)
+                            .setTitle("Slow down!")
+                            .setDescription(String.format(
+                                    "Please wait at least `%s` seconds before submitting a command again.",
+                                    (double) remainingCoolDown / 1000D
+                            ))
                             .build()
-            ).delay(3, TimeUnit.SECONDS)
+            ).delay(10, TimeUnit.SECONDS)
                     .flatMap(Message::delete)
                     .queue();
             return;

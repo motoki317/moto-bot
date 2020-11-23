@@ -15,6 +15,7 @@ import org.jetbrains.annotations.Nullable;
 import java.awt.*;
 import java.util.List;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -51,6 +52,11 @@ public class ItemView extends GenericCommand {
                 .setDescription("Shows an item's stats. Give partial or full item name to the argument.")
                 .build()
         ).build();
+    }
+
+    @Override
+    public long getCoolDown() {
+        return TimeUnit.SECONDS.toMillis(1);
     }
 
     @Override

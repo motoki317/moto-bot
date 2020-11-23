@@ -24,6 +24,7 @@ import utils.UUID;
 import javax.annotation.Nullable;
 import java.text.DateFormat;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 public class Track extends GuildCommand {
@@ -136,6 +137,11 @@ public class Track extends GuildCommand {
     @Override
     protected Permission[] getRequiredPermissions() {
         return new Permission[]{Permission.MANAGE_CHANNEL};
+    }
+
+    @Override
+    public long getCoolDown() {
+        return TimeUnit.SECONDS.toMillis(1);
     }
 
     @Override

@@ -19,6 +19,7 @@ import utils.FormatUtils;
 
 import java.text.DateFormat;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -63,6 +64,11 @@ public class CurrentWars extends GenericCommand {
     }
 
     @Override
+    public long getCoolDown() {
+        return TimeUnit.SECONDS.toMillis(1);
+    }
+
+    @Override
     public void process(@NotNull MessageReceivedEvent event, @NotNull String[] args) {
         List<WarLog> wars = this.warLogRepository.findAllNotEnded();
         List<World> notYetStartedWars = this.worldRepository.findAllWarWorlds();
@@ -93,10 +99,10 @@ public class CurrentWars extends GenericCommand {
         wars.sort(Comparator.comparingLong(w -> w.getCreatedAt().getTime()));
 
         class Display {
-            private String server;
-            private String guild;
-            private String players;
-            private String elapsed;
+            private final String server;
+            private final String guild;
+            private final String players;
+            private final String elapsed;
 
             private Display(String server, String guild, String players, String elapsed) {
                 this.server = server;

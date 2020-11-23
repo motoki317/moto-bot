@@ -9,6 +9,8 @@ import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.concurrent.TimeUnit;
+
 public class Ignore extends GenericCommand {
     private final IgnoreChannelRepository ignoreChannelRepository;
 
@@ -41,6 +43,11 @@ public class Ignore extends GenericCommand {
     @Override
     protected Permission[] getRequiredPermissions() {
         return new Permission[]{Permission.MANAGE_CHANNEL};
+    }
+
+    @Override
+    public long getCoolDown() {
+        return TimeUnit.SECONDS.toMillis(1);
     }
 
     @Override

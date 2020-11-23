@@ -11,6 +11,7 @@ import utils.BotUtils;
 import utils.FormatUtils;
 
 import java.time.Instant;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 public class Ping extends GenericCommand {
@@ -45,6 +46,11 @@ public class Ping extends GenericCommand {
                 "Checks the bot's ping.\n" +
                         "It is preferable that the ping takes no longer than 250 ms, and be stable."
         ).build();
+    }
+
+    @Override
+    public long getCoolDown() {
+        return TimeUnit.SECONDS.toMillis(1);
     }
 
     @Override

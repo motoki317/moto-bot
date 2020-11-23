@@ -105,6 +105,11 @@ public class GuildWarLeaderboardCmd extends GenericCommand {
         ).build();
     }
 
+    @Override
+    public long getCoolDown() {
+        return TimeUnit.SECONDS.toMillis(1);
+    }
+
     private enum SortType {
         Total,
         Success;
@@ -167,11 +172,11 @@ public class GuildWarLeaderboardCmd extends GenericCommand {
     }
 
     private static class Display {
-        private String rank;
-        private String guildName;
-        private String successWarNum;
-        private String totalWarNum;
-        private String successRate;
+        private final String rank;
+        private final String guildName;
+        private final String successWarNum;
+        private final String totalWarNum;
+        private final String successRate;
 
         private Display(String rank, String guildName, String successWarNum, String totalWarNum, String successRate) {
             this.rank = rank;
@@ -183,11 +188,11 @@ public class GuildWarLeaderboardCmd extends GenericCommand {
     }
 
     private static class Justify {
-        private int rank;
-        private int guildName;
-        private int successWarNum;
-        private int totalWarNum;
-        private int successRate;
+        private final int rank;
+        private final int guildName;
+        private final int successWarNum;
+        private final int totalWarNum;
+        private final int successRate;
 
         private Justify(int rank, int guildName, int successWarNum, int totalWarNum, int successRate) {
             this.rank = rank;

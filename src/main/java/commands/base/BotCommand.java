@@ -126,6 +126,13 @@ public abstract class BotCommand {
     }
 
     /**
+     * Retrieves command cool-down in milliseconds.
+     * The user will not be able to execute any other commands for this much time, after executing this command.
+     * @return Cool-down in milliseconds.
+     */
+    public abstract long getCoolDown();
+
+    /**
      * Process a command.
      * @param event Discord message received event.
      * @param args Argument array, separated by space characters.

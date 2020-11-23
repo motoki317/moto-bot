@@ -20,6 +20,7 @@ import utils.UUID;
 
 import java.text.DateFormat;
 import java.util.Date;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 public class NameHistoryCmd extends GenericCommand {
@@ -60,6 +61,11 @@ public class NameHistoryCmd extends GenericCommand {
                 .addField("Syntax", this.syntax(), false)
                 .build()
         ).build();
+    }
+
+    @Override
+    public long getCoolDown() {
+        return TimeUnit.SECONDS.toMillis(3);
     }
 
     @Override

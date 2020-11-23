@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
 public class GuildRank extends GenericCommand {
@@ -60,6 +61,11 @@ public class GuildRank extends GenericCommand {
                 .setDescription("Shows guilds ranking by number of territories each guild possesses.")
                 .build()
         ).build();
+    }
+
+    @Override
+    public long getCoolDown() {
+        return TimeUnit.SECONDS.toMillis(1);
     }
 
     @Override

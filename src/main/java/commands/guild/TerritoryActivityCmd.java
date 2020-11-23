@@ -21,6 +21,7 @@ import utils.FormatUtils;
 
 import java.text.DateFormat;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 
 import static utils.RangeParser.Range;
@@ -84,6 +85,11 @@ public class TerritoryActivityCmd extends GenericCommand {
                         false
                 ).build()
         ).build();
+    }
+
+    @Override
+    public long getCoolDown() {
+        return TimeUnit.SECONDS.toMillis(1);
     }
 
     private static final int ACTIVITIES_PER_PAGE = 10;

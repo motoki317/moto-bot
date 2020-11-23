@@ -18,6 +18,7 @@ import update.reaction.ReactionResponse;
 import utils.ArgumentParser;
 
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -61,6 +62,11 @@ public class IdentifyItem extends GenericCommand {
                                         "and press the reaction button on the message.", false)
                         .build()
         ).build();
+    }
+
+    @Override
+    public long getCoolDown() {
+        return TimeUnit.SECONDS.toMillis(1);
     }
 
     @Override

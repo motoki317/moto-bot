@@ -10,6 +10,8 @@ import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.concurrent.TimeUnit;
+
 public class CatCmd extends GenericCommand {
     private final TheCatApi theCatApi;
 
@@ -36,6 +38,11 @@ public class CatCmd extends GenericCommand {
     @Override
     public @NotNull Message longHelp() {
         return new MessageBuilder(this.shortHelp()).build();
+    }
+
+    @Override
+    public long getCoolDown() {
+        return TimeUnit.SECONDS.toMillis(2);
     }
 
     @Override

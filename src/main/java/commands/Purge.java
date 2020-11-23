@@ -51,6 +51,11 @@ public class Purge extends GuildCommand {
     }
 
     @Override
+    public long getCoolDown() {
+        return TimeUnit.SECONDS.toMillis(10);
+    }
+
+    @Override
     public void process(@NotNull MessageReceivedEvent event, @NotNull String[] args) {
         if (args.length <= 1) {
             respond(event, "Please specify how many messages to purge!");

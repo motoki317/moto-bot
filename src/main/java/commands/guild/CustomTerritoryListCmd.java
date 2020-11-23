@@ -20,6 +20,7 @@ import utils.FormatUtils;
 
 import java.text.DateFormat;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -73,6 +74,11 @@ public class CustomTerritoryListCmd extends GenericCommand {
                         "`>g myList remove <list name>` : Removes the list."
                 })
         ).build();
+    }
+
+    @Override
+    public long getCoolDown() {
+        return TimeUnit.SECONDS.toMillis(1);
     }
 
     @Override
