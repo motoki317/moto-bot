@@ -1,5 +1,6 @@
 package app;
 
+import db.model.serverLog.ServerLogEntry;
 import db.repository.base.ServerLogRepository;
 import db.repository.base.TrackChannelRepository;
 import log.Logger;
@@ -99,7 +100,9 @@ public class UpdaterListener extends ListenerAdapter {
         if (!res) {
             this.logger.log(0, "Failed to remove tracking entries of the channel");
         }
-        if (this.serverLogRepository.exists(() -> event.getGuild().getIdLong())) {
+        // Delete server log channel if it was the deleted channel
+        ServerLogEntry serverLog = this.serverLogRepository.findOne(() -> event.getGuild().getIdLong());
+        if (serverLog != null && serverLog.getChannelId() == channelId) {
             res = this.serverLogRepository.delete(() -> event.getGuild().getIdLong());
             if (!res) {
                 this.logger.log(0, "Failed to remove server log channel of the guild");
