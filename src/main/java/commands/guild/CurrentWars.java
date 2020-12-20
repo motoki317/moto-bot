@@ -15,6 +15,8 @@ import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import org.jetbrains.annotations.NotNull;
+import update.multipage.MultipageHandler;
+import update.reaction.ReactionManager;
 import utils.FormatUtils;
 
 import java.text.DateFormat;
@@ -31,11 +33,14 @@ public class CurrentWars extends GenericCommand {
     private final TimeZoneRepository timeZoneRepository;
     private final DateFormatRepository dateFormatRepository;
 
+    private final ReactionManager reactionManager;
+
     public CurrentWars(Bot bot) {
         this.worldRepository = bot.getDatabase().getWorldRepository();
         this.warLogRepository = bot.getDatabase().getWarLogRepository();
         this.timeZoneRepository = bot.getDatabase().getTimeZoneRepository();
         this.dateFormatRepository = bot.getDatabase().getDateFormatRepository();
+        this.reactionManager = bot.getReactionManager();
     }
 
     @NotNull
@@ -86,32 +91,46 @@ public class CurrentWars extends GenericCommand {
             return;
         }
 
+        wars.sort(Comparator.comparingLong(w -> w.getCreatedAt().getTime()));
+
         CustomTimeZone customTimeZone = this.timeZoneRepository.getTimeZone(event);
         CustomDateFormat customDateFormat = this.dateFormatRepository.getDateFormat(event);
-        respond(event, formatMessage(wars, notYetStartedWars, customTimeZone, customDateFormat));
+        Date lastUpdate = wars.isEmpty()
+                ? notYetStartedWars.get(0).getUpdatedAt()
+                : wars.get(0).getLastUp();
+
+        List<Display> displays = formatDisplays(wars, notYetStartedWars);
+        int pages = (displays.size() - 1) / WARS_PER_PAGE;
+        if (pages == 0) {
+            respond(event, formatMessage(0, wars.size(), displays, lastUpdate, customTimeZone, customDateFormat));
+            return;
+        }
+        respond(event, formatMessage(0, wars.size(), displays, lastUpdate, customTimeZone, customDateFormat),
+                message ->
+                        this.reactionManager.addEventListener(new MultipageHandler(message, event.getAuthor().getIdLong(),
+                                page -> new MessageBuilder(formatMessage(page, wars.size(), displays, lastUpdate, customTimeZone, customDateFormat)).build(),
+                                () -> pages)));
+    }
+
+    private static final int WARS_PER_PAGE = 20;
+
+    private static class Display {
+        private final String server;
+        private final String guild;
+        private final String players;
+        private final String elapsed;
+
+        private Display(String server, String guild, String players, String elapsed) {
+            this.server = server;
+            this.guild = guild;
+            this.players = players;
+            this.elapsed = elapsed;
+        }
     }
 
     @NotNull
-    private String formatMessage(@NotNull List<WarLog> wars,
-                                 @NotNull List<World> notYetStartedWars,
-                                 @NotNull CustomTimeZone customTimeZone,
-                                 @NotNull CustomDateFormat customDateFormat) {
-        wars.sort(Comparator.comparingLong(w -> w.getCreatedAt().getTime()));
-
-        class Display {
-            private final String server;
-            private final String guild;
-            private final String players;
-            private final String elapsed;
-
-            private Display(String server, String guild, String players, String elapsed) {
-                this.server = server;
-                this.guild = guild;
-                this.players = players;
-                this.elapsed = elapsed;
-            }
-        }
-
+    private static List<Display> formatDisplays(@NotNull List<WarLog> wars,
+                                                @NotNull List<World> notYetStartedWars) {
         Function<WarLog, Display> createDisplay = warLog -> {
             int remainingPlayers = (int) warLog.getPlayers().stream().filter(p -> !p.hasExited()).count();
             int totalPlayers = warLog.getPlayers().size();
@@ -132,7 +151,15 @@ public class CurrentWars extends GenericCommand {
 
         List<Display> displays = wars.stream().map(createDisplay).collect(Collectors.toList());
         displays.addAll(notYetStartedWars.stream().map(createDisplayFromWorld).collect(Collectors.toList()));
+        return displays;
+    }
 
+    @NotNull
+    private static String formatMessage(int page, int startedWars,
+                                        @NotNull List<Display> displays,
+                                        @NotNull Date lastUpdate,
+                                        @NotNull CustomTimeZone customTimeZone,
+                                        @NotNull CustomDateFormat customDateFormat) {
         int serverNameJustify = IntStream.concat(
                 displays.stream().mapToInt(d -> d.server.length()),
                 IntStream.of("Server".length())
@@ -155,7 +182,7 @@ public class CurrentWars extends GenericCommand {
         ret.add("---- Ongoing Wars ----");
         ret.add(String.format(
                 "%s / %s servers in fight",
-                wars.size(), displays.size()
+                startedWars, displays.size()
         ));
         ret.add("");
 
@@ -174,7 +201,10 @@ public class CurrentWars extends GenericCommand {
                 nCopies("-", elapsedFieldJustify)
         ));
 
-        for (Display display : displays) {
+        int from = page * WARS_PER_PAGE;
+        int to = Math.min(displays.size(), (page + 1) * WARS_PER_PAGE);
+        for (int i = from; i < to; i++) {
+            Display display = displays.get(i);
             ret.add(String.format(
                     "%s%s | %s%s | %s%s | %s%s",
                     display.server, nCopies(" ", serverNameJustify - display.server.length()),
@@ -186,12 +216,16 @@ public class CurrentWars extends GenericCommand {
 
         ret.add("");
 
+        // show current page if max page >= 1
+        int maxPage = (displays.size() - 1) / WARS_PER_PAGE;
+        if (maxPage >= 1) {
+            ret.add(String.format("< page %d / %d >", page + 1, maxPage + 1));
+            ret.add("");
+        }
+
         DateFormat dateFormat = customDateFormat.getDateFormat().getSecondFormat();
         dateFormat.setTimeZone(customTimeZone.getTimeZoneInstance());
 
-        Date lastUpdate = wars.isEmpty()
-                ? notYetStartedWars.get(0).getUpdatedAt()
-                : wars.get(0).getLastUp();
         long secondsFromLastUpdate = (new Date().getTime() - lastUpdate.getTime()) / 1000L;
         ret.add(String.format(
                 "last update: %s (%s), %s ago",
