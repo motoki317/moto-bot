@@ -59,6 +59,7 @@ public class Purge extends GuildCommand {
     public void process(@NotNull MessageReceivedEvent event, @NotNull String[] args) {
         if (args.length <= 1) {
             respond(event, "Please specify how many messages to purge!");
+            return;
         }
 
         long messageId = event.getMessageIdLong();
