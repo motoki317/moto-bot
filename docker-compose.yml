@@ -29,7 +29,7 @@ services:
       - $HOME/.m2:/root/.m2
 
   mysql:
-    image: mariadb:10.4.10
+    image: mariadb:10.5.8
     restart: always
     environment:
       MYSQL_ROOT_PASSWORD: password
