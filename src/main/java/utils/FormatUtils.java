@@ -98,10 +98,10 @@ public class FormatUtils {
             int scale = (answer.precision() - answer.scale());
             return answer.setScale(4-scale, BigDecimal.ROUND_HALF_UP) + "T";
         } else if (number.compareTo(QUADRILLION) >= 0) {
-            BigDecimal answer = number.divide(THOUSAND, 3, BigDecimal.ROUND_HALF_UP);
+            BigDecimal answer = number.divide(QUADRILLION, 3, BigDecimal.ROUND_HALF_UP);
             int scale = (answer.precision() - answer.scale());
-            return answer.setScale(Math.max(0,4-scale), BigDecimal.ROUND_HALF_UP) + "K";
+            return answer.setScale(Math.max(0,4-scale), BigDecimal.ROUND_HALF_UP) + "Q";
         }
-        return number.toString();
+        return number.divide(BigDecimal.ONE, 0, BigDecimal.ROUND_HALF_UP).toString();
     }
 }

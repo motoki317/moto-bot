@@ -191,6 +191,8 @@ public class GainedXpRank extends GenericCommand {
 
         int justifyNum = displays.stream().mapToInt(g -> g.num.length()).max().orElse(2);
         int justifyName = displays.stream().mapToInt(g -> g.name.length()).max().orElse(10);
+        int justifyXp = Math.max(displays.stream().mapToInt(d -> d.xp.length()).max().orElse(6), 2);
+        int justifyGained = Math.max(displays.stream().mapToInt(d -> d.gained.length()).max().orElse(6), 6);
 
         List<String> ret = new ArrayList<>();
 
@@ -200,12 +202,14 @@ public class GainedXpRank extends GenericCommand {
         ret.add("");
 
         ret.add(String.format(
-                "%s Name%s | Lv | XP     | Gained | Territory",
-                nCopies(" ", justifyNum), nCopies(" ", justifyName - 4)
+                "%s Name%s | Lv | XP%s | Gained%s | Territory",
+                nCopies(" ", justifyNum), nCopies(" ", justifyName - 4),
+                nCopies(" ", justifyXp - 2), nCopies(" ", justifyGained - 6)
         ));
         ret.add(String.format(
-                "%s-%s-+----+--------+--------+-----------",
-                nCopies("-", justifyNum), nCopies("-", justifyName)
+                "%s-%s-+----+-%s-+-%s-+-----------",
+                nCopies("-", justifyNum), nCopies("-", justifyName),
+                nCopies("-", justifyXp), nCopies("-", justifyGained)
         ));
 
         int min = page * GUILDS_PER_PAGE;
@@ -217,15 +221,16 @@ public class GainedXpRank extends GenericCommand {
                     d.num, nCopies(" ", justifyNum - d.num.length()),
                     d.name, nCopies(" ", justifyName - d.name.length()),
                     d.lv,
-                    nCopies(" ", 6 - d.xp.length()), d.xp,
-                    nCopies(" ", 6 - d.gained.length()), d.gained,
+                    nCopies(" ", justifyXp - d.xp.length()), d.xp,
+                    nCopies(" ", justifyGained - d.gained.length()), d.gained,
                     d.territory
             ));
         }
 
         ret.add(String.format(
-                "%s-%s-+----+--------+--------+-----------",
-                nCopies("-", justifyNum), nCopies("-", justifyName)
+                "%s-%s-+----+-%s-+-%s-+-----------",
+                nCopies("-", justifyNum), nCopies("-", justifyName),
+                nCopies("-", justifyXp), nCopies("-", justifyGained)
         ));
 
         String pageView = String.format(
@@ -237,8 +242,8 @@ public class GainedXpRank extends GenericCommand {
         int totalTerritories = displays.stream().mapToInt(d -> d.territory).sum();
 
         ret.add(String.format(
-                "%s %s         Total | %s | %s",
-                pageView, nCopies(" ", justifyName + justifyNum - pageView.length()),
+                "%s %s   Total | %s | %s",
+                pageView, nCopies(" ", justifyNum + justifyName + justifyXp - pageView.length()),
                 FormatUtils.truncateNumber(new BigDecimal(total)), totalTerritories
         ));
 

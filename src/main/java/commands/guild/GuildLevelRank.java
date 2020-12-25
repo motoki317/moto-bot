@@ -251,8 +251,8 @@ public class GuildLevelRank extends GenericCommand {
         int numJustify = displays.stream().mapToInt(d -> d.num.length()).max().orElse(1);
         int nameJustify = displays.stream().mapToInt(d -> d.guildName.length()).max().orElse(6);
         int lvJustify = displays.stream().mapToInt(d -> d.lv.length()).max().orElse(2);
-        int xpJustify = displays.stream().mapToInt(d -> d.xp.length()).max().orElse(6);
-        int gainedJustify = "Gained".length();
+        int xpJustify = Math.max(displays.stream().mapToInt(d -> d.xp.length()).max().orElse(6), 2);
+        int gainedJustify = Math.max(displays.stream().mapToInt(d -> d.gainedXp.length()).max().orElse(6), 6);
         int territoryJustify = displays.stream().mapToInt(d -> d.territory.length()).max().orElse(1);
 
         List<String> ret = new ArrayList<>();
@@ -260,9 +260,10 @@ public class GuildLevelRank extends GenericCommand {
         ret.add("```ml");
         ret.add("---- Guild Level Rank ----");
         ret.add("");
-        ret.add(String.format("%s  Name%s | Lv%s | XP%s | Gained | Territory",
+        ret.add(String.format("%s  Name%s | Lv%s | XP%s | Gained%s | Territory",
                 nCopies(" ", numJustify), nCopies(" ", nameJustify - 4),
-                nCopies(" ", lvJustify - 2), nCopies(" ", xpJustify - 2)));
+                nCopies(" ", lvJustify - 2), nCopies(" ", xpJustify - 2),
+                nCopies(" ", gainedJustify - 6)));
         ret.add(String.format("%s--%s-+-%s-+-%s-+-%s-+-%s-",
                 nCopies("-", numJustify), nCopies("-", nameJustify),
                 nCopies("-", lvJustify), nCopies("-", xpJustify),
