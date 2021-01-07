@@ -3,23 +3,27 @@ package heartbeat.tasks;
 import api.wynn.WynnApi;
 import api.wynn.structs.TerritoryList;
 import app.Bot;
+import db.model.guildWarLog.GuildWarLog;
 import db.model.territory.Territory;
 import db.model.territoryLog.TerritoryLog;
 import db.model.timezone.CustomTimeZone;
 import db.model.track.TrackChannel;
 import db.model.track.TrackType;
+import db.model.warLog.WarLog;
 import db.repository.base.*;
 import heartbeat.base.TaskBase;
 import log.Logger;
 import net.dv8tion.jda.api.entities.TextChannel;
 import net.dv8tion.jda.api.sharding.ShardManager;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import utils.FormatUtils;
 
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 public class TerritoryTracker implements TaskBase {
     private final Logger logger;
@@ -28,6 +32,8 @@ public class TerritoryTracker implements TaskBase {
     private final WynnApi wynnApi;
     private final TerritoryRepository territoryRepository;
     private final TerritoryLogRepository territoryLogRepository;
+    private final WarLogRepository warLogRepository;
+    private final GuildWarLogRepository guildWarLogRepository;
     private final TrackChannelRepository trackChannelRepository;
     private final TimeZoneRepository timeZoneRepository;
     private final DateFormatRepository dateFormatRepository;
@@ -39,6 +45,8 @@ public class TerritoryTracker implements TaskBase {
         this.wynnApi = new WynnApi(this.logger);
         this.territoryRepository = bot.getDatabase().getTerritoryRepository();
         this.territoryLogRepository = bot.getDatabase().getTerritoryLogRepository();
+        this.warLogRepository = bot.getDatabase().getWarLogRepository();
+        this.guildWarLogRepository = bot.getDatabase().getGuildWarLogRepository();
         this.trackChannelRepository = bot.getDatabase().getTrackingChannelRepository();
         this.timeZoneRepository = bot.getDatabase().getTimeZoneRepository();
         this.dateFormatRepository = bot.getDatabase().getDateFormatRepository();
@@ -112,6 +120,26 @@ public class TerritoryTracker implements TaskBase {
         return storedLatestAcquired.getTime() <= retrievedLatestAcquired.getTime();
     }
 
+    @NotNull
+    private Map<Integer, String> getCorrespondingWarNames(List<Integer> territoryLogIds) {
+        List<GuildWarLog> guildLogs = this.guildWarLogRepository.findAllOfTerritoryLogIdIn(territoryLogIds);
+        if (guildLogs == null) {
+            this.logger.log(0, "Territory tracker: failed to retrieve corresponding guild logs.");
+            return new HashMap<>();
+        }
+        List<WarLog> warLogs = this.warLogRepository
+                .findAllIn(guildLogs.stream().map(GuildWarLog::getWarLogId)
+                                .filter(Objects::nonNull).collect(Collectors.toList()));
+        if (warLogs == null) {
+            this.logger.log(0, "Territory tracker: failed to retrieve corresponding war logs.");
+            return new HashMap<>();
+        }
+        Map<Integer, String> warLogMap = warLogs.stream().collect(Collectors.toMap(WarLog::getId, WarLog::getServerName));
+        return guildLogs.stream().filter(l -> l.getWarLogId() != null).collect(Collectors.toMap(
+                GuildWarLog::getTerritoryLogId,
+                l -> warLogMap.getOrDefault(l.getWarLogId(), "No war")));
+    }
+
     /**
      * Do territory tracking. Sends all territory_log from oldLastId (exclusive) to newLastId (inclusive).
      * @param oldLastId Last max id in territory_log before db update.
@@ -129,6 +157,9 @@ public class TerritoryTracker implements TaskBase {
         if (logs.isEmpty()) {
             return;
         }
+
+        Map<Integer, String> serverNames = this.getCorrespondingWarNames(
+                logs.stream().map(TerritoryLog::getId).collect(Collectors.toList()));
 
         List<TrackChannel> allTerritoryTracks = this.trackChannelRepository.findAllOfType(TrackType.TERRITORY_ALL);
         if (allTerritoryTracks == null) {
@@ -150,7 +181,7 @@ public class TerritoryTracker implements TaskBase {
             channelsToSend.addAll(specificTracksOld);
             channelsToSend.addAll(specificTracksNew);
 
-            String messageBase = formatBase(log);
+            String messageBase = formatBase(log, serverNames.get(log.getId()));
             channelsToSend.forEach(ch -> {
                 TextChannel channel = this.manager.getTextChannelById(ch.getChannelId());
                 if (channel == null) return;
@@ -162,15 +193,19 @@ public class TerritoryTracker implements TaskBase {
     /**
      * Formats territory log in order to send it to tracking channels.
      * @param log Territory log.
+     * @param serverName War server name.
      * @return Formatted string.
      */
-    private static String formatBase(TerritoryLog log) {
+    private static String formatBase(TerritoryLog log, @Nullable String serverName) {
         String heldForFormatted = FormatUtils.formatReadableTime(log.getTimeDiff() / 1000, false, "s");
 
         return String.format(
-                "%s: *%s* (%s) → **%s** (%s)\n" +
+                "%s: *%s* (%s) → **%s** (%s) [%s]\n" +
                         "    Territory held for %s\n",
-                log.getTerritoryName(), log.getOldGuildName(), log.getOldGuildTerrAmt(), log.getNewGuildName(), log.getNewGuildTerrAmt(),
+                log.getTerritoryName(),
+                log.getOldGuildName(), log.getOldGuildTerrAmt(),
+                log.getNewGuildName(), log.getNewGuildTerrAmt(),
+                serverName != null ? serverName : "No war",
                 heldForFormatted
         );
     }

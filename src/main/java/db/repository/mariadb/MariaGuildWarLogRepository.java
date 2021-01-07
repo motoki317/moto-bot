@@ -365,6 +365,34 @@ class MariaGuildWarLogRepository extends GuildWarLogRepository {
 
     @Nullable
     @Override
+    public List<GuildWarLog> findAllOfTerritoryLogIdIn(List<Integer> territoryLogIds) {
+        if (territoryLogIds.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        String placeHolder = String.format("(%s)",
+                territoryLogIds.stream().map(i -> "?").collect(Collectors.joining(", "))
+        );
+
+        ResultSet res = this.executeQuery(
+                "SELECT * FROM `guild_war_log` WHERE `territory_log_id` IN " + placeHolder,
+                territoryLogIds.toArray()
+        );
+
+        if (res == null) {
+            return null;
+        }
+
+        try {
+            return bindAll(res);
+        } catch (SQLException e) {
+            this.logResponseException(e);
+            return null;
+        }
+    }
+
+    @Nullable
+    @Override
     public List<GuildWarLog> findAll() {
         throw new Error("Find all not implemented: records size may be too large");
     }

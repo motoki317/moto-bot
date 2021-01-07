@@ -95,10 +95,18 @@ public abstract class GuildWarLogRepository extends Repository<GuildWarLog, Guil
     public abstract int countTotalWarsSum(@NotNull Date start, @NotNull Date end);
 
     /**
-     * Finds all logs of the war log ID list.
+     * Finds all logs which is associated with the given war log ids.
      * @param warLogIds List of war_log_id.
      * @return List of logs. null if something went wrong.
      */
     @Nullable
     public abstract List<GuildWarLog> findAllOfWarLogIdIn(List<Integer> warLogIds);
+
+    /**
+     * Finds all logs which is associated with the given territory log ids.
+     * @param territoryLogIds  List of territory_log_id.
+     * @return List of logs. null if something went wrong.
+     */
+    @Nullable
+    public abstract List<GuildWarLog> findAllOfTerritoryLogIdIn(List<Integer> territoryLogIds);
 }
