@@ -17,15 +17,19 @@ public class Territory {
     private static final DateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
     private String territory;
+    @Nullable
     private String guild;
     private String acquired;
+    @Nullable
     private String attacker;
+    @Nullable
     private Location location;
 
     public String getTerritory() {
         return territory;
     }
 
+    @Nullable
     public String getGuild() {
         return guild;
     }
@@ -43,6 +47,7 @@ public class Territory {
         return attacker;
     }
 
+    @Nullable
     public Location getLocation() {
         return location;
     }
@@ -94,7 +99,10 @@ public class Territory {
         );
     }
 
-    private static db.model.territory.Territory.Location convertLocation(Location l) {
+    private static db.model.territory.Territory.Location convertLocation(@Nullable Location l) {
+        if (l == null) {
+            return new db.model.territory.Territory.Location(0, 0, 0, 0);
+        }
         return new db.model.territory.Territory.Location(l.startX, l.startZ, l.endX, l.endZ);
     }
 }

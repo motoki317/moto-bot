@@ -7,12 +7,12 @@ import java.util.Date;
 
 public class Territory implements TerritoryId {
     @NotNull
-    private String name;
-    private String guild;
-    private Date acquired;
+    private final String name;
+    private final String guild;
+    private final Date acquired;
     @Nullable
-    private String attacker;
-    private Location location;
+    private final String attacker;
+    private final Location location;
 
     public Territory(@NotNull String name, String guild, Date acquired, @Nullable String attacker, @NotNull Location location) {
         this.name = name;
@@ -27,10 +27,10 @@ public class Territory implements TerritoryId {
     }
 
     public static class Location {
-        private int startX;
-        private int startZ;
-        private int endX;
-        private int endZ;
+        private final int startX;
+        private final int startZ;
+        private final int endX;
+        private final int endZ;
 
         public Location(int startX, int startZ, int endX, int endZ) {
             this.startX = startX;
