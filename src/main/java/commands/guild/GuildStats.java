@@ -161,9 +161,9 @@ public class GuildStats extends GenericCommand {
             int contributeExtraPages = (count - 1) / MEMBERS_PER_CONTRIBUTE_PAGE;
             // 0: main
             // 1: online players
-            // 2, 3, 4, 5: chiefs, captains, recruiters, recruits
-            // 6~: xp contributions
-            return 6 + contributeExtraPages;
+            // 2, 3, 4, 5, 6: chiefs, strategists, captains, recruiters, recruits
+            // 7~: xp contributions
+            return 7 + contributeExtraPages;
         }
 
         private void makeGuildInfo(List<String> view, WynnGuild guild) {
@@ -288,16 +288,18 @@ public class GuildStats extends GenericCommand {
                     // online players
                     return getOnlinePlayers(guild);
                 case 2:
-                    // chiefs, captains, recruiters, recruits
+                    // chiefs, strategists, captains, recruiters, recruits
                     return getMembers(guild, Rank.CHIEF);
                 case 3:
-                    return getMembers(guild, Rank.CAPTAIN);
+                    return getMembers(guild, Rank.STRATEGIST);
                 case 4:
-                    return getMembers(guild, Rank.RECRUITER);
+                    return getMembers(guild, Rank.CAPTAIN);
                 case 5:
+                    return getMembers(guild, Rank.RECRUITER);
+                case 6:
                     return getMembers(guild, Rank.RECRUIT);
                 default:
-                    int contributePageNum = page - 6;
+                    int contributePageNum = page - 7;
                     return getContributePage(guild, contributePageNum);
             }
         }
@@ -339,9 +341,8 @@ public class GuildStats extends GenericCommand {
             long onlineMembers = guild.getMembers().stream()
                     .filter(m -> this.wynnApi.findPlayer(m.getName()) != null).count();
             ret.add(String.format(
-                    "Members: %s / %s (Online: %s)",
+                    "Members: %s (Online: %s)",
                     guild.getMembers().size(),
-                    guild.getLevel() + 4,
                     onlineMembers
             ));
 
@@ -399,14 +400,14 @@ public class GuildStats extends GenericCommand {
                 int justifyName = onlineMembers.stream().mapToInt(e -> e.name.length()).max().getAsInt();
                 justifyName = Math.max(justifyName, 4);
 
-                ret.add(String.format("Name%s | Rank | Server", nCopies(" ", justifyName - 4)));
-                ret.add(String.format("%s-+------+--------", nCopies("-", justifyName)));
+                ret.add(String.format("Name%s | Rank  | Server", nCopies(" ", justifyName - 4)));
+                ret.add(String.format("%s-+-------+--------", nCopies("-", justifyName)));
 
                 for (Member onlineMember : onlineMembers) {
                     ret.add(String.format(
                             "%s%s | %s%s | %s",
                             onlineMember.name, nCopies(" ", justifyName - onlineMember.name.length()),
-                            nCopies("*", onlineMember.rank.rank), nCopies(" ", 4 - onlineMember.rank.rank),
+                            nCopies("*", onlineMember.rank.rank), nCopies(" ", 5 - onlineMember.rank.rank),
                             onlineMember.server
                     ));
                 }
@@ -494,12 +495,12 @@ public class GuildStats extends GenericCommand {
             ret.add("---- XP Contributions ----");
             ret.add("");
             ret.add(String.format(
-                    "%s Name%s | Rank | XP%s",
+                    "%s Name%s | Rank  | XP%s",
                     nCopies(" ", justifyRankNum), nCopies(" ", justifyName - 4),
                     nCopies(" ", justifyXp - 2)
             ));
             ret.add(String.format(
-                    "%s-%s-+------+-%s",
+                    "%s-%s-+-------+-%s",
                     nCopies("-", justifyRankNum), nCopies("-", justifyName),
                     nCopies("-", justifyXp)
             ));
@@ -515,7 +516,7 @@ public class GuildStats extends GenericCommand {
                         "%s%s %s%s | %s%s | %s%s",
                         member.rankNum, nCopies(" ", justifyRankNum - member.rankNum.length()),
                         member.name, nCopies(" ", justifyName - member.name.length()),
-                        nCopies("*", member.rank.rank), nCopies(" ", 4 - member.rank.rank),
+                        nCopies("*", member.rank.rank), nCopies(" ", 5 - member.rank.rank),
                         nCopies(" ", justifyXp - member.contributed.length()), member.contributed
                 ));
             }
@@ -529,8 +530,9 @@ public class GuildStats extends GenericCommand {
     }
 
     private enum Rank {
-        OWNER(4, "Owner"),
-        CHIEF(3, "Chief"),
+        OWNER(5, "Owner"),
+        CHIEF(4, "Chief"),
+        STRATEGIST(3, "Strategist"),
         CAPTAIN(2, "Captain"),
         RECRUITER(1, "Recruiter"),
         RECRUIT(0, "Recruit");
