@@ -5,22 +5,25 @@ on:
     branches:
       - master
 
-env:
-  IMAGE_NAME: moto-bot
-  IMAGE_TAG: master
-
 jobs:
   image:
     name: Build Docker Image
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - name: Login to GitHub Registry
-        run: docker login docker.pkg.github.com -u motoki317 -p ${{ secrets.GITHUB_TOKEN }}
-      - name: Build Image
-        run: docker build -t docker.pkg.github.com/motoki317/moto-bot/${IMAGE_NAME}:${IMAGE_TAG} .
-      - name: Push image to GitHub Registry
-        run: docker push docker.pkg.github.com/motoki317/moto-bot/${IMAGE_NAME}:${IMAGE_TAG}
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v1
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.CR_PAT }}
+      - name: Build and Push
+        uses: docker/build-push-action@v2
+        with:
+          push: true
+          tags: ghcr.io/motoki317/moto-bot:master
   deploy:
     name: Deploy
     runs-on: ubuntu-latest

@@ -2,7 +2,7 @@ version: '3'
 
 services:
   moto-bot:
-    image: docker.pkg.github.com/motoki317/moto-bot/moto-bot:master
+    image: ghcr.io/motoki317/moto-bot:master
     restart: always
     environment:
       MYSQL_HOST: mysql
