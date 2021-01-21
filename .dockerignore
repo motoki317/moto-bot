@@ -1,9 +1,13 @@
 .git
-target
+.github
 .idea
+development
+target
 mysql
 
+.dockerignore
 .env
+.env-sample
 .gitignore
 docker-compose.yml
 Dockerfile
