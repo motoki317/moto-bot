@@ -90,6 +90,9 @@ public class Territory {
      */
     @NotNull
     public db.model.territory.Territory convert() throws ParseException {
+        if (this.guild == null) {
+            throw new RuntimeException("guild is null");
+        }
         return new db.model.territory.Territory(
                 this.territory,
                 this.guild,

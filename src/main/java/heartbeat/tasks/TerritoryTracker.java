@@ -77,6 +77,8 @@ public class TerritoryTracker implements TaskBase {
         List<Territory> territories = new ArrayList<>();
         for (Map.Entry<String, api.wynn.structs.Territory> e : territoryList.getTerritories().entrySet()) {
             try {
+                // Skip bad API response
+                if (e.getValue().getGuild() == null) continue;
                 territories.add(e.getValue().convert());
             } catch (ParseException ex) {
                 this.logger.logException("an exception occurred in territory tracker", ex);

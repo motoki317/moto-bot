@@ -8,13 +8,14 @@ import java.util.Date;
 public class Territory implements TerritoryId {
     @NotNull
     private final String name;
+    @NotNull
     private final String guild;
     private final Date acquired;
     @Nullable
     private final String attacker;
     private final Location location;
 
-    public Territory(@NotNull String name, String guild, Date acquired, @Nullable String attacker, @NotNull Location location) {
+    public Territory(@NotNull String name, @NotNull String guild, Date acquired, @Nullable String attacker, @NotNull Location location) {
         this.name = name;
         this.guild = guild;
         this.acquired = acquired;
@@ -62,6 +63,7 @@ public class Territory implements TerritoryId {
         return name;
     }
 
+    @NotNull
     public String getGuild() {
         return guild;
     }
