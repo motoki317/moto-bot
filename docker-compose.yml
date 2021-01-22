@@ -19,14 +19,8 @@ services:
       BOT_LOG_CHANNEL_2: ${BOT_LOG_CHANNEL_2}
       BOT_LOG_CHANNEL_3: ${BOT_LOG_CHANNEL_3}
       BOT_LOG_CHANNEL_4: ${BOT_LOG_CHANNEL_4}
-    ports:
-      - 8080:8080
     depends_on:
       - mysql
-    networks:
-      - internal
-    volumes:
-      - $HOME/.m2:/root/.m2
 
   mysql:
     image: mariadb:10.5.8
@@ -38,11 +32,6 @@ services:
       - 3306
     ports:
       - 3306:3306
-    networks:
-      - internal
     volumes:
       - ./mysql/data:/var/lib/mysql
       - ./mysql/init:/docker-entrypoint-initdb.d
-
-networks:
-  internal:
