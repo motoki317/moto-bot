@@ -8,13 +8,12 @@ import org.jetbrains.annotations.NotNull;
 import javax.annotation.CheckReturnValue;
 import javax.annotation.Nullable;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
-
-import static utils.SQLReplacer.replaceSql;
 
 public abstract class Repository<T, ID> implements IRepository<T, ID> {
     protected final ConnectionPool db;
@@ -24,6 +23,20 @@ public abstract class Repository<T, ID> implements IRepository<T, ID> {
     protected Repository(ConnectionPool db, Logger logger) {
         this.db = db;
         this.logger = logger;
+    }
+
+    private PreparedStatement prepareStatement(@NotNull Connection connection,
+                                               @NotNull String sql,
+                                               Object[] objects) throws SQLException {
+        PreparedStatement ps = connection.prepareStatement(sql);
+        for (int i = 0; i < objects.length; i++) {
+            if (objects[i] == null) {
+                ps.setObject(i + 1, objects[i]);
+            } else {
+                ps.setString(i + 1, objects[i].toString());
+            }
+        }
+        return ps;
     }
 
     /**
@@ -54,14 +67,13 @@ public abstract class Repository<T, ID> implements IRepository<T, ID> {
      * @return True if succeeded.
      */
     @CheckReturnValue
-    protected boolean execute(Connection connection, @Language("MariaDB") String sql, Object... strings) {
-        String fullSql = replaceSql(sql, strings);
+    protected boolean execute(Connection connection, @Language("MariaDB") String sql, Object... objects) {
         try {
-            Statement statement = connection.createStatement();
-            statement.execute(fullSql);
+            PreparedStatement ps = this.prepareStatement(connection, sql, objects);
+            ps.execute();
             return true;
         } catch (SQLException e) {
-            this.logger.logException("an exception occurred while executing sql: " + fullSql, e);
+            this.logger.logException("an exception occurred while executing sql: " + sql + ", parameters: " + Arrays.toString(objects), e);
             return false;
         }
     }
@@ -99,12 +111,11 @@ public abstract class Repository<T, ID> implements IRepository<T, ID> {
     @Nullable
     @CheckReturnValue
     protected ResultSet executeQuery(Connection connection, @Language("MariaDB") String sql, Object... objects) {
-        String fullSql = replaceSql(sql, objects);
         try {
-            Statement statement = connection.createStatement();
-            return statement.executeQuery(fullSql);
+            PreparedStatement ps = this.prepareStatement(connection, sql, objects);
+            return ps.executeQuery();
         } catch (SQLException e) {
-            this.logger.logException("an exception occurred while executing sql: " + fullSql, e);
+            this.logger.logException("an exception occurred while executing sql: " + sql + ", parameters: " + Arrays.toString(objects), e);
             return null;
         }
     }
