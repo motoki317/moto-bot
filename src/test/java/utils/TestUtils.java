@@ -13,11 +13,6 @@ public class TestUtils {
     }
 
     @TestOnly
-    public static TimeZone getWynnTimeZone() {
-        return TimeZone.getTimeZone("America/New_York");
-    }
-
-    @TestOnly
     public static Logger getLogger() {
         return new ConsoleLogger(getLogTimeZone());
     }

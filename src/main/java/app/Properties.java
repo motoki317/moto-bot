@@ -2,9 +2,6 @@ package app;
 
 import java.awt.*;
 import java.io.IOException;
-import java.text.DateFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -14,9 +11,9 @@ public class Properties {
     private final java.util.Properties properties;
 
     public final String version;
+    public final String gitCommitShort;
+    public final String repositoryUrl;
 
-    public final String herokuReleaseVersion;
-    public final Date releaseDate;
     public final Date lastReboot;
 
     final String botAccessToken;
@@ -38,21 +35,15 @@ public class Properties {
 
     final TimeZone logTimeZone;
 
-    public Properties() throws IOException, ParseException {
+    public Properties() throws IOException {
         this.properties = new java.util.Properties();
         this.properties.load(this.getClass().getClassLoader().getResourceAsStream("project.properties"));
+        this.properties.load(this.getClass().getClassLoader().getResourceAsStream("git.properties"));
 
         this.version = getProperty("version");
-//        String artifactId = getProperty("artifactId");
+        this.gitCommitShort = getProperty("git.commit.id.abbrev");
+        this.repositoryUrl = getProperty("repositoryUrl");
 
-        String herokuVersionEnv = getEnv("HEROKU_RELEASE_VERSION");
-        this.herokuReleaseVersion = herokuVersionEnv == null ? "" : herokuVersionEnv;
-
-        String herokuReleaseDateStr = getEnv("HEROKU_RELEASE_CREATED_AT");
-        DateFormat herokuReleaseDateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
-        this.releaseDate = herokuReleaseDateStr == null || herokuReleaseDateStr.equals("")
-                ? new Date()
-                : herokuReleaseDateFormat.parse(herokuReleaseDateStr);
         this.lastReboot = new Date();
 
         this.botAccessToken = getEnv("DISCORD_ACCESS_TOKEN");
@@ -81,8 +72,6 @@ public class Properties {
         this.guildBannerUrl = getProperty("guildBannerUrl");
 
         this.logTimeZone = TimeZone.getTimeZone(getProperty("logTimeZone"));
-        // No longer needed because the territoryList route now returns as UTC instead of EST?
-        // this.wynnTimeZone = TimeZone.getTimeZone(getProperty("wynnTimeZone"));
     }
 
     private String getEnv(String name) {
@@ -103,9 +92,9 @@ public class Properties {
      */
     public Color getMainColor() {
         return new Color(
-                Integer.valueOf( this.mainColor.substring( 1, 3 ), 16 ),
-                Integer.valueOf( this.mainColor.substring( 3, 5 ), 16 ),
-                Integer.valueOf( this.mainColor.substring( 5, 7 ), 16 )
+                Integer.valueOf( this.mainColor.substring(1, 3), 16),
+                Integer.valueOf( this.mainColor.substring(3, 5), 16),
+                Integer.valueOf( this.mainColor.substring(5, 7), 16)
         );
     }
 }

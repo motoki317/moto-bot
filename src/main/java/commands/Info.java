@@ -10,8 +10,6 @@ import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import org.jetbrains.annotations.NotNull;
 
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -61,7 +59,6 @@ public class Info extends GenericCommand {
     }
 
     private EmbedBuilder getInfo() {
-        DateFormat outFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
         EmbedBuilder eb = new EmbedBuilder();
         Properties properties = this.bot.getProperties();
 
@@ -77,14 +74,10 @@ public class Info extends GenericCommand {
         description.add("**Servers:** " + serverNum);
         description.add("**Bot Server:** " + properties.botServerInviteUrl);
 
-        String versionStr = properties.version;
-        if (!properties.herokuReleaseVersion.equals("")) {
-            versionStr += "_" + properties.herokuReleaseVersion;
-        }
-        description.add("**Version:** " + versionStr);
+        description.add("**Version:** " + properties.version);
+        description.add("**Commit:** `" + properties.gitCommitShort + "`");
+        description.add("**Repository:** " + properties.repositoryUrl);
 
-        description.add("**Last Version Release Date:**");
-        description.add(outFormat.format(properties.releaseDate) + " UTC");
         description.add("");
         description.add("Some concepts inspired by:");
         description.add("[WynnBot](https://forums.wynncraft.com/threads/231863/) by Wurst#1783");

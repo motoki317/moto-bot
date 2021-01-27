@@ -14,6 +14,7 @@
         <maven.compiler.target>${java.version}</maven.compiler.target>
         <jackson.version>2.12.0</jackson.version>
         <junit.jupiter.version>5.7.0</junit.jupiter.version>
+        <git-commit-id-plugin.version>4.0.3</git-commit-id-plugin.version>
     </properties>
 
     <repositories>
@@ -125,6 +126,26 @@
                         <MYSQL_PORT>3306</MYSQL_PORT>
                         <DEBUG>1</DEBUG>
                     </environmentVariables>
+                </configuration>
+            </plugin>
+            <!-- To include git commit -->
+            <plugin>
+                <groupId>pl.project13.maven</groupId>
+                <artifactId>git-commit-id-plugin</artifactId>
+                <version>${git-commit-id-plugin.version}</version>
+                <executions>
+                    <execution>
+                        <id>get-the-git-infos</id>
+                        <goals>
+                            <goal>revision</goal>
+                        </goals>
+                        <phase>initialize</phase>
+                    </execution>
+                </executions>
+                <configuration>
+                    <dotGitDirectory>${project.basedir}/.git</dotGitDirectory>
+                    <generateGitPropertiesFile>true</generateGitPropertiesFile>
+                    <generateGitPropertiesFilename>${project.build.outputDirectory}/git.properties</generateGitPropertiesFilename>
                 </configuration>
             </plugin>
         </plugins>

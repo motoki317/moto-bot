@@ -4,12 +4,10 @@ WORKDIR /usr/src/moto-bot
 
 COPY ./pom.xml ./
 # Resole bot dependencies
-RUN mvn dependency:resolve
-# Resolve build dependencies
-RUN mvn package
+RUN --mount=type=cache,target=/root/.m2 mvn dependency:resolve
 
-COPY ./src ./src
-RUN mvn package -D skipTests
+COPY . .
+RUN --mount=type=cache,target=/root/.m2 mvn package -D skipTests
 
 FROM openjdk:8-jre-slim AS runtime
 
