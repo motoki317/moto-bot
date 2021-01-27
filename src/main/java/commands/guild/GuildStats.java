@@ -20,6 +20,7 @@ import update.multipage.MultipageHandler;
 import update.reaction.ReactionManager;
 import utils.FormatUtils;
 import utils.InputChecker;
+import utils.TableFormatter;
 import utils.rateLimit.RateLimitException;
 
 import java.math.BigDecimal;
@@ -28,6 +29,9 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+
+import static utils.TableFormatter.Justify.Left;
+import static utils.TableFormatter.Justify.Right;
 
 public class GuildStats extends GenericCommand {
     private final Handler handler;
@@ -166,13 +170,13 @@ public class GuildStats extends GenericCommand {
             return 7 + contributeExtraPages;
         }
 
-        private void makeGuildInfo(List<String> view, WynnGuild guild) {
+        private void makeGuildInfo(StringBuilder sb, WynnGuild guild) {
             String guildName = guild.getName();
 
             Date lastUpdatedAt = this.guildLeaderboardRepository.getNewestDate();
             if (lastUpdatedAt == null) {
                 // Default view
-                view.add(String.format("Level %s | %s%%", guild.getLevel(), guild.getXp()));
+                sb.append(String.format("Level %s | %s%%\n", guild.getLevel(), guild.getXp()));
                 return;
             }
             GuildLeaderboard lb = this.guildLeaderboardRepository.findOne(new GuildLeaderboardId() {
@@ -195,12 +199,12 @@ public class GuildStats extends GenericCommand {
             int xpRank = this.guildXpLeaderboardRepository.getXPRank(guildName);
             if (xpLBEntry != null && xpRank != -1 && lb != null) {
                 // The guild is in the leaderboard, and has earned at least 1 xp over the last 24h
-                view.add(String.format("Level %s | %s%%, %s XP%s", guild.getLevel(), guild.getXp(),
+                sb.append(String.format("Level %s | %s%%, %s XP%s\n", guild.getLevel(), guild.getXp(),
                         FormatUtils.truncateNumber(BigDecimal.valueOf(xpLBEntry.getXp())),
                         levelRankStr
                 ));
                 long seconds = (xpLBEntry.getTo().getTime() - xpLBEntry.getFrom().getTime()) / 1000L;
-                view.add(String.format("%s XP gained in last %s (#%s)",
+                sb.append(String.format("%s XP gained in last %s (#%s)\n",
                         FormatUtils.truncateNumber(BigDecimal.valueOf(xpLBEntry.getXpDiff())),
                         FormatUtils.formatReadableTime(seconds, false, "m"), xpRank));
                 return;
@@ -209,7 +213,7 @@ public class GuildStats extends GenericCommand {
             if (lb != null) {
                 // The guild is in the leaderboard so we can get exact xp,
                 // but it is NOT on the xp leaderboard i.e. hasn't earned a single xp over the last 24h
-                view.add(String.format("Level %s | %s%%, %s XP%s", guild.getLevel(), guild.getXp(),
+                sb.append(String.format("Level %s | %s%%, %s XP%s\n", guild.getLevel(), guild.getXp(),
                         FormatUtils.truncateNumber(BigDecimal.valueOf(lb.getXp())),
                         levelRankStr
                 ));
@@ -219,17 +223,17 @@ public class GuildStats extends GenericCommand {
             if (xpLBEntry != null && xpRank != -1) {
                 // The guild is on the xp leaderboard, i.e. has earned at least 1 xp over the last 24h,
                 // but it is no longer on the current leaderboard so we can-NOT get the exact xp
-                view.add(String.format("Level %s | %s%%", guild.getLevel(), guild.getXp()));
+                sb.append(String.format("Level %s | %s%%\n", guild.getLevel(), guild.getXp()));
                 long seconds = (xpLBEntry.getTo().getTime() - xpLBEntry.getFrom().getTime()) / 1000L;
                 // `to` time of the xp lb might not be the last updated time
-                view.add(String.format("%s XP gained in %s (#%s)",
+                sb.append(String.format("%s XP gained in %s (#%s)\n",
                         FormatUtils.truncateNumber(BigDecimal.valueOf(xpLBEntry.getXpDiff())),
                         FormatUtils.formatReadableTime(seconds, false, "m"), xpRank));
                 return;
             }
 
             // Default view
-            view.add(String.format("Level %s | %s%%", guild.getLevel(), guild.getXp()));
+            sb.append(String.format("Level %s | %s%%\n", guild.getLevel(), guild.getXp()));
         }
 
         private Message getPage(int page,
@@ -239,32 +243,29 @@ public class GuildStats extends GenericCommand {
             DateFormat dateFormat = customDateFormat.getDateFormat().getSecondFormat();
             dateFormat.setTimeZone(customTimeZone.getTimeZoneInstance());
 
-            List<String> ret = new ArrayList<>();
+            StringBuilder sb = new StringBuilder();
+            sb.append("```ml\n");
+            sb.append(String.format("%s [%s]\n", guild.getName(), guild.getPrefix()));
 
-            ret.add("```ml");
-            ret.add(String.format("%s [%s]", guild.getName(), guild.getPrefix()));
-
-            ret.add("");
-            makeGuildInfo(ret, guild);
+            sb.append("\n");
+            makeGuildInfo(sb, guild);
             int bars = (int) Math.round(Double.parseDouble(guild.getXp()) / 5.0d);
-            ret.add(makeBar(bars));
+            sb.append(makeBar(bars));
 
-            ret.add("");
+            sb.append("\n\n");
+            getMainView(sb, page, guild, customDateFormat, customTimeZone);
+            sb.append("\n");
 
-            ret.add(getMainView(page, guild, customDateFormat, customTimeZone));
-
-            ret.add("");
-
-            ret.add(String.format("  last guild info update: %s",
+            sb.append(String.format("  last guild info update: %s\n",
                     dateFormat.format(new Date(guild.getRequest().getTimestamp() * 1000))
             ));
-            ret.add(String.format("last online stats update: %s",
+            sb.append(String.format("last online stats update: %s\n",
                     dateFormat.format(getLastOnlinePlayerUpdate())
             ));
 
-            ret.add("```");
+            sb.append("```");
 
-            MessageBuilder mb = new MessageBuilder(String.join("\n", ret));
+            MessageBuilder mb = new MessageBuilder(sb.toString());
 
             if (guild.getBanner() != null) {
                 mb.setEmbed(
@@ -279,28 +280,40 @@ public class GuildStats extends GenericCommand {
             return mb.build();
         }
 
-        private String getMainView(int page, @NotNull WynnGuild guild, @NotNull CustomDateFormat customDateFormat, @NotNull CustomTimeZone customTimeZone) {
+        private void getMainView(@NotNull StringBuilder sb,
+                                 int page,
+                                 @NotNull WynnGuild guild,
+                                 @NotNull CustomDateFormat customDateFormat,
+                                 @NotNull CustomTimeZone customTimeZone) {
             switch (page) {
                 case 0:
                     // main
-                    return getFirstPage(guild, customDateFormat, customTimeZone);
+                    getFirstPage(sb, guild, customDateFormat, customTimeZone);
+                    break;
                 case 1:
                     // online players
-                    return getOnlinePlayers(guild);
+                    getOnlinePlayers(sb, guild);
+                    break;
                 case 2:
                     // chiefs, strategists, captains, recruiters, recruits
-                    return getMembers(guild, Rank.CHIEF);
+                    getMembers(sb, guild, Rank.CHIEF);
+                    break;
                 case 3:
-                    return getMembers(guild, Rank.STRATEGIST);
+                    getMembers(sb, guild, Rank.STRATEGIST);
+                    break;
                 case 4:
-                    return getMembers(guild, Rank.CAPTAIN);
+                    getMembers(sb, guild, Rank.CAPTAIN);
+                    break;
                 case 5:
-                    return getMembers(guild, Rank.RECRUITER);
+                    getMembers(sb, guild, Rank.RECRUITER);
+                    break;
                 case 6:
-                    return getMembers(guild, Rank.RECRUIT);
+                    getMembers(sb, guild, Rank.RECRUIT);
+                    break;
                 default:
                     int contributePageNum = page - 7;
-                    return getContributePage(guild, contributePageNum);
+                    getContributePage(sb, guild, contributePageNum);
+                    break;
             }
         }
 
@@ -327,50 +340,40 @@ public class GuildStats extends GenericCommand {
             }
         }
 
-        @NotNull
-        private String getFirstPage(@NotNull WynnGuild guild,
-                                    @NotNull CustomDateFormat customDateFormat,
-                                    @NotNull CustomTimeZone customTimeZone) {
-            List<String> ret = new ArrayList<>();
-            ret.add("---- Guild Information ----");
-
-            ret.add("");
-
-            ret.add("Owner: " + guild.getOwnerName());
+        private void getFirstPage(@NotNull StringBuilder sb,
+                                  @NotNull WynnGuild guild,
+                                  @NotNull CustomDateFormat customDateFormat,
+                                  @NotNull CustomTimeZone customTimeZone) {
+            sb.append("---- Guild Information ----\n");
+            sb.append("\n");
+            sb.append("Owner: ").append(guild.getOwnerName()).append("\n");
 
             long onlineMembers = guild.getMembers().stream()
                     .filter(m -> this.wynnApi.findPlayer(m.getName()) != null).count();
-            ret.add(String.format(
-                    "Members: %s (Online: %s)",
+            sb.append(String.format(
+                    "Members: %s (Online: %s)\n",
                     guild.getMembers().size(),
                     onlineMembers
             ));
 
             DateFormat dateFormat = customDateFormat.getDateFormat().getSecondFormat();
             dateFormat.setTimeZone(customTimeZone.getTimeZoneInstance());
-            ret.add(String.format(
-                    "Created: %s (%s)",
+            sb.append(String.format(
+                    "Created: %s (%s)\n",
                     dateFormat.format(guild.getCreated()), customTimeZone.getFormattedTime()
             ));
 
             int territories = this.territoryRepository.countGuildTerritories(guild.getName());
             int territoryRank = this.territoryRepository.getGuildTerritoryRanking(guild.getName());
             if (territoryRank <= 0) {
-                ret.add(
-                        String.format("Territory: %s", territories)
-                );
+                sb.append(String.format("Territory: %s\n", territories));
             } else {
-                ret.add(
-                        String.format("Territory: %s (#%s)", territories, territoryRank)
-                );
+                sb.append(String.format("Territory: %s (#%s)\n", territories, territoryRank));
             }
-            return String.join("\n", ret);
         }
 
-        @NotNull
-        private String getOnlinePlayers(@NotNull WynnGuild guild) {
-            List<String> ret = new ArrayList<>();
-
+        private void getOnlinePlayers(@NotNull StringBuilder sb,
+                                      @NotNull WynnGuild guild) {
             class Member {
                 private final String name;
                 private final Rank rank;
@@ -389,39 +392,30 @@ public class GuildStats extends GenericCommand {
                     .sorted((m1, m2) -> m2.rank.rank - m1.rank.rank).collect(Collectors.toList());
 
             if (onlineMembers.size() == 1) {
-                ret.add("---- Online Member (1) ----");
+                sb.append("---- Online Member (1) ----\n");
             } else {
-                ret.add(String.format("---- Online Members (%s) ----", onlineMembers.size()));
+                sb.append(String.format("---- Online Members (%s) ----\n", onlineMembers.size()));
             }
 
-            ret.add("");
+            sb.append("\n");
 
             if (onlineMembers.size() != 0) {
-                int justifyName = onlineMembers.stream().mapToInt(e -> e.name.length()).max().getAsInt();
-                justifyName = Math.max(justifyName, 4);
-
-                ret.add(String.format("Name%s | Rank  | Server", nCopies(" ", justifyName - 4)));
-                ret.add(String.format("%s-+-------+--------", nCopies("-", justifyName)));
-
-                for (Member onlineMember : onlineMembers) {
-                    ret.add(String.format(
-                            "%s%s | %s%s | %s",
-                            onlineMember.name, nCopies(" ", justifyName - onlineMember.name.length()),
-                            nCopies("*", onlineMember.rank.rank), nCopies(" ", 5 - onlineMember.rank.rank),
-                            onlineMember.server
-                    ));
+                TableFormatter tf = new TableFormatter(false);
+                tf.addColumn("Name", Left, Left)
+                        .addColumn("Rank", Left, Left)
+                        .addColumn("Server", Left, Left);
+                for (Member m : onlineMembers) {
+                    tf.addRow(m.name, nCopies("*", m.rank.rank), m.server);
                 }
+                tf.toString(sb);
             } else {
-                ret.add("There are no members online.");
+                sb.append("There are no members online.\n");
             }
-
-            return String.join("\n", ret);
         }
 
-        @NotNull
-        private String getMembers(@NotNull WynnGuild guild, Rank rank) {
-            List<String> ret = new ArrayList<>();
-
+        private void getMembers(@NotNull StringBuilder sb,
+                                @NotNull WynnGuild guild,
+                                @NotNull Rank rank) {
             class Member {
                 private final String name;
                 private final String server;
@@ -439,37 +433,33 @@ public class GuildStats extends GenericCommand {
 
             int justifyName = members.stream().mapToInt(e -> e.name.length()).max().orElse(1);
 
-            ret.add(String.format(
-                    "---- %s (%s) ----",
+            sb.append(String.format(
+                    "---- %s (%s) ----\n",
                     rank.readableName + (members.size() != 1 ? "s" : ""),
                     members.size()
             ));
-            ret.add("");
+            sb.append("\n");
 
             for (Member member : members) {
                 if (member.server != null) {
-                    ret.add(String.format(
-                            "%s%s : %s",
+                    sb.append(String.format(
+                            "%s%s : %s\n",
                             member.name, nCopies(" ", justifyName - member.name.length()),
                             member.server
                     ));
                 } else {
-                    ret.add(member.name);
+                    sb.append(member.name).append("\n");
                 }
             }
-
-            return String.join("\n", ret);
         }
 
-        @NotNull
-        private String getContributePage(@NotNull WynnGuild guild, int pageNum) {
-            List<String> ret = new ArrayList<>();
-
+        private void getContributePage(@NotNull StringBuilder sb,
+                                       @NotNull WynnGuild guild,
+                                       int pageNum) {
             class Member {
                 private final String name;
                 private final Rank rank;
                 private final String contributed;
-                private String rankNum;
 
                 private Member(String name, Rank rank, String contributed) {
                     this.name = name;
@@ -485,43 +475,21 @@ public class GuildStats extends GenericCommand {
                     )))
                     .collect(Collectors.toList());
 
-            int justifyName = members.stream().mapToInt(m -> m.name.length()).max().orElse(4);
-            for (int i = 0; i < members.size(); i++) {
-                members.get(i).rankNum = (i + 1) + ".";
-            }
-            int justifyRankNum = members.stream().mapToInt(m -> m.rankNum.length()).max().orElse(2);
-            int justifyXp = members.stream().mapToInt(m -> m.contributed.length()).max().orElse(2);
+            sb.append("---- XP Contributions ----\n");
+            sb.append("\n");
 
-            ret.add("---- XP Contributions ----");
-            ret.add("");
-            ret.add(String.format(
-                    "%s Name%s | Rank  | XP%s",
-                    nCopies(" ", justifyRankNum), nCopies(" ", justifyName - 4),
-                    nCopies(" ", justifyXp - 2)
-            ));
-            ret.add(String.format(
-                    "%s-%s-+-------+-%s",
-                    nCopies("-", justifyRankNum), nCopies("-", justifyName),
-                    nCopies("-", justifyXp)
-            ));
-
+            TableFormatter tf = new TableFormatter(false);
+            tf.addColumn("", Left, Left)
+                    .addColumn("Name", Left, Left)
+                    .addColumn("Rank", Left, Left)
+                    .addColumn("XP", Left, Right);
             int min = pageNum * MEMBERS_PER_CONTRIBUTE_PAGE;
             int max = Math.min((pageNum + 1) * MEMBERS_PER_CONTRIBUTE_PAGE, members.size());
-
-            for (int i = 0; i < members.size(); i++) {
-                if (i < min || max <= i) continue;
-
-                Member member = members.get(i);
-                ret.add(String.format(
-                        "%s%s %s%s | %s%s | %s%s",
-                        member.rankNum, nCopies(" ", justifyRankNum - member.rankNum.length()),
-                        member.name, nCopies(" ", justifyName - member.name.length()),
-                        nCopies("*", member.rank.rank), nCopies(" ", 5 - member.rank.rank),
-                        nCopies(" ", justifyXp - member.contributed.length()), member.contributed
-                ));
+            for (int i = min; i < max; i++) {
+                Member m = members.get(i);
+                tf.addRow((i + 1) + ".", m.name, nCopies("*", m.rank.rank), m.contributed);
             }
-
-            return String.join("\n", ret);
+            tf.toString(sb);
         }
     }
 

@@ -18,6 +18,7 @@ import update.multipage.MultipageHandler;
 import update.reaction.ReactionManager;
 import utils.ArgumentParser;
 import utils.FormatUtils;
+import utils.TableFormatter;
 
 import java.math.BigDecimal;
 import java.text.DateFormat;
@@ -25,6 +26,9 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+
+import static utils.TableFormatter.Justify.Left;
+import static utils.TableFormatter.Justify.Right;
 
 public class GuildLevelRank extends GenericCommand {
     private final ReactionManager reactionManager;
@@ -214,7 +218,7 @@ public class GuildLevelRank extends GenericCommand {
         for (int i = start; i < end; i++) {
             GuildLeaderboard g = lb.get(i);
             displays.add(new Display(
-                    String.valueOf(i + 1),
+                    (i + 1) + ".",
                     String.format("[%s] %s", g.getPrefix(), g.getName()),
                     String.valueOf(g.getLevel()),
                     FormatUtils.truncateNumber(BigDecimal.valueOf(g.getXp())),
@@ -248,62 +252,43 @@ public class GuildLevelRank extends GenericCommand {
     private static String formatDisplays(int page, List<Display> displays,
                                          CustomDateFormat customDateFormat, CustomTimeZone customTimeZone,
                                          LBDisplay lbDisplay) {
-        int numJustify = displays.stream().mapToInt(d -> d.num.length()).max().orElse(1);
-        int nameJustify = displays.stream().mapToInt(d -> d.guildName.length()).max().orElse(6);
-        int lvJustify = displays.stream().mapToInt(d -> d.lv.length()).max().orElse(2);
-        int xpJustify = Math.max(displays.stream().mapToInt(d -> d.xp.length()).max().orElse(6), 2);
-        int gainedJustify = Math.max(displays.stream().mapToInt(d -> d.gainedXp.length()).max().orElse(6), 6);
-        int territoryJustify = displays.stream().mapToInt(d -> d.territory.length()).max().orElse(1);
+        StringBuilder sb = new StringBuilder();
+        sb.append("```ml\n");
+        sb.append("---- Guild Level Rank ----\n");
+        sb.append("\n");
 
-        List<String> ret = new ArrayList<>();
-
-        ret.add("```ml");
-        ret.add("---- Guild Level Rank ----");
-        ret.add("");
-        ret.add(String.format("%s  Name%s | Lv%s | XP%s | Gained%s | Territory",
-                nCopies(" ", numJustify), nCopies(" ", nameJustify - 4),
-                nCopies(" ", lvJustify - 2), nCopies(" ", xpJustify - 2),
-                nCopies(" ", gainedJustify - 6)));
-        ret.add(String.format("%s--%s-+-%s-+-%s-+-%s-+-%s-",
-                nCopies("-", numJustify), nCopies("-", nameJustify),
-                nCopies("-", lvJustify), nCopies("-", xpJustify),
-                nCopies("-", gainedJustify), nCopies("-", "Territory".length())));
-
+        TableFormatter tf = new TableFormatter(false);
+        tf.addColumn("", Left, Left)
+                .addColumn("Name", Left, Left)
+                .addColumn("Lv", Left, Right)
+                .addColumn("XP", Left, Right)
+                .addColumn("Gained", lbDisplay.totalXPGained, Left, Right)
+                .addColumn("Territory", lbDisplay.totalTerritories, Left, Left);
         for (Display d : displays) {
-            ret.add(String.format("%s.%s %s%s | %s%s | %s%s | %s%s | %s%s",
-                    d.num, nCopies(" ", numJustify - d.num.length()),
-                    d.guildName, nCopies(" ", nameJustify - d.guildName.length()),
-                    nCopies(" ", lvJustify - d.lv.length()), d.lv,
-                    nCopies(" ", xpJustify - d.xp.length()), d.xp,
-                    nCopies(" ", gainedJustify - d.gainedXp.length()), d.gainedXp,
-                    nCopies(" ", territoryJustify - d.territory.length()), d.territory));
+            tf.addRow(d.num, d.guildName, d.lv, d.xp, d.gainedXp, d.territory);
         }
+        tf.toString(sb);
+        tf.addSeparator(sb);
 
-        ret.add(String.format("%s--%s-+-%s-+-%s-+-%s-+-%s-",
-                nCopies("-", numJustify), nCopies("-", nameJustify),
-                nCopies("-", lvJustify), nCopies("-", xpJustify),
-                nCopies("-", gainedJustify), nCopies("-", "Territory".length())));
-
-        int leftJustify = numJustify + 2 + nameJustify + 3 + lvJustify + 3 + xpJustify;
         String pageView = String.format("< page %s / %s >", page + 1, lbDisplay.maxPage + 1);
-        ret.add(String.format("%s%sTotal | %s | %s",
-                pageView, nCopies(" ", leftJustify - 5 - pageView.length()),
-                lbDisplay.totalXPGained, lbDisplay.totalTerritories));
-
-        ret.add("");
+        sb.append(String.format("%s%sTotal | %s | %s\n",
+                pageView,
+                nCopies(" ", tf.widthAt(0) + 3 + tf.widthAt(1) + 3 + tf.widthAt(2) + 3 + tf.widthAt(3) - pageView.length() - "Total".length()),
+                lbDisplay.totalXPGained,
+                lbDisplay.totalTerritories));
+        sb.append("\n");
 
         DateFormat dateFormat = customDateFormat.getDateFormat().getSecondFormat();
         dateFormat.setTimeZone(customTimeZone.getTimeZoneInstance());
-
-        ret.add(String.format("  xp gained: %s", lbDisplay.lbDuration));
+        sb.append(String.format("  xp gained: %s\n", lbDisplay.lbDuration));
         // in seconds
         long lastUpdateDiff = (new Date().getTime() - lbDisplay.lastUpdate.getTime()) / 1000L;
-        ret.add(String.format("last update: %s (%s), %s ago", dateFormat.format(lbDisplay.lastUpdate),
+        sb.append(String.format("last update: %s (%s), %s ago\n", dateFormat.format(lbDisplay.lastUpdate),
                 customTimeZone.getFormattedTime(), FormatUtils.formatReadableTime(lastUpdateDiff, false, "s")));
 
-        ret.add("```");
+        sb.append("```");
 
-        return String.join("\n", ret);
+        return sb.toString();
     }
 
     private static String nCopies(String s, int n) {

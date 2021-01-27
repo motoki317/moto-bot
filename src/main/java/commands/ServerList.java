@@ -16,16 +16,18 @@ import org.jetbrains.annotations.Nullable;
 import update.multipage.MultipageHandler;
 import update.reaction.ReactionManager;
 import utils.FormatUtils;
+import utils.TableFormatter;
 
 import java.text.DateFormat;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
+
+import static utils.TableFormatter.Justify.Left;
+import static utils.TableFormatter.Justify.Right;
 
 public class ServerList extends GenericCommand {
     private static final int WORLDS_PER_PAGE_DEFAULT = 20;
@@ -109,7 +111,7 @@ public class ServerList extends GenericCommand {
         int worldsPerPage = WORLDS_PER_PAGE_DEFAULT;
         if (args.length > 1) {
             for (String arg : args) {
-                if ("all".equals(arg.toLowerCase())) {
+                if ("all".equalsIgnoreCase(arg)) {
                     getAll = true;
                 } else if (arg.matches("\\d+")) {
                     worldsPerPage = Integer.parseInt(arg);
@@ -133,6 +135,7 @@ public class ServerList extends GenericCommand {
             return;
         }
 
+        worlds.sort((w1, w2) -> w2.getCreatedAt().compareTo(w1.getCreatedAt()));
         sendMessage(event, worldsPerPage, worlds);
     }
 
@@ -161,106 +164,44 @@ public class ServerList extends GenericCommand {
         return (worldsSize - 1) / worldsPerPage;
     }
 
-    private static class WorldDisplay {
-        private final String num;
-        private final String name;
-        private final String players;
-        private final String uptime;
-
-        private WorldDisplay(int num, String name, int players, String uptime) {
-            this.num = String.valueOf(num);
-            this.name = name;
-            this.players = String.valueOf(players);
-            this.uptime = uptime;
-        }
-    }
-
     @NotNull
     private static String format(@NotNull List<World> worlds, int page, int worldsPerPage, CustomTimeZone timeZone, DateFormat dateFormat) {
-        worlds.sort((w1, w2) -> (int) (w2.getCreatedAt().getTime() - w1.getCreatedAt().getTime()));
-
         long currentTimeMillis = System.currentTimeMillis();
-
-        int min = page * worldsPerPage;
-        int max = Math.min((page + 1) * worldsPerPage, worlds.size());
-        List<WorldDisplay> displays = new ArrayList<>();
-        for (int i = min; i < max; i++) {
-            World w = worlds.get(i);
-            int num = i + 1;
-            long uptimeSeconds = (currentTimeMillis - w.getCreatedAt().getTime()) / 1000L;
-            String uptime = FormatUtils.formatReadableTime(uptimeSeconds, true, "m");
-
-            displays.add(new WorldDisplay(num, w.getName(), w.getPlayers(), uptime));
-        }
 
         int maxPage = maxPage(worlds.size(), worldsPerPage);
         String pageView = String.format("< page %s / %s >", page + 1, maxPage + 1);
-
-        return formatDisplays(
-                displays,
-                worlds.stream().mapToLong(d -> d.getUpdatedAt().getTime()).max().orElse(System.currentTimeMillis()),
-                dateFormat,
-                timeZone,
-                pageView
-        );
-    }
-
-    private static String formatDisplays(List<WorldDisplay> displays,
-                                         long lastUpdate, DateFormat dateFormat, CustomTimeZone customTimeZone,
-                                         String pageView) {
-        int numJustify = displays.stream().mapToInt(d -> d.num.length()).max().orElse(1);
-        int serverNameJustify = IntStream.concat(
-                IntStream.of("Server".length()),
-                displays.stream().mapToInt(d -> d.name.length())
-        ).max().orElse("Server".length());
-        int playersJustify = IntStream.concat(
-                IntStream.of("Players".length()),
-                displays.stream().mapToInt(d -> d.players.length())
-        ).max().orElse("Players".length());
-        int uptimeJustify = IntStream.concat(
-                IntStream.of("Uptime".length()),
-                displays.stream().mapToInt(d -> d.uptime.length())
-        ).max().orElse("Uptime".length());
 
         List<String> ret = new ArrayList<>();
         ret.add("```ml");
         ret.add("---- Server List ----");
         ret.add("");
 
-        ret.add(nSpaces(numJustify + 2) + "Server" + nSpaces(serverNameJustify - 6) +
-                " | " + "Players" + nSpaces(playersJustify - 7) +
-                " | " + "Uptime");
-        ret.add(nHyphens(numJustify + 2 + serverNameJustify) +
-                "-+-" + nHyphens(playersJustify) +
-                "-+-" + nHyphens(uptimeJustify + 1));
+        TableFormatter tf = new TableFormatter(false);
+        tf.addColumn("", Left, Left)
+                .addColumn("Server", Left, Left)
+                .addColumn("Players", Left, Right)
+                .addColumn("Uptime", Left, Right);
 
-        for (WorldDisplay d : displays) {
-            ret.add(String.format("%s.%s %s%s | %s%s | %s%s",
-                    d.num, nSpaces(numJustify - d.num.length()),
-                    d.name, nSpaces(serverNameJustify - d.name.length()),
-                    d.players, nSpaces(playersJustify - d.players.length()),
-                    nSpaces(uptimeJustify - d.uptime.length()), d.uptime
-            ));
+        int min = page * worldsPerPage;
+        int max = Math.min((page + 1) * worldsPerPage, worlds.size());
+        for (int i = min; i < max; i++) {
+            World world = worlds.get(i);
+            long uptimeSeconds = (currentTimeMillis - world.getCreatedAt().getTime()) / 1000L;
+            String uptime = FormatUtils.formatReadableTime(uptimeSeconds, true, "m");
+            tf.addRow("" + (i + 1) + ".", world.getName(), "" + world.getPlayers(), uptime);
         }
-
-        ret.add("");
+        ret.add(tf.toString());
 
         ret.add(pageView);
-
         ret.add("");
 
+        long lastUpdate = worlds.stream()
+                .mapToLong(d -> d.getUpdatedAt().getTime())
+                .max()
+                .orElse(System.currentTimeMillis());
         ret.add(String.format("last update: %s (%s)",
-                dateFormat.format(new Date(lastUpdate)), customTimeZone.getFormattedTime()));
-
+                dateFormat.format(new Date(lastUpdate)), timeZone.getFormattedTime()));
         ret.add("```");
         return String.join("\n", ret);
-    }
-
-    private static String nSpaces(int n) {
-        return String.join("", Collections.nCopies(n, " "));
-    }
-
-    private static String nHyphens(int n) {
-        return String.join("", Collections.nCopies(n, "-"));
     }
 }

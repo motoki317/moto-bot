@@ -17,6 +17,7 @@ import update.multipage.MultipageHandler;
 import update.reaction.ReactionManager;
 import utils.ArgumentParser;
 import utils.FormatUtils;
+import utils.TableFormatter;
 
 import java.math.BigDecimal;
 import java.text.DateFormat;
@@ -24,6 +25,9 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+
+import static utils.TableFormatter.Justify.Left;
+import static utils.TableFormatter.Justify.Right;
 
 public class GainedXpRank extends GenericCommand {
     private final ReactionManager reactionManager;
@@ -189,71 +193,51 @@ public class GainedXpRank extends GenericCommand {
                             @NotNull CustomTimeZone customTimeZone) {
         List<Display> displays = createDisplays(leaderboard);
 
-        int justifyNum = displays.stream().mapToInt(g -> g.num.length()).max().orElse(2);
-        int justifyName = displays.stream().mapToInt(g -> g.name.length()).max().orElse(10);
-        int justifyXp = Math.max(displays.stream().mapToInt(d -> d.xp.length()).max().orElse(6), 2);
-        int justifyGained = Math.max(displays.stream().mapToInt(d -> d.gained.length()).max().orElse(6), 6);
+        long total = leaderboard.stream().mapToLong(GuildXpLeaderboard::getXpDiff).sum();
+        String totalGained = FormatUtils.truncateNumber(new BigDecimal(total));
+        String totalTerritories = "" + displays.stream().mapToInt(d -> d.territory).sum();
 
-        List<String> ret = new ArrayList<>();
+        StringBuilder sb = new StringBuilder();
 
-        ret.add("```ml");
-        ret.add("---- Guild XP Transitions ----");
+        sb.append("```ml\n");
+        sb.append("---- Guild XP Transitions ----\n");
+        sb.append("\n");
 
-        ret.add("");
-
-        ret.add(String.format(
-                "%s Name%s | Lv | XP%s | Gained%s | Territory",
-                nCopies(" ", justifyNum), nCopies(" ", justifyName - 4),
-                nCopies(" ", justifyXp - 2), nCopies(" ", justifyGained - 6)
-        ));
-        ret.add(String.format(
-                "%s-%s-+----+-%s-+-%s-+-----------",
-                nCopies("-", justifyNum), nCopies("-", justifyName),
-                nCopies("-", justifyXp), nCopies("-", justifyGained)
-        ));
-
+        TableFormatter tf = new TableFormatter(false);
+        tf.addColumn("", Left, Left)
+                .addColumn("Name", Left, Left)
+                .addColumn("Lv", Left, Right)
+                .addColumn("XP", Left, Right)
+                .addColumn("Gained", totalGained, Left, Right)
+                .addColumn("Territory", totalTerritories, Left, Left);
         int min = page * GUILDS_PER_PAGE;
         int max = Math.min((page + 1) * GUILDS_PER_PAGE, displays.size());
         for (int i = min; i < max; i++) {
             Display d = displays.get(i);
-            ret.add(String.format(
-                    "%s%s %s%s | %s | %s%s | %s%s | %s",
-                    d.num, nCopies(" ", justifyNum - d.num.length()),
-                    d.name, nCopies(" ", justifyName - d.name.length()),
-                    d.lv,
-                    nCopies(" ", justifyXp - d.xp.length()), d.xp,
-                    nCopies(" ", justifyGained - d.gained.length()), d.gained,
-                    d.territory
-            ));
+            tf.addRow(d.num, d.name, ""+ d.lv, d.xp, d.gained, "" + d.territory);
         }
-
-        ret.add(String.format(
-                "%s-%s-+----+-%s-+-%s-+-----------",
-                nCopies("-", justifyNum), nCopies("-", justifyName),
-                nCopies("-", justifyXp), nCopies("-", justifyGained)
-        ));
+        tf.toString(sb);
+        tf.addSeparator(sb);
 
         String pageView = String.format(
                 "< page %s / %s >",
                 page + 1, maxPage(leaderboard) + 1
         );
-
-        long total = leaderboard.stream().mapToLong(GuildXpLeaderboard::getXpDiff).sum();
-        int totalTerritories = displays.stream().mapToInt(d -> d.territory).sum();
-
-        ret.add(String.format(
-                "%s %s   Total | %s | %s",
-                pageView, nCopies(" ", justifyNum + justifyName + justifyXp - pageView.length()),
-                FormatUtils.truncateNumber(new BigDecimal(total)), totalTerritories
+        sb.append(String.format(
+                "%s%sTotal | %s | %s\n",
+                pageView,
+                nSpaces(tf.widthAt(0) + 3 + tf.widthAt(1) + 3 + tf.widthAt(2) + 3 + tf.widthAt(3) - pageView.length() - "Total".length()),
+                totalGained,
+                totalTerritories
         ));
+        sb.append("\n");
 
-        ret.add("");
+        sb.append(makeFooter(leaderboard, customDateFormat, customTimeZone));
+        sb.append("\n");
 
-        ret.add(makeFooter(leaderboard, customDateFormat, customTimeZone));
+        sb.append("```");
 
-        ret.add("```");
-
-        return new MessageBuilder(String.join("\n", ret)).build();
+        return new MessageBuilder(sb.toString()).build();
     }
 
     private static String makeFooter(@NotNull List<GuildXpLeaderboard> leaderboard,
@@ -287,7 +271,7 @@ public class GainedXpRank extends GenericCommand {
         return String.join("\n", ret);
     }
 
-    private static String nCopies(String s, int n) {
-        return String.join("", Collections.nCopies(n, s));
+    private static String nSpaces(int n) {
+        return String.join("", Collections.nCopies(n, " "));
     }
 }

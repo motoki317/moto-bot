@@ -17,12 +17,15 @@ import org.jetbrains.annotations.NotNull;
 import update.multipage.MultipageHandler;
 import update.reaction.ReactionManager;
 import utils.FormatUtils;
+import utils.TableFormatter;
 
 import java.text.DateFormat;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
+
+import static utils.TableFormatter.Justify.Left;
+import static utils.TableFormatter.Justify.Right;
 
 public class CustomTerritoryListCmd extends GenericCommand {
     private final TerritoryRepository territoryRepository;
@@ -197,7 +200,7 @@ public class CustomTerritoryListCmd extends GenericCommand {
         for (int i = begin; i < end; i++) {
             Territory t = territories.get(i);
             displays.add(new Display(
-                    String.valueOf(i + 1),
+                    (i + 1) + ".",
                     t.getName(),
                     t.getGuild(),
                     FormatUtils.formatReadableTime((now - t.getAcquired().getTime()) / 1000L, true, "m")
@@ -210,8 +213,17 @@ public class CustomTerritoryListCmd extends GenericCommand {
         ret.add("");
         ret.add(String.format("List: %s", listName));
         ret.add("");
-        ret.add(formatDisplays(displays));
-        ret.add("");
+
+        TableFormatter tf = new TableFormatter(false);
+        tf.addColumn("", Left, Left)
+                .addColumn("Territory", Left, Left)
+                .addColumn("Owner", Left, Left)
+                .addColumn("Held Time", Left, Right);
+        for (Display d : displays) {
+            tf.addRow(d.num, d.territory, d.owner, d.heldTime);
+        }
+        ret.add(tf.toString());
+
         int maxPage = (territories.size() - 1) / TERRITORIES_PER_PAGE;
         ret.add(String.format("< page %s / %s >", page + 1, maxPage + 1));
         ret.add("");
@@ -223,47 +235,6 @@ public class CustomTerritoryListCmd extends GenericCommand {
         ret.add("```");
 
         return String.join("\n", ret);
-    }
-
-    private static String formatDisplays(List<Display> displays) {
-        int numJustify = displays.stream().mapToInt(d -> d.num.length()).max().orElse(1);
-        int terrNameJustify = IntStream.concat(
-                IntStream.of("Territory".length()),
-                displays.stream().mapToInt(d -> d.territory.length())
-        ).max().orElse("Territory".length());
-        int ownerJustify = IntStream.concat(
-                IntStream.of("Owner".length()),
-                displays.stream().mapToInt(d -> d.owner.length())
-        ).max().orElse("Owner".length());
-        int heldTimeJustify = IntStream.concat(
-                IntStream.of("Held Time".length()),
-                displays.stream().mapToInt(d -> d.heldTime.length())
-        ).max().orElse("Held Time".length());
-
-        List<String> ret = new ArrayList<>();
-        ret.add(String.format("%s  | Territory%s | Owner%s | Held Time",
-                nCopies(" ", numJustify), nCopies(" ", terrNameJustify - "Territory".length()),
-                nCopies(" ", ownerJustify - "Owner".length())));
-        String rule = String.format("%s--+-%s-+-%s-+-%s-",
-                nCopies("-", numJustify), nCopies("-", terrNameJustify),
-                nCopies("-", ownerJustify), nCopies("-", heldTimeJustify));
-        ret.add(rule);
-
-        for (Display d : displays) {
-            ret.add(String.format("%s.%s | %s%s | %s%s | %s%s",
-                    d.num, nCopies(" ", numJustify - d.num.length()),
-                    d.territory, nCopies(" ", terrNameJustify - d.territory.length()),
-                    d.owner, nCopies(" ", ownerJustify - d.owner.length()),
-                    nCopies(" ", heldTimeJustify - d.heldTime.length()), d.heldTime));
-        }
-
-        ret.add(rule);
-
-        return String.join("\n", ret);
-    }
-
-    private static String nCopies(String s, int n) {
-        return String.join("", Collections.nCopies(n, s));
     }
 
     private void addToList(MessageReceivedEvent event, String[] args) {

@@ -18,14 +18,16 @@ import update.multipage.MultipageHandler;
 import update.reaction.ReactionManager;
 import utils.ArgumentParser;
 import utils.FormatUtils;
+import utils.TableFormatter;
 
 import java.text.DateFormat;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.IntStream;
 
 import static utils.RangeParser.Range;
 import static utils.RangeParser.parseRange;
+import static utils.TableFormatter.Justify.Left;
+import static utils.TableFormatter.Justify.Right;
 
 public class TerritoryActivityCmd extends GenericCommand {
     private final TerritoryLogRepository territoryLogRepository;
@@ -199,7 +201,7 @@ public class TerritoryActivityCmd extends GenericCommand {
         for (int i = begin; i < end; i++) {
             TerritoryActivity ta = display.activities.get(i);
             displays.add(new Display(
-                    String.valueOf(i + 1),
+                    (i + 1) + ".",
                     ta.getTerritoryName(),
                     String.valueOf(ta.getCount())
             ));
@@ -207,7 +209,6 @@ public class TerritoryActivityCmd extends GenericCommand {
 
         int totalCount = display.activities.stream().mapToInt(TerritoryActivity::getCount).sum();
         ret.add(formatDisplays(displays, totalCount));
-        ret.add("");
 
         int maxPage = (display.activities.size() - 1) / ACTIVITIES_PER_PAGE;
         ret.add(String.format("< page %s / %s >", page + 1, maxPage + 1));
@@ -224,39 +225,24 @@ public class TerritoryActivityCmd extends GenericCommand {
     }
 
     private static String formatDisplays(List<Display> displays, int totalCount) {
-        int numJustify = displays.stream().mapToInt(d -> d.num.length()).max().orElse(1);
-        int terrNameJustify = IntStream.concat(
-                IntStream.of("Territory".length()),
-                displays.stream().mapToInt(d -> d.territoryName.length())
-        ).max().orElse("Territory".length());
-        int countJustify = IntStream.concat(
-                IntStream.of("Count".length(), String.valueOf(totalCount).length()),
-                displays.stream().mapToInt(d -> d.count.length())
-        ).max().orElse("Count".length());
-
-        List<String> ret = new ArrayList<>();
-        ret.add(String.format("%s  | Territory%s | Count",
-                nCopies(" ", numJustify), nCopies(" ", terrNameJustify - "Territory".length())));
-        String rule = String.format("%s--+-%s-+-%s-",
-                nCopies("-", numJustify), nCopies("-", terrNameJustify),
-                nCopies("-", countJustify));
-        ret.add(rule);
+        StringBuilder sb = new StringBuilder();
+        TableFormatter tf = new TableFormatter(false);
+        tf.addColumn("", Left, Left)
+                .addColumn("Territory", Left, Left)
+                .addColumn("Count", "" + totalCount, Left, Right);
         for (Display d : displays) {
-            ret.add(String.format("%s.%s | %s%s | %s%s",
-                    d.num, nCopies(" ", numJustify - d.num.length()),
-                    d.territoryName, nCopies(" ", terrNameJustify - d.territoryName.length()),
-                    nCopies(" ", countJustify - d.count.length()), d.count));
+            tf.addRow(d.num, d.territoryName, d.count);
         }
-        ret.add(rule);
-        ret.add(String.format("%s    Total | %s%s",
-                nCopies(" ", numJustify + terrNameJustify - "Total".length()),
-                nCopies(" ", countJustify - String.valueOf(totalCount).length()),
-                totalCount));
-
-        return String.join("\n", ret);
+        tf.toString(sb);
+        tf.addSeparator(sb);
+        sb.append(String.format("%sTotal | %s%s",
+                    nSpaces(tf.widthAt(0) + 3 + tf.widthAt(1) - "Total".length()),
+                    nSpaces(tf.widthAt(2) - String.valueOf(totalCount).length()),
+                    totalCount));
+        return sb.toString();
     }
 
-    private static String nCopies(String s, int n) {
-        return String.join("", Collections.nCopies(n, s));
+    private static String nSpaces(int n) {
+        return String.join("", Collections.nCopies(n, " "));
     }
 }

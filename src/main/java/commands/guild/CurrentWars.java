@@ -18,13 +18,16 @@ import org.jetbrains.annotations.NotNull;
 import update.multipage.MultipageHandler;
 import update.reaction.ReactionManager;
 import utils.FormatUtils;
+import utils.TableFormatter;
 
 import java.text.DateFormat;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
+
+import static utils.TableFormatter.Justify.Left;
+import static utils.TableFormatter.Justify.Right;
 
 public class CurrentWars extends GenericCommand {
     private final WorldRepository worldRepository;
@@ -160,23 +163,6 @@ public class CurrentWars extends GenericCommand {
                                         @NotNull Date lastUpdate,
                                         @NotNull CustomTimeZone customTimeZone,
                                         @NotNull CustomDateFormat customDateFormat) {
-        int serverNameJustify = IntStream.concat(
-                displays.stream().mapToInt(d -> d.server.length()),
-                IntStream.of("Server".length())
-        ).max().orElse("Server".length());
-        int guildNameJustify = IntStream.concat(
-                displays.stream().mapToInt(d -> d.guild.length()),
-                IntStream.of("Guild".length())
-        ).max().orElse("Guild".length());
-        int playersJustify = IntStream.concat(
-                displays.stream().mapToInt(d -> d.players.length()),
-                IntStream.of("Players".length())
-        ).max().orElse("Players".length());
-        int elapsedFieldJustify = IntStream.concat(
-                displays.stream().mapToInt(d -> d.elapsed.length()),
-                IntStream.of("Elapsed".length())
-        ).max().orElse("Elapsed".length());
-
         List<String> ret = new ArrayList<>();
         ret.add("```ml");
         ret.add("---- Ongoing Wars ----");
@@ -186,35 +172,20 @@ public class CurrentWars extends GenericCommand {
         ));
         ret.add("");
 
-        ret.add(String.format(
-                "Server%s | Guild%s | Players%s | Elapsed%s",
-                nCopies(" ", serverNameJustify - "Server".length()),
-                nCopies(" ", guildNameJustify - "Guild".length()),
-                nCopies(" ", playersJustify - "Players".length()),
-                nCopies(" ", elapsedFieldJustify - "Elapsed".length())
-        ));
-        ret.add(String.format(
-                "%s-+-%s-+-%s-+-%s-",
-                nCopies("-", serverNameJustify),
-                nCopies("-", guildNameJustify),
-                nCopies("-", playersJustify),
-                nCopies("-", elapsedFieldJustify)
-        ));
+        TableFormatter tf = new TableFormatter(false);
+        tf.addColumn("Server", Left, Left)
+                .addColumn("Guild", Left, Left)
+                .addColumn("Players", Left, Right)
+                .addColumn("Elapsed", Left, Right);
 
         int from = page * WARS_PER_PAGE;
         int to = Math.min(displays.size(), (page + 1) * WARS_PER_PAGE);
         for (int i = from; i < to; i++) {
-            Display display = displays.get(i);
-            ret.add(String.format(
-                    "%s%s | %s%s | %s%s | %s%s",
-                    display.server, nCopies(" ", serverNameJustify - display.server.length()),
-                    display.guild, nCopies(" ", guildNameJustify - display.guild.length()),
-                    nCopies(" ", playersJustify - display.players.length()), display.players,
-                    nCopies(" ", elapsedFieldJustify - display.elapsed.length()), display.elapsed
-            ));
+            Display d = displays.get(i);
+            tf.addRow(d.server, d.guild, d.players, d.elapsed);
         }
 
-        ret.add("");
+        ret.add(tf.toString());
 
         // show current page if max page >= 1
         int maxPage = (displays.size() - 1) / WARS_PER_PAGE;
@@ -237,9 +208,5 @@ public class CurrentWars extends GenericCommand {
         ret.add("```");
 
         return String.join("\n", ret);
-    }
-
-    private static String nCopies(String s, int n) {
-        return String.join("", Collections.nCopies(n, s));
     }
 }
