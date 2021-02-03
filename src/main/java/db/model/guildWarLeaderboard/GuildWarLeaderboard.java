@@ -7,12 +7,12 @@ import java.math.BigDecimal;
 
 public class GuildWarLeaderboard implements GuildWarLeaderboardId {
     @NotNull
-    private String guildName;
-    private int totalWar;
-    private int successWar;
+    private final String guildName;
+    private final int totalWar;
+    private final int successWar;
 
     // generated column
-    private double successRate;
+    private final double successRate;
 
     public GuildWarLeaderboard(@NotNull String guildName, int totalWar, int successWar, @Nullable BigDecimal successRate) {
         this.guildName = guildName;

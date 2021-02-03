@@ -1,26 +1,21 @@
 package db.repository.base;
 
-import db.ConnectionPool;
 import db.model.guildWarLog.GuildWarLog;
 import db.model.guildWarLog.GuildWarLogId;
-import log.Logger;
+import db.repository.Repository;
 import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
 import java.util.Date;
 import java.util.List;
 
-public abstract class GuildWarLogRepository extends Repository<GuildWarLog, GuildWarLogId> {
-    protected GuildWarLogRepository(ConnectionPool db, Logger logger) {
-        super(db, logger);
-    }
-
+public interface GuildWarLogRepository extends Repository<GuildWarLog, GuildWarLogId> {
     /**
      * Counts number of war logs for guild.
      * @param guildName Guild name.
      * @return Number of logs. -1 if something went wrong.
      */
-    public abstract int countGuildLogs(String guildName);
+    int countGuildLogs(String guildName);
 
     /**
      * Finds war logs for a guild, with limit and offset.
@@ -31,7 +26,7 @@ public abstract class GuildWarLogRepository extends Repository<GuildWarLog, Guil
      * @return List of records.
      */
     @Nullable
-    public abstract List<GuildWarLog> findGuildLogs(String guildName, int limit, int offset);
+    List<GuildWarLog> findGuildLogs(String guildName, int limit, int offset);
 
     /**
      * Counts success wars by a guild.
@@ -39,14 +34,14 @@ public abstract class GuildWarLogRepository extends Repository<GuildWarLog, Guil
      * @param guildName Guild name.
      * @return Number of success wars. -1 if something went wrong.
      */
-    public abstract int countSuccessWars(String guildName);
+    int countSuccessWars(String guildName);
 
     /**
      * Counts total wars done by a guild.
      * @param guildName Guild name.
      * @return Number of total wars. -1 if something went wrong.
      */
-    public abstract int countTotalWars(String guildName);
+    int countTotalWars(String guildName);
 
     /**
      * Counts success wars done by a guild in given time frame.
@@ -55,7 +50,7 @@ public abstract class GuildWarLogRepository extends Repository<GuildWarLog, Guil
      * @param end End date (exclusive).
      * @return Number of success wars.
      */
-    public abstract int countSuccessWars(String guildName, @NotNull Date start, @NotNull Date end);
+    int countSuccessWars(String guildName, @NotNull Date start, @NotNull Date end);
 
     /**
      * Counts total wars done by a guild in given time frame.
@@ -64,19 +59,19 @@ public abstract class GuildWarLogRepository extends Repository<GuildWarLog, Guil
      * @param end End date (exclusive).
      * @return Number of total wars.
      */
-    public abstract int countTotalWars(String guildName, @NotNull Date start, @NotNull Date end);
+    int countTotalWars(String guildName, @NotNull Date start, @NotNull Date end);
 
     /**
      * Counts success wars done by any guild ever.
      * @return Number of success wars.
      */
-    public abstract int countSuccessWarsSum();
+    int countSuccessWarsSum();
 
     /**
      * Counts total wars done by any guild ever.
      * @return Number of total wars.
      */
-    public abstract int countTotalWarsSum();
+    int countTotalWarsSum();
 
     /**
      * Counts success wars done in given time frame.
@@ -84,7 +79,7 @@ public abstract class GuildWarLogRepository extends Repository<GuildWarLog, Guil
      * @param end End date (exclusive).
      * @return Number of success wars.
      */
-    public abstract int countSuccessWarsSum(@NotNull Date start, @NotNull Date end);
+    int countSuccessWarsSum(@NotNull Date start, @NotNull Date end);
 
     /**
      * Counts total wars done in given time frame.
@@ -92,7 +87,7 @@ public abstract class GuildWarLogRepository extends Repository<GuildWarLog, Guil
      * @param end End date (exclusive).
      * @return Number of total wars.
      */
-    public abstract int countTotalWarsSum(@NotNull Date start, @NotNull Date end);
+    int countTotalWarsSum(@NotNull Date start, @NotNull Date end);
 
     /**
      * Finds all logs which is associated with the given war log ids.
@@ -100,7 +95,7 @@ public abstract class GuildWarLogRepository extends Repository<GuildWarLog, Guil
      * @return List of logs. null if something went wrong.
      */
     @Nullable
-    public abstract List<GuildWarLog> findAllOfWarLogIdIn(List<Integer> warLogIds);
+    List<GuildWarLog> findAllOfWarLogIdIn(List<Integer> warLogIds);
 
     /**
      * Finds all logs which is associated with the given territory log ids.
@@ -108,5 +103,5 @@ public abstract class GuildWarLogRepository extends Repository<GuildWarLog, Guil
      * @return List of logs. null if something went wrong.
      */
     @Nullable
-    public abstract List<GuildWarLog> findAllOfTerritoryLogIdIn(List<Integer> territoryLogIds);
+    List<GuildWarLog> findAllOfTerritoryLogIdIn(List<Integer> territoryLogIds);
 }

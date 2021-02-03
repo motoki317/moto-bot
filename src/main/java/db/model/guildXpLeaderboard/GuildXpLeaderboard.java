@@ -3,13 +3,13 @@ package db.model.guildXpLeaderboard;
 import java.util.Date;
 
 public class GuildXpLeaderboard implements GuildXpLeaderboardId {
-    private String name;
-    private String prefix;
-    private int level;
-    private long xp;
-    private long xpDiff;
-    private Date from;
-    private Date to;
+    private final String name;
+    private final String prefix;
+    private final int level;
+    private final long xp;
+    private final long xpDiff;
+    private final Date from;
+    private final Date to;
 
     public GuildXpLeaderboard(String name, String prefix, int level, long xp, long xpDiff, Date from, Date to) {
         this.name = name;

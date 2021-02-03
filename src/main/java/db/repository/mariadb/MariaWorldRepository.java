@@ -17,7 +17,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-class MariaWorldRepository extends WorldRepository {
+class MariaWorldRepository extends MariaRepository<World> implements WorldRepository {
     private static final DateFormat dbFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
     MariaWorldRepository(ConnectionPool db, Logger logger) {

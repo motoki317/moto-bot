@@ -1,8 +1,8 @@
 package db.model.serverLog;
 
 public class ServerLogEntry implements ServerLogEntryId {
-    private long guildId;
-    private long channelId;
+    private final long guildId;
+    private final long channelId;
 
     public ServerLogEntry(long guildId, long channelId) {
         this.guildId = guildId;

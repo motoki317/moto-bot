@@ -17,7 +17,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
-class MariaGuildWarLogRepository extends GuildWarLogRepository {
+class MariaGuildWarLogRepository extends MariaRepository<GuildWarLog> implements GuildWarLogRepository {
     private static final DateFormat dbFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
     MariaGuildWarLogRepository(ConnectionPool db, Logger logger) {

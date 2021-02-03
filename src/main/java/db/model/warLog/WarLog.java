@@ -10,11 +10,11 @@ import java.util.List;
 public class WarLog implements WarLogId {
     private int id;
     @NotNull
-    private String serverName;
+    private final String serverName;
     @Nullable
     private String guildName;
     @NotNull
-    private Date createdAt;
+    private final Date createdAt;
     @NotNull
     private Date lastUp;
     private boolean ended;
@@ -22,7 +22,7 @@ public class WarLog implements WarLogId {
 
     // Join column
     @NotNull
-    private List<WarPlayer> players;
+    private final List<WarPlayer> players;
 
     public WarLog(int id, @NotNull String serverName, @Nullable String guildName, @NotNull Date createdAt, @NotNull Date lastUp, boolean ended, boolean logEnded, @NotNull List<WarPlayer> players) {
         this.id = id;

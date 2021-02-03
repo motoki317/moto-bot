@@ -8,16 +8,16 @@ import java.util.Objects;
 
 public class TrackChannel implements TrackChannelId {
     @NotNull
-    private TrackType type;
-    private long guildId;
-    private long channelId;
+    private final TrackType type;
+    private final long guildId;
+    private final long channelId;
 
     @Nullable
     private String guildName;
     @Nullable
     private String playerUUID;
 
-    private long userId;
+    private final long userId;
     @NotNull
     private Date expiresAt;
 

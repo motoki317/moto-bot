@@ -1,12 +1,8 @@
 package db.repository.base;
 
-import db.ConnectionPool;
 import db.model.prefix.Prefix;
 import db.model.prefix.PrefixId;
-import log.Logger;
+import db.repository.Repository;
 
-public abstract class PrefixRepository extends Repository<Prefix, PrefixId> {
-    protected PrefixRepository(ConnectionPool db, Logger logger) {
-        super(db, logger);
-    }
+public interface PrefixRepository extends Repository<Prefix, PrefixId> {
 }

@@ -16,7 +16,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-class MariaGuildXpLeaderboardRepository extends GuildXpLeaderboardRepository {
+class MariaGuildXpLeaderboardRepository extends MariaRepository<GuildXpLeaderboard> implements GuildXpLeaderboardRepository {
     private static final DateFormat dbFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
     MariaGuildXpLeaderboardRepository(ConnectionPool db, Logger logger) {

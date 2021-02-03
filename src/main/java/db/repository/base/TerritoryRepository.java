@@ -1,10 +1,9 @@
 package db.repository.base;
 
-import db.ConnectionPool;
 import db.model.territory.Territory;
 import db.model.territory.TerritoryId;
 import db.model.territory.TerritoryRank;
-import log.Logger;
+import db.repository.Repository;
 import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.CheckReturnValue;
@@ -12,17 +11,13 @@ import javax.annotation.Nullable;
 import java.util.Date;
 import java.util.List;
 
-public abstract class TerritoryRepository extends Repository<Territory, TerritoryId> {
-    protected TerritoryRepository(ConnectionPool db, Logger logger) {
-        super(db, logger);
-    }
-
+public interface TerritoryRepository extends Repository<Territory, TerritoryId> {
     /**
      * Counts number of guild territories a guild possesses.
      * @param guildName Guild name.
      * @return Territory count. -1 if something went wrong.
      */
-    public abstract int countGuildTerritories(@NotNull String guildName);
+    int countGuildTerritories(@NotNull String guildName);
 
     /**
      * Returns a list of territories the guild possesses.
@@ -30,28 +25,28 @@ public abstract class TerritoryRepository extends Repository<Territory, Territor
      * @return Territory list.
      */
     @Nullable
-    public abstract List<Territory> getGuildTerritories(@NotNull String guildName);
+    List<Territory> getGuildTerritories(@NotNull String guildName);
 
     /**
      * Get ranking of guilds by number of territories.
      * @return Ranking map, where keys are guild names and values are number of territories.
      */
     @Nullable
-    public abstract List<TerritoryRank> getGuildTerritoryNumbers();
+    List<TerritoryRank> getGuildTerritoryNumbers();
 
     /**
      * Get ranking of guild by number of territories.
      * @param guildName Guild name.
      * @return Ranking. -1 if something went wrong. 0 if the guild does not exist in the ranking.
      */
-    public abstract int getGuildTerritoryRanking(@NotNull String guildName);
+    int getGuildTerritoryRanking(@NotNull String guildName);
 
     /**
      * Retrieves the latest `acquired` time.
      * @return Latest territory acquired time.
      */
     @Nullable
-    public abstract Date getLatestAcquiredTime();
+    Date getLatestAcquiredTime();
 
     /**
      * Updates the whole table to the new given territories list.
@@ -59,7 +54,7 @@ public abstract class TerritoryRepository extends Repository<Territory, Territor
      * @return {@code true} if succeeded.
      */
     @CheckReturnValue
-    public abstract boolean updateAll(@NotNull List<Territory> territories);
+    boolean updateAll(@NotNull List<Territory> territories);
 
     /**
      * Retrieves all territory names that begins with the given prefix. Case insensitive.
@@ -67,7 +62,7 @@ public abstract class TerritoryRepository extends Repository<Territory, Territor
      * @return List of territory names.
      */
     @Nullable
-    public abstract List<String> territoryNamesBeginsWith(String prefix);
+    List<String> territoryNamesBeginsWith(String prefix);
 
     /**
      * Retrieves all territory data in the given territory names.
@@ -75,5 +70,5 @@ public abstract class TerritoryRepository extends Repository<Territory, Territor
      * @return List of territories.
      */
     @Nullable
-    public abstract List<Territory> findAllIn(List<String> territoryNames);
+    List<Territory> findAllIn(List<String> territoryNames);
 }

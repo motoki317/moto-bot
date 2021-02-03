@@ -1,25 +1,19 @@
 package db.repository.base;
 
-import db.ConnectionPool;
 import db.model.dateFormat.CustomDateFormat;
 import db.model.dateFormat.CustomDateFormatId;
-import log.Logger;
+import db.repository.Repository;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import org.jetbrains.annotations.NotNull;
 
-public abstract class DateFormatRepository extends Repository<CustomDateFormat, CustomDateFormatId> {
-    protected DateFormatRepository(ConnectionPool db, Logger logger) {
-        super(db, logger);
-    }
-
+public interface DateFormatRepository extends Repository<CustomDateFormat, CustomDateFormatId> {
     /**
      * Retrieves custom date format.
      * If more than one IDs are given, the later ones are more prioritized.
      * @param ids List of discord IDs.
      * @return Custom date format.
      */
-    @NotNull
-    public abstract CustomDateFormat getDateFormat(long... ids);
+    @NotNull CustomDateFormat getDateFormat(long... ids);
 
     /**
      * Retrieves custom date format, in order of guild (if exists) -> channel -> user -> default (fallback).
@@ -27,6 +21,5 @@ public abstract class DateFormatRepository extends Repository<CustomDateFormat, 
      * @param event discord message received event.
      * @return Custom date format.
      */
-    @NotNull
-    public abstract CustomDateFormat getDateFormat(MessageReceivedEvent event);
+    @NotNull CustomDateFormat getDateFormat(MessageReceivedEvent event);
 }

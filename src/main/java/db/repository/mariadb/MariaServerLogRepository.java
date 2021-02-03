@@ -14,7 +14,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-public class MariaServerLogRepository extends ServerLogRepository {
+public class MariaServerLogRepository extends MariaRepository<ServerLogEntry> implements ServerLogRepository {
     MariaServerLogRepository(ConnectionPool db, Logger logger) {
         super(db, logger);
     }

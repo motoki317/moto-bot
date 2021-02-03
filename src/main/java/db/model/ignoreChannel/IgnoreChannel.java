@@ -1,7 +1,7 @@
 package db.model.ignoreChannel;
 
 public class IgnoreChannel implements IgnoreChannelId {
-    private long channelId;
+    private final long channelId;
 
     public IgnoreChannel(long channelId) {
         this.channelId = channelId;

@@ -13,7 +13,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 
-class MariaTimeZoneRepository extends TimeZoneRepository {
+class MariaTimeZoneRepository extends MariaRepository<CustomTimeZone> implements TimeZoneRepository {
     MariaTimeZoneRepository(ConnectionPool db, Logger logger) {
         super(db, logger);
     }

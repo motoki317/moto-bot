@@ -18,7 +18,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class MariaTerritoryLogRepository extends TerritoryLogRepository {
+public class MariaTerritoryLogRepository extends MariaRepository<TerritoryLog> implements TerritoryLogRepository {
     private static final DateFormat dbFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
     MariaTerritoryLogRepository(ConnectionPool db, Logger logger) {

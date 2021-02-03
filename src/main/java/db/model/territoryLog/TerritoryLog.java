@@ -3,18 +3,18 @@ package db.model.territoryLog;
 import java.util.Date;
 
 public class TerritoryLog implements TerritoryLogId {
-    private int id;
+    private final int id;
 
-    private String territoryName;
+    private final String territoryName;
 
-    private String oldGuildName;
-    private String newGuildName;
+    private final String oldGuildName;
+    private final String newGuildName;
 
-    private int oldGuildTerrAmt;
-    private int newGuildTerrAmt;
+    private final int oldGuildTerrAmt;
+    private final int newGuildTerrAmt;
 
-    private Date acquired;
-    private long timeDiff;
+    private final Date acquired;
+    private final long timeDiff;
 
     public TerritoryLog(int id, String territoryName, String oldGuildName, String newGuildName,
                         int oldGuildTerrAmt, int newGuildTerrAmt, Date acquired, long timeDiff) {

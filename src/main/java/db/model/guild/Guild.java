@@ -6,9 +6,9 @@ import java.util.Date;
 
 public class Guild implements GuildId {
     @NotNull
-    private String name;
-    private String prefix;
-    private Date createdAt;
+    private final String name;
+    private final String prefix;
+    private final Date createdAt;
 
     public Guild(@NotNull String name, String prefix, Date createdAt) {
         this.name = name;

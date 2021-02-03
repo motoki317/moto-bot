@@ -12,7 +12,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 
-class MariaIgnoreChannelRepository extends IgnoreChannelRepository {
+class MariaIgnoreChannelRepository extends MariaRepository<IgnoreChannel> implements IgnoreChannelRepository {
     MariaIgnoreChannelRepository(ConnectionPool db, Logger logger) {
         super(db, logger);
     }

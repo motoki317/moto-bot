@@ -20,16 +20,16 @@ public enum TrackType {
     GUILD_CREATE("Guild Creation", TimeUnit.DAYS.toMillis(365)),
     GUILD_DELETE("Guild Deletion", TimeUnit.DAYS.toMillis(365));
 
-    private String displayName;
+    private final String displayName;
     // default expire time in millis
-    private long defaultExpireTime;
+    private final long defaultExpireTime;
 
     TrackType(String displayName, long defaultExpireTime) {
         this.displayName = displayName;
         this.defaultExpireTime = defaultExpireTime;
     }
 
-    private static List<Set<TrackType>> conflictGroups;
+    private static final List<Set<TrackType>> conflictGroups;
 
     static {
         conflictGroups = new ArrayList<>();

@@ -1,9 +1,9 @@
 package db.model.territory;
 
 public class TerritoryRank {
-    private String guildName;
-    private int count;
-    private int rank;
+    private final String guildName;
+    private final int count;
+    private final int rank;
 
     public TerritoryRank(String guildName, int count, int rank) {
         this.guildName = guildName;

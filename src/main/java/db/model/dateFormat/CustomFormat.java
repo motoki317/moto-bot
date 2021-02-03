@@ -15,11 +15,11 @@ public enum CustomFormat {
             new SimpleDateFormat("yyyy/MM/dd HH:mm:ss")
     );
 
-    private String shortName;
+    private final String shortName;
     // minute-wise format
-    private DateFormat minuteFormat;
+    private final DateFormat minuteFormat;
     // second-wise format
-    private DateFormat secondFormat;
+    private final DateFormat secondFormat;
 
     CustomFormat(String shortName, DateFormat minuteFormat, DateFormat secondFormat) {
         this.shortName = shortName;

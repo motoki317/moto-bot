@@ -17,7 +17,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
-class MariaPlayerWarLeaderboardRepository extends PlayerWarLeaderboardRepository {
+class MariaPlayerWarLeaderboardRepository extends MariaRepository<PlayerWarLeaderboard> implements PlayerWarLeaderboardRepository {
     private static final DateFormat dbFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
     MariaPlayerWarLeaderboardRepository(ConnectionPool db, Logger logger) {

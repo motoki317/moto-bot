@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-class MariaTerritoryRepository extends TerritoryRepository {
+class MariaTerritoryRepository extends MariaRepository<Territory> implements TerritoryRepository {
     private static final DateFormat dbFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
     MariaTerritoryRepository(ConnectionPool db, Logger logger) {

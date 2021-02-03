@@ -8,15 +8,15 @@ import java.util.Date;
 public class CommandLog implements CommandLogId {
     private int id;
     @NotNull
-    private String kind;
+    private final String kind;
     @NotNull
-    private String full;
+    private final String full;
     @Nullable
-    private Long guildId;
-    private long channelId;
-    private long userId;
+    private final Long guildId;
+    private final long channelId;
+    private final long userId;
     @NotNull
-    private Date createdAt;
+    private final Date createdAt;
 
     // For select
     public CommandLog(int id, @NotNull String kind, @NotNull String full, @Nullable Long guildId, long channelId, long userId, @NotNull Date createdAt) {

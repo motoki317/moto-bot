@@ -5,13 +5,13 @@ import org.jetbrains.annotations.NotNull;
 import java.sql.Timestamp;
 
 public class World implements WorldId {
-    private String name;
+    private final String name;
 
-    private int players;
+    private final int players;
 
-    private Timestamp createdAt;
+    private final Timestamp createdAt;
 
-    private Timestamp updatedAt;
+    private final Timestamp updatedAt;
 
     public World(String name, int players, Timestamp createdAt, Timestamp updatedAt) {
         this.name = name;

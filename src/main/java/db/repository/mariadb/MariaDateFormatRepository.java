@@ -14,7 +14,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 
-class MariaDateFormatRepository extends DateFormatRepository {
+class MariaDateFormatRepository extends MariaRepository<CustomDateFormat> implements DateFormatRepository {
     MariaDateFormatRepository(ConnectionPool db, Logger logger) {
         super(db, logger);
     }

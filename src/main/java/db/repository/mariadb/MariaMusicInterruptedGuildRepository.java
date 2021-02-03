@@ -14,7 +14,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Stream;
 
-class MariaMusicInterruptedGuildRepository extends MusicInterruptedGuildRepository {
+class MariaMusicInterruptedGuildRepository extends MariaRepository<MusicInterruptedGuild> implements MusicInterruptedGuildRepository {
     MariaMusicInterruptedGuildRepository(ConnectionPool db, Logger logger) {
         super(db, logger);
     }

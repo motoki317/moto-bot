@@ -14,7 +14,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class MariaTerritoryListRepository extends TerritoryListRepository {
+public class MariaTerritoryListRepository extends MariaRepository<TerritoryListEntry> implements TerritoryListRepository {
     MariaTerritoryListRepository(ConnectionPool db, Logger logger) {
         super(db, logger);
     }

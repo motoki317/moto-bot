@@ -18,7 +18,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-class MariaWarLogRepository extends WarLogRepository {
+class MariaWarLogRepository extends MariaRepository<WarLog> implements WarLogRepository {
     private static final DateFormat dbFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
     private final MariaWarPlayerRepository warPlayerRepository;

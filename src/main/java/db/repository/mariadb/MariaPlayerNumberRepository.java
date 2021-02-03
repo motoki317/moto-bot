@@ -15,7 +15,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 
-class MariaPlayerNumberRepository extends PlayerNumberRepository {
+class MariaPlayerNumberRepository extends MariaRepository<PlayerNumber> implements PlayerNumberRepository {
     private static final DateFormat dbFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
     MariaPlayerNumberRepository(ConnectionPool db, Logger logger) {

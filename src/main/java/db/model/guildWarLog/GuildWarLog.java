@@ -5,13 +5,13 @@ import org.jetbrains.annotations.NotNull;
 import javax.annotation.Nullable;
 
 public class GuildWarLog implements GuildWarLogId {
-    private int id;
+    private final int id;
     @NotNull
-    private String guildName;
+    private final String guildName;
     @Nullable
-    private Integer warLogId;
+    private final Integer warLogId;
     @Nullable
-    private Integer territoryLogId;
+    private final Integer territoryLogId;
 
     public GuildWarLog(int id, @NotNull String guildName, @Nullable Integer warLogId, @Nullable Integer territoryLogId) {
         this.id = id;

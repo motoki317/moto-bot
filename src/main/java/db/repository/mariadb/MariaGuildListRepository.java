@@ -14,7 +14,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class MariaGuildListRepository extends GuildListRepository {
+public class MariaGuildListRepository extends MariaRepository<GuildListEntry> implements GuildListRepository {
     MariaGuildListRepository(ConnectionPool db, Logger logger) {
         super(db, logger);
     }

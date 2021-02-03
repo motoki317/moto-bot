@@ -13,7 +13,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 
-class MariaWarTrackRepository extends WarTrackRepository {
+class MariaWarTrackRepository extends MariaRepository<WarTrack> implements WarTrackRepository {
     MariaWarTrackRepository(ConnectionPool db, Logger logger) {
         super(db, logger);
     }

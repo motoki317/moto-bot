@@ -1,26 +1,21 @@
 package db.repository.base;
 
-import db.ConnectionPool;
 import db.model.guild.Guild;
 import db.model.guild.GuildId;
-import log.Logger;
+import db.repository.Repository;
 import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
 import java.util.List;
 
-public abstract class GuildRepository extends Repository<Guild, GuildId> {
-    protected GuildRepository(ConnectionPool db, Logger logger) {
-        super(db, logger);
-    }
-
+public interface GuildRepository extends Repository<Guild, GuildId> {
     /**
      * Find all guilds with provided guild names.
      * @param guildNames Guild names.
      * @return List of guilds.
      */
     @Nullable
-    public abstract List<Guild> findAllIn(@NotNull String... guildNames);
+    List<Guild> findAllIn(@NotNull String... guildNames);
 
     /**
      * Find all matches with case insensitive and ignoring trailing spaces search.
@@ -29,7 +24,7 @@ public abstract class GuildRepository extends Repository<Guild, GuildId> {
      * @return List of guilds.
      */
     @Nullable
-    public abstract List<Guild> findAllCaseInsensitive(@NotNull String guildName);
+    List<Guild> findAllCaseInsensitive(@NotNull String guildName);
 
     /**
      * Find all guilds having the specified prefix. Case sensitive.
@@ -37,7 +32,7 @@ public abstract class GuildRepository extends Repository<Guild, GuildId> {
      * @return List of guilds.
      */
     @Nullable
-    public abstract List<Guild> findAllByPrefix(@NotNull String prefix);
+    List<Guild> findAllByPrefix(@NotNull String prefix);
 
     /**
      * Find all guilds having the specified prefix. Case <b>insensitive</b>.
@@ -45,5 +40,5 @@ public abstract class GuildRepository extends Repository<Guild, GuildId> {
      * @return List of guilds.
      */
     @Nullable
-    public abstract List<Guild> findAllByPrefixCaseInsensitive(@NotNull String prefix);
+    List<Guild> findAllByPrefixCaseInsensitive(@NotNull String prefix);
 }

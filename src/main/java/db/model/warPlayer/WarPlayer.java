@@ -6,7 +6,7 @@ import org.jetbrains.annotations.Nullable;
 public class WarPlayer implements WarPlayerId {
     private int warLogId;
     @NotNull
-    private String playerName;
+    private final String playerName;
     @Nullable
     private String playerUUID;
     private boolean exited;

@@ -4,14 +4,14 @@ import java.util.Date;
 import java.util.Objects;
 
 public class GuildLeaderboard implements GuildLeaderboardId {
-    private String name;
-    private String prefix;
-    private long xp;
-    private int level;
-    private int num;
-    private int territories;
-    private int memberCount;
-    private Date updatedAt;
+    private final String name;
+    private final String prefix;
+    private final long xp;
+    private final int level;
+    private final int num;
+    private final int territories;
+    private final int memberCount;
+    private final Date updatedAt;
 
     public GuildLeaderboard(String name, String prefix, long xp, int level, int num, int territories, int memberCount, Date updatedAt) {
         this.name = name;

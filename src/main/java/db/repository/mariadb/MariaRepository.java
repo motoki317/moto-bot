@@ -1,4 +1,4 @@
-package db.repository.base;
+package db.repository.mariadb;
 
 import db.ConnectionPool;
 import log.Logger;
@@ -15,12 +15,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public abstract class Repository<T, ID> implements IRepository<T, ID> {
+abstract class MariaRepository<T> {
     protected final ConnectionPool db;
 
     protected final Logger logger;
 
-    protected Repository(ConnectionPool db, Logger logger) {
+    protected MariaRepository(ConnectionPool db, Logger logger) {
         this.db = db;
         this.logger = logger;
     }

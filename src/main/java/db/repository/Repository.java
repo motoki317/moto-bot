@@ -1,4 +1,4 @@
-package db.repository.base;
+package db.repository;
 
 import org.jetbrains.annotations.NotNull;
 
@@ -6,7 +6,7 @@ import javax.annotation.CheckReturnValue;
 import javax.annotation.Nullable;
 import java.util.List;
 
-public interface IRepository<T, ID> {
+public interface Repository<T, ID> {
     /**
      * Creates a new entity in the repository.
      * @param entity Entity

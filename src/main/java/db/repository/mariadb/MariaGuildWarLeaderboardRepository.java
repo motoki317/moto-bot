@@ -15,7 +15,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 
-public class MariaGuildWarLeaderboardRepository extends GuildWarLeaderboardRepository {
+public class MariaGuildWarLeaderboardRepository extends MariaRepository<GuildWarLeaderboard> implements GuildWarLeaderboardRepository {
     private static final DateFormat dbFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
     MariaGuildWarLeaderboardRepository(ConnectionPool db, Logger logger) {

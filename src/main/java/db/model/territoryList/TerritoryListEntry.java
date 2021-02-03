@@ -3,11 +3,11 @@ package db.model.territoryList;
 import org.jetbrains.annotations.NotNull;
 
 public class TerritoryListEntry implements TerritoryListEntryId {
-    private long userId;
+    private final long userId;
     @NotNull
-    private String listName;
+    private final String listName;
     @NotNull
-    private String territoryName;
+    private final String territoryName;
 
     public TerritoryListEntry(long userId, @NotNull String listName, @NotNull String territoryName) {
         this.userId = userId;

@@ -12,7 +12,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 
-class MariaPrefixRepository extends PrefixRepository {
+class MariaPrefixRepository extends MariaRepository<Prefix> implements PrefixRepository {
     MariaPrefixRepository(ConnectionPool db, Logger logger) {
         super(db, logger);
     }

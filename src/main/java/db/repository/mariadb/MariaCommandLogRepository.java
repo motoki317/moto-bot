@@ -14,7 +14,7 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.List;
 
-class MariaCommandLogRepository extends CommandLogRepository {
+class MariaCommandLogRepository extends MariaRepository<CommandLog> implements CommandLogRepository {
     private static final DateFormat dbFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
     MariaCommandLogRepository(ConnectionPool db, Logger logger) {

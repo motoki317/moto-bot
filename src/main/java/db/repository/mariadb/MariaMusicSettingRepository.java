@@ -13,7 +13,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 
-class MariaMusicSettingRepository extends MusicSettingRepository {
+class MariaMusicSettingRepository extends MariaRepository<MusicSetting> implements MusicSettingRepository {
     MariaMusicSettingRepository(ConnectionPool db, Logger logger) {
         super(db, logger);
     }

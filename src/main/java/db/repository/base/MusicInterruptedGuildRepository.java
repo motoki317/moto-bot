@@ -1,27 +1,22 @@
 package db.repository.base;
 
-import db.ConnectionPool;
 import db.model.musicInterruptedGuild.MusicInterruptedGuild;
 import db.model.musicInterruptedGuild.MusicInterruptedGuildId;
-import log.Logger;
+import db.repository.Repository;
 
 import java.util.List;
 
-public abstract class MusicInterruptedGuildRepository extends Repository<MusicInterruptedGuild, MusicInterruptedGuildId> {
-    protected MusicInterruptedGuildRepository(ConnectionPool db, Logger logger) {
-        super(db, logger);
-    }
-
+public interface MusicInterruptedGuildRepository extends Repository<MusicInterruptedGuild, MusicInterruptedGuildId> {
     /**
      * Create all entries.
      * @param guilds Entries.
      * @return {@code true} if success.
      */
-    public abstract boolean createAll(List<MusicInterruptedGuild> guilds);
+    boolean createAll(List<MusicInterruptedGuild> guilds);
 
     /**
      * Deletes all entries.
      * @return {@code true} if success.
      */
-    public abstract boolean deleteAll();
+    boolean deleteAll();
 }

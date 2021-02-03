@@ -17,7 +17,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.stream.Stream;
 
-class MariaMusicQueueRepository extends MusicQueueRepository {
+class MariaMusicQueueRepository extends MariaRepository<MusicQueueEntry> implements MusicQueueRepository {
     private static final DateFormat dbFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
     MariaMusicQueueRepository(ConnectionPool db, Logger logger) {

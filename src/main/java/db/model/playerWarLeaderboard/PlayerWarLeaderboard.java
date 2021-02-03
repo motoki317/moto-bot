@@ -7,14 +7,14 @@ import java.math.BigDecimal;
 
 public class PlayerWarLeaderboard implements PlayerWarLeaderboardId {
     @NotNull
-    private String UUID;
+    private final String UUID;
     @NotNull
-    private String lastName;
-    private int totalWar;
-    private int successWar;
-    private int survivedWar;
-    private double successRate;
-    private double survivedRate;
+    private final String lastName;
+    private final int totalWar;
+    private final int successWar;
+    private final int survivedWar;
+    private final double successRate;
+    private final double survivedRate;
 
     public PlayerWarLeaderboard(@NotNull String UUID, @NotNull String lastName, int totalWar, int successWar, int survivedWar,
                                 @Nullable BigDecimal successRate, @Nullable BigDecimal survivedRate) {

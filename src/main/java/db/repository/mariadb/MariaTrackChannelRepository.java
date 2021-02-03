@@ -15,7 +15,7 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.List;
 
-class MariaTrackChannelRepository extends TrackChannelRepository {
+class MariaTrackChannelRepository extends MariaRepository<TrackChannel> implements TrackChannelRepository {
     private static final DateFormat dbFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
     MariaTrackChannelRepository(ConnectionPool db, Logger logger) {

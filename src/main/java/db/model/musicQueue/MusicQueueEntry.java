@@ -3,12 +3,12 @@ package db.model.musicQueue;
 import java.util.Date;
 
 public class MusicQueueEntry implements MusicQueueEntryId {
-    private long guildId;
-    private int index;
-    private long userId;
-    private String url;
-    private long position;
-    private Date updatedAt;
+    private final long guildId;
+    private final int index;
+    private final long userId;
+    private final String url;
+    private final long position;
+    private final Date updatedAt;
 
     public MusicQueueEntry(long guildId, int index, long userId, String url, long position, Date updatedAt) {
         this.guildId = guildId;

@@ -3,11 +3,11 @@ package db.model.guildList;
 import org.jetbrains.annotations.NotNull;
 
 public class GuildListEntry implements GuildListEntryId {
-    private long userId;
+    private final long userId;
     @NotNull
-    private String listName;
+    private final String listName;
     @NotNull
-    private String guildName;
+    private final String guildName;
 
     public GuildListEntry(long userId, @NotNull String listName, @NotNull String guildName) {
         this.userId = userId;
