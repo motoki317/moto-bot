@@ -12,9 +12,9 @@ public enum RepeatState {
                     "The current song will be added to the end of the queue, when finished.",
             true);
 
-    private String message;
-    private String description;
-    private boolean endlessMode;
+    private final String message;
+    private final String description;
+    private final boolean endlessMode;
 
     RepeatState(String message, String description, boolean endlessMode) {
         this.message = message;

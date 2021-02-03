@@ -110,7 +110,7 @@ public class TableFormatter {
         }
     }
 
-    public StringBuilder toString(StringBuilder sb) {
+    public void toString(StringBuilder sb) {
         this.computeWidths();
 
         int cols = this.columns.size();
@@ -153,7 +153,6 @@ public class TableFormatter {
             sb.append("\n");
         }
 
-        return sb;
     }
 
     public String toString() {

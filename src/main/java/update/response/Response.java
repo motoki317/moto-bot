@@ -15,8 +15,8 @@ public class Response implements UserResponseListener<MessageReceivedEvent> {
     // Called when this instance is discarded by manager
     private Runnable onDestroy;
 
-    private long updatedAt;
-    private long maxLive;
+    private final long updatedAt;
+    private final long maxLive;
 
     public Response(long channelId,
                     long userId,

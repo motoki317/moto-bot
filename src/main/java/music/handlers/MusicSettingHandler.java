@@ -14,7 +14,6 @@ import org.jetbrains.annotations.Nullable;
 import utils.MinecraftColor;
 
 import java.util.Arrays;
-import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -22,13 +21,10 @@ import java.util.stream.Collectors;
 import static commands.base.BotCommand.*;
 
 public class MusicSettingHandler {
-    private final Map<Long, MusicState> states;
-
     private final ShardManager manager;
     private final MusicSettingRepository musicSettingRepository;
 
-    public MusicSettingHandler(Bot bot, Map<Long, MusicState> states) {
-        this.states = states;
+    public MusicSettingHandler(Bot bot) {
         this.manager = bot.getManager();
         this.musicSettingRepository = bot.getDatabase().getMusicSettingRepository();
     }

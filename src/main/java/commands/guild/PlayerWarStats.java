@@ -252,8 +252,8 @@ public class PlayerWarStats extends GenericCommand {
             throw new RuntimeException("Something went wrong while retrieving data...");
         }
 
-        List<Integer> territoryLogIds = guildWarLogs.stream().filter(l -> l.getTerritoryLogId() != null)
-                .map(GuildWarLog::getTerritoryLogId).collect(Collectors.toList());
+        List<Integer> territoryLogIds = guildWarLogs.stream().map(GuildWarLog::getTerritoryLogId)
+                .filter(Objects::nonNull).collect(Collectors.toList());
         List<TerritoryLog> territoryLogs = this.territoryLogRepository.findAllIn(territoryLogIds);
         if (territoryLogs == null) {
             throw new RuntimeException("Something went wrong while retrieving data...");

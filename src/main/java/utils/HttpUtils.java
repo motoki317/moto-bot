@@ -112,7 +112,7 @@ public class HttpUtils {
         }
     }
 
-    private static boolean contains(@NotNull int[] list, int target) {
+    private static boolean contains(int[] list, int target) {
         for (int i : list) {
             if (i == target) return true;
         }

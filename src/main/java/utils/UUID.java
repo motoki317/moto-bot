@@ -10,9 +10,9 @@ import java.util.Objects;
  */
 
 public class UUID {
-    private byte[] data;
+    private final byte[] data;
 
-    public UUID(@NotNull byte[] data) {
+    public UUID(byte[] data) {
         if (data.length != 16) {
             throw new IllegalArgumentException("Length of the given data (" + data.length + ") is not correct (want 16).");
         }

@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
+@SuppressWarnings("OverlyLongMethod")
 class TestWarTerritoryDataIntegrity {
     private static final DateFormat formatter = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
 
@@ -231,8 +232,6 @@ class TestWarTerritoryDataIntegrity {
         warLog = warLogRepository.findOne(() -> warLogId);
         assert warLog != null;
         warLog.setLastUp(formatter.parse("2020/01/01 15:29:30"));
-        // warLog.setEnded(true);
-        // warLog.setLogEnded(true);
         assert warLogRepository.update(warLog);
 
         Date acquired = formatter.parse("2020/01/01 15:30:00");

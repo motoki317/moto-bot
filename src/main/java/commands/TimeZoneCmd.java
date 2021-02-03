@@ -148,7 +148,7 @@ public class TimeZoneCmd extends GenericCommand {
             return;
         }
 
-        if ("reset".equals(timezoneId.toLowerCase())) {
+        if ("reset".equalsIgnoreCase(timezoneId)) {
             resetSetting(event, type);
             return;
         }

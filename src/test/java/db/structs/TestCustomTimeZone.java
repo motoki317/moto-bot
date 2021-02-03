@@ -7,9 +7,9 @@ import java.util.concurrent.TimeUnit;
 
 class TestCustomTimeZone {
     private static class TestCase {
-        private String timezone;
-        private String expectFormattedTime;
-        private long expectOffset;
+        private final String timezone;
+        private final String expectFormattedTime;
+        private final long expectOffset;
 
         private TestCase(String timezone, String expectFormattedTime, long expectOffset) {
             this.timezone = timezone;

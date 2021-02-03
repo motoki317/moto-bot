@@ -9,8 +9,8 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 public class ArgumentParser {
-    private Map<String, String> argumentMap;
-    private String normalArgument;
+    private final Map<String, String> argumentMap;
+    private final String normalArgument;
 
     public ArgumentParser(@NotNull String[] arguments) {
         this.argumentMap = new HashMap<>();

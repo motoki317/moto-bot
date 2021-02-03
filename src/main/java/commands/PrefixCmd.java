@@ -136,7 +136,7 @@ public class PrefixCmd extends GenericCommand {
         }
 
         String newPrefix = args[1];
-        if ("reset".equals(newPrefix.toLowerCase())) {
+        if ("reset".equalsIgnoreCase(newPrefix)) {
             resetSetting(event, type);
             return;
         }

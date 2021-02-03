@@ -170,8 +170,8 @@ public class ItemView extends GenericCommand {
     }
 
     private static class Status {
-        Function<Item, Integer> status;
-        String displayName;
+        final Function<Item, Integer> status;
+        final String displayName;
 
         private Status(Function<Item, Integer> status, String displayName) {
             this.status = status;
@@ -180,8 +180,8 @@ public class ItemView extends GenericCommand {
     }
 
     private static class Damage {
-        private Function<Item, String> status;
-        private String displayName;
+        private final Function<Item, String> status;
+        private final String displayName;
 
         private Damage(Function<Item, String> status, String displayName) {
             this.status = status;
@@ -224,7 +224,7 @@ public class ItemView extends GenericCommand {
         VERY_FAST(3.1),
         SUPER_FAST(4.3);
 
-        private double multiplier;
+        private final double multiplier;
 
         AttackSpeed(double multiplier) {
             this.multiplier = multiplier;
@@ -333,8 +333,8 @@ public class ItemView extends GenericCommand {
     }
 
     static class Identification extends Status {
-        private String suffix;
-        private boolean identified;
+        private final String suffix;
+        private final boolean identified;
 
         private Identification(Function<Item, Integer> status, String displayName, String suffix, boolean identified) {
             super(status, displayName);

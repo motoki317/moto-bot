@@ -16,7 +16,7 @@ public class Player {
     private static final DateFormat apiFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
     private static final ObjectMapper mapper = new ObjectMapper();
 
-    private RequestV2 request;
+    private final RequestV2 request;
 
     private String username;
     private String uuid;
@@ -139,14 +139,14 @@ public class Player {
         /**
          * Online server name or null
          */
-        private String server;
-        private boolean isVeteran;
+        private final String server;
+        private final boolean isVeteran;
 
-        private int playtime;
+        private final int playtime;
 
-        private boolean tagDisplay;
+        private final boolean tagDisplay;
         @Nullable
-        private String tag;
+        private final String tag;
 
         private MetaInfo(JsonNode meta) {
             try {
@@ -165,32 +165,32 @@ public class Player {
         }
     }
 
-    public class WynnClass {
-        private String name;
-        private int level;
-        private int quests;
-        private List<String> questNames;
-        private int itemsIdentified;
-        private int mobsKilled;
+    public static class WynnClass {
+        private final String name;
+        private final int level;
+        private final int quests;
+        private final List<String> questNames;
+        private final int itemsIdentified;
+        private final int mobsKilled;
 
-        private int pvpKills;
-        private int pvpDeaths;
+        private final int pvpKills;
+        private final int pvpDeaths;
 
-        private int chestsFound;
-        private long blocksWalked;
-        private int logins;
-        private int deaths;
-        private int playtime;
+        private final int chestsFound;
+        private final long blocksWalked;
+        private final int logins;
+        private final int deaths;
+        private final int playtime;
 
-        private Skills skills;
+        private final Skills skills;
 
-        private Professions professions;
+        private final Professions professions;
 
-        private Dungeons dungeons;
+        private final Dungeons dungeons;
 
-        private int discoveries;
-        private int eventsWon;
-        private boolean preEconomyUpdate;
+        private final int discoveries;
+        private final int eventsWon;
+        private final boolean preEconomyUpdate;
 
         private WynnClass(JsonNode data) {
             name = data.get("name").asText();
@@ -305,12 +305,12 @@ public class Player {
             return dungeons;
         }
 
-        public class Skills {
+        public static class Skills {
             public Map<String, Integer> getData() {
                 return data;
             }
 
-            private Map<String, Integer> data;
+            private final Map<String, Integer> data;
 
             private Skills(JsonNode node) {
                 data = new HashMap<>();
@@ -325,7 +325,7 @@ public class Player {
     }
 
     public static class Professions {
-        private Map<String, ProfessionLevel> profLevels;
+        private final Map<String, ProfessionLevel> profLevels;
 
         private Professions(JsonNode professions) {
             profLevels = new HashMap<>();
@@ -347,8 +347,8 @@ public class Player {
     }
 
     public static class ProfessionLevel {
-        private int level;
-        private String xp;
+        private final int level;
+        private final String xp;
 
         ProfessionLevel(int level, String xp) {
             this.level = level;
@@ -365,8 +365,8 @@ public class Player {
     }
 
     public static class Dungeons {
-        private int totalCompleted;
-        private Map<String, Integer> list;
+        private final int totalCompleted;
+        private final Map<String, Integer> list;
 
         private Dungeons(JsonNode data) {
             list = new HashMap<>();
@@ -397,9 +397,9 @@ public class Player {
         }
 
         @Nullable
-        private String name;
+        private final String name;
         @Nullable
-        private String rank;
+        private final String rank;
 
         private GuildInfo(JsonNode guild) {
             this.name = JsonUtils.getNullableString(guild, "name");
@@ -407,24 +407,24 @@ public class Player {
         }
     }
 
-    public class GlobalInfo {
-        private Player parent;
+    public static class GlobalInfo {
+        private final Player parent;
 
-        private int chestsFound;
-        private long blocksWalked;
-        private int itemsIdentified;
-        private int mobsKilled;
+        private final int chestsFound;
+        private final long blocksWalked;
+        private final int itemsIdentified;
+        private final int mobsKilled;
 
-        private int totalLevelCombat;
-        private int totalLevelProfession;
+        private final int totalLevelCombat;
+        private final int totalLevelProfession;
 
-        private int pvpKills;
-        private int pvpDeaths;
+        private final int pvpKills;
+        private final int pvpDeaths;
 
-        private int logins;
-        private int deaths;
-        private int discoveries;
-        private int eventsWon;
+        private final int logins;
+        private final int deaths;
+        private final int discoveries;
+        private final int eventsWon;
 
         private GlobalInfo(Player parent, JsonNode data) {
             this.parent = parent;

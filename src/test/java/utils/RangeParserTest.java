@@ -34,12 +34,12 @@ class RangeParserTest {
     @Test
     void testRanged() throws ParseException {
         class TestCase {
-            private Map<String, String> args;
-            private long expected;
+            private final Map<String, String> args;
+            private final long expected;
             @Nullable
-            private Date expectedSince;
+            private final Date expectedSince;
             @Nullable
-            private Date expectedUntil;
+            private final Date expectedUntil;
 
             private TestCase(Map<String, String> args, long expected,
                              @Nullable Date expectedSince, @Nullable Date expectedUntil) {

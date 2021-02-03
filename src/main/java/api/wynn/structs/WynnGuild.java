@@ -78,12 +78,12 @@ public class WynnGuild {
     public static class Member {
         private static final DateFormat apiFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
 
-        private String name;
-        private String uuid;
-        private String rank;
-        private long contributed;
+        private final String name;
+        private final String uuid;
+        private final String rank;
+        private final long contributed;
         private Date joined;
-        private String joinedFriendly;
+        private final String joinedFriendly;
 
         @JsonCreator
         public Member(@JsonProperty("name") String name,

@@ -57,7 +57,7 @@ public class Music extends GuildCommand {
         this.musicSettingRepository = bot.getDatabase().getMusicSettingRepository();
         this.playHandler = new MusicPlayHandler(bot, states, playerManager);
         this.managementHandler = new MusicManagementHandler(bot);
-        this.settingHandler = new MusicSettingHandler(bot, states);
+        this.settingHandler = new MusicSettingHandler(bot);
 
         this.registerCommands();
 

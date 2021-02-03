@@ -10,7 +10,7 @@ import javax.annotation.Nullable;
  */
 public class NullableUUID {
     @Nullable
-    private UUID uuid;
+    private final UUID uuid;
 
     @Contract(pure = true)
     public NullableUUID(@Nullable UUID uuid) {

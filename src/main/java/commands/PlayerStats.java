@@ -116,8 +116,8 @@ public class PlayerStats extends GenericCommand {
 
     @NotNull
     private Message format(@NotNull Player player,
-                                 @NotNull CustomDateFormat customDateFormat,
-                                 @NotNull CustomTimeZone customTimeZone) {
+                           @NotNull CustomDateFormat customDateFormat,
+                           @NotNull CustomTimeZone customTimeZone) {
         DateFormat dateFormat = customDateFormat.getDateFormat().getMinuteFormat();
         dateFormat.setTimeZone(customTimeZone.getTimeZoneInstance());
         String formattedTimeZone = customTimeZone.getFormattedTime();
@@ -188,7 +188,7 @@ public class PlayerStats extends GenericCommand {
         );
         displays.add(
                 new Display("Playtime", FormatUtils.formatReadableTime(
-                        player.getMetaInfo().getPlaytime() * 60, false, "m"
+                        player.getMetaInfo().getPlaytime() * 60L, false, "m"
                 ))
         );
         displays.add(

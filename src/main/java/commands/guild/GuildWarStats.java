@@ -152,12 +152,12 @@ public class GuildWarStats extends GenericCommand {
 
         // To avoid n+1 (although logs per page is 5)
         List<WarLog> retrievedWarLogs = this.warLogRepository.findAllIn(
-                logs.stream().filter(log -> log.getWarLogId() != null)
-                        .map(GuildWarLog::getWarLogId).collect(Collectors.toList())
+                logs.stream().map(GuildWarLog::getWarLogId)
+                        .filter(Objects::nonNull).collect(Collectors.toList())
         );
         List<TerritoryLog> retrievedTerritoryLogs = this.territoryLogRepository.findAllIn(
-                logs.stream().filter(log -> log.getTerritoryLogId() != null)
-                        .map(GuildWarLog::getTerritoryLogId).collect(Collectors.toList())
+                logs.stream().map(GuildWarLog::getTerritoryLogId)
+                        .filter(Objects::nonNull).collect(Collectors.toList())
         );
         if (retrievedWarLogs == null || retrievedTerritoryLogs == null) {
             return "Something went wrong while retrieving data...";

@@ -6,7 +6,7 @@ import java.io.IOException;
  * Used by {@link HttpUtils} class to indicate that one of
  */
 public class StatusCodeException extends IOException {
-    private int code;
+    private final int code;
 
     StatusCodeException(String message, int code) {
         super(message);

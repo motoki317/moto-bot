@@ -162,7 +162,7 @@ public class GuildLeaderboardTracker implements TaskBase {
     }
 
     private static class GuildHistory {
-        private Map<String, List<GuildLeaderboard>> history;
+        private final Map<String, List<GuildLeaderboard>> history;
 
         GuildHistory() {
             this.history = new HashMap<>();

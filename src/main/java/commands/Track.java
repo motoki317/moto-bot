@@ -388,7 +388,7 @@ public class Track extends GuildCommand {
             case "server":
                 boolean all = false;
                 if (args.length > 3) {
-                    if ("all".equals(args[3].toLowerCase())) {
+                    if ("all".equalsIgnoreCase(args[3])) {
                         all = true;
                     }
                 }

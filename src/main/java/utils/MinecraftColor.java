@@ -20,9 +20,9 @@ public enum MinecraftColor {
     YELLOW(new Color(0xFFFF55), "Yellow", "yellow"),
     WHITE(new Color(0xFFFFFF), "White", "white");
 
-    private Color color;
-    private String officialName;
-    private String technicalName;
+    private final Color color;
+    private final String officialName;
+    private final String technicalName;
 
     MinecraftColor(Color color, String officialName, String technicalName) {
         this.color = color;

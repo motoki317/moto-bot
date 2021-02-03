@@ -4,7 +4,7 @@ public enum SearchSite {
     YouTube("ytsearch: "),
     SoundCloud("scsearch: ");
 
-    private String prefix;
+    private final String prefix;
 
     SearchSite(String prefix) {
         this.prefix = prefix;

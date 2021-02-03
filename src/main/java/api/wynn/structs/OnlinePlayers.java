@@ -16,7 +16,7 @@ public class OnlinePlayers {
 
     private Request request;
     // player list has to be bound by hand
-    private Map<String, List<String>> worlds;
+    private final Map<String, List<String>> worlds;
 
     public Request getRequest() {
         return request;

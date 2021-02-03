@@ -18,7 +18,7 @@ public class ReactionResponse implements UserResponseListener<MessageReactionAdd
     private Runnable onDestroy;
 
     private long updatedAt;
-    private long maxLive;
+    private final long maxLive;
 
     protected ReactionResponse(long messageId, long channelId, long userId, boolean userPrivate,
                                Predicate<MessageReactionAddEvent> onReaction) {

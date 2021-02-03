@@ -63,13 +63,12 @@ public class ServerLogCmd extends GuildCommand {
 
         if (old != null && old.getChannelId() == entry.getChannelId()) {
             boolean res = this.serverLogRepository.delete(old);
-            if (res) {
-                respond(event, "Successfully removed server log from this channel.");
-                return;
-            } else {
+            if (!res) {
                 respondError(event, "Something went wrong while saving your data...");
                 return;
             }
+            respond(event, "Successfully removed server log from this channel.");
+            return;
         }
 
         boolean res = old == null

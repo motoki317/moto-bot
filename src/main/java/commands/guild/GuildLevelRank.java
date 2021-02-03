@@ -273,7 +273,7 @@ public class GuildLevelRank extends GenericCommand {
         String pageView = String.format("< page %s / %s >", page + 1, lbDisplay.maxPage + 1);
         sb.append(String.format("%s%sTotal | %s | %s\n",
                 pageView,
-                nCopies(" ", tf.widthAt(0) + 3 + tf.widthAt(1) + 3 + tf.widthAt(2) + 3 + tf.widthAt(3) - pageView.length() - "Total".length()),
+                nSpaces(tf.widthAt(0) + 3 + tf.widthAt(1) + 3 + tf.widthAt(2) + 3 + tf.widthAt(3) - pageView.length() - "Total".length()),
                 lbDisplay.totalXPGained,
                 lbDisplay.totalTerritories));
         sb.append("\n");
@@ -291,7 +291,7 @@ public class GuildLevelRank extends GenericCommand {
         return sb.toString();
     }
 
-    private static String nCopies(String s, int n) {
-        return String.join("", Collections.nCopies(n, s));
+    private static String nSpaces(int n) {
+        return String.join("", Collections.nCopies(n, " "));
     }
 }
