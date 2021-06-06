@@ -18,13 +18,13 @@
     </properties>
 
     <repositories>
-        <!-- Lavaplayer -->
+        <!-- central -->
         <repository>
-            <id>jcenter</id>
-            <name>jcenter-bintray</name>
-            <url>https://jcenter.bintray.com</url>
+            <id>central</id>
+            <name>central</name>
+            <url>https://repo.maven.apache.org/maven2/</url>
         </repository>
-        <!-- JDA -->
+        <!-- JDA, LavaPlayer -->
         <repository>
             <id>dv8tion</id>
             <name>m2-dv8tion</name>

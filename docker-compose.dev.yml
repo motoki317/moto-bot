@@ -2,7 +2,7 @@ version: '3'
 
 services:
   moto-bot:
-    build: ..
+    build: .
     restart: always
     environment:
       MYSQL_HOST: mysql
@@ -34,5 +34,5 @@ services:
     ports:
       - 3306:3306
     volumes:
-      - ../mysql/data:/var/lib/mysql
-      - ../mysql/init:/docker-entrypoint-initdb.d
+      - ./mysql/data:/var/lib/mysql
+      - ./mysql/init:/docker-entrypoint-initdb.d
