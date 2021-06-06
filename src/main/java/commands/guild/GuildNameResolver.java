@@ -96,7 +96,7 @@ public class GuildNameResolver {
         }
 
         // Prefix search
-        if (specified.length() == 3) {
+        if (specified.length() == 3 || specified.length() == 4) {
             // Case sensitive prefix search
             ret = this.guildRepository.findAllByPrefix(specified);
             if (ret == null) {
