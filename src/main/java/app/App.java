@@ -39,6 +39,8 @@ public class App implements Runnable, Bot {
 
     private final StoppableThread heartBeat;
 
+    private final boolean[] connected;
+
     @Override
     public ShardManager getManager() {
         return this.manager;
@@ -81,11 +83,47 @@ public class App implements Runnable, Bot {
         return -1;
     }
 
+    @Override
+    public void setConnected(int shardId, boolean connected) {
+        if (shardId < 0 || this.connected.length <= shardId) return;
+        boolean prev;
+        synchronized (this.connected) {
+            prev = this.connected[shardId];
+            this.connected[shardId] = connected;
+        }
+        if (prev != connected) {
+            if (connected) {
+                this.logger.log(-1, "Shard " + shardId + " went online");
+            } else {
+                this.logger.log(-1, "Shard " + shardId + " went offline");
+            }
+        }
+    }
+
+    @Override
+    public boolean isConnected(int shardId) {
+        if (shardId < 0 || this.connected.length <= shardId) return false;
+        synchronized (this.connected) {
+            return this.connected[shardId];
+        }
+    }
+
+    @Override
+    public boolean isAllConnected() {
+        synchronized (this.connected) {
+            for (boolean c : this.connected) {
+                if (!c) return false;
+            }
+            return true;
+        }
+    }
+
     public App(Properties properties, UpdaterFactory updaterFactory) throws LoginException {
         this.properties = properties;
         this.logger = new ConsoleLogger(this.properties.logTimeZone);
         this.reactionManager = updaterFactory.getReactionManager();
         this.responseManager = updaterFactory.getResponseManager();
+        this.connected = new boolean[this.properties.shards];
 
         this.manager = DefaultShardManagerBuilder.createDefault(this.properties.botAccessToken)
                 // For server log feature
@@ -131,7 +169,7 @@ public class App implements Runnable, Bot {
                     e.printStackTrace();
                 }
             }
-            this.logger.debug("JDA Sharding: Shard ID " + i + " is loaded!");
+            this.setConnected(i, true);
         }
         this.logger.log(-1, "JDA Sharding: All shards loaded!");
     }

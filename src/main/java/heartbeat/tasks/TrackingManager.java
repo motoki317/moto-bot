@@ -16,11 +16,13 @@ import java.util.concurrent.TimeUnit;
  * Tracking manager deletes expired tracking, and sends messages to the channel.
  */
 public class TrackingManager implements TaskBase {
+    private final Bot bot;
     private final ShardManager shardManager;
     private final Logger logger;
     private final TrackChannelRepository trackChannelRepository;
 
     public TrackingManager(Bot bot) {
+        this.bot = bot;
         this.shardManager = bot.getManager();
         this.logger = bot.getLogger();
         this.trackChannelRepository = bot.getDatabase().getTrackingChannelRepository();
@@ -39,6 +41,9 @@ public class TrackingManager implements TaskBase {
 
     @Override
     public void run() {
+        // Do not process if JDA is disconnected from WS
+        if (!this.bot.isAllConnected()) return;
+
         long now = System.currentTimeMillis();
 
         List<TrackChannel> tracks = this.trackChannelRepository.findAll();

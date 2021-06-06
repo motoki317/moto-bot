@@ -29,6 +29,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 public class CommandListener extends ListenerAdapter {
+    private final Bot bot;
+
     private final List<BotCommand> commands;
     private final Map<String, BotCommand> commandNameMap;
     private int maxArgumentsLength;
@@ -45,6 +47,8 @@ public class CommandListener extends ListenerAdapter {
     private final DiscordSpamChecker spamChecker;
 
     CommandListener(Bot bot) {
+        this.bot = bot;
+
         this.commands = new ArrayList<>();
         this.commandNameMap = new HashMap<>();
         this.maxArgumentsLength = 1;
@@ -132,6 +136,9 @@ public class CommandListener extends ListenerAdapter {
 
     @Override
     public void onMessageReceived(@Nonnull MessageReceivedEvent event) {
+        // Do not process if JDA is disconnected from WS
+        if (!this.bot.isConnected(this.bot.getShardId(event.getJDA()))) return;
+
         // Do not respond to webhook/bot messages
         if (event.isWebhookMessage() || event.getAuthor().isBot()) return;
 

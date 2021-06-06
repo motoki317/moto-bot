@@ -14,5 +14,9 @@ public interface Bot {
     Logger getLogger();
     ReactionManager getReactionManager();
     ResponseManager getResponseManager();
+
     int getShardId(JDA jda);
+    void setConnected(int shardId, boolean connected);
+    boolean isConnected(int shardId);
+    boolean isAllConnected();
 }

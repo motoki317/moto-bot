@@ -6,6 +6,7 @@ import db.repository.base.TrackChannelRepository;
 import log.Logger;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.events.*;
 import net.dv8tion.jda.api.events.channel.text.TextChannelDeleteEvent;
 import net.dv8tion.jda.api.events.guild.GuildJoinEvent;
 import net.dv8tion.jda.api.events.guild.GuildLeaveEvent;
@@ -13,12 +14,14 @@ import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.sharding.ShardManager;
+import org.jetbrains.annotations.NotNull;
 import update.reaction.ReactionManager;
 import update.response.ResponseManager;
 
 import javax.annotation.Nonnull;
 
 public class UpdaterListener extends ListenerAdapter {
+    private final Bot bot;
     private final ResponseManager responseManager;
     private final ReactionManager reactionManager;
     private final Logger logger;
@@ -27,12 +30,42 @@ public class UpdaterListener extends ListenerAdapter {
     private final ServerLogRepository serverLogRepository;
 
     UpdaterListener(Bot bot) {
+        this.bot = bot;
         this.responseManager = bot.getResponseManager();
         this.reactionManager = bot.getReactionManager();
         this.logger = bot.getLogger();
         this.manager = bot.getManager();
         this.trackChannelRepository = bot.getDatabase().getTrackingChannelRepository();
         this.serverLogRepository = bot.getDatabase().getServerLogRepository();
+    }
+
+    // ----------------------------
+    // JDA Events
+    // ----------------------------
+
+    @Override
+    public void onReady(@NotNull ReadyEvent event) {
+        this.bot.setConnected(this.bot.getShardId(event.getJDA()), true);
+    }
+
+    @Override
+    public void onResumed(@NotNull ResumedEvent event) {
+        this.bot.setConnected(this.bot.getShardId(event.getJDA()), true);
+    }
+
+    @Override
+    public void onReconnected(@NotNull ReconnectedEvent event) {
+        this.bot.setConnected(this.bot.getShardId(event.getJDA()), true);
+    }
+
+    @Override
+    public void onDisconnect(@NotNull DisconnectEvent event) {
+        this.bot.setConnected(this.bot.getShardId(event.getJDA()), false);
+    }
+
+    @Override
+    public void onShutdown(@NotNull ShutdownEvent event) {
+        this.bot.setConnected(this.bot.getShardId(event.getJDA()), false);
     }
 
     // ----------------------------
