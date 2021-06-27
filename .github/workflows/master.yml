@@ -24,6 +24,7 @@ jobs:
         with:
           context: .
           file: ./Dockerfile
+          platforms: linux/amd64,linux/arm64
           push: true
           tags: ghcr.io/motoki317/moto-bot:master
   deploy:

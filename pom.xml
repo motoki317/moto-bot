@@ -21,7 +21,7 @@
         <!-- central -->
         <repository>
             <id>central</id>
-            <name>central</name>
+            <name>Maven Central</name>
             <url>https://repo.maven.apache.org/maven2/</url>
         </repository>
         <!-- JDA, LavaPlayer -->
