@@ -2,6 +2,7 @@ package api.wynn.structs;
 
 import api.wynn.structs.common.Request;
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import javax.annotation.Nullable;
@@ -11,6 +12,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class WynnGuild {
     private String name;
     private String prefix;
@@ -75,6 +77,7 @@ public class WynnGuild {
                 .map(m -> m.name).findFirst().orElse(null);
     }
 
+    @JsonIgnoreProperties(ignoreUnknown = true)
     public static class Member {
         private static final DateFormat apiFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
 
@@ -133,6 +136,7 @@ public class WynnGuild {
         }
     }
 
+    @JsonIgnoreProperties(ignoreUnknown = true)
     public static class Banner {
         private String base;
         private int tier;
