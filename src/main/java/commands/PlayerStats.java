@@ -231,7 +231,7 @@ public class PlayerStats extends GenericCommand {
         EmbedBuilder eb = new EmbedBuilder();
 
         List<String> desc = new ArrayList<>();
-        String headAvatarUrl = "https://minotar.net/avatar/" + player.getUsername();
+        String headAvatarUrl = "https://minotar.net/helm/" + player.getUsername();
         eb.setAuthor(player.getUsername(), null, headAvatarUrl);
 
         // Add official stats page in description
