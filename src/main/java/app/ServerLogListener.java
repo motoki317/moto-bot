@@ -289,6 +289,15 @@ public class ServerLogListener extends ListenerAdapter {
                                 "Voice Channel Created: #" + event.getChannel().getName()
                         )
         );
+        addHandler(VoiceChannelUpdateRegionEvent.class, (event, eb) ->
+                eb.setColor(MinecraftColor.DARK_AQUA.getColor())
+                        .setAuthor(event.getGuild().getName(), null, event.getGuild().getIconUrl())
+                        .setDescription(
+                                "Voice Region Updated"
+                        )
+                        .addField("Before", event.getOldRegion().getName(), false)
+                        .addField("After", event.getNewRegion().getName(), false)
+        );
 
         // Generic user
         addHandler(UserUpdateNameEvent.class, (event, eb) -> {
@@ -416,15 +425,6 @@ public class ServerLogListener extends ListenerAdapter {
                             newOwner != null ? newOwner.getAsMention() : "None", event.getNewOwnerIdLong()),
                             false);
         });
-        addGuildEventHandler(GuildUpdateRegionEvent.class, (event, eb, getFormattedTime) ->
-                eb.setColor(MinecraftColor.DARK_AQUA.getColor())
-                        .setAuthor(event.getGuild().getName(), null, event.getGuild().getIconUrl())
-                        .setDescription(
-                                "Guild Region Updated"
-                        )
-                        .addField("Before", event.getOldRegion().getName(), false)
-                        .addField("After", event.getNewRegion().getName(), false)
-        );
         addGuildEventHandler(GuildUpdateSplashEvent.class, (event, eb, getFormattedTime) ->
                 eb.setColor(MinecraftColor.DARK_AQUA.getColor())
                         .setAuthor(event.getGuild().getName(), null, event.getGuild().getIconUrl())
@@ -801,7 +801,7 @@ public class ServerLogListener extends ListenerAdapter {
         if (eb == null) {
             return;
         }
-        logChannel.sendMessage(eb.build()).queue();
+        logChannel.sendMessageEmbeds(eb.build()).queue();
     }
 
     @Override
@@ -826,7 +826,7 @@ public class ServerLogListener extends ListenerAdapter {
         if (eb == null) {
             return;
         }
-        logChannel.sendMessage(eb.build()).queue();
+        logChannel.sendMessageEmbeds(eb.build()).queue();
     }
 
     // User Events
@@ -857,7 +857,7 @@ public class ServerLogListener extends ListenerAdapter {
             }
             // different timezones for each guild / log channel
             String formattedDate = getFormattedCurrentTime(log.getGuildId(), log.getChannelId());
-            logChannel.sendMessage(
+            logChannel.sendMessageEmbeds(
                     new EmbedBuilder(eb)
                     .setFooter(String.format("User ID: %s | %s", userId, formattedDate))
                     .build()
@@ -896,7 +896,7 @@ public class ServerLogListener extends ListenerAdapter {
         }
         eb.setFooter(footerText);
 
-        logChannel.sendMessage(eb.build()).queue();
+        logChannel.sendMessageEmbeds(eb.build()).queue();
     }
 
     @Override
@@ -922,6 +922,6 @@ public class ServerLogListener extends ListenerAdapter {
             return;
         }
 
-        logChannel.sendMessage(eb.build()).queue();
+        logChannel.sendMessageEmbeds(eb.build()).queue();
     }
 }
