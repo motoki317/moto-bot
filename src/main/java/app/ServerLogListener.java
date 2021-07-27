@@ -93,11 +93,10 @@ public class ServerLogListener extends ListenerAdapter {
          * @param event Event.
          * @param eb Embed builder.
          * @param getFormattedTime If given a unix milliseconds time, formats the date.
-         * @param getUser Given a user ID, retrieves discord user.
          * @return Returns null if the message should not be sent.
          */
         @Nullable
-        EmbedBuilder handle(T event, EmbedBuilder eb, Function<Long, String> getFormattedTime, Function<Long, @Nullable User> getUser);
+        EmbedBuilder handle(T event, EmbedBuilder eb, Function<Long, String> getFormattedTime);
     }
 
     private static final Map<Class<?>, Handler<?>> handlers;
@@ -138,7 +137,7 @@ public class ServerLogListener extends ListenerAdapter {
     @SuppressWarnings("unchecked")
     @Nullable
     private static <T extends GenericGuildEvent> EmbedBuilder handleGuildEvent(Class<T> c, Event event,
-                                                                               EmbedBuilder eb, Function<Long, String> formatTime, Function<Long, @Nullable User> getUser) {
+                                                                               EmbedBuilder eb, Function<Long, String> formatTime) {
         GuildEventHandler<T> handler = (GuildEventHandler<T>) guildEventHandlers.getOrDefault(c, null);
         if (handler == null) {
             return null;
@@ -150,7 +149,7 @@ public class ServerLogListener extends ListenerAdapter {
             e.printStackTrace();
             return null;
         }
-        return handler.handle(casted, eb, formatTime, getUser);
+        return handler.handle(casted, eb, formatTime);
     }
 
     static {
@@ -313,7 +312,7 @@ public class ServerLogListener extends ListenerAdapter {
 
         // Generic guild
         addGuildEventHandler(GuildBanEvent.class, ServerLogListener::handleGuildBan);
-        addGuildEventHandler(GuildUnbanEvent.class, (event, eb, getFormattedTime, getUser) -> {
+        addGuildEventHandler(GuildUnbanEvent.class, (event, eb, getFormattedTime) -> {
             String nameWithDiscriminator = event.getUser().getName() + "#" + event.getUser().getDiscriminator();
             return eb.setColor(MinecraftColor.DARK_GRAY.getColor())
                     .setAuthor(nameWithDiscriminator, null, event.getUser().getEffectiveAvatarUrl())
@@ -324,7 +323,7 @@ public class ServerLogListener extends ListenerAdapter {
         });
         addGuildEventHandler(GuildMessageUpdateEvent.class, ServerLogListener::handleMessageUpdate);
         addGuildEventHandler(GuildMessageDeleteEvent.class, ServerLogListener::handleMessageDelete);
-        addGuildEventHandler(GuildUpdateSystemChannelEvent.class, (event, eb, getFormattedTime, getUser) -> {
+        addGuildEventHandler(GuildUpdateSystemChannelEvent.class, (event, eb, getFormattedTime) -> {
             TextChannel oldChannel = event.getOldSystemChannel();
             TextChannel newChannel = event.getNewSystemChannel();
 
@@ -338,7 +337,7 @@ public class ServerLogListener extends ListenerAdapter {
                     .addField("Before", oldChannel == null ? "None" : oldChannel.getAsMention(), false)
                     .addField("After", newChannel == null ? "None" : newChannel.getAsMention(), false);
         });
-        addGuildEventHandler(GuildUpdateAfkTimeoutEvent.class, (event, eb, getFormattedTime, getUser) ->
+        addGuildEventHandler(GuildUpdateAfkTimeoutEvent.class, (event, eb, getFormattedTime) ->
                 eb.setColor(MinecraftColor.DARK_AQUA.getColor())
                         .setAuthor(event.getGuild().getName(), null, event.getGuild().getIconUrl())
                         .setDescription(
@@ -351,7 +350,7 @@ public class ServerLogListener extends ListenerAdapter {
                                 FormatUtils.formatReadableTime(event.getNewAfkTimeout().getSeconds(), false, "s"),
                                 false)
         );
-        addGuildEventHandler(GuildUpdateExplicitContentLevelEvent.class, (event, eb, getFormattedTime, getUser) ->
+        addGuildEventHandler(GuildUpdateExplicitContentLevelEvent.class, (event, eb, getFormattedTime) ->
                 eb.setColor(MinecraftColor.DARK_AQUA.getColor())
                         .setAuthor(event.getGuild().getName(), null, event.getGuild().getIconUrl())
                         .setDescription(
@@ -362,7 +361,7 @@ public class ServerLogListener extends ListenerAdapter {
                         .addField("After", event.getNewLevel().getDescription()
                                 + " - " + event.getNewLevel().getKey(), false)
         );
-        addGuildEventHandler(GuildUpdateIconEvent.class, (event, eb, getFormattedTime, getUser) ->
+        addGuildEventHandler(GuildUpdateIconEvent.class, (event, eb, getFormattedTime) ->
                 eb.setColor(MinecraftColor.DARK_AQUA.getColor())
                         .setAuthor(event.getGuild().getName(), null, event.getGuild().getIconUrl())
                         .setDescription(
@@ -373,7 +372,7 @@ public class ServerLogListener extends ListenerAdapter {
                         .setThumbnail(event.getOldIconUrl())
                         .setImage(event.getNewIconUrl())
         );
-        addGuildEventHandler(GuildUpdateMFALevelEvent.class, (event, eb, getFormattedTime, getUser) ->
+        addGuildEventHandler(GuildUpdateMFALevelEvent.class, (event, eb, getFormattedTime) ->
                 eb.setColor(MinecraftColor.DARK_AQUA.getColor())
                         .setAuthor(event.getGuild().getName(), null, event.getGuild().getIconUrl())
                         .setDescription(
@@ -382,7 +381,7 @@ public class ServerLogListener extends ListenerAdapter {
                         .addField("Before", event.getOldMFALevel().name(), false)
                         .addField("After", event.getNewMFALevel().name(), false)
         );
-        addGuildEventHandler(GuildUpdateNameEvent.class, (event, eb, getFormattedTime, getUser) ->
+        addGuildEventHandler(GuildUpdateNameEvent.class, (event, eb, getFormattedTime) ->
                 eb.setColor(MinecraftColor.DARK_AQUA.getColor())
                         .setAuthor(event.getGuild().getName(), null, event.getGuild().getIconUrl())
                         .setDescription(
@@ -391,7 +390,7 @@ public class ServerLogListener extends ListenerAdapter {
                         .addField("Before", event.getOldName(), false)
                         .addField("After", event.getNewName(), false)
         );
-        addGuildEventHandler(GuildUpdateNotificationLevelEvent.class, (event, eb, getFormattedTime, getUser) ->
+        addGuildEventHandler(GuildUpdateNotificationLevelEvent.class, (event, eb, getFormattedTime) ->
                 eb.setColor(MinecraftColor.DARK_AQUA.getColor())
                         .setAuthor(event.getGuild().getName(), null, event.getGuild().getIconUrl())
                         .setDescription(
@@ -400,7 +399,7 @@ public class ServerLogListener extends ListenerAdapter {
                         .addField("Before", event.getOldNotificationLevel().name(), false)
                         .addField("After", event.getNewNotificationLevel().name(), false)
         );
-        addGuildEventHandler(GuildUpdateOwnerEvent.class, (event, eb, getFormattedTime, getUser) -> {
+        addGuildEventHandler(GuildUpdateOwnerEvent.class, (event, eb, getFormattedTime) -> {
             Member oldOwner = event.getOldOwner();
             Member newOwner = event.getNewOwner();
 
@@ -417,7 +416,7 @@ public class ServerLogListener extends ListenerAdapter {
                             newOwner != null ? newOwner.getAsMention() : "None", event.getNewOwnerIdLong()),
                             false);
         });
-        addGuildEventHandler(GuildUpdateRegionEvent.class, (event, eb, getFormattedTime, getUser) ->
+        addGuildEventHandler(GuildUpdateRegionEvent.class, (event, eb, getFormattedTime) ->
                 eb.setColor(MinecraftColor.DARK_AQUA.getColor())
                         .setAuthor(event.getGuild().getName(), null, event.getGuild().getIconUrl())
                         .setDescription(
@@ -426,7 +425,7 @@ public class ServerLogListener extends ListenerAdapter {
                         .addField("Before", event.getOldRegion().getName(), false)
                         .addField("After", event.getNewRegion().getName(), false)
         );
-        addGuildEventHandler(GuildUpdateSplashEvent.class, (event, eb, getFormattedTime, getUser) ->
+        addGuildEventHandler(GuildUpdateSplashEvent.class, (event, eb, getFormattedTime) ->
                 eb.setColor(MinecraftColor.DARK_AQUA.getColor())
                         .setAuthor(event.getGuild().getName(), null, event.getGuild().getIconUrl())
                         .setDescription(
@@ -437,7 +436,7 @@ public class ServerLogListener extends ListenerAdapter {
                         .setThumbnail(event.getOldSplashUrl())
                         .setImage(event.getNewSplashUrl())
         );
-        addGuildEventHandler(GuildUpdateVerificationLevelEvent.class, (event, eb, getFormattedTime, getUser) ->
+        addGuildEventHandler(GuildUpdateVerificationLevelEvent.class, (event, eb, getFormattedTime) ->
                 eb.setColor(MinecraftColor.DARK_AQUA.getColor())
                         .setAuthor(event.getGuild().getName(), null, event.getGuild().getIconUrl())
                         .setDescription(
@@ -446,7 +445,7 @@ public class ServerLogListener extends ListenerAdapter {
                         .addField("Before", event.getOldVerificationLevel().name(), false)
                         .addField("After", event.getNewVerificationLevel().name(), false)
         );
-        addGuildEventHandler(GuildMemberJoinEvent.class, (event, eb, getFormattedTime, getUser) -> {
+        addGuildEventHandler(GuildMemberJoinEvent.class, (event, eb, getFormattedTime) -> {
             long accountCreation = BotUtils.getIdCreationTime(event.getUser().getIdLong());
             long elapsedMillis = System.currentTimeMillis() - accountCreation;
             String nameWithDiscriminator = event.getUser().getName() + "#" + event.getUser().getDiscriminator();
@@ -466,7 +465,7 @@ public class ServerLogListener extends ListenerAdapter {
                                             : "")
                     );
         });
-        addGuildEventHandler(GuildMemberRemoveEvent.class, (event, eb, getFormattedTime, getUser) -> {
+        addGuildEventHandler(GuildMemberRemoveEvent.class, (event, eb, getFormattedTime) -> {
             String nameWithDiscriminator = event.getUser().getName() + "#" + event.getUser().getDiscriminator();
 
             return eb.setColor(MinecraftColor.RED.getColor())
@@ -478,7 +477,7 @@ public class ServerLogListener extends ListenerAdapter {
                                     nameWithDiscriminator)
                     );
         });
-        addGuildEventHandler(GuildMemberRoleAddEvent.class, (event, eb, getFormattedTime, getUser) -> {
+        addGuildEventHandler(GuildMemberRoleAddEvent.class, (event, eb, getFormattedTime) -> {
             String nameWithDiscriminator = event.getUser().getName() + "#" + event.getUser().getDiscriminator();
             String addedRoles = event.getRoles().stream()
                     .map(IMentionable::getAsMention).collect(Collectors.joining(" , "));
@@ -492,7 +491,7 @@ public class ServerLogListener extends ListenerAdapter {
                                     addedRoles)
                     );
         });
-        addGuildEventHandler(GuildMemberRoleRemoveEvent.class, (event, eb, getFormattedTime, getUser) -> {
+        addGuildEventHandler(GuildMemberRoleRemoveEvent.class, (event, eb, getFormattedTime) -> {
             String nameWithDiscriminator = event.getUser().getName() + "#" + event.getUser().getDiscriminator();
             String removedRoles = event.getRoles().stream()
                     .map(IMentionable::getAsMention).collect(Collectors.joining(" , "));
@@ -506,7 +505,7 @@ public class ServerLogListener extends ListenerAdapter {
                                     removedRoles)
                     );
         });
-        addGuildEventHandler(GuildMemberUpdateNicknameEvent.class, (event, eb, getFormattedTime, getUser) -> {
+        addGuildEventHandler(GuildMemberUpdateNicknameEvent.class, (event, eb, getFormattedTime) -> {
             String nameWithDiscriminator = event.getUser().getName() + "#" + event.getUser().getDiscriminator();
             String oldNick = event.getOldNickname();
             String newNick = event.getNewNickname();
@@ -520,7 +519,7 @@ public class ServerLogListener extends ListenerAdapter {
                     .addField("Before", oldNick == null ? "_None_" : oldNick, false)
                     .addField("After", newNick == null ? "_None_" : newNick, false);
         });
-        addGuildEventHandler(GuildVoiceJoinEvent.class, (event, eb, getFormattedTime, getUser) -> {
+        addGuildEventHandler(GuildVoiceJoinEvent.class, (event, eb, getFormattedTime) -> {
             User user = event.getMember().getUser();
             String nameWithDiscriminator = user.getName() + "#" + user.getDiscriminator();
 
@@ -531,7 +530,7 @@ public class ServerLogListener extends ListenerAdapter {
                             user.getAsMention() + " joined voice channel #" + event.getChannelJoined().getName()
                     );
         });
-        addGuildEventHandler(GuildVoiceMoveEvent.class, (event, eb, getFormattedTime, getUser) -> {
+        addGuildEventHandler(GuildVoiceMoveEvent.class, (event, eb, getFormattedTime) -> {
             User user = event.getMember().getUser();
             String nameWithDiscriminator = user.getName() + "#" + user.getDiscriminator();
 
@@ -542,7 +541,7 @@ public class ServerLogListener extends ListenerAdapter {
                             user.getAsMention() + " moved voice channel to #" + event.getChannelJoined().getName()
                     );
         });
-        addGuildEventHandler(GuildVoiceLeaveEvent.class, (event, eb, getFormattedTime, getUser) -> {
+        addGuildEventHandler(GuildVoiceLeaveEvent.class, (event, eb, getFormattedTime) -> {
             User user = event.getMember().getUser();
             String nameWithDiscriminator = user.getName() + "#" + user.getDiscriminator();
 
@@ -553,7 +552,7 @@ public class ServerLogListener extends ListenerAdapter {
                             user.getAsMention() + " left voice channel #" + event.getChannelLeft().getName()
                     );
         });
-        addGuildEventHandler(GuildVoiceGuildMuteEvent.class, (event, eb, getFormattedTime, getUser) -> {
+        addGuildEventHandler(GuildVoiceGuildMuteEvent.class, (event, eb, getFormattedTime) -> {
             User user = event.getMember().getUser();
             String nameWithDiscriminator = user.getName() + "#" + user.getDiscriminator();
 
@@ -564,7 +563,7 @@ public class ServerLogListener extends ListenerAdapter {
                             user.getAsMention() + " has been " + (event.isGuildMuted() ? "muted." : "un-muted.")
                     );
         });
-        addGuildEventHandler(GuildVoiceGuildDeafenEvent.class, (event, eb, getFormattedTime, getUser) -> {
+        addGuildEventHandler(GuildVoiceGuildDeafenEvent.class, (event, eb, getFormattedTime) -> {
             User user = event.getMember().getUser();
             String nameWithDiscriminator = user.getName() + "#" + user.getDiscriminator();
 
@@ -575,7 +574,7 @@ public class ServerLogListener extends ListenerAdapter {
                             user.getAsMention() + " has been " + (event.isGuildDeafened() ? "deafened." : "un-deafened.")
                     );
         });
-        addGuildEventHandler(GuildVoiceSuppressEvent.class, (event, eb, getFormattedTime, getUser) -> {
+        addGuildEventHandler(GuildVoiceSuppressEvent.class, (event, eb, getFormattedTime) -> {
             User user = event.getMember().getUser();
             String nameWithDiscriminator = user.getName() + "#" + user.getDiscriminator();
 
@@ -659,7 +658,7 @@ public class ServerLogListener extends ListenerAdapter {
         });
     }
 
-    private static EmbedBuilder handleGuildBan(GuildBanEvent event, EmbedBuilder eb, Function<Long, String> getFormattedTime, Function<Long, @Nullable User> getUser) {
+    private static EmbedBuilder handleGuildBan(GuildBanEvent event, EmbedBuilder eb, Function<Long, String> getFormattedTime) {
         String banReason;
         try {
             banReason = event.getGuild().retrieveBan(event.getUser()).complete().getReason();
@@ -677,7 +676,7 @@ public class ServerLogListener extends ListenerAdapter {
                 .addField("Ban Reason", banReason, false);
     }
 
-    private static EmbedBuilder handleMessageUpdate(GuildMessageUpdateEvent event, EmbedBuilder eb, Function<Long, String> getFormattedTime, Function<Long, @Nullable User> getUser) {
+    private static EmbedBuilder handleMessageUpdate(GuildMessageUpdateEvent event, EmbedBuilder eb, Function<Long, String> getFormattedTime) {
         if (event.getAuthor().isBot()) return null;
 
         // Retrieve old message from the cache, if possible
@@ -715,12 +714,12 @@ public class ServerLogListener extends ListenerAdapter {
                         false);
     }
 
-    private static EmbedBuilder handleMessageDelete(GuildMessageDeleteEvent event, EmbedBuilder eb, Function<Long, String> getFormattedTime, Function<Long, @Nullable User> getUser) {
+    private static EmbedBuilder handleMessageDelete(GuildMessageDeleteEvent event, EmbedBuilder eb, Function<Long, String> getFormattedTime) {
         long messageId = event.getMessageIdLong();
 
         // Try to retrieve the old message
         MessageCache oldMessage = messageCache.get(messageId);
-        User user = oldMessage != null ? getUser.apply(oldMessage.userId) : null;
+        User user = oldMessage != null ? event.getJDA().getUserById(oldMessage.userId) : null;
         if (oldMessage != null) {
             eb.addField("Content",
                     oldMessage.content.length() > MessageEmbed.VALUE_MAX_LENGTH
@@ -881,8 +880,7 @@ public class ServerLogListener extends ListenerAdapter {
 
         EmbedBuilder eb = handleGuildEvent(
                 event.getClass(), event, new EmbedBuilder(),
-                time -> getFormattedTime(guildId, log.getChannelId(), time),
-                this.shardManager::getUserById
+                time -> getFormattedTime(guildId, log.getChannelId(), time)
         );
         if (eb == null) {
             return;
