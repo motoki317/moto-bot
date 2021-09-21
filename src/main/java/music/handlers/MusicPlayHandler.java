@@ -14,6 +14,7 @@ import db.model.musicSetting.MusicSetting;
 import db.repository.base.MusicInterruptedGuildRepository;
 import db.repository.base.MusicQueueRepository;
 import db.repository.base.MusicSettingRepository;
+import io.prometheus.client.Gauge;
 import log.Logger;
 import music.*;
 import music.exception.DuplicateTrackException;
@@ -39,6 +40,11 @@ import static music.MusicUtils.formatLength;
 import static music.MusicUtils.getThumbnailURL;
 
 public class MusicPlayHandler {
+    private static final Gauge MUSIC_PLAYER_GAUGE = Gauge.build()
+            .name("moto_bot_music_players")
+            .help("Count of music players set up.")
+            .register();
+
     private final Map<Long, MusicState> states;
     private final AudioPlayerManager playerManager;
 
@@ -128,6 +134,7 @@ public class MusicPlayHandler {
                         "Please make sure the bot has sufficient permissions to do so!");
                 synchronized (states) {
                     states.remove(guildId);
+                    MUSIC_PLAYER_GAUGE.dec();
                 }
             }
         }
@@ -200,6 +207,7 @@ public class MusicPlayHandler {
         MusicState state = new MusicState(player, scheduler, setting, guildId, channelId, voiceChannelId);
         synchronized (states) {
             states.put(guildId, state);
+            MUSIC_PLAYER_GAUGE.inc();
         }
 
         Guild guild = channel.getGuild();
@@ -349,6 +357,7 @@ public class MusicPlayHandler {
             respondException(event, "The bot couldn't join your voice channel. Please make sure the bot has sufficient permissions to do so!");
             synchronized (states) {
                 states.remove(event.getGuild().getIdLong());
+                MUSIC_PLAYER_GAUGE.dec();
             }
             return false;
         }
@@ -416,6 +425,7 @@ public class MusicPlayHandler {
 
         synchronized (states) {
             states.remove(state.getGuildId());
+            MUSIC_PLAYER_GAUGE.dec();
         }
 
         respond(event, new EmbedBuilder()

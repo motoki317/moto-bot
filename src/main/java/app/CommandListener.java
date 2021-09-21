@@ -10,6 +10,7 @@ import db.model.prefix.Prefix;
 import db.repository.base.CommandLogRepository;
 import db.repository.base.IgnoreChannelRepository;
 import db.repository.base.PrefixRepository;
+import io.prometheus.client.Counter;
 import log.DiscordSpamChecker;
 import log.Logger;
 import music.Music;
@@ -29,6 +30,12 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 public class CommandListener extends ListenerAdapter {
+    private static final Counter COMMANDS_COUNTER = Counter.build()
+            .name("moto_bot_commands")
+            .help("Counts of moto-bot command usage per command kind.")
+            .labelNames("kind")
+            .register();
+
     private final Bot bot;
 
     private final List<BotCommand> commands;
@@ -237,6 +244,7 @@ public class CommandListener extends ListenerAdapter {
         }
 
         addCommandLog(cmdBase, commandMessage, event);
+        COMMANDS_COUNTER.labels(cmdBase).inc();
     }
 
     /**

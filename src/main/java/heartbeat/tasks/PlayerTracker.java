@@ -15,6 +15,7 @@ import db.model.warTrack.WarTrack;
 import db.model.world.World;
 import db.repository.base.*;
 import heartbeat.base.TaskBase;
+import io.prometheus.client.Gauge;
 import log.Logger;
 import net.dv8tion.jda.api.entities.Activity;
 import net.dv8tion.jda.api.entities.TextChannel;
@@ -33,8 +34,14 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class PlayerTracker implements TaskBase {
-    private static final Pattern mainWorld = Pattern.compile("(WC|EU)\\d+");
-    private static final Pattern warWorld = Pattern.compile("WAR\\d+");
+    private static final Gauge ONLINE_PLAYERS_GAUGE = Gauge.build()
+            .name("moto_bot_online_players")
+            .help("Number of online players in Wynncraft per world.")
+            .labelNames("world")
+            .register();
+
+    private static final Pattern MAIN_WORLD = Pattern.compile("(WC|EU)\\d+");
+    private static final Pattern WAR_WORLD = Pattern.compile("WAR\\d+");
 
     private final Logger logger;
     private final Object dbLock;
@@ -156,10 +163,12 @@ public class PlayerTracker implements TaskBase {
             if (!prevWorlds.containsKey(currentWorld.getName())) {
                 sendServerTracking(true, this.trackChannelRepository, this.manager, this.logger, currentWorld);
             }
+            ONLINE_PLAYERS_GAUGE.labels(currentWorld.getName()).set(currentWorld.getPlayers());
         }
         for (World prevWorld : prevWorlds.values()) {
             if (!currentWorlds.containsKey(prevWorld.getName())) {
                 sendServerTracking(false, this.trackChannelRepository, this.manager, this.logger, prevWorld);
+                ONLINE_PLAYERS_GAUGE.remove(prevWorld.getName());
             }
         }
     }
@@ -177,7 +186,7 @@ public class PlayerTracker implements TaskBase {
             return;
         }
 
-        Map<String, List<String>> currentWars = players.getWorlds().entrySet().stream().filter(e -> warWorld.matcher(e.getKey()).matches())
+        Map<String, List<String>> currentWars = players.getWorlds().entrySet().stream().filter(e -> WAR_WORLD.matcher(e.getKey()).matches())
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
         Map<String, WarLog> prevWars = knownWarLogs.stream().collect(Collectors.toMap(WarLog::getServerName, w -> w));
 
@@ -504,7 +513,7 @@ public class PlayerTracker implements TaskBase {
         logger.debug(message);
 
         // Ignore war worlds
-        if (warWorld.matcher(world.getName()).matches()) {
+        if (WAR_WORLD.matcher(world.getName()).matches()) {
             return;
         }
 
@@ -513,7 +522,7 @@ public class PlayerTracker implements TaskBase {
         Set<TrackChannel> channelsToSend = new HashSet<>(allServers);
 
         // Is a main world
-        if (mainWorld.matcher(world.getName()).matches()) {
+        if (MAIN_WORLD.matcher(world.getName()).matches()) {
             List<TrackChannel> toAdd = repo.findAllOfType(start ? TrackType.SERVER_START : TrackType.SERVER_CLOSE);
             if (toAdd == null) return;
             channelsToSend.addAll(toAdd);

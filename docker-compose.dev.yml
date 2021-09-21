@@ -10,6 +10,7 @@ services:
       MYSQL_DATABASE: moto-bot
       MYSQL_USER: moto-bot
       MYSQL_PASSWORD: password
+      PORT: 8080
       DISCORD_ACCESS_TOKEN: ${DISCORD_ACCESS_TOKEN}
       BOT_DISCORD_ID: ${BOT_DISCORD_ID}
       PLAYER_TRACKER_CHANNEL: ${PLAYER_TRACKER_CHANNEL}
@@ -20,6 +21,8 @@ services:
       BOT_LOG_CHANNEL_3: ${BOT_LOG_CHANNEL_3}
       BOT_LOG_CHANNEL_4: ${BOT_LOG_CHANNEL_4}
       DEBUG: 1
+    ports:
+      - "8080:8080"
     depends_on:
       - mysql
 
@@ -32,7 +35,7 @@ services:
     expose:
       - 3306
     ports:
-      - 3306:3306
+      - "3306:3306"
     volumes:
       - ./mysql/data:/var/lib/mysql
       - ./mysql/init:/docker-entrypoint-initdb.d

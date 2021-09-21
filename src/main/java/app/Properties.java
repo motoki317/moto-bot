@@ -16,6 +16,7 @@ public class Properties {
 
     public final Date lastReboot;
 
+    public final int port;
     final String botAccessToken;
     public final String botDiscordId;
 
@@ -46,6 +47,7 @@ public class Properties {
 
         this.lastReboot = new Date();
 
+        this.port = getEnvInt("PORT", 8080);
         this.botAccessToken = getEnv("DISCORD_ACCESS_TOKEN");
         this.botDiscordId = getEnv("BOT_DISCORD_ID");
 
@@ -76,6 +78,12 @@ public class Properties {
 
     private String getEnv(String name) {
         return System.getenv(name);
+    }
+
+    private int getEnvInt(String name, int fallback) {
+        String s = getEnv(name);
+        if (s != null) return Integer.parseInt(s);
+        return fallback;
     }
 
     private String getProperty(String name) {

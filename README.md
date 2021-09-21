@@ -35,6 +35,7 @@ Manual build and installation (does not use docker)
 2. Install correct version of MariaDB (see `docker-compose.yaml` at root).
 3. Execute sql files in `mysql/init` directory.
 4. Set these environment variables for the bot.
+    - `PORT` ... Server port. Exposes Prometheus metrics on `/metrics`.
     - `DISCORD_ACCESS_TOKEN` ... Discord bot account access token
     - `BOT_DISCORD_ID` ... Bot's discord user ID
     - `BOT_LOG_CHANNEL_0` ~ `BOT_LOG_CHANNEL_4` ... Discord channel IDs to which bot sends logs
