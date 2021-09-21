@@ -19,6 +19,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+import static music.Music.MUSIC_PLAYER_GAUGE;
+
 public class MusicAutoLeaveChecker {
     private final Map<Long, MusicState> states;
 
@@ -110,6 +112,7 @@ public class MusicAutoLeaveChecker {
                 }
 
                 iterator.remove();
+                MUSIC_PLAYER_GAUGE.dec();
             }
         }
     }
@@ -130,6 +133,8 @@ public class MusicAutoLeaveChecker {
                 shutdownGuild(state);
 
                 toSave.add(new MusicInterruptedGuild(guildId, state.getBoundChannelId(), state.getVoiceChannelId()));
+
+                MUSIC_PLAYER_GAUGE.dec();
             }
 
             boolean res = this.interruptedGuildRepository.createAll(toSave);

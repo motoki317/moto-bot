@@ -8,6 +8,7 @@ import commands.base.GuildCommand;
 import db.model.musicSetting.MusicSetting;
 import db.repository.base.MusicSettingRepository;
 import heartbeat.HeartBeatTask;
+import io.prometheus.client.Gauge;
 import log.Logger;
 import music.handlers.*;
 import net.dv8tion.jda.api.EmbedBuilder;
@@ -27,6 +28,11 @@ import java.util.function.BiConsumer;
 import java.util.function.Function;
 
 public class Music extends GuildCommand {
+    public static final Gauge MUSIC_PLAYER_GAUGE = Gauge.build()
+            .name("moto_bot_music_players")
+            .help("Count of music players set up.")
+            .register();
+
     private static final Map<Long, MusicState> states;
     private static final AudioPlayerManager playerManager;
 

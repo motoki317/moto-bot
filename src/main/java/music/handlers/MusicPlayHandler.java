@@ -14,7 +14,6 @@ import db.model.musicSetting.MusicSetting;
 import db.repository.base.MusicInterruptedGuildRepository;
 import db.repository.base.MusicQueueRepository;
 import db.repository.base.MusicSettingRepository;
-import io.prometheus.client.Gauge;
 import log.Logger;
 import music.*;
 import music.exception.DuplicateTrackException;
@@ -36,15 +35,11 @@ import java.util.concurrent.*;
 import java.util.stream.Collectors;
 
 import static commands.base.BotCommand.*;
+import static music.Music.MUSIC_PLAYER_GAUGE;
 import static music.MusicUtils.formatLength;
 import static music.MusicUtils.getThumbnailURL;
 
 public class MusicPlayHandler {
-    private static final Gauge MUSIC_PLAYER_GAUGE = Gauge.build()
-            .name("moto_bot_music_players")
-            .help("Count of music players set up.")
-            .register();
-
     private final Map<Long, MusicState> states;
     private final AudioPlayerManager playerManager;
 
