@@ -169,9 +169,9 @@ public class CommandListener extends ListenerAdapter {
 
         // Process command from the most 'specific' (e.g. g pws) to most 'generic' (e.g. guild)
         for (int argLength = Math.min(this.maxArgumentsLength, args.length); argLength > 0; argLength--) {
-            String cmdBase = String.join(" ", Arrays.copyOfRange(args, 0, argLength));
+            String cmdBase = String.join(" ", Arrays.copyOfRange(args, 0, argLength)).toLowerCase();
             // Command name match
-            if (this.commandNameMap.containsKey(cmdBase.toLowerCase())) {
+            if (this.commandNameMap.containsKey(cmdBase)) {
                 int finalArgLength = argLength;
                 this.threadPool.execute(() -> processCommand(event, commandMessage, args, finalArgLength, cmdBase));
                 return;
@@ -180,7 +180,7 @@ public class CommandListener extends ListenerAdapter {
     }
 
     private void processCommand(@Nonnull MessageReceivedEvent event, String commandMessage, String[] args, int argLength, String cmdBase) {
-        BotCommand command = this.commandNameMap.get(cmdBase.toLowerCase());
+        BotCommand command = this.commandNameMap.get(cmdBase);
 
         // Check guild-only command
         if (!event.isFromGuild() && command.guildOnly()) {
