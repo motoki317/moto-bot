@@ -12,6 +12,7 @@ import db.model.track.TrackType;
 import db.model.warLog.WarLog;
 import db.repository.base.*;
 import heartbeat.base.TaskBase;
+import io.prometheus.client.Gauge;
 import log.Logger;
 import net.dv8tion.jda.api.entities.TextChannel;
 import net.dv8tion.jda.api.sharding.ShardManager;
@@ -26,6 +27,12 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 public class TerritoryTracker implements TaskBase {
+    private static final Gauge GUILD_TERRITORIES_GAUGE = Gauge.build()
+            .name("moto_bot_guild_territories")
+            .help("Number of territories per guild.")
+            .labelNames("guild")
+            .register();
+
     private final Logger logger;
     private final Object dbLock;
     private final ShardManager manager;
@@ -91,6 +98,8 @@ public class TerritoryTracker implements TaskBase {
             return;
         }
 
+        updatePromGauge(territories);
+
         int oldLastId;
         int newLastId;
         synchronized (this.dbLock) {
@@ -120,6 +129,12 @@ public class TerritoryTracker implements TaskBase {
         }
 
         return storedLatestAcquired.getTime() <= retrievedLatestAcquired.getTime();
+    }
+
+    private static void updatePromGauge(List<Territory> territories) {
+        Map<String, List<Territory>> perGuild = territories.stream().collect(Collectors.groupingBy(Territory::getGuild));
+        GUILD_TERRITORIES_GAUGE.clear();
+        perGuild.forEach((guild, guildTerritories) -> GUILD_TERRITORIES_GAUGE.labels(guild).set(guildTerritories.size()));
     }
 
     @NotNull
