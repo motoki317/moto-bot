@@ -4,6 +4,7 @@ import net.dv8tion.jda.api.entities.User;
 import org.jetbrains.annotations.NotNull;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.List;
@@ -12,7 +13,7 @@ import java.util.concurrent.TimeUnit;
 
 public class FormatUtils {
     /**
-     * Returns user name with its discriminator.
+     * Returns username with its discriminator.
      * @param user User object.
      * @return Example "username#1234"
      */
@@ -29,7 +30,7 @@ public class FormatUtils {
      * "1 h 1 m 13 s" (formatSpaces false) <br/>
      * @param seconds Number of seconds.
      * @param formatSpaces Right-justify spaces.
-     * @param smallestUnit Specifies smallest unit. For example if "m" was given, returns "1 h 1 m". Can be chosen from
+     * @param smallestUnit Specifies the smallest unit. For example if "m" was given, returns "1 h 1 m". Can be chosen from
      *                     "d", "h", "m", and "s".
      * @return Formatted string.
      */
@@ -82,26 +83,26 @@ public class FormatUtils {
      */
     public static String truncateNumber(BigDecimal number) {
         if (number.compareTo(THOUSAND) >= 0 && number.compareTo(MILLION) < 0) {
-            BigDecimal answer = number.divide(THOUSAND, 3, BigDecimal.ROUND_HALF_UP);
+            BigDecimal answer = number.divide(THOUSAND, 3, RoundingMode.HALF_UP);
             int scale = (answer.precision() - answer.scale());
-            return answer.setScale(4-scale, BigDecimal.ROUND_HALF_UP) + "K";
+            return answer.setScale(4-scale, RoundingMode.HALF_UP) + "K";
         } else if (number.compareTo(MILLION) >= 0 && number.compareTo(BILLION) < 0) {
-            BigDecimal answer = number.divide(MILLION, 3, BigDecimal.ROUND_HALF_UP);
+            BigDecimal answer = number.divide(MILLION, 3, RoundingMode.HALF_UP);
             int scale = (answer.precision() - answer.scale());
-            return answer.setScale(4-scale, BigDecimal.ROUND_HALF_UP) + "M";
+            return answer.setScale(4-scale, RoundingMode.HALF_UP) + "M";
         } else if (number.compareTo(BILLION) >= 0 && number.compareTo(TRILLION) < 0) {
-            BigDecimal answer = number.divide(BILLION, 3, BigDecimal.ROUND_HALF_UP);
+            BigDecimal answer = number.divide(BILLION, 3, RoundingMode.HALF_UP);
             int scale = (answer.precision() - answer.scale());
-            return answer.setScale(4-scale, BigDecimal.ROUND_HALF_UP) + "B";
+            return answer.setScale(4-scale, RoundingMode.HALF_UP) + "B";
         } else if (number.compareTo(TRILLION) >= 0 && number.compareTo(QUADRILLION) < 0) {
-            BigDecimal answer = number.divide(TRILLION, 3, BigDecimal.ROUND_HALF_UP);
+            BigDecimal answer = number.divide(TRILLION, 3, RoundingMode.HALF_UP);
             int scale = (answer.precision() - answer.scale());
-            return answer.setScale(4-scale, BigDecimal.ROUND_HALF_UP) + "T";
+            return answer.setScale(4-scale, RoundingMode.HALF_UP) + "T";
         } else if (number.compareTo(QUADRILLION) >= 0) {
-            BigDecimal answer = number.divide(QUADRILLION, 3, BigDecimal.ROUND_HALF_UP);
+            BigDecimal answer = number.divide(QUADRILLION, 3, RoundingMode.HALF_UP);
             int scale = (answer.precision() - answer.scale());
-            return answer.setScale(Math.max(0,4-scale), BigDecimal.ROUND_HALF_UP) + "Q";
+            return answer.setScale(Math.max(0,4-scale), RoundingMode.HALF_UP) + "Q";
         }
-        return number.divide(BigDecimal.ONE, 0, BigDecimal.ROUND_HALF_UP).toString();
+        return number.divide(BigDecimal.ONE, 0, RoundingMode.HALF_UP).toString();
     }
 }

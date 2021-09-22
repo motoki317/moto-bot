@@ -138,7 +138,7 @@ public class PlayerTracker implements TaskBase {
     /**
      * Checks if the retrieved new data has newer timestamp than the stored previous worlds list.
      * @param prevWorldList Stored previous worlds list.
-     * @param newData Retrieved new worlds data.
+     * @param newData Retrieved new worlds' data.
      * @return {@code true} if ok and the new data can be processed normally.
      */
     private static boolean checkIntegrity(@NotNull List<World> prevWorldList, OnlinePlayers newData) {
