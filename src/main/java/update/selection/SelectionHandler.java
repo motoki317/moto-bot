@@ -80,7 +80,7 @@ public class SelectionHandler extends Response {
             } catch (Exception ignored) {
             }
 
-            event.getTextChannel().sendMessage(
+            event.getTextChannel().sendMessageEmbeds(
                     new EmbedBuilder()
                             .setColor(MinecraftColor.RED.getColor())
                             .setDescription("Cancelled.")
@@ -107,7 +107,7 @@ public class SelectionHandler extends Response {
         }
 
         if (num <= 0 || choiceList.size() < num) {
-            event.getTextChannel().sendMessage(
+            event.getTextChannel().sendMessageEmbeds(
                     new EmbedBuilder()
                             .setColor(MinecraftColor.RED.getColor())
                             .setDescription("That is not a valid input. " +

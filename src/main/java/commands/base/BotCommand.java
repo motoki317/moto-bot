@@ -55,7 +55,7 @@ public abstract class BotCommand {
     }
 
     /**
-     * Get base arguments length of this command.
+     * Get base arguments' length of this command.
      * Examples:
      * "help" command: 1,
      * "g levelRank" command: 2
@@ -146,7 +146,7 @@ public abstract class BotCommand {
         event.getChannel().sendMessage(message).queue();
     }
     public static void respond(MessageReceivedEvent event, MessageEmbed message) {
-        event.getChannel().sendMessage(message).queue();
+        event.getChannel().sendMessageEmbeds(message).queue();
     }
     public static void respond(MessageChannel channel, CharSequence message) {
         channel.sendMessage(message).queue();
@@ -155,7 +155,7 @@ public abstract class BotCommand {
         channel.sendMessage(message).queue();
     }
     public static void respond(MessageChannel channel, MessageEmbed message) {
-        channel.sendMessage(message).queue();
+        channel.sendMessageEmbeds(message).queue();
     }
     public static void respond(MessageReceivedEvent event, CharSequence message, Consumer<? super Message> onSuccess) {
         event.getChannel().sendMessage(message).queue(onSuccess);
@@ -164,7 +164,7 @@ public abstract class BotCommand {
         event.getChannel().sendMessage(message).queue(onSuccess);
     }
     public static void respond(MessageReceivedEvent event, MessageEmbed message, Consumer<? super Message> onSuccess) {
-        event.getChannel().sendMessage(message).queue(onSuccess);
+        event.getChannel().sendMessageEmbeds(message).queue(onSuccess);
     }
     public static void respond(MessageChannel channel, CharSequence message, Consumer<? super Message> onSuccess) {
         channel.sendMessage(message).queue(onSuccess);
@@ -173,7 +173,7 @@ public abstract class BotCommand {
         channel.sendMessage(message).queue(onSuccess);
     }
     public static void respond(MessageChannel channel, MessageEmbed message, Consumer<? super Message> onSuccess) {
-        channel.sendMessage(message).queue(onSuccess);
+        channel.sendMessageEmbeds(message).queue(onSuccess);
     }
 
     /**
@@ -210,7 +210,7 @@ public abstract class BotCommand {
      * @param message Description of the error.
      */
     public static void respondError(MessageReceivedEvent event, CharSequence message) {
-        event.getChannel().sendMessage(
+        event.getChannel().sendMessageEmbeds(
                 new EmbedBuilder()
                 .setColor(MinecraftColor.RED.getColor())
                 // Heavy exclamation mark :exclamation: ❗

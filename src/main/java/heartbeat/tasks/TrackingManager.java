@@ -35,7 +35,7 @@ public class TrackingManager implements TaskBase {
 
     private void delete(TrackChannel track) {
         if (!this.trackChannelRepository.delete(track)) {
-            this.logger.log(0, "Something went wrong while trying to remove expired track:\n" + track.toString());
+            this.logger.log(0, "Something went wrong while trying to remove expired track:\n" + track);
         }
     }
 
@@ -57,14 +57,14 @@ public class TrackingManager implements TaskBase {
             TextChannel channel = this.shardManager.getTextChannelById(track.getChannelId());
             if (channel == null) {
                 this.logger.log(0,
-                        "Tracking Manager: Failed to get text channel for a track entry, removing.\n" + track.toString());
+                        "Tracking Manager: Failed to get text channel for a track entry, removing.\n" + track);
 
                 this.delete(track);
                 continue;
             }
             if (!channel.canTalk()) {
                 this.logger.log(0,
-                        "Tracking Manager: Cannot talk in a track entry, removing.\n" + track.toString());
+                        "Tracking Manager: Cannot talk in a track entry, removing.\n" + track);
 
                 this.delete(track);
                 continue;
@@ -80,10 +80,10 @@ public class TrackingManager implements TaskBase {
                             String.format("**%s**", track.getDisplayName())
                     ).queue();
 
-                    this.logger.log(0, ":mute: A tracking has expired:\n" + track.toString());
+                    this.logger.log(0, ":mute: A tracking has expired:\n" + track);
                 } else {
                     this.logger.log(0,
-                            "Something went wrong while trying to remove expired track:\n" + track.toString());
+                            "Something went wrong while trying to remove expired track:\n" + track);
                 }
             }
         }

@@ -275,7 +275,7 @@ public class PlayerStats extends GenericCommand {
         eb.setDescription(String.join("\n", desc));
         return new MessageBuilder()
                 .setContent(String.join("\n", ret))
-                .setEmbed(eb.build())
+                .setEmbeds(eb.build())
                 .build();
     }
 

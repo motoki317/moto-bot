@@ -16,6 +16,7 @@ import utils.MinecraftColor;
 import java.text.DateFormat;
 import java.time.Instant;
 import java.util.Date;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 public class DateFormatCmd extends GenericCommand {
@@ -170,12 +171,10 @@ public class DateFormatCmd extends GenericCommand {
 
     private void addField(EmbedBuilder eb, String name, long id, Date now, CustomTimeZone timeZone) {
         CustomDateFormat customDateFormat = this.dateFormatRepository.findOne(() -> id);
-        DateFormat formatter;
-        if (customDateFormat != null) {
-            formatter = customDateFormat.getDateFormat().getSecondFormat();
-        } else {
-            formatter = CustomDateFormat.getDefault().getDateFormat().getSecondFormat();
-        }
+        DateFormat formatter = Objects
+                .requireNonNullElseGet(customDateFormat, CustomDateFormat::getDefault)
+                .getDateFormat()
+                .getSecondFormat();
         formatter.setTimeZone(timeZone.getTimeZoneInstance());
         eb.addField(name,
                 String.format("%s `%s` (%s) %s",

@@ -195,7 +195,7 @@ public class IdentifyItem extends GenericCommand {
                 "```ml\n" +
                         getIDs(item) +
                         "\n```"
-        ).setEmbed(
+        ).setEmbeds(
                 eb.build()
         ).build();
     }

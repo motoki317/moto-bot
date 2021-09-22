@@ -102,10 +102,12 @@ public class MusicAutoLeaveChecker {
 
                 if (channel != null) {
                     try {
-                        channel.sendMessage(new EmbedBuilder()
+                        channel.sendMessageEmbeds(
+                                new EmbedBuilder()
                                 .setColor(MinecraftColor.RED.getColor())
                                 .setDescription("Left the voice channel due to inactivity.")
-                                .build()).queue();
+                                .build()
+                        ).queue();
                     } catch (Exception e) {
                         e.printStackTrace();
                     }

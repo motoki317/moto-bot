@@ -255,7 +255,7 @@ public class MusicManagementHandler {
         event.getChannel().sendMessage(String.format("Seeked to %s.", positionStr))
                 .delay(1, TimeUnit.SECONDS)
                 .flatMap(Message::delete)
-                .flatMap(v -> event.getChannel().sendMessage(
+                .flatMap(v -> event.getChannel().sendMessageEmbeds(
                         formatNowPlaying(np.getTrack(), user, state.getSetting(), botAvatarURL, true)
                 )).queue();
     }

@@ -177,9 +177,7 @@ public class TableFormatter {
     }
 
     private static void pad(StringBuilder sb, char ch, int n) {
-        for (int i = 0; i < n; i++) {
-            sb.append(ch);
-        }
+        sb.append(String.valueOf(ch).repeat(Math.max(0, n)));
     }
 
     public int widthAt(int column) {

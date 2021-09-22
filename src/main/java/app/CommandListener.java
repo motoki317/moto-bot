@@ -162,7 +162,7 @@ public class CommandListener extends ListenerAdapter {
         String commandMessage = rawMessage.substring(prefix.length());
         String[] args = commandMessage.split("\\s+");
 
-        // Do not process command for ignored channel, unless it was ignore command itself
+        // Do not process command for ignored channel, unless it was the 'ignore' command itself
         if (channelIsIgnored && !commandMessage.toLowerCase().startsWith("ignore")) {
             return;
         }
@@ -195,7 +195,7 @@ public class CommandListener extends ListenerAdapter {
         if (isSpam) {
             long userId = event.getAuthor().getIdLong();
             long remainingCoolDown = this.spamChecker.nextCoolDownExpire(userId);
-            event.getChannel().sendMessage(
+            event.getChannel().sendMessageEmbeds(
                     new EmbedBuilder()
                             .setColor(MinecraftColor.RED.getColor())
                             .setTitle("Slow down!")

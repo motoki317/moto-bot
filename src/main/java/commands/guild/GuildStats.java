@@ -268,7 +268,7 @@ public class GuildStats extends GenericCommand {
             MessageBuilder mb = new MessageBuilder(sb.toString());
 
             if (guild.getBanner() != null) {
-                mb.setEmbed(
+                mb.setEmbeds(
                         new EmbedBuilder()
                         .setAuthor("Guild Banner")
                         .setDescription("Tier: " + guild.getBanner().getTier())

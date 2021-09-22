@@ -128,7 +128,7 @@ public class ItemView extends GenericCommand {
                 "```ml\n" +
                         getIDs(item) +
                         "\n```"
-        ).setEmbed(
+        ).setEmbeds(
                 getEmbed(item, imageURLBase).build()
         ).build();
     }

@@ -39,7 +39,7 @@ public class OnlinePlayers {
                 continue;
             }
 
-            List<String> players = mapper.readValue(e.getValue().toString(), new TypeReference<List<String>>(){});
+            List<String> players = mapper.readValue(e.getValue().toString(), new TypeReference<>(){});
             this.worlds.put(e.getKey(), players);
         }
 

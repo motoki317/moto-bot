@@ -151,7 +151,7 @@ public class NameHistoryCmd extends GenericCommand {
         return new MessageBuilder(
                 new EmbedBuilder()
                 .setAuthor(String.format("%s's Name History : Page [%s/%s]", currentName, 1, maxPage + 1),
-                        null, AVATAR_URL + history.getUuid().toString())
+                        null, AVATAR_URL + history.getUuid())
                 .setDescription(description)
                 .setFooter("UUID: " + history.getUuid().toStringWithHyphens())
                 .build()
@@ -176,7 +176,7 @@ public class NameHistoryCmd extends GenericCommand {
         EmbedBuilder eb = new EmbedBuilder();
         // details page num = given page num + 2
         eb.setAuthor(String.format("%s's Name History : Page [%s/%s]", currentName, page + 2, maxPage + 1),
-                null, AVATAR_URL + history.getUuid().toString());
+                null, AVATAR_URL + history.getUuid());
         eb.setDescription(String.format("Timezone: %s", customTimeZone.getFormattedTime()));
 
         DateFormat dateFormat = customDateFormat.getDateFormat().getMinuteFormat();

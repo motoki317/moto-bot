@@ -94,7 +94,7 @@ public class Ping extends GenericCommand {
                     false
             );
 
-            message.editMessage(eb.build()).queue();
+            message.editMessageEmbeds(eb.build()).queue();
         };
     }
 }

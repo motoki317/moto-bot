@@ -302,7 +302,7 @@ public class MusicPlayHandler {
 
     private void sendFinishEnqueueSaved(Message message, MusicState state, List<Future<Void>> futures,
                                         CompletableFuture<Void> all, String desc) {
-        all.thenRun(() -> message.editMessage(
+        all.thenRun(() -> message.editMessageEmbeds(
                 new EmbedBuilder()
                 .setColor(MinecraftColor.DARK_GREEN.getColor())
                 .setDescription(desc + "\nFinished loading!")
@@ -318,7 +318,7 @@ public class MusicPlayHandler {
                 if (f.isDone()) return;
                 f.cancel(false);
             });
-            message.editMessage(
+            message.editMessageEmbeds(
                     new EmbedBuilder()
                     .setColor(MinecraftColor.RED.getColor())
                     .setDescription(desc + "\nCancelled loading.")
