@@ -12,7 +12,7 @@
         <java.version>11</java.version>
         <maven.compiler.source>${java.version}</maven.compiler.source>
         <maven.compiler.target>${java.version}</maven.compiler.target>
-        <jackson.version>2.12.5</jackson.version>
+        <jackson.version>2.13.0</jackson.version>
         <junit.jupiter.version>5.8.0</junit.jupiter.version>
         <git-commit-id-plugin.version>4.9.10</git-commit-id-plugin.version>
     </properties>
