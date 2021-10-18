@@ -166,16 +166,11 @@ public class TimeZoneCmd extends GenericCommand {
         User;
 
         private long getDiscordId(MessageReceivedEvent event) {
-            switch (this) {
-                case Guild:
-                    return event.getGuild().getIdLong();
-                case Channel:
-                    return event.getChannel().getIdLong();
-                case User:
-                    return event.getAuthor().getIdLong();
-                default:
-                    return 0L;
-            }
+            return switch (this) {
+                case Guild -> event.getGuild().getIdLong();
+                case Channel -> event.getChannel().getIdLong();
+                case User -> event.getAuthor().getIdLong();
+            };
         }
     }
 

@@ -22,18 +22,10 @@ public class RequestV2 {
             Map.Entry<String, JsonNode> e = i.next();
 
             switch (e.getKey()) {
-                case "kind":
-                    this.kind = e.getValue().asText();
-                    break;
-                case "code":
-                    this.code = e.getValue().asInt();
-                    break;
-                case "timestamp":
-                    this.timestamp = e.getValue().asLong();
-                    break;
-                case "version":
-                    this.version = e.getValue().asText();
-                    break;
+                case "kind" -> this.kind = e.getValue().asText();
+                case "code" -> this.code = e.getValue().asInt();
+                case "timestamp" -> this.timestamp = e.getValue().asLong();
+                case "version" -> this.version = e.getValue().asText();
             }
         }
 

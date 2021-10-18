@@ -76,15 +76,11 @@ public class TrackChannel implements TrackChannelId {
     @NotNull
     public String getDisplayName() {
         String ret = this.type.getDisplayName();
-        switch (this.type) {
-            case WAR_SPECIFIC:
-            case TERRITORY_SPECIFIC:
-                ret += " (Guild: " + this.guildName + ")";
-                break;
-            case WAR_PLAYER:
-                ret += " (Player UUID: " + this.playerUUID + ")";
-                break;
-        }
+        ret += switch (this.type) {
+            case WAR_SPECIFIC, TERRITORY_SPECIFIC -> " (Guild: " + this.guildName + ")";
+            case WAR_PLAYER -> " (Player UUID: " + this.playerUUID + ")";
+            default -> "";
+        };
         return ret;
     }
 

@@ -157,15 +157,9 @@ public class PlayerWarLeaderboardCmd extends GenericCommand {
 
         private void sort(List<PlayerWarLeaderboard> leaderboard) {
             switch (this) {
-                case Total:
-                    leaderboard.sort((l1, l2) -> l2.getTotalWar() - l1.getTotalWar());
-                    break;
-                case Success:
-                    leaderboard.sort((l1, l2) -> l2.getSuccessWar() - l1.getSuccessWar());
-                    break;
-                case Survived:
-                    leaderboard.sort((l1, l2) -> l2.getSurvivedWar() - l1.getSurvivedWar());
-                    break;
+                case Total -> leaderboard.sort((l1, l2) -> l2.getTotalWar() - l1.getTotalWar());
+                case Success -> leaderboard.sort((l1, l2) -> l2.getSuccessWar() - l1.getSuccessWar());
+                case Survived -> leaderboard.sort((l1, l2) -> l2.getSurvivedWar() - l1.getSurvivedWar());
             }
         }
     }
@@ -201,14 +195,11 @@ public class PlayerWarLeaderboardCmd extends GenericCommand {
                                              @NotNull CustomTimeZone customTimeZone,
                                              @NotNull CustomDateFormat customDateFormat) {
         if (range == null) {
-            switch (sortType) {
-                case Total:
-                    return "All Time: by # of total wars";
-                case Success:
-                    return "All Time: by # of success wars";
-                case Survived:
-                    return "All Time: by # of survived wars";
-            }
+            return switch (sortType) {
+                case Total -> "All Time: by # of total wars";
+                case Success -> "All Time: by # of success wars";
+                case Survived -> "All Time: by # of survived wars";
+            };
         } else {
             DateFormat dateFormat = customDateFormat.getDateFormat().getMinuteFormat();
             dateFormat.setTimeZone(customTimeZone.getTimeZoneInstance());
@@ -219,17 +210,12 @@ public class PlayerWarLeaderboardCmd extends GenericCommand {
                     dateFormat.format(range.start), customTimeZone.getFormattedTime(),
                     dateFormat.format(range.end), customTimeZone.getFormattedTime());
 
-            switch (sortType) {
-                case Total:
-                    return String.format("Ranged: by # of total wars\n%s", startAndEnd);
-                case Success:
-                    return String.format("Ranged: by # of success wars\n%s", startAndEnd);
-                case Survived:
-                    return String.format("Ranged: by # of survived wars\n%s", startAndEnd);
-            }
+            return switch (sortType) {
+                case Total -> String.format("Ranged: by # of total wars\n%s", startAndEnd);
+                case Success -> String.format("Ranged: by # of success wars\n%s", startAndEnd);
+                case Survived -> String.format("Ranged: by # of survived wars\n%s", startAndEnd);
+            };
         }
-
-        return "error: unknown sorting type";
     }
 
     private static final int PLAYERS_PER_PAGE = 10;
@@ -503,25 +489,18 @@ public class PlayerWarLeaderboardCmd extends GenericCommand {
                                                                        @Nullable Range range,
                                                                        int offset) {
         if (range == null) {
-            switch (sortType) {
-                case Total:
-                    return this.playerWarLeaderboardRepository.getByTotalWarDescending(PLAYERS_PER_PAGE, offset);
-                case Success:
-                    return this.playerWarLeaderboardRepository.getBySuccessWarDescending(PLAYERS_PER_PAGE, offset);
-                case Survived:
-                    return this.playerWarLeaderboardRepository.getBySurvivedWarDescending(PLAYERS_PER_PAGE, offset);
-            }
+            return switch (sortType) {
+                case Total -> this.playerWarLeaderboardRepository.getByTotalWarDescending(PLAYERS_PER_PAGE, offset);
+                case Success -> this.playerWarLeaderboardRepository.getBySuccessWarDescending(PLAYERS_PER_PAGE, offset);
+                case Survived -> this.playerWarLeaderboardRepository.getBySurvivedWarDescending(PLAYERS_PER_PAGE, offset);
+            };
         } else {
-            switch (sortType) {
-                case Total:
-                    return this.playerWarLeaderboardRepository.getByTotalWarDescending(PLAYERS_PER_PAGE, offset, range.start, range.end);
-                case Success:
-                    return this.playerWarLeaderboardRepository.getBySuccessWarDescending(PLAYERS_PER_PAGE, offset, range.start, range.end);
-                case Survived:
-                    return this.playerWarLeaderboardRepository.getBySurvivedWarDescending(PLAYERS_PER_PAGE, offset, range.start, range.end);
-            }
+            return switch (sortType) {
+                case Total -> this.playerWarLeaderboardRepository.getByTotalWarDescending(PLAYERS_PER_PAGE, offset, range.start, range.end);
+                case Success -> this.playerWarLeaderboardRepository.getBySuccessWarDescending(PLAYERS_PER_PAGE, offset, range.start, range.end);
+                case Survived -> this.playerWarLeaderboardRepository.getBySurvivedWarDescending(PLAYERS_PER_PAGE, offset, range.start, range.end);
+            };
         }
-        return null;
     }
 
     // Page supplier for normal leaderboard

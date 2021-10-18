@@ -47,18 +47,18 @@ public class DateFormatCmd extends GenericCommand {
     public @NotNull Message longHelp() {
         return new MessageBuilder(
                 new EmbedBuilder()
-                .setColor(MinecraftColor.BLUE.getColor())
-                .setAuthor("Time Format Help")
-                .setDescription(this.shortHelp() + " Use without arguments to view current settings.")
-                .addField("Syntax",
-                        String.join("\n",
-                                "`" + this.syntax() + "`",
-                                "`<12h|24h>` is a required argument and specifies setting.",
-                                "`[guild|channel|user]` is an optional argument and specifies guild, channel or user setting."
-                        ),
-                        false
-                )
-                .build()
+                        .setColor(MinecraftColor.BLUE.getColor())
+                        .setAuthor("Time Format Help")
+                        .setDescription(this.shortHelp() + " Use without arguments to view current settings.")
+                        .addField("Syntax",
+                                String.join("\n",
+                                        "`" + this.syntax() + "`",
+                                        "`<12h|24h>` is a required argument and specifies setting.",
+                                        "`[guild|channel|user]` is an optional argument and specifies guild, channel or user setting."
+                                ),
+                                false
+                        )
+                        .build()
         ).build();
     }
 
@@ -73,16 +73,11 @@ public class DateFormatCmd extends GenericCommand {
         User;
 
         private long getDiscordId(MessageReceivedEvent event) {
-            switch (this) {
-                case Guild:
-                    return event.getGuild().getIdLong();
-                case Channel:
-                    return event.getChannel().getIdLong();
-                case User:
-                    return event.getAuthor().getIdLong();
-                default:
-                    return 0L;
-            }
+            return switch (this) {
+                case Guild -> event.getGuild().getIdLong();
+                case Channel -> event.getChannel().getIdLong();
+                case User -> event.getAuthor().getIdLong();
+            };
         }
     }
 
@@ -93,30 +88,24 @@ public class DateFormatCmd extends GenericCommand {
             return;
         }
 
-        CustomFormat specified;
-        switch (args[1].toLowerCase()) {
-            case "12h":
-                specified = CustomFormat.TWELVE_HOUR;
-                break;
-            case "24h":
-                specified = CustomFormat.TWENTY_FOUR_HOUR;
-                break;
-            default:
-                respond(event, "Please specify either \"12h\" or \"24h\".");
-                return;
+        CustomFormat specified = switch (args[1].toLowerCase()) {
+            case "12h" -> CustomFormat.TWELVE_HOUR;
+            case "24h" -> CustomFormat.TWENTY_FOUR_HOUR;
+            default -> null;
+        };
+        if (specified == null) {
+            respond(event, "Please specify either \"12h\" or \"24h\".");
+            return;
         }
 
         // type
         Type type = Type.Channel;
         if (args.length > 2) {
-            switch (args[2].toLowerCase()) {
-                case "guild":
-                    type = Type.Guild;
-                    break;
-                case "user":
-                    type = Type.User;
-                    break;
-            }
+            type = switch (args[2].toLowerCase()) {
+                case "guild" -> Type.Guild;
+                case "user" -> Type.User;
+                default -> Type.Channel;
+            };
         }
 
         // save settings

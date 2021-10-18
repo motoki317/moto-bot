@@ -72,36 +72,36 @@ public class GuildWarLeaderboardCmd extends GenericCommand {
     public @NotNull Message longHelp() {
         return new MessageBuilder(
                 new EmbedBuilder()
-                .setAuthor("Guild War Leaderboard Help")
-                .setDescription(
-                        "This command displays war leaderboard for guilds.\n" +
-                        "They are ordered by their # of success wars by default.\n" +
-                        "Note: Wars are logged and stored since around the beginning of April 2018."
-                )
-                .addField("Syntax",
-                        this.syntax(),
-                        false
-                )
-                .addField("Optional Arguments",
-                        String.join("\n",
-                                "**-t --total** : Sorts in order of # of total wars.",
-                                "**-sc --success** : Sorts in order of # of success wars.",
-                                "**-d|--days <days>** : Shows leaderboard of last given days, up to last 30 days.",
-                                "**--since|-S <date>**, **--until|-U <date>** : Directly specifies time range of the leaderboard.",
-                                "If --until is omitted, current time is specified.",
-                                "Acceptable formats: \"2020/01/01\", \"2020-01-01 15:00:00\", \"15 days ago\", \"8 hours ago\", \"30 minutes ago\""
-                        ),
-                        false
-                )
-                .addField("Examples",
-                        String.join("\n",
-                                ">g lb : Displays leaderboard of all guilds ordered by # of success wars.",
-                                ">g lb -t : Displays leaderboard of guilds ordered by # of total wars.",
-                                ">g lb -sc -d 7 : Displays leaderboard of all guilds in last 7 days in order of # of success rate.",
-                                ">g lb --since 3 days ago --until 1 day ago : Displays leaderboard from 3 days ago to 1 day ago."
-                        ),
-                        false
-                ).build()
+                        .setAuthor("Guild War Leaderboard Help")
+                        .setDescription(
+                                "This command displays war leaderboard for guilds.\n" +
+                                        "They are ordered by their # of success wars by default.\n" +
+                                        "Note: Wars are logged and stored since around the beginning of April 2018."
+                        )
+                        .addField("Syntax",
+                                this.syntax(),
+                                false
+                        )
+                        .addField("Optional Arguments",
+                                String.join("\n",
+                                        "**-t --total** : Sorts in order of # of total wars.",
+                                        "**-sc --success** : Sorts in order of # of success wars.",
+                                        "**-d|--days <days>** : Shows leaderboard of last given days, up to last 30 days.",
+                                        "**--since|-S <date>**, **--until|-U <date>** : Directly specifies time range of the leaderboard.",
+                                        "If --until is omitted, current time is specified.",
+                                        "Acceptable formats: \"2020/01/01\", \"2020-01-01 15:00:00\", \"15 days ago\", \"8 hours ago\", \"30 minutes ago\""
+                                ),
+                                false
+                        )
+                        .addField("Examples",
+                                String.join("\n",
+                                        ">g lb : Displays leaderboard of all guilds ordered by # of success wars.",
+                                        ">g lb -t : Displays leaderboard of guilds ordered by # of total wars.",
+                                        ">g lb -sc -d 7 : Displays leaderboard of all guilds in last 7 days in order of # of success rate.",
+                                        ">g lb --since 3 days ago --until 1 day ago : Displays leaderboard from 3 days ago to 1 day ago."
+                                ),
+                                false
+                        ).build()
         ).build();
     }
 
@@ -219,21 +219,16 @@ public class GuildWarLeaderboardCmd extends GenericCommand {
                                                             @Nullable Range range,
                                                             int offset) {
         if (range == null) {
-            switch (sortType) {
-                case Total:
-                    return this.guildWarLeaderboardRepository.getByTotalWarDescending(GUILDS_PER_PAGE, offset);
-                case Success:
-                    return this.guildWarLeaderboardRepository.getBySuccessWarDescending(GUILDS_PER_PAGE, offset);
-            }
+            return switch (sortType) {
+                case Total -> this.guildWarLeaderboardRepository.getByTotalWarDescending(GUILDS_PER_PAGE, offset);
+                case Success -> this.guildWarLeaderboardRepository.getBySuccessWarDescending(GUILDS_PER_PAGE, offset);
+            };
         } else {
-            switch (sortType) {
-                case Total:
-                    return this.guildWarLeaderboardRepository.getByTotalWarDescending(GUILDS_PER_PAGE, offset, range.start, range.end);
-                case Success:
-                    return this.guildWarLeaderboardRepository.getBySuccessWarDescending(GUILDS_PER_PAGE, offset, range.start, range.end);
-            }
+            return switch (sortType) {
+                case Total -> this.guildWarLeaderboardRepository.getByTotalWarDescending(GUILDS_PER_PAGE, offset, range.start, range.end);
+                case Success -> this.guildWarLeaderboardRepository.getBySuccessWarDescending(GUILDS_PER_PAGE, offset, range.start, range.end);
+            };
         }
-        return null;
     }
 
     // Get description of the leaderboard of the given context in arguments
@@ -243,12 +238,10 @@ public class GuildWarLeaderboardCmd extends GenericCommand {
                                              @NotNull CustomTimeZone customTimeZone,
                                              @NotNull CustomDateFormat customDateFormat) {
         if (range == null) {
-            switch (sortType) {
-                case Total:
-                    return "All Time: by # of total wars";
-                case Success:
-                    return "All Time: by # of success wars";
-            }
+            return switch (sortType) {
+                case Total -> "All Time: by # of total wars";
+                case Success -> "All Time: by # of success wars";
+            };
         } else {
             DateFormat dateFormat = customDateFormat.getDateFormat().getMinuteFormat();
             dateFormat.setTimeZone(customTimeZone.getTimeZoneInstance());
@@ -259,15 +252,11 @@ public class GuildWarLeaderboardCmd extends GenericCommand {
                     dateFormat.format(range.start), customTimeZone.getFormattedTime(),
                     dateFormat.format(range.end), customTimeZone.getFormattedTime());
 
-            switch (sortType) {
-                case Total:
-                    return String.format("Ranged: by # of total wars\n%s", startAndEnd);
-                case Success:
-                    return String.format("Ranged: by # of success wars\n%s", startAndEnd);
-            }
+            return switch (sortType) {
+                case Total -> String.format("Ranged: by # of total wars\n%s", startAndEnd);
+                case Success -> String.format("Ranged: by # of success wars\n%s", startAndEnd);
+            };
         }
-
-        return "error: unknown sorting type";
     }
 
     private int getSuccessWarSum(@Nullable Range range) {

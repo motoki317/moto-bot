@@ -270,10 +270,10 @@ public class GuildStats extends GenericCommand {
             if (guild.getBanner() != null) {
                 mb.setEmbeds(
                         new EmbedBuilder()
-                        .setAuthor("Guild Banner")
-                        .setDescription("Tier: " + guild.getBanner().getTier())
-                        .setThumbnail(this.guildBannerUrl + guild.getName().replace(" ", "%20"))
-                        .build()
+                                .setAuthor("Guild Banner")
+                                .setDescription("Tier: " + guild.getBanner().getTier())
+                                .setThumbnail(this.guildBannerUrl + guild.getName().replace(" ", "%20"))
+                                .build()
                 );
             }
 
@@ -286,39 +286,26 @@ public class GuildStats extends GenericCommand {
                                  @NotNull CustomDateFormat customDateFormat,
                                  @NotNull CustomTimeZone customTimeZone) {
             switch (page) {
-                case 0:
-                    // main
-                    getFirstPage(sb, guild, customDateFormat, customTimeZone);
-                    break;
-                case 1:
-                    // online players
-                    getOnlinePlayers(sb, guild);
-                    break;
-                case 2:
-                    // chiefs, strategists, captains, recruiters, recruits
-                    getMembers(sb, guild, Rank.CHIEF);
-                    break;
-                case 3:
-                    getMembers(sb, guild, Rank.STRATEGIST);
-                    break;
-                case 4:
-                    getMembers(sb, guild, Rank.CAPTAIN);
-                    break;
-                case 5:
-                    getMembers(sb, guild, Rank.RECRUITER);
-                    break;
-                case 6:
-                    getMembers(sb, guild, Rank.RECRUIT);
-                    break;
-                default:
+                // main
+                case 0 -> getFirstPage(sb, guild, customDateFormat, customTimeZone);
+                // online players
+                case 1 -> getOnlinePlayers(sb, guild);
+                // chiefs, strategists, captains, recruiters, recruits
+                case 2 -> getMembers(sb, guild, Rank.CHIEF);
+                case 3 -> getMembers(sb, guild, Rank.STRATEGIST);
+                case 4 -> getMembers(sb, guild, Rank.CAPTAIN);
+                case 5 -> getMembers(sb, guild, Rank.RECRUITER);
+                case 6 -> getMembers(sb, guild, Rank.RECRUIT);
+                default -> {
                     int contributePageNum = page - 7;
                     getContributePage(sb, guild, contributePageNum);
-                    break;
+                }
             }
         }
 
         /**
          * Make a gauge of max 20 bars.
+         *
          * @param bars Number of bars.
          * @return Formatted gauge.
          */

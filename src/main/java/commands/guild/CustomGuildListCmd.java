@@ -79,15 +79,10 @@ public class CustomGuildListCmd extends GenericCommand {
         }
 
         switch (args[2].toLowerCase()) {
-            case "add":
-                addToList(event, args);
-                return;
-            case "remove":
-                removeFromList(event, args);
-                return;
+            case "add" -> addToList(event, args);
+            case "remove" -> removeFromList(event, args);
+            default -> viewList(event, args[2]);
         }
-
-        viewList(event, args[2]);
     }
 
     private void viewUserLists(MessageReceivedEvent event) {

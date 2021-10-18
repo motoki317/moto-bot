@@ -152,12 +152,12 @@ public class Track extends GuildCommand {
         }
 
         switch (args[1].toLowerCase()) {
-            case "update":
-            case "refresh":
+            case "update", "refresh" -> {
                 if (refreshTracking(event)) {
                     respond(event, ":white_check_mark: Successfully refreshed expiration time!");
                 }
                 return;
+            }
         }
 
         TrackType type = getCorrespondingTrackType(args);
@@ -219,8 +219,7 @@ public class Track extends GuildCommand {
      */
     private void resolveGuildOrPlayer(MessageReceivedEvent event, @NotNull String[] args, TrackChannel entity, Runnable onResolve, Runnable unknownGuildResolved) throws IllegalArgumentException {
         switch (entity.getType()) {
-            case WAR_SPECIFIC:
-            case TERRITORY_SPECIFIC:
+            case WAR_SPECIFIC, TERRITORY_SPECIFIC -> {
                 String specified = getName(args);
                 if (specified == null) {
                     throw new IllegalArgumentException("Invalid arguments: guild name was not specified.");
@@ -237,24 +236,21 @@ public class Track extends GuildCommand {
                         },
                         reason -> respondException(event, reason)
                 );
-                return;
-            case WAR_PLAYER:
+            }
+            case WAR_PLAYER -> {
                 String playerName = getName(args);
                 if (playerName == null) {
                     throw new IllegalArgumentException("Invalid arguments: player name was not specified.");
                 }
-
                 UUID uuid = this.mojangApi.mustGetUUIDAtTime(playerName, new Date().getTime());
                 if (uuid == null) {
                     throw new IllegalArgumentException(String.format("Failed to retrieve player UUID for `%s`... " +
                             "Check the spelling, and make sure the player with that name exists.", playerName));
                 }
-
                 entity.setPlayerUUID(uuid.toStringWithHyphens());
                 onResolve.run();
-                return;
-            default:
-                onResolve.run();
+            }
+            default -> onResolve.run();
         }
     }
 
@@ -392,43 +388,30 @@ public class Track extends GuildCommand {
                         all = true;
                     }
                 }
-                switch (args[2].toLowerCase()) {
-                    case "start":
-                        return all ? TrackType.SERVER_START_ALL : TrackType.SERVER_START;
-                    case "close":
-                        return all ? TrackType.SERVER_CLOSE_ALL : TrackType.SERVER_CLOSE;
-                    default:
-                        return null;
-                }
+                return switch (args[2].toLowerCase()) {
+                    case "start" -> all ? TrackType.SERVER_START_ALL : TrackType.SERVER_START;
+                    case "close" -> all ? TrackType.SERVER_CLOSE_ALL : TrackType.SERVER_CLOSE;
+                    default -> null;
+                };
             case "guild":
-                switch (args[2].toLowerCase()) {
-                    case "create":
-                        return TrackType.GUILD_CREATE;
-                    case "delete":
-                        return TrackType.GUILD_DELETE;
-                    default:
-                        return null;
-                }
+                return switch (args[2].toLowerCase()) {
+                    case "create" -> TrackType.GUILD_CREATE;
+                    case "delete" -> TrackType.GUILD_DELETE;
+                    default -> null;
+                };
             case "war":
-                switch (args[2].toLowerCase()) {
-                    case "all":
-                        return TrackType.WAR_ALL;
-                    case "guild":
-                        return TrackType.WAR_SPECIFIC;
-                    case "player":
-                        return TrackType.WAR_PLAYER;
-                    default:
-                        return null;
-                }
+                return switch (args[2].toLowerCase()) {
+                    case "all" -> TrackType.WAR_ALL;
+                    case "guild" -> TrackType.WAR_SPECIFIC;
+                    case "player" -> TrackType.WAR_PLAYER;
+                    default -> null;
+                };
             case "territory":
-                switch (args[2].toLowerCase()) {
-                    case "all":
-                        return TrackType.TERRITORY_ALL;
-                    case "guild":
-                        return TrackType.TERRITORY_SPECIFIC;
-                    default:
-                        return null;
-                }
+                return switch (args[2].toLowerCase()) {
+                    case "all" -> TrackType.TERRITORY_ALL;
+                    case "guild" -> TrackType.TERRITORY_SPECIFIC;
+                    default -> null;
+                };
             default:
                 return null;
         }

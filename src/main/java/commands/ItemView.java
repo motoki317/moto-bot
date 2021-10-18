@@ -513,36 +513,21 @@ public class ItemView extends GenericCommand {
      * @return Numeric item ID such as "298"
      */
     private static int getArmorID(String type, String armorType) {
-        int offset = 0;
-        switch (type) {
-            case "Helmet":
-                offset = 0;
-                break;
-            case "Chestplate":
-                offset = 1;
-                break;
-            case "Leggings":
-                offset = 2;
-                break;
-            case "Boots":
-                offset = 3;
-                break;
-        }
+        int offset = switch (type) {
+            case "Helmet", default -> 0;
+            case "Chestplate" -> 1;
+            case "Leggings" -> 2;
+            case "Boots" -> 3;
+        };
 
-        switch (armorType) {
-            case "Leather":
-                return 298 + offset;
-            case "Chain":
-                return 302 + offset;
-            case "Iron":
-                return 306 + offset;
-            case "Diamond":
-                return 310 + offset;
-            case "Golden":
-                return 314 + offset;
-        }
-
-        return 0;
+        return switch (armorType) {
+            case "Leather" -> 298 + offset;
+            case "Chain" -> 302 + offset;
+            case "Iron" -> 306 + offset;
+            case "Diamond" -> 310 + offset;
+            case "Golden" -> 314 + offset;
+            default -> 0;
+        };
     }
 
     /**
@@ -552,21 +537,15 @@ public class ItemView extends GenericCommand {
      */
     @Nullable
     private static Color getTierColor(String tier) {
-        switch (tier) {
-            case "Unique":
-                return new Color(255, 255, 85);
-            case "Rare":
-                return new Color(255, 85, 255);
-            case "Legendary":
-                return new Color(85, 255, 255);
-            case "Fabled":
-                return new Color(255, 85, 85);
-            case "Mythic":
-                return new Color(170, 0, 170);
-            case "Set":
-                return new Color(0, 170, 0);
-        }
-        return null;
+        return switch (tier) {
+            case "Unique" -> new Color(255, 255, 85);
+            case "Rare" -> new Color(255, 85, 255);
+            case "Legendary" -> new Color(85, 255, 255);
+            case "Fabled" -> new Color(255, 85, 85);
+            case "Mythic" -> new Color(170, 0, 170);
+            case "Set" -> new Color(0, 170, 0);
+            default -> null;
+        };
     }
 
     private static String nSpaces(int n) {

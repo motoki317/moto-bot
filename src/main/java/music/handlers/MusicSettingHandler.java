@@ -31,6 +31,7 @@ public class MusicSettingHandler {
 
     /**
      * Saves setting for the guild.
+     *
      * @param setting Setting.
      * @return {@code true} if success.
      */
@@ -53,10 +54,11 @@ public class MusicSettingHandler {
 
     /**
      * Handles "volume" command.
-     * @param event Event.
-     * @param args Command arguments.
+     *
+     * @param event   Event.
+     * @param args    Command arguments.
      * @param setting Music setting.
-     * @param state Music state of the guild if it is up.
+     * @param state   Music state of the guild if it is up.
      */
     public void handleVolume(MessageReceivedEvent event, String[] args, MusicSetting setting, @Nullable MusicState state) {
         int oldVolume = setting.getVolume();
@@ -116,8 +118,9 @@ public class MusicSettingHandler {
 
     /**
      * Handles "repeat" command.
-     * @param event Event.
-     * @param args Command arguments.
+     *
+     * @param event   Event.
+     * @param args    Command arguments.
      * @param setting Music setting.
      */
     public void handleRepeat(MessageReceivedEvent event, String[] args, MusicSetting setting) {
@@ -169,8 +172,9 @@ public class MusicSettingHandler {
 
     /**
      * Handles "setting" command.
-     * @param event Event.
-     * @param args Command arguments.
+     *
+     * @param event   Event.
+     * @param args    Command arguments.
      * @param setting Music setting.
      */
     public void handleSetting(MessageReceivedEvent event, String[] args, MusicSetting setting) {
@@ -180,16 +184,10 @@ public class MusicSettingHandler {
         }
 
         switch (args[2].toLowerCase()) {
-            case "shownp":
-                handleShowNP(event, setting, args);
-                return;
-            case "restrict":
-            case "restriction":
-                handleRestriction(event, setting, args);
-                return;
+            case "shownp" -> handleShowNP(event, setting, args);
+            case "restrict", "restriction" -> handleRestriction(event, setting, args);
+            default -> respond(event, "Unknown music setting.");
         }
-
-        respond(event, "Unknown music setting.");
     }
 
     private static MessageEmbed showNPHelp(boolean current, String botAvatarURL) {
@@ -203,9 +201,10 @@ public class MusicSettingHandler {
 
     /**
      * Handles "setting shownp" command.
-     * @param event Event.
+     *
+     * @param event   Event.
      * @param setting Current setting.
-     * @param args Command arguments.
+     * @param args    Command arguments.
      */
     private void handleShowNP(MessageReceivedEvent event, MusicSetting setting, String[] args) {
         if (args.length <= 3) {
@@ -215,15 +214,12 @@ public class MusicSettingHandler {
 
         boolean newValue;
         switch (args[3].toUpperCase()) {
-            case "ON":
-                newValue = true;
-                break;
-            case "OFF":
-                newValue = false;
-                break;
-            default:
+            case "ON" -> newValue = true;
+            case "OFF" -> newValue = false;
+            default -> {
                 respond(event, "Input either `ON` OR `OFF` for the new value!");
                 return;
+            }
         }
 
         setting.setShowNp(newValue);
@@ -251,9 +247,10 @@ public class MusicSettingHandler {
 
     /**
      * Handles "setting restrict" command.
-     * @param event Event.
+     *
+     * @param event   Event.
      * @param setting Current setting.
-     * @param args Command arguments.
+     * @param args    Command arguments.
      */
     private void handleRestriction(MessageReceivedEvent event, MusicSetting setting, String[] args) {
         if (args.length <= 3) {
@@ -263,15 +260,12 @@ public class MusicSettingHandler {
 
         Long newValue;
         switch (args[3].toUpperCase()) {
-            case "ON":
-                newValue = event.getChannel().getIdLong();
-                break;
-            case "OFF":
-                newValue = null;
-                break;
-            default:
+            case "ON" -> newValue = event.getChannel().getIdLong();
+            case "OFF" -> newValue = null;
+            default -> {
                 respond(event, "Input either `ON` OR `OFF` for the new value!");
                 return;
+            }
         }
 
         setting.setRestrictChannel(newValue);

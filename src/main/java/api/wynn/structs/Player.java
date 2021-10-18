@@ -36,30 +36,18 @@ public class Player {
             Map.Entry<String, JsonNode> e = i.next();
 
             switch (e.getKey()) {
-                case "username":
-                    this.username = e.getValue().asText();
-                    break;
-                case "uuid":
-                    this.uuid = e.getValue().asText();
-                    break;
-                case "rank":
-                    this.rank = e.getValue().asText();
-                    break;
-                case "meta":
-                    this.metaInfo = new MetaInfo(e.getValue());
-                    break;
-                case "classes":
+                case "username" -> this.username = e.getValue().asText();
+                case "uuid" -> this.uuid = e.getValue().asText();
+                case "rank" -> this.rank = e.getValue().asText();
+                case "meta" -> this.metaInfo = new MetaInfo(e.getValue());
+                case "classes" -> {
                     this.classes = new WynnClass[e.getValue().size()];
                     for (int j = 0; j < e.getValue().size(); j++) {
                         this.classes[j] = new WynnClass(e.getValue().get(j));
                     }
-                    break;
-                case "guild":
-                    this.guildInfo = new GuildInfo(e.getValue());
-                    break;
-                case "global":
-                    this.globalInfo = new GlobalInfo(this, e.getValue());
-                    break;
+                }
+                case "guild" -> this.guildInfo = new GuildInfo(e.getValue());
+                case "global" -> this.globalInfo = new GlobalInfo(this, e.getValue());
             }
         }
     }
@@ -198,7 +186,7 @@ public class Player {
             quests = data.get("quests").get("completed").asInt();
             questNames = new ArrayList<>();
             JsonNode questList = data.get("quests").get("list");
-            for (int i=0; i < questList.size(); i++)
+            for (int i = 0; i < questList.size(); i++)
                 questNames.add(questList.get(i).asText());
             itemsIdentified = data.get("itemsIdentified").asInt();
             mobsKilled = data.get("mobsKilled").asInt();
@@ -371,7 +359,7 @@ public class Player {
         private Dungeons(JsonNode data) {
             list = new HashMap<>();
             totalCompleted = data.get("completed").asInt();
-            for (int i=0; i < data.get("list").size(); i++) {
+            for (int i = 0; i < data.get("list").size(); i++) {
                 JsonNode child = data.get("list").get(i);
                 list.put(child.get("name").asText(), child.get("completed").asInt());
             }
@@ -391,6 +379,7 @@ public class Player {
         public String getName() {
             return name;
         }
+
         @Nullable
         public String getRank() {
             return rank;

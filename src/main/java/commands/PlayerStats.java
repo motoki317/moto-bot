@@ -17,6 +17,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import utils.FormatUtils;
 import utils.InputChecker;
+import utils.MinecraftColor;
 import utils.UUID;
 import utils.rateLimit.RateLimitException;
 
@@ -87,7 +88,7 @@ public class PlayerStats extends GenericCommand {
         String specified = args[1];
         if (!UUID.isUUID(specified) && !InputChecker.isValidMinecraftUsername(specified)) {
             respond(event, String.format("Given name `%s` doesn't seem to be a valid Minecraft username or a UUID...",
-                            specified));
+                    specified));
             return;
         }
 
@@ -296,36 +297,23 @@ public class PlayerStats extends GenericCommand {
 
     @Nullable
     private static Color getTagColor(@NotNull String tag) {
-        switch (tag) {
-            case "VIP":
-                return new Color(0, 170, 0);
-            case "VIP+":
-                return new Color(85, 225, 225);
-            case "HERO":
-                return new Color(170, 0, 170);
-        }
-        return null;
+        return switch (tag) {
+            case "VIP" -> MinecraftColor.DARK_GREEN.getColor();
+            case "VIP+" -> MinecraftColor.AQUA.getColor();
+            case "HERO" -> MinecraftColor.DARK_PURPLE.getColor();
+            case "CHAMPION" -> MinecraftColor.YELLOW.getColor();
+            default -> null;
+        };
     }
 
     @Nullable
     private static Color getRankColor(@NotNull String rank) {
-        switch (rank) {
-            case "Moderator":
-                return new Color(255, 170, 0);
-            case "Administrator":
-            case "Developer":
-            case "WebDev":
-                return new Color(170, 0, 0);
-            case "Game Master":
-            case "Item":
-            case "Music":
-            case "Builder":
-            case "CMD":
-            case "Script":
-            case "Modeler":
-                return new Color(0, 170, 170);
-        }
-        return null;
+        return switch (rank) {
+            case "Moderator" -> MinecraftColor.GOLD.getColor();
+            case "Administrator", "Developer", "WebDev" -> MinecraftColor.DARK_RED.getColor();
+            case "Game Master", "Item", "Music", "Builder", "CMD", "Script", "Modeler" -> MinecraftColor.DARK_AQUA.getColor();
+            default -> null;
+        };
     }
 
     private static String nSpaces(int n) {

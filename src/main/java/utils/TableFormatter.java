@@ -10,18 +10,16 @@ public class TableFormatter {
 
         private void append(StringBuilder sb, String data, int columnWidth, boolean isLast) {
             switch (this) {
-                case Left:
+                case Left -> {
                     sb.append(data);
                     if (!isLast) {
                         pad(sb, ' ', columnWidth - data.length());
                     }
-                    break;
-                case Right:
+                }
+                case Right -> {
                     pad(sb, ' ', columnWidth - data.length());
                     sb.append(data);
-                    break;
-                default:
-                    throw new Error("implement me");
+                }
             }
         }
     }

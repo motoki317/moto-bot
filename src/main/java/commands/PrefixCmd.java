@@ -80,16 +80,11 @@ public class PrefixCmd extends GenericCommand {
         if (member.hasPermission(Permission.ADMINISTRATOR)) {
             return true;
         }
-        switch (type) {
-            case User:
-                return true;
-            case Channel:
-                return member.hasPermission(Permission.MANAGE_CHANNEL);
-            case Guild:
-                return member.hasPermission(Permission.MANAGE_SERVER);
-            default:
-                return false;
-        }
+        return switch (type) {
+            case User -> true;
+            case Channel -> member.hasPermission(Permission.MANAGE_CHANNEL);
+            case Guild -> member.hasPermission(Permission.MANAGE_SERVER);
+        };
     }
 
     @Override
@@ -154,16 +149,11 @@ public class PrefixCmd extends GenericCommand {
         User;
 
         private long getDiscordId(MessageReceivedEvent event) {
-            switch (this) {
-                case Guild:
-                    return event.getGuild().getIdLong();
-                case Channel:
-                    return event.getChannel().getIdLong();
-                case User:
-                    return event.getAuthor().getIdLong();
-                default:
-                    return 0L;
-            }
+            return switch (this) {
+                case Guild -> event.getGuild().getIdLong();
+                case Channel -> event.getChannel().getIdLong();
+                case User -> event.getAuthor().getIdLong();
+            };
         }
     }
 
