@@ -9,7 +9,7 @@
     <version>2.1.4</version>
 
     <properties>
-        <java.version>11</java.version>
+        <java.version>17</java.version>
         <maven.compiler.source>${java.version}</maven.compiler.source>
         <maven.compiler.target>${java.version}</maven.compiler.target>
         <jackson.version>2.12.5</jackson.version>
