@@ -17,4 +17,4 @@ COPY --from=build /usr/src/moto-bot/target/moto-bot-jar-with-dependencies.jar ./
 
 EXPOSE 8080
 
-ENTRYPOINT ["java", "-jar", "./moto-bot.jar"]
+ENTRYPOINT ["java", "-jar", "--enable-preview", "./moto-bot.jar"]
