@@ -37,7 +37,7 @@ jobs:
     needs: [image]
     steps:
       - name: Install SSH key
-        uses: shimataro/ssh-key-action@262770b68bf225871bf8219e01b27e5d78cf4a59
+        uses: shimataro/ssh-key-action@v2
         with:
           key: ${{ secrets.SSH_KEY }}
           known_hosts: ${{ secrets.KNOWN_HOSTS }}
