@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS `track_channel` (
     `guild_id` BIGINT NOT NULL,
     `channel_id` BIGINT NOT NULL,
     `guild_name` VARBINARY(30) NULL,
-    `player_uuid` CHAR(36) NULL,
+    `player_uuid` VARCHAR(36) NULL,
     # discord user id of the user who created track
     `user_id` BIGINT NOT NULL,
     `expires_at` DATETIME NOT NULL,
