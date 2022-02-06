@@ -42,4 +42,4 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           known_hosts: ${{ secrets.KNOWN_HOSTS }}
       - name: Deploy
-        run: ssh -o LogLevel=QUIET -t ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} "~/moto-bot/deploy.sh"
+        run: ssh -o LogLevel=QUIET -t ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} "/srv/moto-bot/deploy.sh"
