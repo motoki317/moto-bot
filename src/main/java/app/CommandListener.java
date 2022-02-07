@@ -149,10 +149,11 @@ public class CommandListener extends ListenerAdapter {
         // Do not respond to webhook/bot messages
         if (event.isWebhookMessage() || event.getAuthor().isBot()) return;
 
-        // Ignored channel
-        boolean channelIsIgnored = this.ignoreChannelRepository.exists(
-                () -> event.getChannel().getIdLong()
-        );
+        // Do not respond if the bot cannot talk in the (text) channel
+        // DMs are always okay
+        if (event.isFromGuild() && !event.getTextChannel().canTalk()) {
+            return;
+        }
 
         // Check prefix
         String prefix = getPrefix(event);
@@ -162,6 +163,10 @@ public class CommandListener extends ListenerAdapter {
         String commandMessage = rawMessage.substring(prefix.length());
         String[] args = commandMessage.split("\\s+");
 
+        // Ignored channel
+        boolean channelIsIgnored = this.ignoreChannelRepository.exists(
+                () -> event.getChannel().getIdLong()
+        );
         // Do not process command for ignored channel, unless it was the 'ignore' command itself
         if (channelIsIgnored && !commandMessage.toLowerCase().startsWith("ignore")) {
             return;
