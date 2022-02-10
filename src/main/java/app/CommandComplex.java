@@ -102,7 +102,7 @@ public class CommandComplex {
                         slashData = new CommandData(slashName[0], this.commandDescriptions.getOrDefault(slashName[0], slashName[0]));
                         this.slashCommands.put(slashName[0], slashData);
                     }
-                    slashData.addOption(OptionType.SUB_COMMAND, slashName[1], command.shortHelp(), true);
+                    slashData.addSubcommands(new SubcommandData(slashName[1], command.shortHelp()));
                     break;
                 case 3:
                     slashData = this.slashCommands.get(slashName[0]);
