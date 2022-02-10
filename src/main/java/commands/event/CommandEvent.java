@@ -1,14 +1,18 @@
 package commands.event;
 
 import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.*;
 import utils.MinecraftColor;
 
 import java.time.Instant;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
 public interface CommandEvent {
+    JDA getJDA();
+
     /**
      * Retrieves the time this event was created.
      *
@@ -44,15 +48,20 @@ public interface CommandEvent {
      */
     void acknowledge();
 
-    // TODO: interaction abstraction
     void reply(String message);
 
     void reply(Message message);
 
     void reply(MessageEmbed embed);
 
+    void reply(String message, Consumer<SentMessage> callback);
+    void reply(Message message, Consumer<SentMessage> callback);
+    void reply(MessageEmbed embed, Consumer<SentMessage> callback);
+
     void replyMultiPage(String message, Function<Integer, Message> pages, Supplier<Integer> maxPage);
+
     void replyMultiPage(Message message, Function<Integer, Message> pages, Supplier<Integer> maxPage);
+
     void replyMultiPage(MessageEmbed embed, Function<Integer, Message> pages, Supplier<Integer> maxPage);
 
     /**

@@ -1,15 +1,22 @@
 package commands.event;
 
 import app.Bot;
+import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.*;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import update.multipage.MultipageHandler;
 import utils.BotUtils;
 
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
 public record MessageReceivedEventAdapter(MessageReceivedEvent event, Bot bot) implements CommandEvent {
+    @Override
+    public JDA getJDA() {
+        return event.getJDA();
+    }
+
     @Override
     public long getCreatedAt() {
         return BotUtils.getIdCreationTime(event.getMessageIdLong());
@@ -63,6 +70,21 @@ public record MessageReceivedEventAdapter(MessageReceivedEvent event, Bot bot) i
     @Override
     public void reply(MessageEmbed embed) {
         event.getChannel().sendMessageEmbeds(embed).queue();
+    }
+
+    @Override
+    public void reply(String message, Consumer<SentMessage> callback) {
+        event.getChannel().sendMessage(message).queue(m -> callback.accept(new SentMessageAdapter(m)));
+    }
+
+    @Override
+    public void reply(Message message, Consumer<SentMessage> callback) {
+        event.getChannel().sendMessage(message).queue(m -> callback.accept(new SentMessageAdapter(m)));
+    }
+
+    @Override
+    public void reply(MessageEmbed embed, Consumer<SentMessage> callback) {
+        event.getChannel().sendMessageEmbeds(embed).queue(m -> callback.accept(new SentMessageAdapter(m)));
     }
 
     @Override

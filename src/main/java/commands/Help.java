@@ -55,7 +55,7 @@ public class Help extends GenericCommand {
     @NotNull
     @Override
     public String shortHelp() {
-        return "Calls this help. Use with arguments to view detailed help of each command. e.g. `help ping`";
+        return "Calls help (of each command).";
     }
 
     @NotNull

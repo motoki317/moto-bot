@@ -1,15 +1,22 @@
 package commands.event;
 
 import app.Bot;
+import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.*;
 import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
 import update.multipage.ButtonMultiPageHandler;
 import utils.BotUtils;
 
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
 public record SlashCommandEventAdapter(SlashCommandEvent event, Bot bot) implements CommandEvent {
+    @Override
+    public JDA getJDA() {
+        return event.getJDA();
+    }
+
     @Override
     public long getCreatedAt() {
         return BotUtils.getIdCreationTime(event.getIdLong());
@@ -63,6 +70,21 @@ public record SlashCommandEventAdapter(SlashCommandEvent event, Bot bot) impleme
     @Override
     public void reply(MessageEmbed embed) {
         event.replyEmbeds(embed).queue();
+    }
+
+    @Override
+    public void reply(String message, Consumer<SentMessage> callback) {
+        event.reply(message).queue(h -> callback.accept(new InteractionHookAdapter(h)));
+    }
+
+    @Override
+    public void reply(Message message, Consumer<SentMessage> callback) {
+        event.reply(message).queue(h -> callback.accept(new InteractionHookAdapter(h)));
+    }
+
+    @Override
+    public void reply(MessageEmbed embed, Consumer<SentMessage> callback) {
+        event.replyEmbeds(embed).queue(h -> callback.accept(new InteractionHookAdapter(h)));
     }
 
     @Override

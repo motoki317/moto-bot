@@ -2,10 +2,12 @@ package commands;
 
 import app.Bot;
 import commands.base.GenericCommand;
+import commands.event.CommandEvent;
+import commands.event.SentMessage;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import org.jetbrains.annotations.NotNull;
 import utils.BotUtils;
 import utils.FormatUtils;
@@ -25,6 +27,16 @@ public class Ping extends GenericCommand {
     @Override
     public String[][] names() {
         return new String[][]{{"ping"}};
+    }
+
+    @Override
+    public @NotNull String[] slashName() {
+        return new String[]{"ping"};
+    }
+
+    @Override
+    public @NotNull OptionData[] slashOptions() {
+        return new OptionData[]{};
     }
 
     @NotNull
@@ -54,7 +66,7 @@ public class Ping extends GenericCommand {
     }
 
     @Override
-    public void process(@NotNull MessageReceivedEvent event, @NotNull String[] args) {
+    public void process(@NotNull CommandEvent event, @NotNull String[] args) {
         EmbedBuilder eb = new EmbedBuilder();
 
         eb.setAuthor("Pong!", null, event.getAuthor().getEffectiveAvatarUrl());
@@ -72,15 +84,14 @@ public class Ping extends GenericCommand {
                 ", Current Shard: " + this.bot.getShardId(event.getJDA()));
         eb.setTimestamp(Instant.now());
 
-        long messageCreationTime = BotUtils.getIdCreationTime(event.getMessageIdLong());
-        Consumer<Message> callback = onMessageCreate(eb, messageCreationTime, System.currentTimeMillis());
-        respond(event, eb.build(), callback);
+        Consumer<SentMessage> callback = onMessageCreate(eb, event.getCreatedAt(), System.currentTimeMillis());
+        event.reply(eb.build(), callback);
     }
 
-    private Consumer<Message> onMessageCreate(EmbedBuilder eb, long messageCreationTime, long receivedTime) {
+    private Consumer<SentMessage> onMessageCreate(EmbedBuilder eb, long messageCreationTime, long receivedTime) {
         return message -> {
             long load = receivedTime - messageCreationTime;
-            long send = BotUtils.getIdCreationTime(message.getIdLong()) - receivedTime;
+            long send = BotUtils.getIdCreationTime(message.getId()) - receivedTime;
             long total = load + send;
 
             eb.addField(
@@ -94,7 +105,7 @@ public class Ping extends GenericCommand {
                     false
             );
 
-            message.editMessageEmbeds(eb.build()).queue();
+            message.editMessage(eb.build());
         };
     }
 }
