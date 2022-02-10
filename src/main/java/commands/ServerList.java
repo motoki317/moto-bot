@@ -73,7 +73,7 @@ public class ServerList extends GenericCommand {
     @NotNull
     @Override
     public String shortHelp() {
-        return "Returns a list of Wynncraft servers and their respective uptime.";
+        return "Shows Wynncraft servers and their respective uptime.";
     }
 
     @NotNull

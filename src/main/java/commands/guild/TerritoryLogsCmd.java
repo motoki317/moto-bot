@@ -53,7 +53,7 @@ public class TerritoryLogsCmd extends GenericCommand {
     @Override
     public @NotNull OptionData[] slashOptions() {
         return new OptionData[]{
-                new OptionData(OptionType.STRING, "territory-name", "Name of a territory", true)
+                new OptionData(OptionType.STRING, "territory", "Name of a territory", true)
         };
     }
 

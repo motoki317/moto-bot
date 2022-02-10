@@ -66,7 +66,7 @@ public class CustomTerritoryListCmd extends GenericCommand {
 
     @Override
     public @NotNull String shortHelp() {
-        return "Customize your own territory list to view a set of territory stats at one time. \">g myList help\" for more.";
+        return "Customize your own territory list to view a set of territory stats at one time.";
     }
 
     @Override

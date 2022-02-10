@@ -38,7 +38,7 @@ public class CommandAliases extends GenericCommand {
     @Override
     public @NotNull OptionData[] slashOptions() {
         return new OptionData[]{
-                new OptionData(OptionType.STRING, "command-name", "Command to get help for", true)
+                new OptionData(OptionType.STRING, "command", "Command to get help for", true)
         };
     }
 

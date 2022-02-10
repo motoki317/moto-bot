@@ -79,7 +79,7 @@ public class PlayerWarLeaderboardCmd extends GenericCommand {
 
     @Override
     public @NotNull String shortHelp() {
-        return "Player war leaderboard. `g plb help` for more.";
+        return "Player war leaderboard.";
     }
 
     @Override

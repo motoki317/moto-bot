@@ -57,7 +57,7 @@ public class CustomGuildListCmd extends GenericCommand {
 
     @Override
     public @NotNull String shortHelp() {
-        return "Customize your own custom guild list. \">g customList help\" for more.";
+        return "Customize your own custom guild list.";
     }
 
     @Override

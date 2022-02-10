@@ -68,7 +68,7 @@ public class TerritoryListCmd extends GenericCommand {
 
     @Override
     public @NotNull String shortHelp() {
-        return "Shows a list of all territories, or if a guild name is given, shows a list of territories the guild possesses.";
+        return "Shows a list of all/guild's territories.";
     }
 
     @Override

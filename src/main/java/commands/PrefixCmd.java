@@ -41,7 +41,7 @@ public class PrefixCmd extends GenericCommand {
     @Override
     public @NotNull OptionData[] slashOptions() {
         return new OptionData[]{
-                new OptionData(OptionType.STRING, "new prefix", "New prefix", true),
+                new OptionData(OptionType.STRING, "prefix", "New prefix", true),
                 new OptionData(OptionType.STRING, "target", "Setting target")
                         .addChoice("guild", "guild")
                         .addChoice("channel", "channel")

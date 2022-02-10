@@ -35,7 +35,7 @@ public class SetPage extends GenericCommand {
     @Override
     public @NotNull OptionData[] slashOptions() {
         return new OptionData[]{
-                new OptionData(OptionType.INTEGER, "new page", "New page number", true)
+                new OptionData(OptionType.INTEGER, "page", "New page number", true)
         };
     }
 

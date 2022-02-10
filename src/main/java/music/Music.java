@@ -288,7 +288,7 @@ public class Music extends GuildCommand {
 
     @Override
     public @NotNull String shortHelp() {
-        return "Music commands! `music help` for more.";
+        return "Music commands.";
     }
 
     @Override

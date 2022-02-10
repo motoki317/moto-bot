@@ -44,8 +44,7 @@ public class ServerLogCmd extends GuildCommand {
 
     @Override
     public @NotNull String shortHelp() {
-        return "Sets the server log channel. " +
-                "The bot will send all notable actions in the server such as member join, leave to the channel.";
+        return "Sets the server log channel.";
     }
 
     @Override
@@ -53,6 +52,8 @@ public class ServerLogCmd extends GuildCommand {
         return new MessageBuilder(
                 new EmbedBuilder()
                         .setAuthor("Server Log Command Help")
+                        .setDescription(this.shortHelp() + "\n" +
+                                "The bot will send all notable actions in the server such as member join, leave to the channel.")
         ).build();
     }
 

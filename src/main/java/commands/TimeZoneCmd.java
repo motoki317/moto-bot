@@ -62,7 +62,7 @@ public class TimeZoneCmd extends GenericCommand {
     @NotNull
     @Override
     public String shortHelp() {
-        return "Sets local timezone for a guild, a channel or an user, for easier view of time stamps.";
+        return "Sets local timezone for easier view of time stamps.";
     }
 
     @NotNull

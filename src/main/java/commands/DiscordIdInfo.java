@@ -39,7 +39,7 @@ public class DiscordIdInfo extends GenericCommand {
     @Override
     public @NotNull OptionData[] slashOptions() {
         return new OptionData[]{
-                new OptionData(OptionType.INTEGER, "discord id", "Discord ID (such as user, channel, guild id)", true)
+                new OptionData(OptionType.INTEGER, "id", "Discord ID (such as user, channel, guild id)", true)
         };
     }
 
@@ -50,13 +50,13 @@ public class DiscordIdInfo extends GenericCommand {
 
     @Override
     public @NotNull String shortHelp() {
-        return "Given a number discord ID, parse and display its creation time. " +
-                "Can be used to extract creation time of ID (and its object).";
+        return "Given a discord ID, parse and display its creation time.";
     }
 
     @Override
     public @NotNull Message longHelp() {
-        return new MessageBuilder(this.shortHelp()).build();
+        return new MessageBuilder(this.shortHelp() + "\n" +
+                "Can be used to extract creation time of ID (and its object).").build();
     }
 
     @Override

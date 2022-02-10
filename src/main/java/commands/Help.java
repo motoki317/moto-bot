@@ -42,7 +42,7 @@ public class Help extends GenericCommand {
     @Override
     public @NotNull OptionData[] slashOptions() {
         return new OptionData[]{
-                new OptionData(OptionType.STRING, "command-name", "Command to get help for")
+                new OptionData(OptionType.STRING, "command", "Command to get help for")
         };
     }
 

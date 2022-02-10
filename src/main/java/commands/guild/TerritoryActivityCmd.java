@@ -62,8 +62,7 @@ public class TerritoryActivityCmd extends GenericCommand {
 
     @Override
     public @NotNull String shortHelp() {
-        return "Shows leaderboard of territories ordered by number of times each territory has been taken in specified time range. " +
-                "If no time range is specified, displays data of all territory logs.";
+        return "Shows leaderboard of territories by their takeover activity.";
     }
 
     @Override
@@ -71,7 +70,8 @@ public class TerritoryActivityCmd extends GenericCommand {
         return new MessageBuilder(
                 new EmbedBuilder()
                         .setAuthor("Territory Activity Command Help")
-                        .setDescription(this.shortHelp())
+                        .setDescription("Shows leaderboard of territories ordered by number of times each territory has been taken in specified time range.\n" +
+                                "If no time range is specified, displays data of all territory logs.")
                         .addField("Syntax",
                                 this.syntax(),
                                 false
