@@ -10,5 +10,5 @@ public interface SentMessage {
     void editMessage(String message);
     void editMessage(Message message);
     void editMessage(MessageEmbed embed);
-    void deleteMessageAfter(long timeout, TimeUnit unit);
+    void deleteAfter(long timeout, TimeUnit unit);
 }

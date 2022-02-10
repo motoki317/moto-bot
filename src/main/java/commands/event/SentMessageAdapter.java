@@ -27,7 +27,7 @@ public record SentMessageAdapter(Message m) implements SentMessage {
     }
 
     @Override
-    public void deleteMessageAfter(long timeout, TimeUnit unit) {
+    public void deleteAfter(long timeout, TimeUnit unit) {
         m.delete().queueAfter(timeout, unit);
     }
 }

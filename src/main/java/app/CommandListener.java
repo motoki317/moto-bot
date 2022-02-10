@@ -224,7 +224,7 @@ public class CommandListener extends ListenerAdapter {
                                     (double) remainingCoolDown / 1000D
                             ))
                             .build(),
-                    s -> s.deleteMessageAfter(10, TimeUnit.SECONDS));
+                    s -> s.deleteAfter(10, TimeUnit.SECONDS));
             return;
         }
 

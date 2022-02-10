@@ -2,13 +2,14 @@ package commands;
 
 import app.Bot;
 import commands.base.GuildCommand;
+import commands.event.CommandEvent;
 import db.model.serverLog.ServerLogEntry;
 import db.repository.base.ServerLogRepository;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.concurrent.TimeUnit;
@@ -27,6 +28,16 @@ public class ServerLogCmd extends GuildCommand {
     }
 
     @Override
+    public @NotNull String[] slashName() {
+        return new String[]{"serverlog"};
+    }
+
+    @Override
+    public @NotNull OptionData[] slashOptions() {
+        return new OptionData[]{};
+    }
+
+    @Override
     public @NotNull String syntax() {
         return "serverLog";
     }
@@ -41,7 +52,7 @@ public class ServerLogCmd extends GuildCommand {
     public @NotNull Message longHelp() {
         return new MessageBuilder(
                 new EmbedBuilder()
-                .setAuthor("Server Log Command Help")
+                        .setAuthor("Server Log Command Help")
         ).build();
     }
 
@@ -57,17 +68,17 @@ public class ServerLogCmd extends GuildCommand {
     }
 
     @Override
-    public void process(@NotNull MessageReceivedEvent event, @NotNull String[] args) {
+    public void process(@NotNull CommandEvent event, @NotNull String[] args) {
         ServerLogEntry old = this.serverLogRepository.findOne(() -> event.getGuild().getIdLong());
         ServerLogEntry entry = new ServerLogEntry(event.getGuild().getIdLong(), event.getChannel().getIdLong());
 
         if (old != null && old.getChannelId() == entry.getChannelId()) {
             boolean res = this.serverLogRepository.delete(old);
             if (!res) {
-                respondError(event, "Something went wrong while saving your data...");
+                event.reply("Something went wrong while saving your data...");
                 return;
             }
-            respond(event, "Successfully removed server log from this channel.");
+            event.reply("Successfully removed server log from this channel.");
             return;
         }
 
@@ -75,10 +86,10 @@ public class ServerLogCmd extends GuildCommand {
                 ? this.serverLogRepository.create(entry)
                 : this.serverLogRepository.update(entry);
         if (!res) {
-            respondError(event, "Something went wrong while saving your data...");
+            event.replyError("Something went wrong while saving your data...");
             return;
         }
 
-        respond(event, String.format("Successfully set server log channel to %s!", event.getTextChannel().getAsMention()));
+        event.reply("Successfully set server log channel to here!");
     }
 }

@@ -103,7 +103,7 @@ public class SetPage extends GenericCommand {
 
             // delete success message after 3 seconds
             event.reply(String.format("Skipped to page %s.", newPage),
-                    message -> message.deleteMessageAfter(3, TimeUnit.SECONDS));
+                    message -> message.deleteAfter(3, TimeUnit.SECONDS));
         } else {
             event.reply("Message not found.");
         }

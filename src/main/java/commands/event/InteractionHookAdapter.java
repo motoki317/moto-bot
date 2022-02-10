@@ -28,7 +28,7 @@ public record InteractionHookAdapter(InteractionHook hook) implements SentMessag
     }
 
     @Override
-    public void deleteMessageAfter(long timeout, TimeUnit unit) {
+    public void deleteAfter(long timeout, TimeUnit unit) {
         hook.deleteOriginal().queueAfter(timeout, unit);
     }
 }
