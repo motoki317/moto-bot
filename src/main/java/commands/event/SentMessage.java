@@ -21,5 +21,7 @@ public interface SentMessage {
 
     void editMessage(MessageEmbed embed, Consumer<SentMessage> callback);
 
+    void delete();
+
     void deleteAfter(long timeout, TimeUnit unit);
 }

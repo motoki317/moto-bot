@@ -579,7 +579,7 @@ public class MusicPlayHandler {
 
         boolean finalPlayAll = playAll;
         String finalInput = input;
-        event.reply("Searching song...", s ->
+        event.reply(new EmbedBuilder().setDescription("Searching for songs...").build(), s ->
                 playerManager.loadItem(finalInput, new AudioLoadResultHandler() {
                     @Override
                     public void trackLoaded(AudioTrack audioTrack) {
@@ -608,12 +608,15 @@ public class MusicPlayHandler {
 
                     @Override
                     public void noMatches() {
-                        event.reply("No results found.");
+                        s.editMessage(new EmbedBuilder().setDescription("No results found.").build());
                     }
 
                     @Override
                     public void loadFailed(FriendlyException e) {
-                        event.replyException("Something went wrong while loading tracks:\n" + e.getMessage());
+                        s.editMessage(new EmbedBuilder()
+                                .setColor(MinecraftColor.RED.getColor())
+                                .setDescription("Something went wrong while loading tracks:\n" + e.getMessage())
+                                .build());
                     }
                 }));
     }
@@ -642,15 +645,14 @@ public class MusicPlayHandler {
                 .setFooter(String.format("Type '1' ~ '%s', 'all' to play all, or 'c' to cancel.", max))
                 .build();
 
-        s.editMessage(eb, message -> {
-            if (message instanceof SentMessageAdapter sm) {
+        s.editMessage(eb, botResp -> {
+            if (botResp instanceof SentMessageAdapter) {
                 Response handler = new Response(event.getChannel().getIdLong(), event.getAuthor().getIdLong(),
                         response -> {
-                            boolean next = chooseTrack(event, state, tracks, response);
+                            boolean next = chooseTrack(event, state, tracks, botResp, response);
                             if (next) {
-                                // Delete bot and response message if possible
+                                // Delete response message if possible
                                 try {
-                                    sm.m().delete().queue();
                                     response.getMessage().delete().queue();
                                 } catch (Exception ignored) {
                                 }
@@ -659,7 +661,7 @@ public class MusicPlayHandler {
                         }
                 );
                 this.responseManager.addEventListener(handler);
-            } else if (message instanceof InteractionHookAdapter hook) {
+            } else if (botResp instanceof InteractionHookAdapter hook) {
                 MusicSelectButtonHandler handler = new MusicSelectButtonHandler(hook.hook(), tracks, event, state);
                 this.buttonClickManager.addEventListener(handler);
             }
@@ -735,10 +737,11 @@ public class MusicPlayHandler {
         }
     }
 
-    private boolean chooseTrack(CommandEvent event, MusicState state, List<AudioTrack> tracks, MessageReceivedEvent message) {
-        String response = message.getMessage().getContentRaw();
+    private boolean chooseTrack(CommandEvent event, MusicState state, List<AudioTrack> tracks, SentMessage botResp, MessageReceivedEvent userMsg) {
+        String response = userMsg.getMessage().getContentRaw();
+        System.out.println("MusicPlayerHandler#L742: " + response);
         if ("all".equalsIgnoreCase(response)) {
-            this.enqueueMultipleSongs(event, new SentMessageAdapter(message.getMessage()), state, tracks);
+            this.enqueueMultipleSongs(event, botResp, state, tracks);
             return true;
         }
         if ("c".equalsIgnoreCase(response)) {
@@ -755,7 +758,7 @@ public class MusicPlayHandler {
                 return false;
             }
 
-            this.enqueueSong(event, new SentMessageAdapter(message.getMessage()), state, tracks.get(index - 1));
+            this.enqueueSong(event, botResp, state, tracks.get(index - 1));
             return true;
         } catch (NumberFormatException ignored) {
             // Ignore normal messages
@@ -769,10 +772,15 @@ public class MusicPlayHandler {
         int queueSize = state.getCurrentQueue().getQueue().size();
         long remainingLength = state.getRemainingLength();
 
+        if (!toShowQueuedMsg) {
+            state.setMessageToEdit(msg);
+        }
+
         try {
             state.enqueue(new QueueEntry(audioTrack, userId));
         } catch (DuplicateTrackException | QueueFullException e) {
             event.replyException(e.getMessage());
+            state.setMessageToEdit(null);
             return;
         }
 
@@ -787,8 +795,6 @@ public class MusicPlayHandler {
                     .addField("Position in queue", String.valueOf(queueSize), true)
                     .addField("Estimated time until playing", formatLength(remainingLength), true)
                     .build());
-        } else {
-            state.setMessageToEdit(msg);
         }
     }
 

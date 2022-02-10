@@ -30,17 +30,22 @@ public record InteractionHookAdapter(InteractionHook hook) implements SentMessag
 
     @Override
     public void editMessage(String message, Consumer<SentMessage> callback) {
-        hook.editOriginal(message).queue(s -> new InteractionHookAdapter(hook));
+        hook.editOriginal(message).queue(s -> callback.accept(new InteractionHookAdapter(hook)));
     }
 
     @Override
     public void editMessage(Message message, Consumer<SentMessage> callback) {
-        hook.editOriginal(message).queue(s -> new InteractionHookAdapter(hook));
+        hook.editOriginal(message).queue(s -> callback.accept(new InteractionHookAdapter(hook)));
     }
 
     @Override
     public void editMessage(MessageEmbed embed, Consumer<SentMessage> callback) {
-        hook.editOriginalEmbeds(embed).queue(s -> new InteractionHookAdapter(hook));
+        hook.editOriginalEmbeds(embed).queue(s -> callback.accept(new InteractionHookAdapter(hook)));
+    }
+
+    @Override
+    public void delete() {
+        hook.deleteOriginal().queue();
     }
 
     @Override

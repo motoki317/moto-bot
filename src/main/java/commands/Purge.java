@@ -109,7 +109,7 @@ public class Purge extends GuildCommand {
                                 CompletableFuture.allOf(
                                         channel.purgeMessages(history.getRetrievedHistory()).toArray(new CompletableFuture[]{})
                                 ).get();
-                                event.reply(new MessageBuilder(
+                                s.editMessage(new MessageBuilder(
                                         new EmbedBuilder()
                                                 .setColor(MinecraftColor.DARK_GREEN.getColor())
                                                 .setDescription(String.format("Successfully deleted %s message(s)!", limit))

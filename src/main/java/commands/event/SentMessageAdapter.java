@@ -29,17 +29,22 @@ public record SentMessageAdapter(Message m) implements SentMessage {
 
     @Override
     public void editMessage(String message, Consumer<SentMessage> callback) {
-        m.editMessage(message).queue(SentMessageAdapter::new);
+        m.editMessage(message).queue(s -> callback.accept(new SentMessageAdapter(s)));
     }
 
     @Override
     public void editMessage(Message message, Consumer<SentMessage> callback) {
-        m.editMessage(message).queue(SentMessageAdapter::new);
+        m.editMessage(message).queue(s -> callback.accept(new SentMessageAdapter(s)));
     }
 
     @Override
     public void editMessage(MessageEmbed embed, Consumer<SentMessage> callback) {
-        m.editMessageEmbeds(embed).queue(SentMessageAdapter::new);
+        m.editMessageEmbeds(embed).queue(s -> callback.accept(new SentMessageAdapter(s)));
+    }
+
+    @Override
+    public void delete() {
+        m.delete().queue();
     }
 
     @Override
