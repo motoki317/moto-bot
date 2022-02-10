@@ -7,7 +7,6 @@ import utils.FormatUtils;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.Map;
 import java.util.TimeZone;
@@ -151,9 +150,7 @@ public class DiscordLogger implements Logger {
         );
         // Print short version to Discord channel 0
         this.logToDiscord(0, msgTimeAppended);
-        String fullStackTrace = msgTimeAppended + "\n";
-        fullStackTrace += Arrays.stream(e.getStackTrace()).map(elt -> "    at " + elt.toString()).collect(Collectors.joining("\n"));
-        // Full stack trace to standard out, and to Discord channel 2
-        this.log(2, fullStackTrace);
+        // Print full stack trace to stdout
+        e.printStackTrace();
     }
 }
