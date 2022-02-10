@@ -8,8 +8,8 @@ import java.util.function.Consumer;
 
 public record SentMessageAdapter(Message m) implements SentMessage {
     @Override
-    public long getId() {
-        return m.getIdLong();
+    public void getId(Consumer<Long> callback) {
+        callback.accept(m.getIdLong());
     }
 
     @Override

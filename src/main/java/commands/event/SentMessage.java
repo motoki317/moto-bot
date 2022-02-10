@@ -7,7 +7,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 public interface SentMessage {
-    long getId();
+    void getId(Consumer<Long> callback);
 
     void editMessage(String message);
 

@@ -104,22 +104,23 @@ public class Purge extends GuildCommand {
         MessageChannel channel = event.getChannel();
 
         event.reply("Purging " + limit + " messages...", s ->
-                channel.getHistoryBefore(s.getId(), limit).queue(history -> {
-                            try {
-                                CompletableFuture.allOf(
-                                        channel.purgeMessages(history.getRetrievedHistory()).toArray(new CompletableFuture[]{})
-                                ).get();
-                                s.editMessage(new MessageBuilder(
-                                        new EmbedBuilder()
-                                                .setColor(MinecraftColor.DARK_GREEN.getColor())
-                                                .setDescription(String.format("Successfully deleted %s message(s)!", limit))
-                                                .build()
-                                ).build(), message -> message.deleteAfter(3, TimeUnit.SECONDS));
-                            } catch (Exception e) {
-                                event.replyError("An error occurred while purging messages. " +
-                                        "Please make sure the bot has correct permission to delete channel messages: " + e.getMessage());
-                            }
-                        }, failure -> event.replyError(String.format("An error occurred while retrieving history: %s", failure.getMessage()))
-                ));
+                s.getId(botRespId ->
+                        channel.getHistoryBefore(botRespId, limit).queue(history -> {
+                                    try {
+                                        CompletableFuture.allOf(
+                                                channel.purgeMessages(history.getRetrievedHistory()).toArray(new CompletableFuture[]{})
+                                        ).get();
+                                        s.editMessage(new MessageBuilder(
+                                                new EmbedBuilder()
+                                                        .setColor(MinecraftColor.DARK_GREEN.getColor())
+                                                        .setDescription(String.format("Successfully deleted %s message(s)!", limit))
+                                                        .build()
+                                        ).build(), message -> message.deleteAfter(3, TimeUnit.SECONDS));
+                                    } catch (Exception e) {
+                                        event.replyError("An error occurred while purging messages. " +
+                                                "Please make sure the bot has correct permission to delete channel messages: " + e.getMessage());
+                                    }
+                                }, failure -> event.replyError(String.format("An error occurred while retrieving history: %s", failure.getMessage()))
+                        )));
     }
 }

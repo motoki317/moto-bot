@@ -91,21 +91,23 @@ public class Ping extends GenericCommand {
     private Consumer<SentMessage> onMessageCreate(EmbedBuilder eb, long messageCreationTime, long receivedTime) {
         return message -> {
             long load = receivedTime - messageCreationTime;
-            long send = BotUtils.getIdCreationTime(message.getId()) - receivedTime;
-            long total = load + send;
+            message.getId(messageId -> {
+                long send = BotUtils.getIdCreationTime(messageId) - receivedTime;
+                long total = load + send;
 
-            eb.addField(
-                    "Message",
-                    "Load (Discord → bot)\n" +
-                            load + " ms\n" +
-                            "Send (bot → Discord)\n" +
-                            send + " ms\n" +
-                            "Total or Actual Ping (Load + Send)\n" +
-                            total + " ms",
-                    false
-            );
+                eb.addField(
+                        "Message",
+                        "Load (Discord → bot)\n" +
+                                load + " ms\n" +
+                                "Send (bot → Discord)\n" +
+                                send + " ms\n" +
+                                "Total or Actual Ping (Load + Send)\n" +
+                                total + " ms",
+                        false
+                );
 
-            message.editMessage(eb.build());
+                message.editMessage(eb.build());
+            });
         };
     }
 }
