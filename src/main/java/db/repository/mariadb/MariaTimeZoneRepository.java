@@ -5,7 +5,6 @@ import db.model.timezone.CustomTimeZone;
 import db.model.timezone.CustomTimeZoneId;
 import db.repository.base.TimeZoneRepository;
 import log.Logger;
-import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
@@ -102,22 +101,6 @@ class MariaTimeZoneRepository extends MariaRepository<CustomTimeZone> implements
             }
         }
         return ret;
-    }
-
-    @NotNull
-    public CustomTimeZone getTimeZone(MessageReceivedEvent event) {
-        if (event.isFromGuild()) {
-            return this.getTimeZone(
-                    event.getGuild().getIdLong(),
-                    event.getChannel().getIdLong(),
-                    event.getAuthor().getIdLong()
-            );
-        } else {
-            return this.getTimeZone(
-                    event.getChannel().getIdLong(),
-                    event.getAuthor().getIdLong()
-            );
-        }
     }
 
     @Nullable

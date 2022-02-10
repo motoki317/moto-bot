@@ -4,6 +4,8 @@ import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.interactions.InteractionHook;
 
+import java.util.concurrent.TimeUnit;
+
 public record InteractionHookAdapter(InteractionHook hook) implements SentMessage {
     @Override
     public long getId() {
@@ -23,5 +25,10 @@ public record InteractionHookAdapter(InteractionHook hook) implements SentMessag
     @Override
     public void editMessage(MessageEmbed embed) {
         hook.editOriginalEmbeds(embed).queue();
+    }
+
+    @Override
+    public void deleteMessageAfter(long timeout, TimeUnit unit) {
+        hook.deleteOriginal().queueAfter(timeout, unit);
     }
 }

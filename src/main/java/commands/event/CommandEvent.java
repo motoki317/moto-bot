@@ -55,7 +55,9 @@ public interface CommandEvent {
     void reply(MessageEmbed embed);
 
     void reply(String message, Consumer<SentMessage> callback);
+
     void reply(Message message, Consumer<SentMessage> callback);
+
     void reply(MessageEmbed embed, Consumer<SentMessage> callback);
 
     void replyMultiPage(String message, Function<Integer, Message> pages, Supplier<Integer> maxPage);

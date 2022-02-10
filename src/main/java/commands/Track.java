@@ -3,6 +3,7 @@ package commands;
 import api.mojang.MojangApi;
 import app.Bot;
 import commands.base.GuildCommand;
+import commands.event.CommandEvent;
 import commands.guild.GuildNameResolver;
 import db.Database;
 import db.model.dateFormat.CustomDateFormat;
@@ -17,7 +18,7 @@ import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import org.jetbrains.annotations.NotNull;
 import utils.UUID;
 
@@ -51,6 +52,16 @@ public class Track extends GuildCommand {
         return new String[][]{{"track"}};
     }
 
+    @Override
+    public @NotNull String[] slashName() {
+        return new String[]{"track"};
+    }
+
+    @Override
+    public @NotNull OptionData[] slashOptions() {
+        return new OptionData[]{};
+    }
+
     @NotNull
     @Override
     public String syntax() {
@@ -68,68 +79,68 @@ public class Track extends GuildCommand {
     public Message longHelp() {
         return new MessageBuilder(
                 new EmbedBuilder()
-                .setAuthor("Track Command Help")
-                .setDescription("Running this command in a guild channel will make the bot to send messages when a certain track event occurs. " +
-                        "Type the same command to enable/disable tracking.\n" +
-                        "Each tracking option has default expiration time, so you will either have to reset the " +
-                        "tracking or use `track <update|refresh>` command to update the expiration time.")
-                .addField("Syntax",
-                        String.join("\n",
-                                "`" + this.syntax() + "`",
-                                "First argument specifies the type of action. " +
-                                        "Use without arguments to view all tracking enabled in this channel."
-                        ),
-                        false)
-                .addField("Server Tracking Syntax",
-                        String.join("\n",
-                                "`track server <start|close> [all]`",
-                                "`<start|close>` specifies when to send message.",
-                                "\"start\" : When a server starts",
-                                "\"close\" : When a server closes.",
-                                "`[all]` : On which server start/close the bot should send messages.",
-                                "Without all argument, the bot sends messages only when main servers (WC and EU) start/close.",
-                                "With all argument, the bot sends messages when every server, but excluding WAR servers, start/close."
-                        ),
-                        false)
-                .addField("Guild Creation/Deletion Tracking Syntax",
-                        String.join("\n",
-                                "`track guild <create|delete>`",
-                                "Guild tracking will send a message when a guild is created or deleted."
-                        ),
-                        false)
-                .addField("War Tracking Syntax",
-                        String.join("\n",
-                        "`track war <all|guild|player> [name]`",
-                                "`<all|guild|player>` specifies the war track type.",
-                                "\"all\" : When any guild starts a war.",
-                                "\"guild\" : When a specified guild starts a war.",
-                                "\"player\" : When a specified player starts a war.",
-                                "`[name]` : Must be specified if you choose guild or player track type."
-                        ),
-                        false)
-                .addField("Territory Tracking Syntax",
-                        String.join("\n",
-                                "`track territory <all|guild> [name]`",
-                                "`<all|guild> specifies the territory track type.`",
-                                "\"all\" : When any guild acquires a territory.",
-                                "\"guild\" : When a specified guild acquires a territory.",
-                                "`[name]` : Must be specified if you choose guild track type."
-                        ),
-                        false)
-                .addField("Update the Expiration Time",
-                        String.join("\n",
-                        "Type `track <update|refresh>` to update expiration time for all tracking enabled in " +
-                                "this channel."),
-                        false)
-                .addField("Examples",
-                        String.join("\n",
-                                "`track server close all`",
-                                "`track server start`",
-                                "`track war guild WynnContentTeam`",
-                                "`track territory all`"
-                        ),
-                        false)
-                .build()
+                        .setAuthor("Track Command Help")
+                        .setDescription("Running this command in a guild channel will make the bot to send messages when a certain track event occurs. " +
+                                "Type the same command to enable/disable tracking.\n" +
+                                "Each tracking option has default expiration time, so you will either have to reset the " +
+                                "tracking or use `track <update|refresh>` command to update the expiration time.")
+                        .addField("Syntax",
+                                String.join("\n",
+                                        "`" + this.syntax() + "`",
+                                        "First argument specifies the type of action. " +
+                                                "Use without arguments to view all tracking enabled in this channel."
+                                ),
+                                false)
+                        .addField("Server Tracking Syntax",
+                                String.join("\n",
+                                        "`track server <start|close> [all]`",
+                                        "`<start|close>` specifies when to send message.",
+                                        "\"start\" : When a server starts",
+                                        "\"close\" : When a server closes.",
+                                        "`[all]` : On which server start/close the bot should send messages.",
+                                        "Without all argument, the bot sends messages only when main servers (WC and EU) start/close.",
+                                        "With all argument, the bot sends messages when every server, but excluding WAR servers, start/close."
+                                ),
+                                false)
+                        .addField("Guild Creation/Deletion Tracking Syntax",
+                                String.join("\n",
+                                        "`track guild <create|delete>`",
+                                        "Guild tracking will send a message when a guild is created or deleted."
+                                ),
+                                false)
+                        .addField("War Tracking Syntax",
+                                String.join("\n",
+                                        "`track war <all|guild|player> [name]`",
+                                        "`<all|guild|player>` specifies the war track type.",
+                                        "\"all\" : When any guild starts a war.",
+                                        "\"guild\" : When a specified guild starts a war.",
+                                        "\"player\" : When a specified player starts a war.",
+                                        "`[name]` : Must be specified if you choose guild or player track type."
+                                ),
+                                false)
+                        .addField("Territory Tracking Syntax",
+                                String.join("\n",
+                                        "`track territory <all|guild> [name]`",
+                                        "`<all|guild> specifies the territory track type.`",
+                                        "\"all\" : When any guild acquires a territory.",
+                                        "\"guild\" : When a specified guild acquires a territory.",
+                                        "`[name]` : Must be specified if you choose guild track type."
+                                ),
+                                false)
+                        .addField("Update the Expiration Time",
+                                String.join("\n",
+                                        "Type `track <update|refresh>` to update expiration time for all tracking enabled in " +
+                                                "this channel."),
+                                false)
+                        .addField("Examples",
+                                String.join("\n",
+                                        "`track server close all`",
+                                        "`track server start`",
+                                        "`track war guild WynnContentTeam`",
+                                        "`track territory all`"
+                                ),
+                                false)
+                        .build()
         ).build();
     }
 
@@ -145,7 +156,7 @@ public class Track extends GuildCommand {
     }
 
     @Override
-    public void process(@NotNull MessageReceivedEvent event, @NotNull String[] args) {
+    public void process(@NotNull CommandEvent event, @NotNull String[] args) {
         if (args.length <= 1) {
             sendCurrentTrackingMessage(event);
             return;
@@ -154,7 +165,7 @@ public class Track extends GuildCommand {
         switch (args[1].toLowerCase()) {
             case "update", "refresh" -> {
                 if (refreshTracking(event)) {
-                    respond(event, ":white_check_mark: Successfully refreshed expiration time!");
+                    event.reply(":white_check_mark: Successfully refreshed expiration time!");
                 }
                 return;
             }
@@ -162,7 +173,7 @@ public class Track extends GuildCommand {
 
         TrackType type = getCorrespondingTrackType(args);
         if (type == null) {
-            respond(event, "Invalid arguments. Please refer to help.");
+            event.reply("Invalid arguments. Please refer to help.");
             return;
         }
 
@@ -181,24 +192,25 @@ public class Track extends GuildCommand {
                     () -> saveTrackData(event, entity, false)
             );
         } catch (IllegalArgumentException e) {
-            respondException(event, e.getMessage());
+            event.replyException(e.getMessage());
         }
     }
 
     /**
      * Saves the final track channel entity.
-     * @param event Message received event.
-     * @param entity Track entity.
+     *
+     * @param event            Command event.
+     * @param entity           Track entity.
      * @param safeGuildResolve {@code true} if the guild name was safely resolved.
      *                         If {@code false}, only tries to delete the existing track.
      */
-    private void saveTrackData(MessageReceivedEvent event, TrackChannel entity, boolean safeGuildResolve) {
+    private void saveTrackData(CommandEvent event, TrackChannel entity, boolean safeGuildResolve) {
         if (this.trackChannelRepository.exists(entity)) {
             disableTracking(event, entity);
         } else {
             // Prevent the track from being registered if an unknown guild has been resolved.
             if (!safeGuildResolve) {
-                respondException(event, String.format(
+                event.replyException(String.format(
                         "Guild with name `%s` not found. Check the spells, or try again later.",
                         entity.getGuildName()
                 ));
@@ -210,14 +222,15 @@ public class Track extends GuildCommand {
 
     /**
      * Resolves guild name or player UUID depending on the track type.
-     * @param event Message Received event.
-     * @param args Command arguments.
-     * @param entity Track channel entity.
-     * @param onResolve To be called on successful resolve.
+     *
+     * @param event                Command event.
+     * @param args                 Command arguments.
+     * @param entity               Track channel entity.
+     * @param onResolve            To be called on successful resolve.
      * @param unknownGuildResolved To be called on unknown guild name resolve.
      * @throws IllegalArgumentException On bad user input.
      */
-    private void resolveGuildOrPlayer(MessageReceivedEvent event, @NotNull String[] args, TrackChannel entity, Runnable onResolve, Runnable unknownGuildResolved) throws IllegalArgumentException {
+    private void resolveGuildOrPlayer(CommandEvent event, @NotNull String[] args, TrackChannel entity, Runnable onResolve, Runnable unknownGuildResolved) throws IllegalArgumentException {
         switch (entity.getType()) {
             case WAR_SPECIFIC, TERRITORY_SPECIFIC -> {
                 String specified = getName(args);
@@ -225,7 +238,7 @@ public class Track extends GuildCommand {
                     throw new IllegalArgumentException("Invalid arguments: guild name was not specified.");
                 }
                 this.guildNameResolver.resolve(
-                        specified, event.getTextChannel(), event.getAuthor(),
+                        specified, event.getChannel(), event.getAuthor(),
                         (guildName, prefix) -> {
                             entity.setGuildName(guildName);
                             if (prefix == null) {
@@ -234,7 +247,7 @@ public class Track extends GuildCommand {
                                 onResolve.run();
                             }
                         },
-                        reason -> respondException(event, reason)
+                        event::replyException
                 );
             }
             case WAR_PLAYER -> {
@@ -254,40 +267,40 @@ public class Track extends GuildCommand {
         }
     }
 
-    private void disableTracking(@NotNull MessageReceivedEvent event, TrackChannel entity) {
+    private void disableTracking(@NotNull CommandEvent event, TrackChannel entity) {
         if (this.trackChannelRepository.delete(entity)) {
-            respond(event, ":mute: Successfully **disabled** " + entity.getDisplayName() + " for this channel.");
+            event.reply(":mute: Successfully **disabled** " + entity.getDisplayName() + " for this channel.");
             this.logger.log(0, ":mute: Tracking has been **disabled**:\n" + entity);
         } else {
-            respondError(event, "Something went wrong while saving data.");
+            event.replyError("Something went wrong while saving data.");
         }
     }
 
-    private void enableTracking(@NotNull MessageReceivedEvent event, TrackChannel entity) {
+    private void enableTracking(@NotNull CommandEvent event, TrackChannel entity) {
         // Check conflicting types
         List<TrackChannel> conflicting = getConflictingEntities(entity.getType(), event);
         if (conflicting == null) {
-            respondError(event, "Something went wrong while retrieving data.");
+            event.replyError("Something went wrong while retrieving data.");
             return;
         }
         if (!conflicting.isEmpty()) {
             String message = "You have conflicting type of tracking enabled in this channel." +
                     " Use a different channel, or remove the below before enabling the one you just specified:\n" +
                     conflicting.stream().map(TrackChannel::getDisplayName).collect(Collectors.joining("\n"));
-            respond(event, message);
+            event.reply(message);
             return;
         }
 
         if (this.trackChannelRepository.create(entity)) {
-            respond(event, ":loud_sound: Successfully **enabled** " + entity.getDisplayName() + " for this channel!");
+            event.reply(":loud_sound: Successfully **enabled** " + entity.getDisplayName() + " for this channel!");
             this.logger.log(0, ":loud_sound: Tracking has been **enabled**:\n" + entity);
         } else {
-            respondError(event, "Something went wrong while saving data.");
+            event.replyError("Something went wrong while saving data.");
         }
     }
 
     @Nullable
-    private List<TrackChannel> getConflictingEntities(TrackType type, MessageReceivedEvent event) {
+    private List<TrackChannel> getConflictingEntities(TrackType type, CommandEvent event) {
         long guildId = event.getGuild().getIdLong();
         long channelId = event.getChannel().getIdLong();
         Set<TrackType> conflictTypes = type.getConflictTypes();
@@ -300,19 +313,20 @@ public class Track extends GuildCommand {
 
     /**
      * Formats message to view all tracking enabled in the channel and sends it.
+     *
      * @param event Guild Message received event.
      */
-    private void sendCurrentTrackingMessage(MessageReceivedEvent event) {
+    private void sendCurrentTrackingMessage(CommandEvent event) {
         long guildId = event.getGuild().getIdLong();
         long channelId = event.getChannel().getIdLong();
         List<TrackChannel> tracks = this.trackChannelRepository.findAllOf(guildId, channelId);
         if (tracks == null) {
-            respondError(event, "Something went wrong while retrieving data...");
+            event.replyError("Something went wrong while retrieving data...");
             return;
         }
 
         if (tracks.size() == 0) {
-            respond(event, "You do not seem to have any tracking enabled in this channel yet. " +
+            event.reply("You do not seem to have any tracking enabled in this channel yet. " +
                     "See help with `track help` for more.");
             return;
         }
@@ -335,25 +349,26 @@ public class Track extends GuildCommand {
             ));
         }
 
-        respond(event, String.join("\n", ret));
+        event.reply(String.join("\n", ret));
     }
 
     /**
      * Refreshes tracking in the channel.
+     *
      * @param event Discord guild message received event.
      * @return {@code true} if success. Else, sends error message.
      */
-    private boolean refreshTracking(MessageReceivedEvent event) {
+    private boolean refreshTracking(CommandEvent event) {
         long guildId = event.getGuild().getIdLong();
         long channelId = event.getChannel().getIdLong();
         List<TrackChannel> tracks = this.trackChannelRepository.findAllOf(guildId, channelId);
         if (tracks == null) {
-            respondError(event, "Something went wrong while retrieving data...");
+            event.replyError("Something went wrong while retrieving data...");
             return false;
         }
 
         if (tracks.isEmpty()) {
-            respond(event, "You do not seem to have any tracking enabled in this channel yet. " +
+            event.reply("You do not seem to have any tracking enabled in this channel yet. " +
                     "See help with `track help` for more.");
             return false;
         }
@@ -366,7 +381,7 @@ public class Track extends GuildCommand {
             }
             // calls update method n times here, but shouldn't be a big problem...
             if (!this.trackChannelRepository.update(track)) {
-                respondError(event, "Something went wrong while updating data...");
+                event.replyError("Something went wrong while updating data...");
                 return false;
             }
         }

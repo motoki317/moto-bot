@@ -3,7 +3,7 @@ package update.selection;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.entities.TextChannel;
+import net.dv8tion.jda.api.entities.MessageChannel;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import org.jetbrains.annotations.Nullable;
@@ -32,11 +32,12 @@ public class SelectionHandler extends Response {
 
     /**
      * Gets message to ask the user to make a choice.
-     * @param channel Text channel object of the channel.
-     * @param user User object to get user name & discriminator.
+     *
+     * @param channel   Message channel.
+     * @param user      User object to get user name & discriminator.
      * @param onSuccess Callback on message send success.
      */
-    public void sendMessage(TextChannel channel, User user, Runnable onSuccess) {
+    public void sendMessage(MessageChannel channel, User user, Runnable onSuccess) {
         List<String> messages = new ArrayList<>();
         for (int i = 0; i < this.choiceList.size(); i++) {
             String choice = this.choiceList.get(i);
@@ -47,13 +48,13 @@ public class SelectionHandler extends Response {
 
         Message message = new MessageBuilder(
                 new EmbedBuilder()
-                .setAuthor("Choose one from below.", null, user.getEffectiveAvatarUrl())
-                .setDescription("Type a number, or 'cancel' in this channel to make a choice. " +
-                        "Your command will then be processed, unless you type in 'cancel.'")
-                .addField("Choices", String.join("\n", messages), false)
-                .setFooter(String.format("Command by %s#%s", user.getName(), user.getDiscriminator()))
-                .setTimestamp(Instant.now())
-                .build()
+                        .setAuthor("Choose one from below.", null, user.getEffectiveAvatarUrl())
+                        .setDescription("Type a number, or 'cancel' in this channel to make a choice. " +
+                                "Your command will then be processed, unless you type in 'cancel.'")
+                        .addField("Choices", String.join("\n", messages), false)
+                        .setFooter(String.format("Command by %s#%s", user.getName(), user.getDiscriminator()))
+                        .setTimestamp(Instant.now())
+                        .build()
         ).build();
 
         channel.sendMessage(message).queue(msg -> {
@@ -81,13 +82,13 @@ public class SelectionHandler extends Response {
             }
 
             event.getTextChannel().sendMessageEmbeds(
-                    new EmbedBuilder()
-                            .setColor(MinecraftColor.RED.getColor())
-                            .setDescription("Cancelled.")
-                            .setFooter(String.format("Command by %s#%s", user.getName(), user.getDiscriminator()))
-                            .setTimestamp(Instant.now())
-                            .build()
-            ).delay(5, TimeUnit.SECONDS)
+                            new EmbedBuilder()
+                                    .setColor(MinecraftColor.RED.getColor())
+                                    .setDescription("Cancelled.")
+                                    .setFooter(String.format("Command by %s#%s", user.getName(), user.getDiscriminator()))
+                                    .setTimestamp(Instant.now())
+                                    .build()
+                    ).delay(5, TimeUnit.SECONDS)
                     .flatMap(Message::delete)
                     .queue();
             return true;
@@ -108,14 +109,14 @@ public class SelectionHandler extends Response {
 
         if (num <= 0 || choiceList.size() < num) {
             event.getTextChannel().sendMessageEmbeds(
-                    new EmbedBuilder()
-                            .setColor(MinecraftColor.RED.getColor())
-                            .setDescription("That is not a valid input. " +
-                                    "Please input a number between 1 and " + choiceList.size() + ".")
-                            .setFooter(String.format("Command by %s#%s", user.getName(), user.getDiscriminator()))
-                            .setTimestamp(Instant.now())
-                            .build()
-            ).delay(5, TimeUnit.SECONDS)
+                            new EmbedBuilder()
+                                    .setColor(MinecraftColor.RED.getColor())
+                                    .setDescription("That is not a valid input. " +
+                                            "Please input a number between 1 and " + choiceList.size() + ".")
+                                    .setFooter(String.format("Command by %s#%s", user.getName(), user.getDiscriminator()))
+                                    .setTimestamp(Instant.now())
+                                    .build()
+                    ).delay(5, TimeUnit.SECONDS)
                     .flatMap(Message::delete)
                     .queue();
             return false;

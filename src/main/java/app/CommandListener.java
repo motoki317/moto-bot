@@ -29,6 +29,7 @@ import javax.annotation.Nonnull;
 import java.util.Date;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 public class CommandListener extends ListenerAdapter {
     private static final Counter COMMANDS_COUNTER = Counter.build()
@@ -215,15 +216,15 @@ public class CommandListener extends ListenerAdapter {
         if (isSpam) {
             long userId = event.getAuthor().getIdLong();
             long remainingCoolDown = this.spamChecker.nextCoolDownExpire(userId);
-            // TODO: delete after 10 seconds?
             event.reply(new EmbedBuilder()
-                    .setColor(MinecraftColor.RED.getColor())
-                    .setTitle("Slow down!")
-                    .setDescription(String.format(
-                            "Please wait at least `%s` seconds before submitting a command again.",
-                            (double) remainingCoolDown / 1000D
-                    ))
-                    .build());
+                            .setColor(MinecraftColor.RED.getColor())
+                            .setTitle("Slow down!")
+                            .setDescription(String.format(
+                                    "Please wait at least `%s` seconds before submitting a command again.",
+                                    (double) remainingCoolDown / 1000D
+                            ))
+                            .build(),
+                    s -> s.deleteMessageAfter(10, TimeUnit.SECONDS));
             return;
         }
 

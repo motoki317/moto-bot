@@ -6,7 +6,6 @@ import db.model.dateFormat.CustomDateFormatId;
 import db.model.dateFormat.CustomFormat;
 import db.repository.base.DateFormatRepository;
 import log.Logger;
-import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
@@ -103,22 +102,6 @@ class MariaDateFormatRepository extends MariaRepository<CustomDateFormat> implem
             }
         }
         return ret;
-    }
-
-    @NotNull
-    public CustomDateFormat getDateFormat(MessageReceivedEvent event) {
-        if (event.isFromGuild()) {
-            return this.getDateFormat(
-                    event.getGuild().getIdLong(),
-                    event.getChannel().getIdLong(),
-                    event.getAuthor().getIdLong()
-            );
-        } else {
-            return this.getDateFormat(
-                    event.getChannel().getIdLong(),
-                    event.getAuthor().getIdLong()
-            );
-        }
     }
 
     @Nullable
