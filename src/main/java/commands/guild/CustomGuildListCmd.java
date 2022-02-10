@@ -2,13 +2,14 @@ package commands.guild;
 
 import app.Bot;
 import commands.base.GenericCommand;
+import commands.event.CommandEvent;
 import db.model.guild.Guild;
 import db.model.guildList.GuildListEntry;
 import db.repository.base.GuildListRepository;
 import db.repository.base.GuildRepository;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -35,8 +36,18 @@ public class CustomGuildListCmd extends GenericCommand {
     @Override
     protected String[][] names() {
         return new String[][]{{"g", "guild"}, {
-            "customGuildList", "customList", "cl"
+                "customGuildList", "custom-guild-list", "customList", "cl"
         }};
+    }
+
+    @Override
+    public @NotNull String[] slashName() {
+        return new String[]{"g", "custom-guild-list"};
+    }
+
+    @Override
+    public @NotNull OptionData[] slashOptions() {
+        return new OptionData[]{};
     }
 
     @Override
@@ -72,7 +83,7 @@ public class CustomGuildListCmd extends GenericCommand {
     }
 
     @Override
-    public void process(@NotNull MessageReceivedEvent event, @NotNull String[] args) {
+    public void process(@NotNull CommandEvent event, @NotNull String[] args) {
         if (args.length <= 2) {
             viewUserLists(event);
             return;
@@ -85,14 +96,14 @@ public class CustomGuildListCmd extends GenericCommand {
         }
     }
 
-    private void viewUserLists(MessageReceivedEvent event) {
+    private void viewUserLists(CommandEvent event) {
         Map<String, Integer> lists = this.guildListRepository.getUserLists(event.getAuthor().getIdLong());
         if (lists == null) {
-            respondError(event, "Something went wrong while retrieving data...");
+            event.replyError("Something went wrong while retrieving data...");
             return;
         }
         if (lists.isEmpty()) {
-            respond(event, "You do not have any custom guild lists configured. `>g customList help` for more.");
+            event.reply("You do not have any custom guild lists configured. `>g customList help` for more.");
             return;
         }
 
@@ -104,17 +115,17 @@ public class CustomGuildListCmd extends GenericCommand {
                     e.getKey(), e.getValue(), e.getValue() == 1 ? "" : "s"));
         }
 
-        respond(event, String.join("\n", ret));
+        event.reply(String.join("\n", ret));
     }
 
-    private void viewList(MessageReceivedEvent event, String listName) {
+    private void viewList(CommandEvent event, String listName) {
         List<GuildListEntry> list = this.guildListRepository.getList(event.getAuthor().getIdLong(), listName);
         if (list == null) {
-            respondError(event, "Something went wrong while retrieving data...");
+            event.replyError("Something went wrong while retrieving data...");
             return;
         }
         if (list.isEmpty()) {
-            respond(event, String.format("You don't seem to have any guilds in a list named `%s`. " +
+            event.reply(String.format("You don't seem to have any guilds in a list named `%s`. " +
                     "Check your spelling or try adding guilds first.", listName));
             return;
         }
@@ -132,7 +143,7 @@ public class CustomGuildListCmd extends GenericCommand {
                     e.getGuildName()));
         }
 
-        respond(event, String.join("\n", ret));
+        event.reply(String.join("\n", ret));
     }
 
     private List<Guild> resolveGuilds(List<String> guildNames) {
@@ -143,9 +154,9 @@ public class CustomGuildListCmd extends GenericCommand {
         }).collect(Collectors.toList());
     }
 
-    private void addToList(MessageReceivedEvent event, String[] args) {
+    private void addToList(CommandEvent event, String[] args) {
         if (args.length <= 4) {
-            respond(event, "Please specify a list name and at least one guild name to add.");
+            event.reply("Please specify a list name and at least one guild name to add.");
             return;
         }
 
@@ -155,7 +166,7 @@ public class CustomGuildListCmd extends GenericCommand {
         List<Guild> guilds = resolveGuilds(guildNames);
 
         if (guilds.isEmpty()) {
-            respond(event, "No guilds found with the given names. Make sure the guild exists and give the exact name(s).");
+            event.reply("No guilds found with the given names. Make sure the guild exists and give the exact name(s).");
             return;
         }
 
@@ -171,28 +182,28 @@ public class CustomGuildListCmd extends GenericCommand {
 
             boolean res = this.guildListRepository.create(e);
             if (!res) {
-                respondError(event, "Something went wrong while saving data...");
+                event.replyError("Something went wrong while saving data...");
                 return;
             }
         }
 
-        respond(event, String.format("Successfully added %s guild%s!\n%s",
+        event.reply(String.format("Successfully added %s guild%s!\n%s",
                 guilds.size(), guilds.size() == 1 ? "" : "s",
                 guilds.stream().map(t -> "`" + t.getName() + "`").collect(Collectors.joining(", "))));
     }
 
-    private void removeFromList(MessageReceivedEvent event, String[] args) {
+    private void removeFromList(CommandEvent event, String[] args) {
         String listName = args[3];
         List<String> guildNames;
         if (args.length == 4) {
             // no guilds specified
             List<GuildListEntry> list = this.guildListRepository.getList(event.getAuthor().getIdLong(), listName);
             if (list == null) {
-                respondError(event, "Something went wrong while retrieving data...");
+                event.replyError("Something went wrong while retrieving data...");
                 return;
             }
             if (list.isEmpty()) {
-                respond(event, String.format("No guilds to remove for list `%s`.", listName));
+                event.reply(String.format("No guilds to remove for list `%s`.", listName));
                 return;
             }
 
@@ -204,7 +215,7 @@ public class CustomGuildListCmd extends GenericCommand {
             List<Guild> guilds = resolveGuilds(specifiedNames);
 
             if (guilds.isEmpty()) {
-                respond(event, "No guilds found with the given names. Make sure the guild exists and give the exact name(s).");
+                event.reply("No guilds found with the given names. Make sure the guild exists and give the exact name(s).");
                 return;
             }
 
@@ -223,12 +234,12 @@ public class CustomGuildListCmd extends GenericCommand {
 
             boolean res = this.guildListRepository.delete(e);
             if (!res) {
-                respondError(event, "Something went wrong while saving data...");
+                event.replyError("Something went wrong while saving data...");
                 return;
             }
         }
 
-        respond(event, String.format("Successfully removed %s guild%s!\n%s",
+        event.reply(String.format("Successfully removed %s guild%s!\n%s",
                 guildNames.size(), guildNames.size() == 1 ? "" : "s",
                 guildNames.stream().map(t -> "`" + t + "`").collect(Collectors.joining(", "))));
     }
