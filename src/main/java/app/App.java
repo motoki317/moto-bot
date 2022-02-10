@@ -15,6 +15,7 @@ import net.dv8tion.jda.api.sharding.DefaultShardManagerBuilder;
 import net.dv8tion.jda.api.sharding.ShardManager;
 import net.dv8tion.jda.api.utils.SessionControllerAdapter;
 import update.UpdaterFactory;
+import update.button.ButtonClickManager;
 import update.reaction.ReactionManager;
 import update.response.ResponseManager;
 import utils.FormatUtils;
@@ -36,6 +37,8 @@ public class App implements Runnable, Bot {
     private final ReactionManager reactionManager;
 
     private final ResponseManager responseManager;
+
+    private final ButtonClickManager buttonClickManager;
 
     private final StoppableThread heartBeat;
 
@@ -69,6 +72,11 @@ public class App implements Runnable, Bot {
     @Override
     public ResponseManager getResponseManager() {
         return this.responseManager;
+    }
+
+    @Override
+    public ButtonClickManager getButtonClickManager() {
+        return this.buttonClickManager;
     }
 
     @Override
@@ -123,6 +131,7 @@ public class App implements Runnable, Bot {
         this.logger = new ConsoleLogger(this.properties.logTimeZone);
         this.reactionManager = updaterFactory.getReactionManager();
         this.responseManager = updaterFactory.getResponseManager();
+        this.buttonClickManager = updaterFactory.getButtonClickManager();
         this.connected = new boolean[this.properties.shards];
 
         this.manager = DefaultShardManagerBuilder.createDefault(this.properties.botAccessToken)

@@ -1,6 +1,6 @@
 package log;
 
-import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import commands.event.CommandEvent;
 
 public interface Logger {
     void log(int botLogCh, CharSequence message);
@@ -11,6 +11,6 @@ public interface Logger {
      * @param event  Discord message received event.
      * @param isSpam If the message was considered spam.
      */
-    void logEvent(MessageReceivedEvent event, boolean isSpam);
+    void logEvent(CommandEvent event, boolean isSpam);
     void logException(CharSequence message, Throwable e);
 }

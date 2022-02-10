@@ -1,6 +1,6 @@
 package log;
 
-import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import commands.event.CommandEvent;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -37,7 +37,7 @@ public class ConsoleLogger implements Logger {
     }
 
     @Override
-    public void logEvent(MessageReceivedEvent event, boolean isSpam) {
+    public void logEvent(CommandEvent event, boolean isSpam) {
         String logMsg = createCommandLog(event, isSpam);
         this.log(4, logMsg);
     }

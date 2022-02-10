@@ -1,5 +1,6 @@
 package commands.base;
 
+import commands.event.CommandEvent;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Member;
@@ -7,6 +8,7 @@ import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageChannel;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import org.jetbrains.annotations.NotNull;
 import utils.MinecraftColor;
 
@@ -28,6 +30,22 @@ public abstract class BotCommand {
      */
     @NotNull
     protected abstract String[][] names();
+
+    /**
+     * Command name for slash command.
+     * Command name returned by this MUST also be included by {@link BotCommand#names()}.
+     * Should return valid slash command name: use lower-case letters and hyphens ("-").
+     * @return Command name.
+     */
+    @NotNull
+    public abstract String[] slashName();
+
+    /**
+     * Command options used by slash command.
+     * @return Slash command options.
+     */
+    @NotNull
+    public abstract OptionData[] slashOptions();
 
     /**
      * Get names for this command including aliases.
@@ -75,7 +93,7 @@ public abstract class BotCommand {
     public abstract String syntax();
 
     /**
-     * Shows short help in help command.
+     * Short help for use in help and slash command.
      * @return Short help.
      */
     @NotNull
@@ -134,29 +152,11 @@ public abstract class BotCommand {
 
     /**
      * Process a command.
-     * @param event Discord message received event.
+     * @param event Command event.
      * @param args Argument array, separated by space characters.
      */
-    public abstract void process(@NotNull MessageReceivedEvent event, @NotNull String[] args);
+    public abstract void process(@NotNull CommandEvent event, @NotNull String[] args);
 
-    public static void respond(MessageReceivedEvent event, CharSequence message) {
-        event.getChannel().sendMessage(message).queue();
-    }
-    public static void respond(MessageReceivedEvent event, Message message) {
-        event.getChannel().sendMessage(message).queue();
-    }
-    public static void respond(MessageReceivedEvent event, MessageEmbed message) {
-        event.getChannel().sendMessageEmbeds(message).queue();
-    }
-    public static void respond(MessageChannel channel, CharSequence message) {
-        channel.sendMessage(message).queue();
-    }
-    public static void respond(MessageChannel channel, Message message) {
-        channel.sendMessage(message).queue();
-    }
-    public static void respond(MessageChannel channel, MessageEmbed message) {
-        channel.sendMessageEmbeds(message).queue();
-    }
     public static void respond(MessageReceivedEvent event, CharSequence message, Consumer<? super Message> onSuccess) {
         event.getChannel().sendMessage(message).queue(onSuccess);
     }
@@ -174,53 +174,5 @@ public abstract class BotCommand {
     }
     public static void respond(MessageChannel channel, MessageEmbed message, Consumer<? super Message> onSuccess) {
         channel.sendMessageEmbeds(message).queue(onSuccess);
-    }
-
-    /**
-     * Respond exception in red embed message.
-     * @param event Message received event.
-     * @param message Description of the exception.
-     */
-    public static void respondException(MessageReceivedEvent event, CharSequence message) {
-        respond(event,
-                new EmbedBuilder()
-                        .setColor(MinecraftColor.RED.getColor())
-                        .setDescription(message)
-                        .build()
-        );
-    }
-
-    /**
-     * Respond exception in red embed message.
-     * @param channel Message channel.
-     * @param message Description of the exception.
-     */
-    public static void respondException(MessageChannel channel, CharSequence message) {
-        respond(channel,
-                new EmbedBuilder()
-                        .setColor(MinecraftColor.RED.getColor())
-                        .setDescription(message)
-                        .build()
-        );
-    }
-
-    /**
-     * Respond error message when something seriously went wrong (not because of bad user action) while processing a command.
-     * @param event Message received event.
-     * @param message Description of the error.
-     */
-    public static void respondError(MessageReceivedEvent event, CharSequence message) {
-        event.getChannel().sendMessageEmbeds(
-                new EmbedBuilder()
-                .setColor(MinecraftColor.RED.getColor())
-                // Heavy exclamation mark :exclamation: ❗
-                .setAuthor("\u2757 Error!", null, event.getAuthor().getEffectiveAvatarUrl())
-                .setDescription(message)
-                .addField("What is this?", "An unexpected error occurred while processing your command. " +
-                        "If the error persists, please contact the bot owner.", false)
-                .setFooter("For more, visit the bot support server via info cmd.")
-                .setTimestamp(Instant.now())
-                .build()
-        ).queue();
     }
 }

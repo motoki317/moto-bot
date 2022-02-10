@@ -10,11 +10,13 @@ import net.dv8tion.jda.api.events.*;
 import net.dv8tion.jda.api.events.channel.text.TextChannelDeleteEvent;
 import net.dv8tion.jda.api.events.guild.GuildJoinEvent;
 import net.dv8tion.jda.api.events.guild.GuildLeaveEvent;
+import net.dv8tion.jda.api.events.interaction.ButtonClickEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.sharding.ShardManager;
 import org.jetbrains.annotations.NotNull;
+import update.button.ButtonClickManager;
 import update.reaction.ReactionManager;
 import update.response.ResponseManager;
 
@@ -24,6 +26,7 @@ public class UpdaterListener extends ListenerAdapter {
     private final Bot bot;
     private final ResponseManager responseManager;
     private final ReactionManager reactionManager;
+    private final ButtonClickManager buttonClickManager;
     private final Logger logger;
     private final ShardManager manager;
     private final TrackChannelRepository trackChannelRepository;
@@ -33,6 +36,7 @@ public class UpdaterListener extends ListenerAdapter {
         this.bot = bot;
         this.responseManager = bot.getResponseManager();
         this.reactionManager = bot.getReactionManager();
+        this.buttonClickManager = bot.getButtonClickManager();
         this.logger = bot.getLogger();
         this.manager = bot.getManager();
         this.trackChannelRepository = bot.getDatabase().getTrackingChannelRepository();
@@ -78,6 +82,11 @@ public class UpdaterListener extends ListenerAdapter {
         if (event.isWebhookMessage() || event.getAuthor().isBot()) return;
 
         this.responseManager.handle(event);
+    }
+
+    @Override
+    public void onButtonClick(@NotNull ButtonClickEvent event) {
+        this.buttonClickManager.handle(event);
     }
 
     @Override
