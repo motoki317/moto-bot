@@ -2,7 +2,6 @@ package app;
 
 import commands.base.BotCommand;
 import net.dv8tion.jda.api.JDA;
-import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.CommandData;
 import net.dv8tion.jda.api.interactions.commands.build.SubcommandData;
 import net.dv8tion.jda.api.interactions.commands.build.SubcommandGroupData;
@@ -112,7 +111,7 @@ public class CommandComplex {
                     }
                     SubcommandGroupData subcommandGroup = slashData.getSubcommandGroups().stream().filter(s -> s.getName().equals(slashName[1])).findFirst().orElse(null);
                     if (subcommandGroup == null) {
-                        subcommandGroup = new SubcommandGroupData( slashName[1], this.subCommandGroupDescriptions.getOrDefault(slashName[0] + " " + slashName[1], slashName[1]));
+                        subcommandGroup = new SubcommandGroupData(slashName[1], this.subCommandGroupDescriptions.getOrDefault(slashName[0] + " " + slashName[1], slashName[1]));
                         slashData.addSubcommandGroups(subcommandGroup);
                     }
                     subcommandGroup.addSubcommands(new SubcommandData(slashName[2], command.shortHelp()));
@@ -134,7 +133,8 @@ public class CommandComplex {
          * |
          * |__ subcommand
          * </pre>
-         * @param name Root command name.
+         *
+         * @param name        Root command name.
          * @param description Description.
          */
         public void addCommandDescription(String name, String description) {
@@ -153,8 +153,9 @@ public class CommandComplex {
          * |
          * |__ subcommand
          * </pre>
-         * @param name Root command name.
-         * @param subName Subcommand-group name.
+         *
+         * @param name        Root command name.
+         * @param subName     Subcommand-group name.
          * @param description Description.
          */
         public void addSubcommandGroupDescription(String name, String subName, String description) {
@@ -175,6 +176,7 @@ public class CommandComplex {
 
         /**
          * Builds {@link CommandComplex} and registers slash commands to JDA.
+         *
          * @return {@link CommandComplex}
          */
         public CommandComplex build() {
