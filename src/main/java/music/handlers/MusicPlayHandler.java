@@ -593,7 +593,10 @@ public class MusicPlayHandler {
                     @Override
                     public void playlistLoaded(AudioPlaylist audioPlaylist) {
                         if (audioPlaylist.getTracks().isEmpty()) {
-                            event.replyException("Received an empty play list.");
+                            s.editMessage(new EmbedBuilder()
+                                    .setColor(MinecraftColor.RED.getColor())
+                                    .setDescription("Received an empty play list.")
+                                    .build());
                             return;
                         }
 
