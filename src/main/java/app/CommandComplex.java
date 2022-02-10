@@ -93,7 +93,7 @@ public class CommandComplex {
                     if (this.slashCommands.containsKey(slashName[0])) {
                         throw new Error("Slash command name conflict: " + slashName[0]);
                     }
-                    this.slashCommands.put(slashName[0], new CommandData(slashName[0], command.shortHelp()).addOptions(command.slashOptions()));
+                    this.slashCommands.put(slashName[0], (CommandData) command.slashCommand());
                     break;
                 case 2:
                     CommandData slashData = this.slashCommands.get(slashName[0]);
@@ -101,7 +101,7 @@ public class CommandComplex {
                         slashData = new CommandData(slashName[0], this.commandDescriptions.getOrDefault(slashName[0], slashName[0]));
                         this.slashCommands.put(slashName[0], slashData);
                     }
-                    slashData.addSubcommands(new SubcommandData(slashName[1], command.shortHelp()));
+                    slashData.addSubcommands((SubcommandData) command.slashCommand());
                     break;
                 case 3:
                     slashData = this.slashCommands.get(slashName[0]);
@@ -114,7 +114,7 @@ public class CommandComplex {
                         subcommandGroup = new SubcommandGroupData(slashName[1], this.subCommandGroupDescriptions.getOrDefault(slashName[0] + " " + slashName[1], slashName[1]));
                         slashData.addSubcommandGroups(subcommandGroup);
                     }
-                    subcommandGroup.addSubcommands(new SubcommandData(slashName[2], command.shortHelp()));
+                    subcommandGroup.addSubcommands((SubcommandData) command.slashCommand());
                     break;
                 default:
                     throw new Error("Slash command name length must be >= 0 and <= 3");

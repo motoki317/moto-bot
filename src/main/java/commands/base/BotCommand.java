@@ -4,7 +4,10 @@ import commands.event.CommandEvent;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
+import net.dv8tion.jda.api.interactions.commands.build.BaseCommand;
+import net.dv8tion.jda.api.interactions.commands.build.CommandData;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
+import net.dv8tion.jda.api.interactions.commands.build.SubcommandData;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Arrays;
@@ -42,6 +45,22 @@ public abstract class BotCommand {
      */
     @NotNull
     public abstract OptionData[] slashOptions();
+
+    /**
+     * For a more controllable slash command registering, override this method.
+     *
+     * @return Slash command instance.
+     */
+    @NotNull
+    public BaseCommand<CommandData> slashCommand() {
+        String[] slashName = this.slashName();
+        return switch (slashName.length) {
+            case 1 -> new CommandData(slashName[0], this.shortHelp());
+            case 2 -> new SubcommandData(slashName[1], this.shortHelp());
+            case 3 -> new SubcommandData(slashName[2], this.shortHelp());
+            default -> throw new Error("Slash command name should be of length >= 1 and <= 3");
+        };
+    }
 
     /**
      * Get names for this command including aliases.

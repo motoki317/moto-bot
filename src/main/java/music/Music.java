@@ -16,7 +16,8 @@ import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.entities.*;
-import net.dv8tion.jda.api.interactions.commands.build.OptionData;
+import net.dv8tion.jda.api.interactions.commands.OptionType;
+import net.dv8tion.jda.api.interactions.commands.build.*;
 import net.dv8tion.jda.api.sharding.ShardManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -276,9 +277,56 @@ public class Music extends GuildCommand {
 
     @Override
     public @NotNull OptionData[] slashOptions() {
-        return new OptionData[]{
-                // TODO
-        };
+        return new OptionData[]{};
+    }
+
+    @Override
+    public @NotNull BaseCommand<CommandData> slashCommand() {
+        return new CommandData("m", "Music commands.")
+                .addSubcommands(
+                        new SubcommandData("join", "Joins the VC."),
+                        new SubcommandData("leave", "Leaves the VC."),
+                        new SubcommandData("stop", "Stops the player and leave VC."),
+                        new SubcommandData("clear", "Stops the player, clear queue, and leave VC."),
+
+                        new SubcommandData("play", "Searches and plays from keyword / URL.")
+                                .addOption(OptionType.STRING, "keyword", "Keyword or URL", true),
+                        new SubcommandData("playall", "Plays all search results from the keyword / URL.")
+                                .addOption(OptionType.STRING, "keyword", "Keyword or URL", true),
+                        new SubcommandData("soundcloud", "Searches SoundCloud with keyword / URL.")
+                                .addOption(OptionType.STRING, "keyword", "Keyword or URL", true),
+
+                        new SubcommandData("np", "Shows now-playing song."),
+                        new SubcommandData("queue", "Shows the queue."),
+                        new SubcommandData("pause", "Pauses the player."),
+                        new SubcommandData("resume", "Resumes the player."),
+                        new SubcommandData("skip", "Skips the current song.")
+                                .addOption(OptionType.INTEGER, "num", "Number of songs to skip"),
+                        new SubcommandData("seek", "Seek to a specified time.")
+                                .addOption(OptionType.STRING, "time", "Time to seek to", true),
+                        new SubcommandData("shuffle", "Shuffles the queue."),
+                        new SubcommandData("purge", "Purges the queue. Does not stop the current song."),
+
+                        new SubcommandData("volume", "Sets the volume.")
+                                .addOption(OptionType.INTEGER, "volume", "Volume in percentage.", true),
+                        new SubcommandData("repeat", "Sets the repeat mode.")
+                                .addOptions(new OptionData(OptionType.STRING, "mode", "Repeat mode")
+                                        .addChoice("none", "none")
+                                        .addChoice("one", "one")
+                                        .addChoice("queue", "queue")
+                                        .addChoice("random", "random")
+                                        .addChoice("random_repeat", "random_repeat")))
+                .addSubcommandGroups(
+                        new SubcommandGroupData("setting", "Other settings.")
+                                .addSubcommands(
+                                        new SubcommandData("shownp", "Whether to send a song info on start.")
+                                                .addOptions(new OptionData(OptionType.STRING, "show", "Show or not")
+                                                        .addChoice("on", "on")
+                                                        .addChoice("off", "off")),
+                                        new SubcommandData("restrict", "Restrict music commands to this channel.")
+                                                .addOptions(new OptionData(OptionType.STRING, "restriction", "Restrict or not")
+                                                        .addChoice("on", "on")
+                                                        .addChoice("off", "off"))));
     }
 
     @Override

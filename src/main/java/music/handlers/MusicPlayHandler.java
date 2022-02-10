@@ -638,14 +638,16 @@ public class MusicPlayHandler {
         desc.add("");
         desc.add("c: Cancel");
 
-        MessageEmbed eb = new EmbedBuilder()
+        EmbedBuilder eb = new EmbedBuilder()
                 .setAuthor(String.format("%s, Select a song!", event.getAuthor().getName()),
                         null, event.getAuthor().getEffectiveAvatarUrl())
-                .setDescription(String.join("\n", desc))
-                .setFooter(String.format("Type '1' ~ '%s', 'all' to play all, or 'c' to cancel.", max))
-                .build();
+                .setDescription(String.join("\n", desc));
 
-        s.editMessage(eb, botResp -> {
+        if (event instanceof MessageReceivedEventAdapter) {
+            eb.setFooter(String.format("Type '1' ~ '%s', 'all' to play all, or 'c' to cancel.", max));
+        }
+
+        s.editMessage(eb.build(), botResp -> {
             if (botResp instanceof SentMessageAdapter) {
                 Response handler = new Response(event.getChannel().getIdLong(), event.getAuthor().getIdLong(),
                         response -> {
@@ -690,13 +692,13 @@ public class MusicPlayHandler {
         private static List<ComponentLayout> getLayout(int maxTracks) {
             List<ComponentLayout> layouts = new ArrayList<>();
             layouts.add(ActionRow.of(IntStream
-                    .range(1, Math.min(maxTracks + 1, 6))
-                    .mapToObj(i -> Button.primary("track-" + i, String.valueOf(i)))
+                    .range(0, Math.min(maxTracks, 5))
+                    .mapToObj(i -> Button.primary("track-" + i, String.valueOf(i + 1)))
                     .collect(Collectors.toCollection(ArrayList::new))));
             if (maxTracks > 5) {
                 layouts.add(ActionRow.of(IntStream
-                        .range(5, Math.min(maxTracks + 1, 11))
-                        .mapToObj(i -> Button.primary("track-" + i, String.valueOf(i)))
+                        .range(5, Math.min(maxTracks, 10))
+                        .mapToObj(i -> Button.primary("track-" + i, String.valueOf(i + 1)))
                         .collect(Collectors.toCollection(ArrayList::new))));
             }
             layouts.add(ActionRow.of(
@@ -721,7 +723,7 @@ public class MusicPlayHandler {
                         return false;
                     }
                     int trackId = Integer.parseInt(buttonId.substring("track-".length()));
-                    MusicPlayHandler.this.enqueueSong(this.cEvent, new InteractionHookAdapter(this.hook), this.state, this.tracks.get(trackId - 1));
+                    MusicPlayHandler.this.enqueueSong(this.cEvent, new InteractionHookAdapter(this.hook), this.state, this.tracks.get(trackId));
                 }
             }
 
