@@ -8,7 +8,12 @@ import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
-import commands.event.*;
+import commands.event.CommandEvent;
+import commands.event.MessageReceivedEventAdapter;
+import commands.event.message.ButtonClickEventAdapter;
+import commands.event.message.InteractionHookAdapter;
+import commands.event.message.SentMessage;
+import commands.event.message.SentMessageAdapter;
 import db.model.musicInterruptedGuild.MusicInterruptedGuild;
 import db.model.musicQueue.MusicQueueEntry;
 import db.model.musicSetting.MusicSetting;
@@ -24,7 +29,6 @@ import net.dv8tion.jda.api.entities.*;
 import net.dv8tion.jda.api.events.interaction.ButtonClickEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.exceptions.InsufficientPermissionException;
-import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.Button;
 import net.dv8tion.jda.api.interactions.components.ComponentLayout;
@@ -664,29 +668,31 @@ public class MusicPlayHandler {
                 );
                 this.responseManager.addEventListener(handler);
             } else if (botResp instanceof InteractionHookAdapter hook) {
-                MusicSelectButtonHandler handler = new MusicSelectButtonHandler(hook.hook(), tracks, event, state);
-                this.buttonClickManager.addEventListener(handler);
+                botResp.getId(messageId -> {
+                    MusicSelectButtonHandler handler = new MusicSelectButtonHandler(botResp, messageId, tracks, event, state);
+                    this.buttonClickManager.addEventListener(handler);
+                });
             }
         });
     }
 
     private class MusicSelectButtonHandler extends ButtonClickHandler {
-        private final InteractionHook hook;
+        private SentMessage message;
         private final List<AudioTrack> tracks;
         private final CommandEvent cEvent;
         private final MusicState state;
 
-        public MusicSelectButtonHandler(InteractionHook hook, List<AudioTrack> tracks, CommandEvent cEvent, MusicState state) {
-            super(hook.getInteraction().getIdLong(), (event) -> false, () -> {
+        public MusicSelectButtonHandler(SentMessage message, long messageId, List<AudioTrack> tracks, CommandEvent cEvent, MusicState state) {
+            super(messageId, (event) -> false, () -> {
             });
 
-            this.hook = hook;
+            this.message = message;
             this.tracks = tracks;
             this.cEvent = cEvent;
             this.state = state;
 
             int max = Math.min(10, tracks.size());
-            hook.editOriginalComponents(getLayout(max)).queue();
+            message.editComponents(getLayout(max).toArray(new ComponentLayout[]{}));
         }
 
         private static List<ComponentLayout> getLayout(int maxTracks) {
@@ -716,17 +722,18 @@ public class MusicPlayHandler {
 
             String buttonId = event.getButton().getId();
             switch (buttonId) {
-                case "all" -> MusicPlayHandler.this.enqueueMultipleSongs(this.cEvent, new InteractionHookAdapter(this.hook), this.state, this.tracks);
+                case "all" -> MusicPlayHandler.this.enqueueMultipleSongs(this.cEvent, new ButtonClickEventAdapter(event), this.state, this.tracks);
                 case "cancel" -> this.cEvent.reply("Cancelled.", m -> m.deleteAfter(3, TimeUnit.SECONDS));
                 default -> { // "track-i"
                     if (!buttonId.startsWith("track-")) {
                         return false;
                     }
                     int trackId = Integer.parseInt(buttonId.substring("track-".length()));
-                    MusicPlayHandler.this.enqueueSong(this.cEvent, new InteractionHookAdapter(this.hook), this.state, this.tracks.get(trackId));
+                    MusicPlayHandler.this.enqueueSong(this.cEvent, new ButtonClickEventAdapter(event), this.state, this.tracks.get(trackId));
                 }
             }
 
+            this.message = new SentMessageAdapter(event.getMessage());
             return true;
         }
 
@@ -735,19 +742,18 @@ public class MusicPlayHandler {
             super.onDestroy();
 
             // Delete buttons
-            this.hook.editOriginalComponents().queue();
+            this.message.editComponents();
         }
     }
 
     private boolean chooseTrack(CommandEvent event, MusicState state, List<AudioTrack> tracks, SentMessage botResp, MessageReceivedEvent userMsg) {
         String response = userMsg.getMessage().getContentRaw();
-        System.out.println("MusicPlayerHandler#L742: " + response);
         if ("all".equalsIgnoreCase(response)) {
             this.enqueueMultipleSongs(event, botResp, state, tracks);
             return true;
         }
         if ("c".equalsIgnoreCase(response)) {
-            event.reply("Cancelled.", m -> m.deleteAfter(3, TimeUnit.SECONDS));
+            botResp.editMessage("Cancelled.", m -> m.deleteAfter(3, TimeUnit.SECONDS));
             return true;
         }
 
@@ -755,7 +761,7 @@ public class MusicPlayHandler {
             int max = Math.min(10, tracks.size());
             int index = Integer.parseInt(response);
             if (index < 1 || max < index) {
-                event.reply(String.format("Please input a number between 1 and %s!", max),
+                botResp.editMessage(String.format("Please input a number between 1 and %s!", max),
                         m -> m.deleteAfter(3, TimeUnit.SECONDS));
                 return false;
             }
@@ -781,7 +787,10 @@ public class MusicPlayHandler {
         try {
             state.enqueue(new QueueEntry(audioTrack, userId));
         } catch (DuplicateTrackException | QueueFullException e) {
-            event.replyException(e.getMessage());
+            msg.editMessage(new EmbedBuilder()
+                    .setColor(MinecraftColor.RED.getColor())
+                    .setDescription(e.getMessage())
+                    .build());
             state.setMessageToEdit(null);
             return;
         }

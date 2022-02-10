@@ -6,8 +6,10 @@ import api.wynn.structs.ItemDB;
 import app.Bot;
 import commands.base.GenericCommand;
 import commands.event.CommandEvent;
-import commands.event.InteractionHookAdapter;
-import commands.event.SentMessageAdapter;
+import commands.event.message.ButtonClickEventAdapter;
+import commands.event.message.InteractionHookAdapter;
+import commands.event.message.SentMessage;
+import commands.event.message.SentMessageAdapter;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.entities.Emoji;
@@ -16,11 +18,11 @@ import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.events.interaction.ButtonClickEvent;
 import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent;
 import net.dv8tion.jda.api.exceptions.PermissionException;
-import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.Button;
+import net.dv8tion.jda.api.interactions.components.Component;
 import org.jetbrains.annotations.NotNull;
 import update.button.ButtonClickHandler;
 import update.button.ButtonClickManager;
@@ -139,9 +141,11 @@ public class IdentifyItem extends GenericCommand {
                 IDReactionHandler handler = new IDReactionHandler(sm.m(), event.getAuthor().getIdLong(),
                         seq -> formatItemInfo(item, this.imageURLBase, seq));
                 this.reactionManager.addEventListener(handler);
-            } else if (message instanceof InteractionHookAdapter hook) {
-                IDButtonHandler handler = new IDButtonHandler(hook.hook(), seq -> formatItemInfo(item, this.imageURLBase, seq));
-                this.buttonClickManager.addEventListener(handler);
+            } else if (message instanceof InteractionHookAdapter) {
+                message.getId(messageId -> {
+                    IDButtonHandler handler = new IDButtonHandler(message, messageId, seq -> formatItemInfo(item, this.imageURLBase, seq));
+                    this.buttonClickManager.addEventListener(handler);
+                });
             }
         });
     }
@@ -215,24 +219,26 @@ public class IdentifyItem extends GenericCommand {
         private static final String BUTTON_ID_REFRESH = "refresh";
         private static final String BUTTON_ID_CANCEL = "cancel";
 
-        private final InteractionHook hook;
+        private SentMessage message;
         private final Function<Integer, Message> messageSupplier;
         private int seq;
 
-        public IDButtonHandler(InteractionHook hook, Function<Integer, Message> messageSupplier) {
-            super(hook.getInteraction().getIdLong(), (event) -> false, () -> {
+        public IDButtonHandler(SentMessage message, long messageId, Function<Integer, Message> messageSupplier) {
+            super(messageId, (event) -> false, () -> {
             });
 
-            this.hook = hook;
+            this.message = message;
             this.messageSupplier = messageSupplier;
             this.seq = 1;
 
-            this.hook.editOriginalComponents(
-                    ActionRow.of(
-                            Button.secondary(BUTTON_ID_REFRESH, Emoji.fromUnicode("\u2705")),
-                            Button.danger(BUTTON_ID_CANCEL, Emoji.fromUnicode("\u274C"))
-                    )
-            ).queue();
+            message.editComponents(ActionRow.of(actionRow()));
+        }
+
+        private static Component[] actionRow() {
+            return new Component[]{
+                    Button.secondary(BUTTON_ID_REFRESH, Emoji.fromUnicode("\u2705")),
+                    Button.danger(BUTTON_ID_CANCEL, Emoji.fromUnicode("\u274C"))
+            };
         }
 
         @Override
@@ -245,12 +251,15 @@ public class IdentifyItem extends GenericCommand {
                 case BUTTON_ID_REFRESH:
                     break;
                 case BUTTON_ID_CANCEL:
+                    this.message = new ButtonClickEventAdapter(event);
                     return true;
             }
 
             this.seq++;
-            this.hook.editOriginal(
-                    messageSupplier.apply(this.seq)
+            event.editMessage(
+                    new MessageBuilder(messageSupplier.apply(this.seq))
+                            .setActionRows(ActionRow.of(actionRow()))
+                            .build()
             ).queue();
 
             return false;
@@ -261,7 +270,7 @@ public class IdentifyItem extends GenericCommand {
             super.onDestroy();
 
             // Delete buttons
-            this.hook.editOriginalComponents().queue();
+            this.message.editComponents();
         }
     }
 

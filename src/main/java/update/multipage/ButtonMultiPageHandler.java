@@ -1,9 +1,12 @@
 package update.multipage;
 
+import commands.event.message.ButtonClickEventAdapter;
+import commands.event.message.SentMessage;
+import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.entities.Emoji;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.events.interaction.ButtonClickEvent;
-import net.dv8tion.jda.api.interactions.InteractionHook;
+import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.Button;
 import net.dv8tion.jda.api.interactions.components.Component;
 import update.button.ButtonClickHandler;
@@ -17,17 +20,17 @@ public class ButtonMultiPageHandler extends ButtonClickHandler {
     private static final String BUTTON_ID_REFRESH = "refresh";
     private static final String BUTTON_ID_CANCEL = "cancel";
 
-    private final InteractionHook h;
+    private SentMessage message;
     private final Function<Integer, Message> pages;
 
     private final Supplier<Integer> maxPage;
 
     private int currentPage;
 
-    public ButtonMultiPageHandler(InteractionHook h, Function<Integer, Message> pages, Supplier<Integer> maxPage) {
-        super(h.getInteraction().getIdLong(), (event) -> false, () -> {
+    public ButtonMultiPageHandler(SentMessage message, long messageId, Function<Integer, Message> pages, Supplier<Integer> maxPage) {
+        super(messageId, (event) -> false, () -> {
         });
-        this.h = h;
+        this.message = message;
         this.pages = pages;
         this.maxPage = maxPage;
         this.currentPage = 0;
@@ -59,6 +62,7 @@ public class ButtonMultiPageHandler extends ButtonClickHandler {
             case BUTTON_ID_REFRESH:
                 break;
             case BUTTON_ID_CANCEL:
+                this.message = new ButtonClickEventAdapter(event);
                 return true;
             default:
                 return false;
@@ -68,8 +72,10 @@ public class ButtonMultiPageHandler extends ButtonClickHandler {
         nextPage = (nextPage + mod) % mod;
 
         this.currentPage = nextPage;
-        event.getInteraction().getMessage().editMessage(
-                pages.apply(nextPage)
+        event.editMessage(
+                new MessageBuilder(pages.apply(nextPage))
+                        .setActionRows(ActionRow.of(getActionRow()))
+                        .build()
         ).queue();
 
         return false;
@@ -80,6 +86,6 @@ public class ButtonMultiPageHandler extends ButtonClickHandler {
         super.onDestroy();
 
         // Delete buttons
-        h.editOriginalComponents().queue();
+        this.message.editComponents();
     }
 }

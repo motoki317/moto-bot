@@ -7,13 +7,13 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
 public class ButtonClickHandler implements UserResponseListener<ButtonClickEvent> {
-    private final long interactionId;
+    private final long messageId;
     private final Function<ButtonClickEvent, Boolean> handler;
     private Runnable onDestroy;
     private long updatedAt;
 
-    public ButtonClickHandler(long interactionId, Function<ButtonClickEvent, Boolean> handler, Runnable onDestroy) {
-        this.interactionId = interactionId;
+    public ButtonClickHandler(long messageId, Function<ButtonClickEvent, Boolean> handler, Runnable onDestroy) {
+        this.messageId = messageId;
         this.handler = handler;
         this.onDestroy = onDestroy;
         this.updatedAt = System.currentTimeMillis();
@@ -45,7 +45,7 @@ public class ButtonClickHandler implements UserResponseListener<ButtonClickEvent
         return TimeUnit.MINUTES.toMillis(10);
     }
 
-    public long getInteractionId() {
-        return this.interactionId;
+    public long getMessageId() {
+        return this.messageId;
     }
 }

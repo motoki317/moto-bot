@@ -1,55 +1,60 @@
-package commands.event;
+package commands.event.message;
 
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageEmbed;
-import net.dv8tion.jda.api.interactions.InteractionHook;
+import net.dv8tion.jda.api.interactions.components.ComponentLayout;
 
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
-public record InteractionHookAdapter(InteractionHook hook) implements SentMessage {
+public record SentMessageAdapter(Message m) implements SentMessage {
     @Override
     public void getId(Consumer<Long> callback) {
-        hook.retrieveOriginal().queue(m -> callback.accept(m.getIdLong()));
+        callback.accept(m.getIdLong());
     }
 
     @Override
     public void editMessage(String message) {
-        hook.editOriginal(message).queue();
+        m.editMessage(message).queue();
     }
 
     @Override
     public void editMessage(Message message) {
-        hook.editOriginal(message).queue();
+        m.editMessage(message).queue();
     }
 
     @Override
     public void editMessage(MessageEmbed embed) {
-        hook.editOriginalEmbeds(embed).queue();
+        m.editMessageEmbeds(embed).queue();
     }
 
     @Override
     public void editMessage(String message, Consumer<SentMessage> callback) {
-        hook.editOriginal(message).queue(s -> callback.accept(new InteractionHookAdapter(hook)));
+        m.editMessage(message).queue(s -> callback.accept(new SentMessageAdapter(s)));
     }
 
     @Override
     public void editMessage(Message message, Consumer<SentMessage> callback) {
-        hook.editOriginal(message).queue(s -> callback.accept(new InteractionHookAdapter(hook)));
+        m.editMessage(message).queue(s -> callback.accept(new SentMessageAdapter(s)));
     }
 
     @Override
     public void editMessage(MessageEmbed embed, Consumer<SentMessage> callback) {
-        hook.editOriginalEmbeds(embed).queue(s -> callback.accept(new InteractionHookAdapter(hook)));
+        m.editMessageEmbeds(embed).queue(s -> callback.accept(new SentMessageAdapter(s)));
+    }
+
+    @Override
+    public void editComponents(ComponentLayout... layouts) {
+        m.editMessageComponents(layouts).queue();
     }
 
     @Override
     public void delete() {
-        hook.deleteOriginal().queue();
+        m.delete().queue();
     }
 
     @Override
     public void deleteAfter(long timeout, TimeUnit unit) {
-        hook.deleteOriginal().queueAfter(timeout, unit);
+        m.delete().queueAfter(timeout, unit);
     }
 }

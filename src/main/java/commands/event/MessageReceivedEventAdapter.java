@@ -1,6 +1,8 @@
 package commands.event;
 
 import app.Bot;
+import commands.event.message.SentMessage;
+import commands.event.message.SentMessageAdapter;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.*;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;

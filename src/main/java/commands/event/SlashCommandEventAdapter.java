@@ -1,6 +1,9 @@
 package commands.event;
 
 import app.Bot;
+import commands.event.message.InteractionHookAdapter;
+import commands.event.message.SentMessage;
+import commands.event.message.SentMessageAdapter;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.*;
 import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
@@ -50,11 +53,9 @@ public final class SlashCommandEventAdapter implements CommandEvent {
             builder.append(" ").append(event.getSubcommandGroup());
         if (event.getSubcommandName() != null)
             builder.append(" ").append(event.getSubcommandName());
-        for (OptionMapping o : event.getOptions())
-        {
+        for (OptionMapping o : event.getOptions()) {
             builder.append(" ");
-            switch (o.getType())
-            {
+            switch (o.getType()) {
                 case CHANNEL:
                     builder.append("#").append(o.getAsGuildChannel().getName());
                     break;
@@ -178,13 +179,14 @@ public final class SlashCommandEventAdapter implements CommandEvent {
                     .setActionRow(ButtonMultiPageHandler.getActionRow())
                     .queue(m ->
                             bot.getButtonClickManager().addEventListener(
-                                    new ButtonMultiPageHandler(this.hook, pages, maxPage)));
+                                    new ButtonMultiPageHandler(new SentMessageAdapter(m), m.getIdLong(), pages, maxPage)));
         } else {
             event.reply(message)
                     .addActionRow(ButtonMultiPageHandler.getActionRow())
                     .queue(s ->
-                            bot.getButtonClickManager().addEventListener(
-                                    new ButtonMultiPageHandler(s, pages, maxPage)));
+                            s.retrieveOriginal().queue(m ->
+                                    bot.getButtonClickManager().addEventListener(
+                                            new ButtonMultiPageHandler(new SentMessageAdapter(m), m.getIdLong(), pages, maxPage))));
         }
     }
 
@@ -195,13 +197,14 @@ public final class SlashCommandEventAdapter implements CommandEvent {
                     .setActionRow(ButtonMultiPageHandler.getActionRow())
                     .queue(m ->
                             bot.getButtonClickManager().addEventListener(
-                                    new ButtonMultiPageHandler(this.hook, pages, maxPage)));
+                                    new ButtonMultiPageHandler(new SentMessageAdapter(m), m.getIdLong(), pages, maxPage)));
         } else {
             event.reply(message)
                     .addActionRow(ButtonMultiPageHandler.getActionRow())
                     .queue(s ->
-                            bot.getButtonClickManager().addEventListener(
-                                    new ButtonMultiPageHandler(s, pages, maxPage)));
+                            s.retrieveOriginal().queue(m ->
+                                    bot.getButtonClickManager().addEventListener(
+                                            new ButtonMultiPageHandler(new SentMessageAdapter(m), m.getIdLong(), pages, maxPage))));
         }
     }
 
@@ -212,13 +215,14 @@ public final class SlashCommandEventAdapter implements CommandEvent {
                     .setActionRow(ButtonMultiPageHandler.getActionRow())
                     .queue(m ->
                             bot.getButtonClickManager().addEventListener(
-                                    new ButtonMultiPageHandler(this.hook, pages, maxPage)));
+                                    new ButtonMultiPageHandler(new SentMessageAdapter(m), m.getIdLong(), pages, maxPage)));
         } else {
             event.replyEmbeds(embed)
                     .addActionRow(ButtonMultiPageHandler.getActionRow())
                     .queue(s ->
-                            bot.getButtonClickManager().addEventListener(
-                                    new ButtonMultiPageHandler(s, pages, maxPage)));
+                            s.retrieveOriginal().queue(m ->
+                                    bot.getButtonClickManager().addEventListener(
+                                            new ButtonMultiPageHandler(new SentMessageAdapter(m), m.getIdLong(), pages, maxPage))));
         }
     }
 }

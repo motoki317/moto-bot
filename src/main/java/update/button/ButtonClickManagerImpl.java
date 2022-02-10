@@ -35,22 +35,23 @@ public class ButtonClickManagerImpl implements ButtonClickManager {
     @Override
     public void addEventListener(ButtonClickHandler r) {
         synchronized (this.lock) {
-            this.waitingResponses.put(r.getInteractionId(), r);
+            this.waitingResponses.put(r.getMessageId(), r);
         }
     }
 
     @Override
     public void handle(ButtonClickEvent event) {
-        long interactionId = event.getInteraction().getIdLong();
+        long messageId = event.getMessage().getIdLong();
 
         synchronized (this.lock) {
-            if (!this.waitingResponses.containsKey(interactionId)) {
+            if (!this.waitingResponses.containsKey(messageId)) {
                 return;
             }
 
-            boolean remove = this.waitingResponses.get(interactionId).handle(event);
+            boolean remove = this.waitingResponses.get(messageId).handle(event);
             if (remove) {
-                this.waitingResponses.remove(interactionId);
+                this.waitingResponses.get(messageId).onDestroy();
+                this.waitingResponses.remove(messageId);
             }
         }
     }

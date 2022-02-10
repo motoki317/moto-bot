@@ -3,7 +3,7 @@ package commands;
 import app.Bot;
 import commands.base.GenericCommand;
 import commands.event.CommandEvent;
-import commands.event.SentMessage;
+import commands.event.message.SentMessage;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.entities.Message;

@@ -2,11 +2,10 @@ package music;
 
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
-import commands.event.SentMessage;
+import commands.event.message.SentMessage;
 import db.model.musicSetting.MusicSetting;
 import music.exception.DuplicateTrackException;
 import music.exception.QueueFullException;
-import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
 import java.util.List;

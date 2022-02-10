@@ -1,6 +1,7 @@
 package commands.event;
 
 import app.Bot;
+import commands.event.message.SentMessage;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.*;
