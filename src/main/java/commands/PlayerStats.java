@@ -5,6 +5,7 @@ import api.wynn.structs.ForumId;
 import api.wynn.structs.Player;
 import app.Bot;
 import commands.base.GenericCommand;
+import commands.event.CommandEvent;
 import db.model.dateFormat.CustomDateFormat;
 import db.model.timezone.CustomTimeZone;
 import db.repository.base.DateFormatRepository;
@@ -12,7 +13,8 @@ import db.repository.base.TimeZoneRepository;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import net.dv8tion.jda.api.interactions.commands.OptionType;
+import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import utils.FormatUtils;
@@ -49,6 +51,18 @@ public class PlayerStats extends GenericCommand {
     }
 
     @Override
+    public @NotNull String[] slashName() {
+        return new String[]{"stats"};
+    }
+
+    @Override
+    public @NotNull OptionData[] slashOptions() {
+        return new OptionData[]{
+                new OptionData(OptionType.STRING, "name-or-uuid", "Name or UUID of player", true)
+        };
+    }
+
+    @Override
     public @NotNull String syntax() {
         return "stats <player name|uuid>";
     }
@@ -79,15 +93,15 @@ public class PlayerStats extends GenericCommand {
     }
 
     @Override
-    public void process(@NotNull MessageReceivedEvent event, @NotNull String[] args) {
+    public void process(@NotNull CommandEvent event, @NotNull String[] args) {
         if (args.length <= 1) {
-            respond(event, this.longHelp());
+            event.reply(this.longHelp());
             return;
         }
 
         String specified = args[1];
         if (!UUID.isUUID(specified) && !InputChecker.isValidMinecraftUsername(specified)) {
-            respond(event, String.format("Given name `%s` doesn't seem to be a valid Minecraft username or a UUID...",
+            event.reply(String.format("Given name `%s` doesn't seem to be a valid Minecraft username or a UUID...",
                     specified));
             return;
         }
@@ -101,18 +115,18 @@ public class PlayerStats extends GenericCommand {
         try {
             player = this.wynnApi.getPlayerStats(specified, false);
         } catch (RateLimitException e) {
-            respondException(event, e.getMessage());
+            event.replyException(e.getMessage());
             return;
         }
         if (player == null) {
-            respondException(event, String.format("Failed to retrieve player statistics for `%s`.", specified));
+            event.replyException(String.format("Failed to retrieve player statistics for `%s`.", specified));
             return;
         }
 
         CustomDateFormat customDateFormat = this.dateFormatRepository.getDateFormat(event);
         CustomTimeZone customTimeZone = this.timeZoneRepository.getTimeZone(event);
 
-        respond(event, format(player, customDateFormat, customTimeZone));
+        event.reply(format(player, customDateFormat, customTimeZone));
     }
 
     @NotNull
