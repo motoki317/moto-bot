@@ -55,9 +55,9 @@ public abstract class BotCommand {
     public BaseCommand<CommandData> slashCommand() {
         String[] slashName = this.slashName();
         return switch (slashName.length) {
-            case 1 -> new CommandData(slashName[0], this.shortHelp());
-            case 2 -> new SubcommandData(slashName[1], this.shortHelp());
-            case 3 -> new SubcommandData(slashName[2], this.shortHelp());
+            case 1 -> new CommandData(slashName[0], this.shortHelp()).addOptions(this.slashOptions());
+            case 2 -> new SubcommandData(slashName[1], this.shortHelp()).addOptions(this.slashOptions());
+            case 3 -> new SubcommandData(slashName[2], this.shortHelp()).addOptions(this.slashOptions());
             default -> throw new Error("Slash command name should be of length >= 1 and <= 3");
         };
     }
