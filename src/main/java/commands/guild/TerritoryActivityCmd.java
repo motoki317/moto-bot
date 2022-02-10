@@ -2,6 +2,7 @@ package commands.guild;
 
 import app.Bot;
 import commands.base.GenericCommand;
+import commands.event.CommandEvent;
 import db.model.dateFormat.CustomDateFormat;
 import db.model.territoryLog.TerritoryActivity;
 import db.model.timezone.CustomTimeZone;
@@ -11,11 +12,9 @@ import db.repository.base.TimeZoneRepository;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import update.multipage.MultipageHandler;
-import update.reaction.ReactionManager;
 import utils.ArgumentParser;
 import utils.FormatUtils;
 import utils.TableFormatter;
@@ -33,19 +32,27 @@ public class TerritoryActivityCmd extends GenericCommand {
     private final TerritoryLogRepository territoryLogRepository;
     private final TimeZoneRepository timeZoneRepository;
     private final DateFormatRepository dateFormatRepository;
-    private final ReactionManager reactionManager;
 
     public TerritoryActivityCmd(Bot bot) {
         this.territoryLogRepository = bot.getDatabase().getTerritoryLogRepository();
         this.timeZoneRepository = bot.getDatabase().getTimeZoneRepository();
         this.dateFormatRepository = bot.getDatabase().getDateFormatRepository();
-        this.reactionManager = bot.getReactionManager();
     }
 
     @NotNull
     @Override
     protected String[][] names() {
         return new String[][]{{"g", "guild"}, {"territoryActivity", "terrActivity", "ta"}};
+    }
+
+    @Override
+    public @NotNull String[] slashName() {
+        return new String[]{"g", "territoryactivity"};
+    }
+
+    @Override
+    public @NotNull OptionData[] slashOptions() {
+        return new OptionData[]{};
     }
 
     @Override
@@ -63,29 +70,29 @@ public class TerritoryActivityCmd extends GenericCommand {
     public @NotNull Message longHelp() {
         return new MessageBuilder(
                 new EmbedBuilder()
-                .setAuthor("Territory Activity Command Help")
-                .setDescription(this.shortHelp())
-                .addField("Syntax",
-                        this.syntax(),
-                        false
-                )
-                .addField("Optional Arguments",
-                        String.join("\n",
-                                "**-d|--days <days>** : Shows leaderboard of last given days.",
-                                "**--since|-S <date>**, **--until|-U <date>** : Directly specifies time range of the leaderboard.",
-                                "If --until is omitted, current time is specified.",
-                                "Acceptable formats: \"2020/01/01\", \"2020-01-01 15:00:00\", \"15 days ago\", \"8 hours ago\", \"30 minutes ago\""
-                        ),
-                        false
-                )
-                .addField("Examples",
-                        String.join("\n",
-                                ">g ta : Displays leaderboard of all territories in last 7 days.",
-                                ">g ta -d 30 : Displays leaderboard in last 30 days.",
-                                ">g ta --since 3 days ago --until 1 day ago : Displays leaderboard from 3 days ago to 1 day ago."
-                        ),
-                        false
-                ).build()
+                        .setAuthor("Territory Activity Command Help")
+                        .setDescription(this.shortHelp())
+                        .addField("Syntax",
+                                this.syntax(),
+                                false
+                        )
+                        .addField("Optional Arguments",
+                                String.join("\n",
+                                        "**-d|--days <days>** : Shows leaderboard of last given days.",
+                                        "**--since|-S <date>**, **--until|-U <date>** : Directly specifies time range of the leaderboard.",
+                                        "If --until is omitted, current time is specified.",
+                                        "Acceptable formats: \"2020/01/01\", \"2020-01-01 15:00:00\", \"15 days ago\", \"8 hours ago\", \"30 minutes ago\""
+                                ),
+                                false
+                        )
+                        .addField("Examples",
+                                String.join("\n",
+                                        ">g ta : Displays leaderboard of all territories in last 7 days.",
+                                        ">g ta -d 30 : Displays leaderboard in last 30 days.",
+                                        ">g ta --since 3 days ago --until 1 day ago : Displays leaderboard from 3 days ago to 1 day ago."
+                                ),
+                                false
+                        ).build()
         ).build();
     }
 
@@ -97,7 +104,7 @@ public class TerritoryActivityCmd extends GenericCommand {
     private static final int ACTIVITIES_PER_PAGE = 10;
 
     @Override
-    public void process(@NotNull MessageReceivedEvent event, @NotNull String[] args) {
+    public void process(@NotNull CommandEvent event, @NotNull String[] args) {
         Map<String, String> parsedArgs = new ArgumentParser(args).getArgumentMap();
 
         CustomDateFormat customDateFormat = this.dateFormatRepository.getDateFormat(event);
@@ -107,7 +114,7 @@ public class TerritoryActivityCmd extends GenericCommand {
         try {
             range = parseRange(parsedArgs, customTimeZone.getTimeZoneInstance(), null);
         } catch (IllegalArgumentException e) {
-            respondException(event, e.getMessage());
+            event.replyException(e.getMessage());
             return;
         }
 
@@ -115,11 +122,11 @@ public class TerritoryActivityCmd extends GenericCommand {
                 ? this.territoryLogRepository.territoryActivity()
                 : this.territoryLogRepository.territoryActivity(range.start, range.end);
         if (activities == null) {
-            respondError(event, "Something went wrong while retrieving data...");
+            event.replyError("Something went wrong while retrieving data...");
             return;
         }
         if (activities.isEmpty()) {
-            respond(event, "There doesn't seem to be any territory activities in the given time.");
+            event.reply("There doesn't seem to be any territory activities in the given time.");
             return;
         }
 
@@ -129,49 +136,23 @@ public class TerritoryActivityCmd extends GenericCommand {
         ActivityDisplay display = new ActivityDisplay(activities, range, customDateFormat, customTimeZone, new Date());
 
         if (maxPage == 0) {
-            respond(event, formatPage(0, display));
+            event.reply(formatPage(0, display));
             return;
         }
 
-        respond(event, formatPage(0, display), message -> {
-            MultipageHandler handler = new MultipageHandler(
-                    message, event.getAuthor().getIdLong(),
-                    page -> new MessageBuilder(formatPage(page, display)).build(),
-                    () -> maxPage
-            );
-            this.reactionManager.addEventListener(handler);
-        });
+        event.replyMultiPage(
+                formatPage(0, display),
+                page -> new MessageBuilder(formatPage(page, display)).build(),
+                () -> maxPage);
     }
 
-    private static class ActivityDisplay {
-        private final List<TerritoryActivity> activities;
-        @Nullable
-        private final Range range;
-        private final CustomDateFormat customDateFormat;
-        private final CustomTimeZone customTimeZone;
-        private final Date lastUpdate;
-
-        private ActivityDisplay(List<TerritoryActivity> activities, @Nullable Range range,
-                                CustomDateFormat customDateFormat, CustomTimeZone customTimeZone,
-                                Date lastUpdate) {
-            this.activities = activities;
-            this.range = range;
-            this.customDateFormat = customDateFormat;
-            this.customTimeZone = customTimeZone;
-            this.lastUpdate = lastUpdate;
-        }
+    private record ActivityDisplay(List<TerritoryActivity> activities,
+                                   @Nullable utils.RangeParser.Range range,
+                                   CustomDateFormat customDateFormat,
+                                   CustomTimeZone customTimeZone, Date lastUpdate) {
     }
 
-    private static class Display {
-        private final String num;
-        private final String territoryName;
-        private final String count;
-
-        private Display(String num, String territoryName, String count) {
-            this.num = num;
-            this.territoryName = territoryName;
-            this.count = count;
-        }
+    private record Display(String num, String territoryName, String count) {
     }
 
     private static String formatPage(int page, ActivityDisplay display) {
@@ -236,9 +217,9 @@ public class TerritoryActivityCmd extends GenericCommand {
         tf.toString(sb);
         tf.addSeparator(sb);
         sb.append(String.format("%sTotal | %s%s",
-                    nSpaces(tf.widthAt(0) + 3 + tf.widthAt(1) - "Total".length()),
-                    nSpaces(tf.widthAt(2) - String.valueOf(totalCount).length()),
-                    totalCount));
+                nSpaces(tf.widthAt(0) + 3 + tf.widthAt(1) - "Total".length()),
+                nSpaces(tf.widthAt(2) - String.valueOf(totalCount).length()),
+                totalCount));
         return sb.toString();
     }
 
