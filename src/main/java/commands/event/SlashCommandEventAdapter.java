@@ -5,6 +5,7 @@ import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.*;
 import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
 import net.dv8tion.jda.api.interactions.InteractionHook;
+import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import update.multipage.ButtonMultiPageHandler;
 import utils.BotUtils;
 
@@ -42,7 +43,43 @@ public final class SlashCommandEventAdapter implements CommandEvent {
 
     @Override
     public String getContentRaw() {
-        return event.getCommandString();
+        // https://github.com/DV8FromTheWorld/JDA/blob/0de1348e241cddf50c9ec5b8751b8235989d774e/src/main/java/net/dv8tion/jda/api/interactions/commands/CommandInteraction.java#L216
+        StringBuilder builder = new StringBuilder();
+        builder.append("/").append(event.getName());
+        if (event.getSubcommandGroup() != null)
+            builder.append(" ").append(event.getSubcommandGroup());
+        if (event.getSubcommandName() != null)
+            builder.append(" ").append(event.getSubcommandName());
+        for (OptionMapping o : event.getOptions())
+        {
+            builder.append(" ");
+            switch (o.getType())
+            {
+                case CHANNEL:
+                    builder.append("#").append(o.getAsGuildChannel().getName());
+                    break;
+                case USER:
+                    builder.append("@").append(o.getAsUser().getName());
+                    break;
+                case ROLE:
+                    builder.append("@").append(o.getAsRole().getName());
+                    break;
+                case MENTIONABLE: //client only allows user or role mentionable as of Aug 4, 2021
+                    if (o.getAsMentionable() instanceof Role)
+                        builder.append("@").append(o.getAsRole().getName());
+                    else if (o.getAsMentionable() instanceof Member)
+                        builder.append("@").append(o.getAsUser().getName());
+                    else if (o.getAsMentionable() instanceof User)
+                        builder.append("@").append(o.getAsUser().getName());
+                    else
+                        builder.append("@").append(o.getAsMentionable().getIdLong());
+                    break;
+                default:
+                    builder.append(o.getAsString());
+                    break;
+            }
+        }
+        return builder.toString();
     }
 
     @Override

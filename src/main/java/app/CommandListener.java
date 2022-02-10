@@ -142,7 +142,8 @@ public class CommandListener extends ListenerAdapter {
             return;
         }
 
-        String rawMessage = event.getCommandString();
+        CommandEvent commandEvent = new SlashCommandEventAdapter(event, this.bot);
+        String rawMessage = commandEvent.getContentRaw(); // Do not include option name
         String commandMessage = rawMessage.substring(1); // strip "/" prefix
         String[] args = commandMessage.split("\\s+");
 
@@ -152,8 +153,8 @@ public class CommandListener extends ListenerAdapter {
         }
 
         this.threadPool.execute(() -> {
-            processCommand(new SlashCommandEventAdapter(event, this.bot), res, args);
-            addCommandLog(res.base(), commandMessage, new SlashCommandEventAdapter(event, this.bot));
+            processCommand(commandEvent, res, args);
+            addCommandLog(res.base(), commandMessage, commandEvent);
             COMMANDS_COUNTER.labels(res.base()).inc();
         });
     }
