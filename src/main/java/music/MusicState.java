@@ -2,10 +2,13 @@ package music;
 
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
+import commands.event.SentMessage;
 import db.model.musicSetting.MusicSetting;
 import music.exception.DuplicateTrackException;
 import music.exception.QueueFullException;
+import org.jetbrains.annotations.NotNull;
 
+import javax.annotation.Nullable;
 import java.util.List;
 
 public class MusicState {
@@ -17,6 +20,10 @@ public class MusicState {
     private final long guildId;
     private final long boundChannelId;
     private final long voiceChannelId;
+
+    // not the best code; to tidy user message for first time play
+    @Nullable
+    private SentMessage messageToEdit;
 
     public MusicState(AudioPlayer player, TrackScheduler scheduler, MusicSetting setting,
                       long guildId, long boundChannelId, long voiceChannelId) {
@@ -125,5 +132,13 @@ public class MusicState {
      */
     public void stopLoadingCache() {
         this.onStopLoadingCache.run();
+    }
+
+    public void setMessageToEdit(@Nullable SentMessage message) {
+        this.messageToEdit = message;
+    }
+
+    public @Nullable SentMessage getMessageToEdit() {
+        return this.messageToEdit;
     }
 }

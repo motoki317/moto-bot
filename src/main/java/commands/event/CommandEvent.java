@@ -1,5 +1,6 @@
 package commands.event;
 
+import app.Bot;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.*;
@@ -11,6 +12,8 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 public interface CommandEvent {
+    Bot getBot();
+
     JDA getJDA();
 
     /**
@@ -38,6 +41,8 @@ public interface CommandEvent {
     Guild getGuild();
 
     MessageChannel getChannel();
+
+    TextChannel getTextChannel();
 
     User getAuthor();
 

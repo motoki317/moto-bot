@@ -1,22 +1,15 @@
 package commands.base;
 
 import commands.event.CommandEvent;
-import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.entities.MessageChannel;
-import net.dv8tion.jda.api.entities.MessageEmbed;
-import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import org.jetbrains.annotations.NotNull;
-import utils.MinecraftColor;
 
-import java.time.Instant;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.function.Consumer;
 
 public abstract class BotCommand {
     public abstract boolean guildOnly();
@@ -26,6 +19,7 @@ public abstract class BotCommand {
      * Examples:
      * {{"help", "h"}} for 1-argument command.
      * {{"guild", "g"}, {"levelRank", "lRank"}} for 2-arguments command.
+     *
      * @return Command names.
      */
     @NotNull
@@ -35,6 +29,7 @@ public abstract class BotCommand {
      * Command name for slash command.
      * Command name returned by this MUST also be included by {@link BotCommand#names()}.
      * Should return valid slash command name: use lower-case letters and hyphens ("-").
+     *
      * @return Command name.
      */
     @NotNull
@@ -42,6 +37,7 @@ public abstract class BotCommand {
 
     /**
      * Command options used by slash command.
+     *
      * @return Slash command options.
      */
     @NotNull
@@ -52,6 +48,7 @@ public abstract class BotCommand {
      * Examples:
      * {"help", "h"} for 1-argument command.
      * {"guild levelRank", "guild lRank", "g levelRank", "g lRank"} for 2-arguments command.
+     *
      * @return Names. Values possibly includes spaces.
      */
     public Set<String> getNames() {
@@ -77,6 +74,7 @@ public abstract class BotCommand {
      * Examples:
      * "help" command: 1,
      * "g levelRank" command: 2
+     *
      * @return Length of base arguments.
      */
     public int getArgumentsLength() {
@@ -87,6 +85,7 @@ public abstract class BotCommand {
      * Command syntax. Used in help display.
      * Example:
      * "help [command name]"
+     *
      * @return Command syntax.
      */
     @NotNull
@@ -94,6 +93,7 @@ public abstract class BotCommand {
 
     /**
      * Short help for use in help and slash command.
+     *
      * @return Short help.
      */
     @NotNull
@@ -101,6 +101,7 @@ public abstract class BotCommand {
 
     /**
      * Shows long help in help (cmd name) command.
+     *
      * @return Long help message.
      */
     @NotNull
@@ -110,6 +111,7 @@ public abstract class BotCommand {
      * Get required guild permissions to execute this command.
      * All permission given by this has to be satisfied by the member.
      * If no permission is required, returns an empty list.
+     *
      * @return List of permissions.
      */
     @NotNull
@@ -119,6 +121,7 @@ public abstract class BotCommand {
 
     /**
      * Checks if this command requires any guild permissions.
+     *
      * @return Returns {@code true} this command requires guild perms.
      */
     public boolean requirePermissions() {
@@ -128,6 +131,7 @@ public abstract class BotCommand {
     /**
      * Checks if the given member has enough permissions to execute this command.
      * Should check {@link BotCommand#requirePermissions()} first before calling this.
+     *
      * @param member Guild member.
      * @return {@code true} if
      */
@@ -146,33 +150,16 @@ public abstract class BotCommand {
     /**
      * Retrieves command cool-down in milliseconds.
      * The user will not be able to execute any other commands for this much time, after executing this command.
+     *
      * @return Cool-down in milliseconds.
      */
     public abstract long getCoolDown();
 
     /**
      * Process a command.
+     *
      * @param event Command event.
-     * @param args Argument array, separated by space characters.
+     * @param args  Argument array, separated by space characters.
      */
     public abstract void process(@NotNull CommandEvent event, @NotNull String[] args);
-
-    public static void respond(MessageReceivedEvent event, CharSequence message, Consumer<? super Message> onSuccess) {
-        event.getChannel().sendMessage(message).queue(onSuccess);
-    }
-    public static void respond(MessageReceivedEvent event, Message message, Consumer<? super Message> onSuccess) {
-        event.getChannel().sendMessage(message).queue(onSuccess);
-    }
-    public static void respond(MessageReceivedEvent event, MessageEmbed message, Consumer<? super Message> onSuccess) {
-        event.getChannel().sendMessageEmbeds(message).queue(onSuccess);
-    }
-    public static void respond(MessageChannel channel, CharSequence message, Consumer<? super Message> onSuccess) {
-        channel.sendMessage(message).queue(onSuccess);
-    }
-    public static void respond(MessageChannel channel, Message message, Consumer<? super Message> onSuccess) {
-        channel.sendMessage(message).queue(onSuccess);
-    }
-    public static void respond(MessageChannel channel, MessageEmbed message, Consumer<? super Message> onSuccess) {
-        channel.sendMessageEmbeds(message).queue(onSuccess);
-    }
 }

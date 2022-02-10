@@ -13,6 +13,11 @@ import java.util.function.Supplier;
 
 public record SlashCommandEventAdapter(SlashCommandEvent event, Bot bot) implements CommandEvent {
     @Override
+    public Bot getBot() {
+        return bot;
+    }
+
+    @Override
     public JDA getJDA() {
         return event.getJDA();
     }
@@ -40,6 +45,11 @@ public record SlashCommandEventAdapter(SlashCommandEvent event, Bot bot) impleme
     @Override
     public MessageChannel getChannel() {
         return event.getChannel();
+    }
+
+    @Override
+    public TextChannel getTextChannel() {
+        return event.getTextChannel();
     }
 
     @Override

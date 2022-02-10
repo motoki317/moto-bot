@@ -1,6 +1,7 @@
 package music.handlers;
 
 import app.Bot;
+import commands.event.CommandEvent;
 import db.model.musicSetting.MusicSetting;
 import db.repository.base.MusicSettingRepository;
 import music.MusicState;
@@ -8,7 +9,6 @@ import music.RepeatState;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.TextChannel;
-import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.sharding.ShardManager;
 import org.jetbrains.annotations.Nullable;
 import utils.MinecraftColor;
@@ -17,8 +17,6 @@ import java.util.Arrays;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-
-import static commands.base.BotCommand.*;
 
 public class MusicSettingHandler {
     private final ShardManager manager;
@@ -60,11 +58,11 @@ public class MusicSettingHandler {
      * @param setting Music setting.
      * @param state   Music state of the guild if it is up.
      */
-    public void handleVolume(MessageReceivedEvent event, String[] args, MusicSetting setting, @Nullable MusicState state) {
+    public void handleVolume(CommandEvent event, String[] args, MusicSetting setting, @Nullable MusicState state) {
         int oldVolume = setting.getVolume();
 
         if (args.length <= 2) {
-            respond(event, volumeHelp(oldVolume, event.getJDA().getSelfUser().getEffectiveAvatarUrl()));
+            event.reply(volumeHelp(oldVolume, event.getJDA().getSelfUser().getEffectiveAvatarUrl()));
             return;
         }
 
@@ -78,11 +76,11 @@ public class MusicSettingHandler {
                 newVolume = Integer.parseInt(args[2]);
             }
             if (newVolume < 0 || MAX_VOLUME < newVolume) {
-                respond(event, String.format("Please input a number between 0 and %s for the new volume!", MAX_VOLUME));
+                event.reply(String.format("Please input a number between 0 and %s for the new volume!", MAX_VOLUME));
                 return;
             }
         } catch (NumberFormatException e) {
-            respondException(event, "Please input a valid number for the new volume!");
+            event.replyException("Please input a valid number for the new volume!");
             return;
         }
 
@@ -93,12 +91,12 @@ public class MusicSettingHandler {
         }
 
         if (this.saveSetting(setting)) {
-            respond(event, new EmbedBuilder()
+            event.reply(new EmbedBuilder()
                     .setColor(MinecraftColor.DARK_GREEN.getColor())
                     .setDescription(String.format("Set volume from `%s%%` to `%s%%`!", oldVolume, newVolume))
                     .build());
         } else {
-            respondError(event, "Something went wrong while saving setting...");
+            event.replyError("Something went wrong while saving setting...");
         }
     }
 
@@ -123,11 +121,11 @@ public class MusicSettingHandler {
      * @param args    Command arguments.
      * @param setting Music setting.
      */
-    public void handleRepeat(MessageReceivedEvent event, String[] args, MusicSetting setting) {
+    public void handleRepeat(CommandEvent event, String[] args, MusicSetting setting) {
         RepeatState oldState = setting.getRepeat();
 
         if (args.length <= 2) {
-            respond(event, repeatHelp(oldState, event.getJDA().getSelfUser().getEffectiveAvatarUrl()));
+            event.reply(repeatHelp(oldState, event.getJDA().getSelfUser().getEffectiveAvatarUrl()));
             return;
         }
 
@@ -135,19 +133,19 @@ public class MusicSettingHandler {
         try {
             newState = RepeatState.valueOf(args[2].toUpperCase());
         } catch (IllegalArgumentException e) {
-            respondException(event, "Invalid repeat type.");
+            event.replyException("Invalid repeat type.");
             return;
         }
 
         setting.setRepeat(newState);
 
         if (this.saveSetting(setting)) {
-            respond(event, new EmbedBuilder()
+            event.reply(new EmbedBuilder()
                     .setColor(MinecraftColor.DARK_GREEN.getColor())
                     .setDescription(String.format("Set repeat mode from `%s` to `%s`!", oldState.name(), newState.name()))
                     .build());
         } else {
-            respondError(event, "Something went wrong while saving setting...");
+            event.replyError("Something went wrong while saving setting...");
         }
     }
 
@@ -177,16 +175,16 @@ public class MusicSettingHandler {
      * @param args    Command arguments.
      * @param setting Music setting.
      */
-    public void handleSetting(MessageReceivedEvent event, String[] args, MusicSetting setting) {
+    public void handleSetting(CommandEvent event, String[] args, MusicSetting setting) {
         if (args.length <= 2) {
-            respond(event, settingHelp(setting, event.getJDA().getSelfUser().getEffectiveAvatarUrl()));
+            event.reply(settingHelp(setting, event.getJDA().getSelfUser().getEffectiveAvatarUrl()));
             return;
         }
 
         switch (args[2].toLowerCase()) {
             case "shownp" -> handleShowNP(event, setting, args);
             case "restrict", "restriction" -> handleRestriction(event, setting, args);
-            default -> respond(event, "Unknown music setting.");
+            default -> event.reply("Unknown music setting.");
         }
     }
 
@@ -206,9 +204,9 @@ public class MusicSettingHandler {
      * @param setting Current setting.
      * @param args    Command arguments.
      */
-    private void handleShowNP(MessageReceivedEvent event, MusicSetting setting, String[] args) {
+    private void handleShowNP(CommandEvent event, MusicSetting setting, String[] args) {
         if (args.length <= 3) {
-            respond(event, showNPHelp(setting.isShowNp(), event.getJDA().getSelfUser().getEffectiveAvatarUrl()));
+            event.reply(showNPHelp(setting.isShowNp(), event.getJDA().getSelfUser().getEffectiveAvatarUrl()));
             return;
         }
 
@@ -217,7 +215,7 @@ public class MusicSettingHandler {
             case "ON" -> newValue = true;
             case "OFF" -> newValue = false;
             default -> {
-                respond(event, "Input either `ON` OR `OFF` for the new value!");
+                event.reply("Input either `ON` OR `OFF` for the new value!");
                 return;
             }
         }
@@ -225,12 +223,12 @@ public class MusicSettingHandler {
         setting.setShowNp(newValue);
 
         if (this.saveSetting(setting)) {
-            respond(event, new EmbedBuilder()
+            event.reply(new EmbedBuilder()
                     .setColor(MinecraftColor.DARK_GREEN.getColor())
                     .setDescription(String.format("The bot will %s display now playing messages!", newValue ? "now" : "no longer"))
                     .build());
         } else {
-            respondError(event, "Something went wrong while saving setting...");
+            event.replyError("Something went wrong while saving setting...");
         }
     }
 
@@ -252,9 +250,9 @@ public class MusicSettingHandler {
      * @param setting Current setting.
      * @param args    Command arguments.
      */
-    private void handleRestriction(MessageReceivedEvent event, MusicSetting setting, String[] args) {
+    private void handleRestriction(CommandEvent event, MusicSetting setting, String[] args) {
         if (args.length <= 3) {
-            respond(event, restrictionHelp(setting.getRestrictChannel(), event.getJDA().getSelfUser().getEffectiveAvatarUrl()));
+            event.reply(restrictionHelp(setting.getRestrictChannel(), event.getJDA().getSelfUser().getEffectiveAvatarUrl()));
             return;
         }
 
@@ -263,7 +261,7 @@ public class MusicSettingHandler {
             case "ON" -> newValue = event.getChannel().getIdLong();
             case "OFF" -> newValue = null;
             default -> {
-                respond(event, "Input either `ON` OR `OFF` for the new value!");
+                event.reply("Input either `ON` OR `OFF` for the new value!");
                 return;
             }
         }
@@ -272,12 +270,12 @@ public class MusicSettingHandler {
 
         if (this.saveSetting(setting)) {
             String newSetting = newValue != null ? event.getTextChannel().getAsMention() : "None";
-            respond(event, new EmbedBuilder()
+            event.reply(new EmbedBuilder()
                     .setColor(MinecraftColor.DARK_GREEN.getColor())
                     .setDescription(String.format("Successfully set channel restriction to: %s!", newSetting))
                     .build());
         } else {
-            respondError(event, "Something went wrong while saving setting...");
+            event.replyError("Something went wrong while saving setting...");
         }
     }
 }

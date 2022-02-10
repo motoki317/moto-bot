@@ -8,6 +8,7 @@ import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
+import commands.event.*;
 import db.model.musicInterruptedGuild.MusicInterruptedGuild;
 import db.model.musicQueue.MusicQueueEntry;
 import db.model.musicSetting.MusicSetting;
@@ -20,12 +21,19 @@ import music.exception.DuplicateTrackException;
 import music.exception.QueueFullException;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.*;
+import net.dv8tion.jda.api.events.interaction.ButtonClickEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.exceptions.InsufficientPermissionException;
+import net.dv8tion.jda.api.interactions.InteractionHook;
+import net.dv8tion.jda.api.interactions.components.ActionRow;
+import net.dv8tion.jda.api.interactions.components.Button;
+import net.dv8tion.jda.api.interactions.components.ComponentLayout;
 import net.dv8tion.jda.api.managers.AudioManager;
 import net.dv8tion.jda.api.sharding.ShardManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import update.button.ButtonClickHandler;
+import update.button.ButtonClickManager;
 import update.response.Response;
 import update.response.ResponseManager;
 import utils.MinecraftColor;
@@ -33,8 +41,8 @@ import utils.MinecraftColor;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
-import static commands.base.BotCommand.*;
 import static music.Music.MUSIC_PLAYER_GAUGE;
 import static music.MusicUtils.formatLength;
 import static music.MusicUtils.getThumbnailURL;
@@ -49,6 +57,7 @@ public class MusicPlayHandler {
     private final MusicQueueRepository musicQueueRepository;
     private final MusicInterruptedGuildRepository interruptedGuildRepository;
     private final ResponseManager responseManager;
+    private final ButtonClickManager buttonClickManager;
 
     public MusicPlayHandler(Bot bot, Map<Long, MusicState> states, AudioPlayerManager playerManager) {
         this.states = states;
@@ -59,15 +68,17 @@ public class MusicPlayHandler {
         this.musicQueueRepository = bot.getDatabase().getMusicQueueRepository();
         this.interruptedGuildRepository = bot.getDatabase().getMusicInterruptedGuildRepository();
         this.responseManager = bot.getResponseManager();
+        this.buttonClickManager = bot.getButtonClickManager();
     }
 
     /**
      * Retrieves voice channel the user is in.
+     *
      * @param event Event.
      * @return Voice channel. null if not found.
      */
     @Nullable
-    private static VoiceChannel getVoiceChannel(@NotNull MessageReceivedEvent event) {
+    private static VoiceChannel getVoiceChannel(@NotNull CommandEvent event) {
         Member member = event.getMember();
         if (member == null) {
             return null;
@@ -81,6 +92,7 @@ public class MusicPlayHandler {
 
     /**
      * Get music setting for the guild.
+     *
      * @param guildId Guild ID.
      * @return Music setting. Default setting if not found.
      */
@@ -125,8 +137,8 @@ public class MusicPlayHandler {
                 // AudioPlayerSendHandler handles audio sending from LavaPlayer to Discord (JDA)
                 audioManager.setSendingHandler(new AudioPlayerSendHandler(state.getPlayer()));
             } catch (InsufficientPermissionException e) {
-                respondException(channel, "The bot couldn't join your voice channel. " +
-                        "Please make sure the bot has sufficient permissions to do so!");
+                channel.sendMessage("The bot couldn't join your voice channel. " +
+                        "Please make sure the bot has sufficient permissions to do so!").queue();
                 synchronized (states) {
                     states.remove(guildId);
                     MUSIC_PLAYER_GAUGE.dec();
@@ -138,7 +150,8 @@ public class MusicPlayHandler {
     /**
      * Prepares music state for the guild.
      * (Sets up audio players, but does not join the VC)
-     * @param channel Guild text channel.
+     *
+     * @param channel        Guild text channel.
      * @param voiceChannelId Voice channel ID. For data cache.
      * @return Music state
      */
@@ -157,6 +170,16 @@ public class MusicPlayHandler {
         TrackScheduler scheduler = new TrackScheduler(new TrackScheduler.SchedulerGateway() {
             @Override
             public void sendMessage(Message message) {
+                MusicState state;
+                synchronized (states) {
+                    state = states.getOrDefault(guildId, null);
+                }
+                if (state != null && state.getMessageToEdit() != null) {
+                    state.getMessageToEdit().editMessage(message);
+                    state.setMessageToEdit(null);
+                    return;
+                }
+
                 TextChannel channel = manager.getTextChannelById(channelId);
                 if (channel == null) {
                     logger.log(-1, "Music: Failed to retrieve text channel for id " + channelId);
@@ -216,8 +239,9 @@ public class MusicPlayHandler {
 
     /**
      * Enqueues all saved previous queue.
+     *
      * @param guildId Guild ID.
-     * @param state State.
+     * @param state   State.
      */
     private void enqueueSavedQueue(MessageChannel channel, long guildId, MusicState state) {
         List<MusicQueueEntry> queue = this.musicQueueRepository.getGuildMusicQueue(guildId);
@@ -291,22 +315,21 @@ public class MusicPlayHandler {
             }
         });
 
-        respond(channel,
+        channel.sendMessageEmbeds(
                 new EmbedBuilder()
-                .setColor(MinecraftColor.DARK_GREEN.getColor())
-                .setDescription(desc + "\nThis might take a while. `m purge` or `m clear` to stop loading.")
-                .build(),
-                message -> sendFinishEnqueueSaved(message, state, futures, all, desc)
-        );
+                        .setColor(MinecraftColor.DARK_GREEN.getColor())
+                        .setDescription(desc + "\nThis might take a while. `m purge` or `m clear` to stop loading.")
+                        .build()
+        ).queue(message -> sendFinishEnqueueSaved(message, state, futures, all, desc));
     }
 
     private void sendFinishEnqueueSaved(Message message, MusicState state, List<Future<Void>> futures,
                                         CompletableFuture<Void> all, String desc) {
         all.thenRun(() -> message.editMessageEmbeds(
                 new EmbedBuilder()
-                .setColor(MinecraftColor.DARK_GREEN.getColor())
-                .setDescription(desc + "\nFinished loading!")
-                .build()
+                        .setColor(MinecraftColor.DARK_GREEN.getColor())
+                        .setDescription(desc + "\nFinished loading!")
+                        .build()
         ).queue());
 
         state.setOnStopLoadingCache(() -> {
@@ -320,22 +343,23 @@ public class MusicPlayHandler {
             });
             message.editMessageEmbeds(
                     new EmbedBuilder()
-                    .setColor(MinecraftColor.RED.getColor())
-                    .setDescription(desc + "\nCancelled loading.")
-                    .build()
+                            .setColor(MinecraftColor.RED.getColor())
+                            .setDescription(desc + "\nCancelled loading.")
+                            .build()
             ).queue();
         });
     }
 
     /**
      * Tries to connect to the VC the user is in.
+     *
      * @param event Event.
      * @return {@code true} if success.
      */
-    private boolean connect(MessageReceivedEvent event) {
+    private boolean connect(CommandEvent event) {
         VoiceChannel channel = getVoiceChannel(event);
         if (channel == null) {
-            respondException(event, "Please join in a voice channel before you use this command!");
+            event.replyException("Please join in a voice channel before you use this command!");
             return false;
         }
 
@@ -349,7 +373,7 @@ public class MusicPlayHandler {
             // AudioPlayerSendHandler handles audio sending from LavaPlayer to Discord (JDA)
             audioManager.setSendingHandler(new AudioPlayerSendHandler(state.getPlayer()));
         } catch (InsufficientPermissionException e) {
-            respondException(event, "The bot couldn't join your voice channel. Please make sure the bot has sufficient permissions to do so!");
+            event.replyException("The bot couldn't join your voice channel. Please make sure the bot has sufficient permissions to do so!");
             synchronized (states) {
                 states.remove(event.getGuild().getIdLong());
                 MUSIC_PLAYER_GAUGE.dec();
@@ -363,11 +387,12 @@ public class MusicPlayHandler {
     /**
      * Retrieves music state if the guild already has a music player set up,
      * or creates a new state if the guild doesn't.
+     *
      * @param event Event.
      * @return Music state. null if failed to join in a vc.
      */
     @Nullable
-    private MusicState getStateOrConnect(MessageReceivedEvent event) {
+    private MusicState getStateOrConnect(CommandEvent event) {
         long guildId = event.getGuild().getIdLong();
         synchronized (states) {
             MusicState state = states.getOrDefault(guildId, null);
@@ -384,12 +409,13 @@ public class MusicPlayHandler {
 
     /**
      * Handles "join" command.
+     *
      * @param event Event.
      */
-    public void handleJoin(MessageReceivedEvent event) {
+    public void handleJoin(CommandEvent event) {
         synchronized (states) {
             if (states.containsKey(event.getGuild().getIdLong())) {
-                respond(event, "This guild already has a music player set up!");
+                event.reply("This guild already has a music player set up!");
                 return;
             }
         }
@@ -398,7 +424,7 @@ public class MusicPlayHandler {
             return;
         }
 
-        respond(event, new EmbedBuilder()
+        event.reply(new EmbedBuilder()
                 .setColor(MinecraftColor.DARK_GREEN.getColor())
                 .setDescription("Successfully connected to your voice channel!")
                 .build());
@@ -406,15 +432,16 @@ public class MusicPlayHandler {
 
     /**
      * handles "leave" command.
-     * @param event Event.
-     * @param state Current music state of the guild.
+     *
+     * @param event     Event.
+     * @param state     Current music state of the guild.
      * @param saveQueue {@code true} if the bot should save the current queue, and use it next time.
      */
-    public void handleLeave(@NotNull MessageReceivedEvent event, @NotNull MusicState state, boolean saveQueue) {
+    public void handleLeave(@NotNull CommandEvent event, @NotNull MusicState state, boolean saveQueue) {
         try {
             this.shutdownPlayer(saveQueue, state);
         } catch (RuntimeException e) {
-            respondError(event, e.getMessage());
+            event.replyError(e.getMessage());
             return;
         }
 
@@ -423,7 +450,7 @@ public class MusicPlayHandler {
             MUSIC_PLAYER_GAUGE.dec();
         }
 
-        respond(event, new EmbedBuilder()
+        event.reply(new EmbedBuilder()
                 .setDescription(String.format("Player stopped. (%s)",
                         saveQueue ? "Saved the queue" : "Queue cleared"))
                 .build());
@@ -431,8 +458,9 @@ public class MusicPlayHandler {
 
     /**
      * Shuts down the music player for the guild.
+     *
      * @param saveQueue If the bot should save the current queue.
-     * @param state Music state.
+     * @param state     Music state.
      * @throws RuntimeException If something went wrong.
      */
     void shutdownPlayer(boolean saveQueue, MusicState state) throws RuntimeException {
@@ -484,8 +512,9 @@ public class MusicPlayHandler {
 
     /**
      * Saves the current queue.
+     *
      * @param guildId Guild ID.
-     * @param queue Music queue.
+     * @param queue   Music queue.
      * @return {@code true} if success.
      */
     private boolean saveQueue(long guildId, @NotNull QueueState queue) {
@@ -516,21 +545,24 @@ public class MusicPlayHandler {
 
     /**
      * Handles "play" command.
-     * @param event Event.
-     * @param args Command arguments.
+     *
+     * @param event   Event.
+     * @param args    Command arguments.
      * @param playAll If the bot should enqueue all the search results directly.
-     * @param site Which site to search from.
+     * @param site    Which site to search from.
      */
-    public void handlePlay(MessageReceivedEvent event, String[] args, boolean playAll, SearchSite site) {
+    public void handlePlay(CommandEvent event, String[] args, boolean playAll, SearchSite site) {
         if (args.length <= 2) {
-            respond(event, "Please input a keyword or URL you want to search or play!");
+            event.reply("Please input a keyword or URL you want to search or play!");
             return;
         }
 
         // Delete message if possible
-        try {
-            event.getMessage().delete().queue();
-        } catch (Exception ignored) {
+        if (event instanceof MessageReceivedEventAdapter a) {
+            try {
+                a.event().getMessage().delete().queue();
+            } catch (Exception ignored) {
+            }
         }
 
         String input = String.join(" ", Arrays.copyOfRange(args, 2, args.length));
@@ -546,45 +578,47 @@ public class MusicPlayHandler {
         }
 
         boolean finalPlayAll = playAll;
-        playerManager.loadItem(input, new AudioLoadResultHandler() {
-            @Override
-            public void trackLoaded(AudioTrack audioTrack) {
-                enqueueSong(event, state, audioTrack);
-            }
+        String finalInput = input;
+        event.reply("Searching song...", s ->
+                playerManager.loadItem(finalInput, new AudioLoadResultHandler() {
+                    @Override
+                    public void trackLoaded(AudioTrack audioTrack) {
+                        enqueueSong(event, s, state, audioTrack);
+                    }
 
-            @Override
-            public void playlistLoaded(AudioPlaylist audioPlaylist) {
-                if (audioPlaylist.getTracks().isEmpty()) {
-                    respondException(event, "Received an empty play list.");
-                    return;
-                }
+                    @Override
+                    public void playlistLoaded(AudioPlaylist audioPlaylist) {
+                        if (audioPlaylist.getTracks().isEmpty()) {
+                            event.replyException("Received an empty play list.");
+                            return;
+                        }
 
-                if (audioPlaylist.getTracks().size() == 1) {
-                    enqueueSong(event, state, audioPlaylist.getTracks().get(0));
-                    return;
-                }
+                        if (audioPlaylist.getTracks().size() == 1) {
+                            enqueueSong(event, s, state, audioPlaylist.getTracks().get(0));
+                            return;
+                        }
 
-                if (!audioPlaylist.isSearchResult() || finalPlayAll) {
-                    enqueueMultipleSongs(event, state, audioPlaylist.getTracks());
-                    return;
-                }
+                        if (!audioPlaylist.isSearchResult() || finalPlayAll) {
+                            enqueueMultipleSongs(event, s, state, audioPlaylist.getTracks());
+                            return;
+                        }
 
-                selectSong(event, state, audioPlaylist);
-            }
+                        selectSong(event, s, state, audioPlaylist);
+                    }
 
-            @Override
-            public void noMatches() {
-                respond(event, "No results found.");
-            }
+                    @Override
+                    public void noMatches() {
+                        event.reply("No results found.");
+                    }
 
-            @Override
-            public void loadFailed(FriendlyException e) {
-                respondException(event, "Something went wrong while loading tracks:\n" + e.getMessage());
-            }
-        });
+                    @Override
+                    public void loadFailed(FriendlyException e) {
+                        event.replyException("Something went wrong while loading tracks:\n" + e.getMessage());
+                    }
+                }));
     }
 
-    private void selectSong(MessageReceivedEvent event, MusicState state, AudioPlaylist playlist) {
+    private void selectSong(CommandEvent event, SentMessage s, MusicState state, AudioPlaylist playlist) {
         List<AudioTrack> tracks = playlist.getTracks();
         List<String> desc = new ArrayList<>();
         int max = Math.min(10, tracks.size());
@@ -607,53 +641,121 @@ public class MusicPlayHandler {
                 .setDescription(String.join("\n", desc))
                 .setFooter(String.format("Type '1' ~ '%s', 'all' to play all, or 'c' to cancel.", max))
                 .build();
-        respond(event, eb, message -> {
-            Response handler = new Response(event.getChannel().getIdLong(), event.getAuthor().getIdLong(),
-                    res -> chooseTrack(event, message, state, tracks, res)
-            );
-            this.responseManager.addEventListener(handler);
+
+        s.editMessage(eb, message -> {
+            if (message instanceof SentMessageAdapter sm) {
+                Response handler = new Response(event.getChannel().getIdLong(), event.getAuthor().getIdLong(),
+                        response -> {
+                            boolean next = chooseTrack(event, state, tracks, response);
+                            if (next) {
+                                // Delete bot and response message if possible
+                                try {
+                                    sm.m().delete().queue();
+                                    response.getMessage().delete().queue();
+                                } catch (Exception ignored) {
+                                }
+                            }
+                            return next;
+                        }
+                );
+                this.responseManager.addEventListener(handler);
+            } else if (message instanceof InteractionHookAdapter hook) {
+                MusicSelectButtonHandler handler = new MusicSelectButtonHandler(hook.hook(), tracks, event, state);
+                this.buttonClickManager.addEventListener(handler);
+            }
         });
     }
 
-    private boolean chooseTrack(MessageReceivedEvent event, Message botMsg,
-                                MusicState state, List<AudioTrack> tracks, MessageReceivedEvent res) {
-        String msg = res.getMessage().getContentRaw();
-        if ("all".equalsIgnoreCase(msg)) {
-            try {
-                // Delete bot and response message if possible
-                botMsg.delete().queue();
-                res.getMessage().delete().queue();
-            } catch (Exception ignored) {
+    private class MusicSelectButtonHandler extends ButtonClickHandler {
+        private final InteractionHook hook;
+        private final List<AudioTrack> tracks;
+        private final CommandEvent cEvent;
+        private final MusicState state;
+
+        public MusicSelectButtonHandler(InteractionHook hook, List<AudioTrack> tracks, CommandEvent cEvent, MusicState state) {
+            super(hook.getInteraction().getIdLong(), (event) -> false, () -> {
+            });
+
+            this.hook = hook;
+            this.tracks = tracks;
+            this.cEvent = cEvent;
+            this.state = state;
+
+            int max = Math.min(10, tracks.size());
+            hook.editOriginalComponents(getLayout(max)).queue();
+        }
+
+        private static List<ComponentLayout> getLayout(int maxTracks) {
+            List<ComponentLayout> layouts = new ArrayList<>();
+            layouts.add(ActionRow.of(IntStream
+                    .range(1, Math.min(maxTracks + 1, 6))
+                    .mapToObj(i -> Button.primary("track-" + i, String.valueOf(i)))
+                    .collect(Collectors.toCollection(ArrayList::new))));
+            if (maxTracks > 5) {
+                layouts.add(ActionRow.of(IntStream
+                        .range(5, Math.min(maxTracks + 1, 11))
+                        .mapToObj(i -> Button.primary("track-" + i, String.valueOf(i)))
+                        .collect(Collectors.toCollection(ArrayList::new))));
             }
-            this.enqueueMultipleSongs(event, state, tracks);
+            layouts.add(ActionRow.of(
+                    Button.secondary("all", "Play all"),
+                    Button.danger("cancel", "Cancel")
+            ));
+            return layouts;
+        }
+
+        @Override
+        public boolean handle(ButtonClickEvent event) {
+            super.handle(event);
+
+            if (event.getButton() == null || event.getButton().getId() == null) return false;
+
+            String buttonId = event.getButton().getId();
+            switch (buttonId) {
+                case "all" -> MusicPlayHandler.this.enqueueMultipleSongs(this.cEvent, new InteractionHookAdapter(this.hook), this.state, this.tracks);
+                case "cancel" -> this.cEvent.reply("Cancelled.", m -> m.deleteAfter(3, TimeUnit.SECONDS));
+                default -> { // "track-i"
+                    if (!buttonId.startsWith("track-")) {
+                        return false;
+                    }
+                    int trackId = Integer.parseInt(buttonId.substring("track-".length()));
+                    MusicPlayHandler.this.enqueueSong(this.cEvent, new InteractionHookAdapter(this.hook), this.state, this.tracks.get(trackId - 1));
+                }
+            }
+
             return true;
         }
-        if ("c".equalsIgnoreCase(msg)) {
-            try {
-                // Delete bot and response message if possible
-                botMsg.delete().queue();
-                res.getMessage().delete().queue();
-            } catch (Exception ignored) {
-            }
-            respond(event, "Cancelled.", m -> m.delete().queueAfter(3, TimeUnit.SECONDS));
+
+        @Override
+        public void onDestroy() {
+            super.onDestroy();
+
+            // Delete buttons
+            this.hook.editOriginalComponents().queue();
+        }
+    }
+
+    private boolean chooseTrack(CommandEvent event, MusicState state, List<AudioTrack> tracks, MessageReceivedEvent message) {
+        String response = message.getMessage().getContentRaw();
+        if ("all".equalsIgnoreCase(response)) {
+            this.enqueueMultipleSongs(event, new SentMessageAdapter(message.getMessage()), state, tracks);
+            return true;
+        }
+        if ("c".equalsIgnoreCase(response)) {
+            event.reply("Cancelled.", m -> m.deleteAfter(3, TimeUnit.SECONDS));
             return true;
         }
 
         try {
             int max = Math.min(10, tracks.size());
-            int index = Integer.parseInt(msg);
+            int index = Integer.parseInt(response);
             if (index < 1 || max < index) {
-                respond(event, String.format("Please input a number between 1 and %s!", max),
-                        m -> m.delete().queueAfter(3, TimeUnit.SECONDS));
+                event.reply(String.format("Please input a number between 1 and %s!", max),
+                        m -> m.deleteAfter(3, TimeUnit.SECONDS));
                 return false;
             }
-            // Delete bot and response message if possible
-            try {
-                botMsg.delete().queue();
-                res.getMessage().delete().queue();
-            } catch (Exception ignored) {
-            }
-            this.enqueueSong(event, state, tracks.get(index - 1));
+
+            this.enqueueSong(event, new SentMessageAdapter(message.getMessage()), state, tracks.get(index - 1));
             return true;
         } catch (NumberFormatException ignored) {
             // Ignore normal messages
@@ -661,7 +763,7 @@ public class MusicPlayHandler {
         }
     }
 
-    private void enqueueSong(MessageReceivedEvent event, MusicState state, AudioTrack audioTrack) {
+    private void enqueueSong(CommandEvent event, SentMessage msg, MusicState state, AudioTrack audioTrack) {
         long userId = event.getAuthor().getIdLong();
         boolean toShowQueuedMsg = !state.getCurrentQueue().getQueue().isEmpty();
         int queueSize = state.getCurrentQueue().getQueue().size();
@@ -670,13 +772,13 @@ public class MusicPlayHandler {
         try {
             state.enqueue(new QueueEntry(audioTrack, userId));
         } catch (DuplicateTrackException | QueueFullException e) {
-            respondException(event, e.getMessage());
+            event.replyException(e.getMessage());
             return;
         }
 
         if (toShowQueuedMsg) {
             AudioTrackInfo info = audioTrack.getInfo();
-            respond(event, new EmbedBuilder()
+            msg.editMessage(new EmbedBuilder()
                     .setColor(MinecraftColor.DARK_GREEN.getColor())
                     .setAuthor("✔ Queued 1 song.", null, event.getAuthor().getEffectiveAvatarUrl())
                     .setTitle(("".equals(info.title) ? "(No title)" : info.title), info.uri)
@@ -685,10 +787,12 @@ public class MusicPlayHandler {
                     .addField("Position in queue", String.valueOf(queueSize), true)
                     .addField("Estimated time until playing", formatLength(remainingLength), true)
                     .build());
+        } else {
+            state.setMessageToEdit(msg);
         }
     }
 
-    private void enqueueMultipleSongs(MessageReceivedEvent event, MusicState state, List<AudioTrack> tracks) {
+    private void enqueueMultipleSongs(CommandEvent event, SentMessage msg, MusicState state, List<AudioTrack> tracks) {
         long userId = event.getAuthor().getIdLong();
         long remainingLength = state.getRemainingLength();
         int queueSize = state.getCurrentQueue().getQueue().size();
@@ -704,7 +808,7 @@ public class MusicPlayHandler {
             }
         }
 
-        respond(event, new EmbedBuilder()
+        msg.editMessage(new EmbedBuilder()
                 .setColor(MinecraftColor.DARK_GREEN.getColor())
                 .setAuthor(String.format("✔ Queued %s song%s.", success, success == 1 ? "" : "s"),
                         null, event.getAuthor().getEffectiveAvatarUrl())
@@ -714,8 +818,11 @@ public class MusicPlayHandler {
                 .build());
 
         if (success != tracks.size()) {
-            respondException(event, String.format("Failed to queue %s song%s due to duplicated track(s) or queue being full.",
-                    tracks.size() - success, (tracks.size() - success) == 1 ? "" : "s"));
+            // Not using reply() because of the reply above
+            event.getChannel().sendMessage(
+                    String.format("Failed to queue %s song%s due to duplicated track(s) or queue being full.",
+                            tracks.size() - success, (tracks.size() - success) == 1 ? "" : "s")
+            ).queue();
         }
     }
 }

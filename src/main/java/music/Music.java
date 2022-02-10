@@ -5,6 +5,7 @@ import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.source.AudioSourceManagers;
 import commands.base.GuildCommand;
+import commands.event.CommandEvent;
 import db.model.musicSetting.MusicSetting;
 import db.repository.base.MusicSettingRepository;
 import heartbeat.HeartBeatTask;
@@ -15,7 +16,7 @@ import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.entities.*;
-import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import net.dv8tion.jda.api.sharding.ShardManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -42,7 +43,7 @@ public class Music extends GuildCommand {
         AudioSourceManagers.registerRemoteSources(playerManager);
     }
 
-    private final Map<String, BiConsumer<MessageReceivedEvent, String[]>> commands;
+    private final Map<String, BiConsumer<CommandEvent, String[]>> commands;
 
     // Command handlers
     private final MusicPlayHandler playHandler;
@@ -86,36 +87,38 @@ public class Music extends GuildCommand {
     }
 
     private interface MusicSubCommandRequireMusicState {
-        void handle(MessageReceivedEvent event, String[] args, MusicState state);
+        void handle(CommandEvent event, String[] args, MusicState state);
     }
 
     /**
      * Requires the guild to have a player set up, AND requires the user to be in the same voice channel
      * as the bot is in.
+     *
      * @param next Next handler.
      * @return Wrapped handler.
      */
-    private BiConsumer<MessageReceivedEvent, String[]> requireMusicState(MusicSubCommandRequireMusicState next) {
+    private BiConsumer<CommandEvent, String[]> requireMusicState(MusicSubCommandRequireMusicState next) {
         return (event, args) -> {
             MusicState state;
             synchronized (states) {
                 state = states.getOrDefault(event.getGuild().getIdLong(), null);
             }
             if (state == null) {
-                respond(event, "This guild doesn't seem to have a music player set up.");
+                event.reply("This guild doesn't seem to have a music player set up.");
                 return;
             }
 
             // Require user to be in the same voice channel
             // null chaining
             long userVCId = Optional.of(event)
-                    .map(MessageReceivedEvent::getMember)
+                    .map(CommandEvent::getGuild)
+                    .map(g -> g.getMember(event.getAuthor()))
                     .map(Member::getVoiceState)
                     .map(GuildVoiceState::getChannel)
                     .map(ISnowflake::getIdLong)
                     .orElse(0L);
             if (state.getVoiceChannelId() != userVCId) {
-                respond(event, "You have to be in the same voice channel as the bot is in to use this command.");
+                event.reply("You have to be in the same voice channel as the bot is in to use this command.");
                 return;
             }
 
@@ -124,7 +127,7 @@ public class Music extends GuildCommand {
     }
 
     private interface MusicSettingSubCommand {
-        void handle(MessageReceivedEvent event, String[] args, MusicSetting setting);
+        void handle(CommandEvent event, String[] args, MusicSetting setting);
     }
 
     /**
@@ -132,10 +135,11 @@ public class Music extends GuildCommand {
      * If the guild currently has a player set up, requires the user to be in the same voice channel
      * as the bot is in.
      * If not, returns the guild music setting (or default if the guild doesn't have one).
+     *
      * @param next Next handler.
      * @return Wrapped handler.
      */
-    private BiConsumer<MessageReceivedEvent, String[]> requireMusicSetting(MusicSettingSubCommand next) {
+    private BiConsumer<CommandEvent, String[]> requireMusicSetting(MusicSettingSubCommand next) {
         return (event, args) -> {
             long guildId = event.getGuild().getIdLong();
             MusicState state;
@@ -147,13 +151,14 @@ public class Music extends GuildCommand {
                 // Require user to be in the same voice channel
                 // null chaining
                 long userVCId = Optional.of(event)
-                        .map(MessageReceivedEvent::getMember)
+                        .map(CommandEvent::getGuild)
+                        .map(g -> g.getMember(event.getAuthor()))
                         .map(Member::getVoiceState)
                         .map(GuildVoiceState::getChannel)
                         .map(ISnowflake::getIdLong)
                         .orElse(0L);
                 if (state.getVoiceChannelId() != userVCId) {
-                    respond(event, "You have to be in the same voice channel as the bot is in to use this command," +
+                    event.reply("You have to be in the same voice channel as the bot is in to use this command," +
                             " while the player is set up.");
                     return;
                 }
@@ -233,7 +238,7 @@ public class Music extends GuildCommand {
                 (event, args, state) -> this.managementHandler.handlePurge(event, state)
         ));
 
-        Function<MessageReceivedEvent, @Nullable MusicState> getOptionalMusicState = event -> {
+        Function<CommandEvent, @Nullable MusicState> getOptionalMusicState = event -> {
             MusicState state;
             synchronized (states) {
                 state = states.getOrDefault(event.getGuild().getIdLong(), null);
@@ -265,6 +270,18 @@ public class Music extends GuildCommand {
     }
 
     @Override
+    public @NotNull String[] slashName() {
+        return new String[]{"m"};
+    }
+
+    @Override
+    public @NotNull OptionData[] slashOptions() {
+        return new OptionData[]{
+                // TODO
+        };
+    }
+
+    @Override
     public @NotNull String syntax() {
         return "music";
     }
@@ -282,19 +299,19 @@ public class Music extends GuildCommand {
                 : null;
         return new MessageBuilder(
                 new EmbedBuilder()
-                .setAuthor("♪ Music Help", null, selfUserImage)
-                .addField("Join and Leave", String.join("\n",
-                        "**m join** : Joins the voice channel.",
+                        .setAuthor("♪ Music Help", null, selfUserImage)
+                        .addField("Join and Leave", String.join("\n",
+                                "**m join** : Joins the voice channel.",
                                 "**m leave** : Leaves the voice channel (saves the current queue).",
                                 "**m clear** : Leaves the voice channel (does NOT save the current queue)."
-                ), false)
-                .addField("Play Songs", String.join("\n",
-                        "**m play <keyword / URL>** : Searches and plays from the keyword / URL.",
+                        ), false)
+                        .addField("Play Songs", String.join("\n",
+                                "**m play <keyword / URL>** : Searches and plays from the keyword / URL.",
                                 "**m playAll <keyword / URL>** : Plays all search results from the keyword / URL.",
                                 "**m soundcloud <keyword / URL>** : Searches SoundCloud with keyword / URL."
-                ), false)
-                .addField("Player Management", String.join("\n",
-                        "**m nowPlaying** : Shows the current song.",
+                        ), false)
+                        .addField("Player Management", String.join("\n",
+                                "**m nowPlaying** : Shows the current song.",
                                 "**m queue** : Shows the queue.",
                                 "**m pause** : Pauses the song.",
                                 "**m resume** : Resumes the song.",
@@ -302,12 +319,12 @@ public class Music extends GuildCommand {
                                 "**m seek <time>** : Seeks the current song to the specified time. e.g. `m seek 1:50`",
                                 "**m shuffle** : Shuffles the queue.",
                                 "**m purge** : Purges all waiting songs in the queue. Does not stop the current song."
-                ), false)
-                .addField("Settings", String.join("\n",
-                        "**m volume <percentage>** : Sets the volume. e.g. `m volume 50`",
+                        ), false)
+                        .addField("Settings", String.join("\n",
+                                "**m volume <percentage>** : Sets the volume. e.g. `m volume 50`",
                                 "**m repeat <mode>** : Sets the repeat mode.",
                                 "**m settings** : Other settings. Settings will be saved per guild if changed."
-                ), false)
+                        ), false)
         ).build();
     }
 
@@ -318,6 +335,7 @@ public class Music extends GuildCommand {
 
     /**
      * Retrieves music setting for the guild.
+     *
      * @param guildId Guild ID.
      * @return Music setting. Default if not found.
      */
@@ -328,9 +346,9 @@ public class Music extends GuildCommand {
     }
 
     @Override
-    public void process(@NotNull MessageReceivedEvent event, @NotNull String[] args) {
+    public void process(@NotNull CommandEvent event, @NotNull String[] args) {
         if (args.length <= 1) {
-            respond(event, this.longHelp());
+            event.reply(this.longHelp());
             return;
         }
 
@@ -343,7 +361,7 @@ public class Music extends GuildCommand {
         }
         if (state != null && state.getBoundChannelId() != channelId) {
             TextChannel channel = this.manager.getTextChannelById(state.getBoundChannelId());
-            respond(event, String.format("Music commands are currently bound to %s!",
+            event.reply(String.format("Music commands are currently bound to %s!",
                     channel != null ? channel.getAsMention() : "ID: " + state.getBoundChannelId()));
             return;
         }
@@ -352,13 +370,13 @@ public class Music extends GuildCommand {
         MusicSetting setting = state != null ? state.getSetting() : getSetting(guildId);
         if (setting.getRestrictChannel() != null && setting.getRestrictChannel() != channelId) {
             TextChannel channel = this.manager.getTextChannelById(setting.getRestrictChannel());
-            respond(event, String.format("Music commands are only allowed in %s!",
+            event.reply(String.format("Music commands are only allowed in %s!",
                     channel != null ? channel.getAsMention() : "ID: " + setting.getRestrictChannel()));
             return;
         }
 
-        BiConsumer<MessageReceivedEvent, String[]> handler = this.commands.getOrDefault(
-                // case insensitive sub commands
+        BiConsumer<CommandEvent, String[]> handler = this.commands.getOrDefault(
+                // case-insensitive sub commands
                 args[1].toLowerCase(),
                 null
         );
@@ -367,6 +385,6 @@ public class Music extends GuildCommand {
             return;
         }
 
-        respond(event, "Unknown music command. Try `m help`!");
+        event.reply("Unknown music command. Try `m help`!");
     }
 }

@@ -13,6 +13,11 @@ import java.util.function.Supplier;
 
 public record MessageReceivedEventAdapter(MessageReceivedEvent event, Bot bot) implements CommandEvent {
     @Override
+    public Bot getBot() {
+        return bot;
+    }
+
+    @Override
     public JDA getJDA() {
         return event.getJDA();
     }
@@ -40,6 +45,11 @@ public record MessageReceivedEventAdapter(MessageReceivedEvent event, Bot bot) i
     @Override
     public MessageChannel getChannel() {
         return event.getChannel();
+    }
+
+    @Override
+    public TextChannel getTextChannel() {
+        return event.getTextChannel();
     }
 
     @Override
