@@ -53,7 +53,7 @@ public class GuildStats extends GenericCommand {
     @Override
     public @NotNull OptionData[] slashOptions() {
         return new OptionData[]{
-                new OptionData(OptionType.STRING, "name-or-prefix", "Name or prefix of a guild", true)
+                new OptionData(OptionType.STRING, "guild", "Name or prefix of a guild", true)
         };
     }
 

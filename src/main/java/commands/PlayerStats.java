@@ -58,7 +58,7 @@ public class PlayerStats extends GenericCommand {
     @Override
     public @NotNull OptionData[] slashOptions() {
         return new OptionData[]{
-                new OptionData(OptionType.STRING, "name-or-uuid", "Name or UUID of player", true)
+                new OptionData(OptionType.STRING, "player", "Name or UUID of player", true)
         };
     }
 

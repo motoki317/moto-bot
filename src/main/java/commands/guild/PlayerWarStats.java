@@ -6,6 +6,7 @@ import api.wynn.WynnApi;
 import api.wynn.structs.Player;
 import app.Bot;
 import commands.base.GenericCommand;
+import commands.event.CommandEvent;
 import db.model.dateFormat.CustomDateFormat;
 import db.model.guild.Guild;
 import db.model.guildWarLog.GuildWarLog;
@@ -17,11 +18,10 @@ import db.repository.base.*;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import net.dv8tion.jda.api.interactions.commands.OptionType;
+import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import update.multipage.MultipageHandler;
-import update.reaction.ReactionManager;
 import utils.ArgumentParser;
 import utils.UUID;
 import utils.rateLimit.RateLimitException;
@@ -31,6 +31,7 @@ import java.math.RoundingMode;
 import java.text.DateFormat;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class PlayerWarStats extends GenericCommand {
@@ -40,7 +41,6 @@ public class PlayerWarStats extends GenericCommand {
     private final WarLogRepository warLogRepository;
     private final TerritoryLogRepository territoryLogRepository;
     private final GuildWarLogRepository guildWarLogRepository;
-    private final ReactionManager reactionManager;
     private final GuildRepository guildRepository;
     private final DateFormatRepository dateFormatRepository;
     private final TimeZoneRepository timeZoneRepository;
@@ -54,7 +54,6 @@ public class PlayerWarStats extends GenericCommand {
         this.warLogRepository = bot.getDatabase().getWarLogRepository();
         this.territoryLogRepository = bot.getDatabase().getTerritoryLogRepository();
         this.guildWarLogRepository = bot.getDatabase().getGuildWarLogRepository();
-        this.reactionManager = bot.getReactionManager();
         this.guildRepository = bot.getDatabase().getGuildRepository();
         this.dateFormatRepository = bot.getDatabase().getDateFormatRepository();
         this.timeZoneRepository = bot.getDatabase().getTimeZoneRepository();
@@ -66,6 +65,18 @@ public class PlayerWarStats extends GenericCommand {
     @Override
     protected String[][] names() {
         return new String[][]{{"guild", "g"}, {"playerWarStats", "pWarStats", "pwStats", "pStats", "pws"}};
+    }
+
+    @Override
+    public @NotNull String[] slashName() {
+        return new String[]{"g", "pws"};
+    }
+
+    @Override
+    public @NotNull OptionData[] slashOptions() {
+        return new OptionData[]{
+                new OptionData(OptionType.STRING, "player", "Name or UUID of a player", true)
+        };
     }
 
     @Override
@@ -82,15 +93,15 @@ public class PlayerWarStats extends GenericCommand {
     public @NotNull Message longHelp() {
         return new MessageBuilder(
                 new EmbedBuilder()
-                .setAuthor("Player War Stats Help")
-                .setDescription("Shows war activities of a player.")
-                .addField("Syntax",
-                        "`" + this.syntax() + "`",
-                        false
-                ).addField("Optional arguments", String.join("\n",
-                        "**-g <guild name>** : Specify a guild name to retrieve a guild-scoped logs of the player."
-                ), false)
-                .build()
+                        .setAuthor("Player War Stats Help")
+                        .setDescription("Shows war activities of a player.")
+                        .addField("Syntax",
+                                "`" + this.syntax() + "`",
+                                false
+                        ).addField("Optional arguments", String.join("\n",
+                                "**-g <guild name>** : Specify a guild name to retrieve a guild-scoped logs of the player."
+                        ), false)
+                        .build()
         ).build();
     }
 
@@ -101,7 +112,7 @@ public class PlayerWarStats extends GenericCommand {
 
     @NotNull
     private String getPlayerNameDisplay(@NotNull UUID uuid, @Nullable String playerName) throws RateLimitException {
-        Player player = this.wynnApi.getPlayerStats(uuid.toStringWithHyphens(),  false);
+        Player player = this.wynnApi.getPlayerStats(uuid.toStringWithHyphens(), false);
         String guildPrefix;
         if (player != null && player.getGuildInfo().getName() != null) {
             Guild guild = this.guildRepository.findOne(() -> player.getGuildInfo().getName());
@@ -131,9 +142,9 @@ public class PlayerWarStats extends GenericCommand {
     }
 
     @Override
-    public void process(@NotNull MessageReceivedEvent event, @NotNull String[] args) {
+    public void process(@NotNull CommandEvent event, @NotNull String[] args) {
         if (args.length <= 2) {
-            respond(event, this.longHelp());
+            event.reply(this.longHelp());
             return;
         }
 
@@ -147,11 +158,11 @@ public class PlayerWarStats extends GenericCommand {
             playerName = specified;
             Map<String, NullableUUID> retrieved = mojangApi.getUUIDsIterative(Collections.singletonList(specified));
             if (retrieved == null) {
-                respondError(event, "Something went wrong while retrieving player UUID...");
+                event.replyError("Something went wrong while retrieving player UUID...");
                 return;
             }
             if (!retrieved.containsKey(specified) || (uuid = retrieved.get(specified).getUuid()) == null) {
-                respond(event, String.format("Failed to retrieve player UUID for %s. " +
+                event.reply(String.format("Failed to retrieve player UUID for %s. " +
                         "Please check the username.", specified));
                 return;
             }
@@ -161,16 +172,16 @@ public class PlayerWarStats extends GenericCommand {
         try {
             playerNameDisplay = getPlayerNameDisplay(uuid, playerName);
         } catch (RateLimitException e) {
-            respondException(event, e.getMessage());
+            event.replyException(e.getMessage());
             return;
         }
 
         Map<String, String> parsedArgs = new ArgumentParser(args).getArgumentMap();
         if (parsedArgs.containsKey("g")) {
             this.guildNameResolver.resolve(
-                    parsedArgs.get("g"), event.getTextChannel(), event.getAuthor(),
+                    parsedArgs.get("g"), event.getChannel(), event.getAuthor(),
                     (guildName, prefix) -> respondLeaderboard(event, uuid, playerNameDisplay, guildName),
-                    reason -> respondError(event, reason)
+                    event::replyError
             );
             return;
         }
@@ -178,24 +189,17 @@ public class PlayerWarStats extends GenericCommand {
         respondLeaderboard(event, uuid, playerNameDisplay, null);
     }
 
-    private void respondLeaderboard(@NotNull MessageReceivedEvent event, UUID uuid, String playerNameDisplay, String guildName) {
+    private void respondLeaderboard(@NotNull CommandEvent event, UUID uuid, String playerNameDisplay, String guildName) {
         CustomTimeZone customTimeZone = this.timeZoneRepository.getTimeZone(event);
         CustomDateFormat customDateFormat = this.dateFormatRepository.getDateFormat(event);
 
         if (maxPage(uuid, guildName) == 0) {
-            respond(event, format(0, uuid, playerNameDisplay, guildName, customTimeZone, customDateFormat));
+            event.reply(format(0, uuid, playerNameDisplay, guildName, customTimeZone, customDateFormat));
             return;
         }
 
-        respond(event, format(0, uuid, playerNameDisplay, guildName, customTimeZone, customDateFormat), msg -> {
-            MultipageHandler handler = new MultipageHandler(
-                    msg,
-                    event.getAuthor().getIdLong(),
-                    page -> new MessageBuilder(format(page, uuid, playerNameDisplay, guildName, customTimeZone, customDateFormat)).build(),
-                    () -> maxPage(uuid, guildName)
-            );
-            this.reactionManager.addEventListener(handler);
-        });
+        Function<Integer, Message> pages = page -> new MessageBuilder(format(page, uuid, playerNameDisplay, guildName, customTimeZone, customDateFormat)).build();
+        event.replyMultiPage(pages.apply(0), pages, () -> maxPage(uuid, guildName));
     }
 
     private static final int LOGS_PER_PAGE = 5;
@@ -223,16 +227,9 @@ public class PlayerWarStats extends GenericCommand {
         return (getTotalWars(playerUUID, guildName) - 1) / LOGS_PER_PAGE;
     }
 
-    private static class PlayerWarLogPortion {
-        private final List<WarLog> warLogs;
-        private final Map<Integer, GuildWarLog> guildWarLogMap;
-        private final Map<Integer, TerritoryLog> territoryLogMap;
-
-        private PlayerWarLogPortion(List<WarLog> warLogs, Map<Integer, GuildWarLog> guildWarLogMap, Map<Integer, TerritoryLog> territoryLogMap) {
-            this.warLogs = warLogs;
-            this.guildWarLogMap = guildWarLogMap;
-            this.territoryLogMap = territoryLogMap;
-        }
+    private record PlayerWarLogPortion(List<WarLog> warLogs,
+                                       Map<Integer, GuildWarLog> guildWarLogMap,
+                                       Map<Integer, TerritoryLog> territoryLogMap) {
     }
 
     private PlayerWarLogPortion getPlayerWarLogPortion(int page, @NotNull UUID playerUUID, @Nullable String guildName) {
@@ -384,19 +381,21 @@ public class PlayerWarStats extends GenericCommand {
                 // War ongoing
                 event = "In fight...";
             }
-            return String.format("%s. %s : %s\n" +
-                            "   War Time: %s ~ %s\n" +
-                            "   Players: %s",
+            return String.format("""
+                            %s. %s : %s
+                               War Time: %s ~ %s
+                               Players: %s""",
                     seq, warLog.getServerName(), event,
                     formatter.format(warLog.getCreatedAt()), formatter.format(warLog.getLastUp()),
                     formatPlayers(warLog.getPlayers())
             );
         } else {
             // Assert territory acquired, and war was a success
-            return String.format("%s. %s : %s\n" +
-                            "   %s (%s) → %s (%s)\n" +
-                            "   War Time: %s ~ %s\n" +
-                            "   Players: %s",
+            return String.format("""
+                            %s. %s : %s
+                               %s (%s) → %s (%s)
+                               War Time: %s ~ %s
+                               Players: %s""",
                     seq, warLog.getServerName(), territoryLog.getTerritoryName(),
                     territoryLog.getOldGuildName(), territoryLog.getOldGuildTerrAmt(),
                     territoryLog.getNewGuildName(), territoryLog.getNewGuildTerrAmt(),
