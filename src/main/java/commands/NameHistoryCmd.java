@@ -4,6 +4,7 @@ import api.mojang.MojangApi;
 import api.mojang.structs.NameHistory;
 import app.Bot;
 import commands.base.GenericCommand;
+import commands.event.CommandEvent;
 import db.model.dateFormat.CustomDateFormat;
 import db.model.timezone.CustomTimeZone;
 import db.repository.base.DateFormatRepository;
@@ -11,10 +12,9 @@ import db.repository.base.TimeZoneRepository;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import net.dv8tion.jda.api.interactions.commands.OptionType;
+import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import org.jetbrains.annotations.NotNull;
-import update.multipage.MultipageHandler;
-import update.reaction.ReactionManager;
 import utils.FormatUtils;
 import utils.UUID;
 
@@ -27,19 +27,29 @@ public class NameHistoryCmd extends GenericCommand {
     private final MojangApi mojangApi;
     private final TimeZoneRepository timeZoneRepository;
     private final DateFormatRepository dateFormatRepository;
-    private final ReactionManager reactionManager;
 
     public NameHistoryCmd(Bot bot) {
         this.mojangApi = new MojangApi(bot.getLogger());
         this.timeZoneRepository = bot.getDatabase().getTimeZoneRepository();
         this.dateFormatRepository = bot.getDatabase().getDateFormatRepository();
-        this.reactionManager = bot.getReactionManager();
     }
 
     @NotNull
     @Override
     protected String[][] names() {
         return new String[][]{{"nameHistory", "names", "name"}};
+    }
+
+    @Override
+    public @NotNull String[] slashName() {
+        return new String[]{"names"};
+    }
+
+    @Override
+    public @NotNull OptionData[] slashOptions() {
+        return new OptionData[]{
+                new OptionData(OptionType.STRING, "name", "Name of player", true)
+        };
     }
 
     @Override
@@ -56,10 +66,10 @@ public class NameHistoryCmd extends GenericCommand {
     public @NotNull Message longHelp() {
         return new MessageBuilder(
                 new EmbedBuilder()
-                .setAuthor("Name History Command Help")
-                .setDescription(this.shortHelp())
-                .addField("Syntax", this.syntax(), false)
-                .build()
+                        .setAuthor("Name History Command Help")
+                        .setDescription(this.shortHelp())
+                        .addField("Syntax", this.syntax(), false)
+                        .build()
         ).build();
     }
 
@@ -69,9 +79,9 @@ public class NameHistoryCmd extends GenericCommand {
     }
 
     @Override
-    public void process(@NotNull MessageReceivedEvent event, @NotNull String[] args) {
+    public void process(@NotNull CommandEvent event, @NotNull String[] args) {
         if (args.length <= 1) {
-            respond(event, this.longHelp());
+            event.reply(this.longHelp());
             return;
         }
 
@@ -82,7 +92,7 @@ public class NameHistoryCmd extends GenericCommand {
         } else {
             uuid = this.mojangApi.mustGetUUIDAtTime(playerName, System.currentTimeMillis());
             if (uuid == null) {
-                respond(event, String.format("Failed to retrieve player UUID for `%s`. " +
+                event.reply(String.format("Failed to retrieve player UUID for `%s`. " +
                         "Make sure the player exists and check your spelling.", playerName));
                 return;
             }
@@ -90,7 +100,7 @@ public class NameHistoryCmd extends GenericCommand {
 
         NameHistory history = this.mojangApi.mustGetNameHistory(uuid);
         if (history == null) {
-            respondError(event, String.format("Something went wrong while retrieving name history for player `%s`... " +
+            event.replyError(String.format("Something went wrong while retrieving name history for player `%s`... " +
                     "(UUID: `%s`)", playerName, uuid.toStringWithHyphens()));
             return;
         }
@@ -101,18 +111,14 @@ public class NameHistoryCmd extends GenericCommand {
         int maxPage = maxPage(history);
 
         if (maxPage == 0) {
-            respond(event, formatPage(0, history, customDateFormat, customTimeZone));
+            event.reply(formatPage(0, history, customDateFormat, customTimeZone));
             return;
         }
 
-        respond(event, formatPage(0, history, customDateFormat, customTimeZone), message -> {
-            MultipageHandler handler = new MultipageHandler(
-                    message, event.getAuthor().getIdLong(),
-                    page -> formatPage(page, history, customDateFormat, customTimeZone),
-                    () -> maxPage
-            );
-            this.reactionManager.addEventListener(handler);
-        });
+        event.replyMultiPage(
+                formatPage(0, history, customDateFormat, customTimeZone),
+                page -> formatPage(page, history, customDateFormat, customTimeZone),
+                () -> maxPage);
     }
 
     private static final int HISTORIES_PER_PAGE = 5;
@@ -145,16 +151,16 @@ public class NameHistoryCmd extends GenericCommand {
         String description = String.format("*%s had these name(s) in the past:* %s",
                 currentName,
                 history.getHistory().stream().map(h -> "**" + escapeUsername(h.getUsername()) + "**")
-                .distinct().collect(Collectors.joining(", "))
+                        .distinct().collect(Collectors.joining(", "))
         );
 
         return new MessageBuilder(
                 new EmbedBuilder()
-                .setAuthor(String.format("%s's Name History : Page [%s/%s]", currentName, 1, maxPage + 1),
-                        null, AVATAR_URL + history.getUuid())
-                .setDescription(description)
-                .setFooter("UUID: " + history.getUuid().toStringWithHyphens())
-                .build()
+                        .setAuthor(String.format("%s's Name History : Page [%s/%s]", currentName, 1, maxPage + 1),
+                                null, AVATAR_URL + history.getUuid())
+                        .setDescription(description)
+                        .setFooter("UUID: " + history.getUuid().toStringWithHyphens())
+                        .build()
         ).build();
     }
 

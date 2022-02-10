@@ -2,6 +2,7 @@ package commands.guild;
 
 import app.Bot;
 import commands.base.GenericCommand;
+import commands.event.CommandEvent;
 import db.model.dateFormat.CustomDateFormat;
 import db.model.guildLeaderboard.GuildLeaderboard;
 import db.model.guildList.GuildListEntry;
@@ -11,11 +12,9 @@ import db.repository.base.*;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import update.multipage.MultipageHandler;
-import update.reaction.ReactionManager;
 import utils.ArgumentParser;
 import utils.FormatUtils;
 import utils.TableFormatter;
@@ -31,7 +30,6 @@ import static utils.TableFormatter.Justify.Left;
 import static utils.TableFormatter.Justify.Right;
 
 public class GuildLevelRank extends GenericCommand {
-    private final ReactionManager reactionManager;
     private final GuildLeaderboardRepository guildLeaderboardRepository;
     private final GuildXpLeaderboardRepository guildXpLeaderboardRepository;
     private final DateFormatRepository dateFormatRepository;
@@ -39,7 +37,6 @@ public class GuildLevelRank extends GenericCommand {
     private final GuildListRepository guildListRepository;
 
     public GuildLevelRank(Bot bot) {
-        this.reactionManager = bot.getReactionManager();
         this.guildLeaderboardRepository = bot.getDatabase().getGuildLeaderboardRepository();
         this.guildXpLeaderboardRepository = bot.getDatabase().getGuildXpLeaderboardRepository();
         this.dateFormatRepository = bot.getDatabase().getDateFormatRepository();
@@ -54,14 +51,23 @@ public class GuildLevelRank extends GenericCommand {
     }
 
     @Override
+    public @NotNull String[] slashName() {
+        return new String[]{"g", "levelrank"};
+    }
+
+    @Override
+    public @NotNull OptionData[] slashOptions() {
+        return new OptionData[]{};
+    }
+
+    @Override
     public @NotNull String syntax() {
         return "g levelRank [-cl <list name>]";
     }
 
     @Override
     public @NotNull String shortHelp() {
-        return "Guilds ranking by level and XP. " +
-                "Append your custom guild list name to arguments to view the rank of guilds in the list.";
+        return "Guilds ranking by level and XP.";
     }
 
     @Override
@@ -69,7 +75,8 @@ public class GuildLevelRank extends GenericCommand {
         return new MessageBuilder(
                 new EmbedBuilder()
                         .setAuthor("Guild Level Rank command help")
-                        .setDescription("Shows guilds ranking by their level and current XP.")
+                        .setDescription("Shows guilds ranking by their level and current XP.\n" +
+                                "Append your custom guild list name to arguments to view the rank of guilds in the list.")
                         .addField("Syntax", this.syntax(), false)
                         .addField("Why is it that only about 90 guilds are displayed?",
                                 "The bot is using leaderboard retrieved from the Wynncraft API to make level rank " +
@@ -91,6 +98,7 @@ public class GuildLevelRank extends GenericCommand {
 
     /**
      * Parses the command args and returns non-null list name if custom guild list was specified.
+     *
      * @param args Command args.
      * @return List name if specified.
      */
@@ -101,11 +109,11 @@ public class GuildLevelRank extends GenericCommand {
     }
 
     @Override
-    public void process(@NotNull MessageReceivedEvent event, @NotNull String[] args) {
+    public void process(@NotNull CommandEvent event, @NotNull String[] args) {
         List<GuildLeaderboard> lb = this.guildLeaderboardRepository.getLatestLeaderboard();
         List<GuildXpLeaderboard> xpGained = this.guildXpLeaderboardRepository.findAll();
         if (lb == null || xpGained == null) {
-            respondError(event, "Something went wrong while retrieving data...");
+            event.replyError("Something went wrong while retrieving data...");
             return;
         }
 
@@ -124,7 +132,7 @@ public class GuildLevelRank extends GenericCommand {
         Date from = this.guildLeaderboardRepository.getOldestDate();
         Date to = this.guildLeaderboardRepository.getNewestDate();
         if (from == null || to == null) {
-            respondError(event, "Something went wrong while retrieving data...");
+            event.replyError("Something went wrong while retrieving data...");
             return;
         }
 
@@ -147,19 +155,11 @@ public class GuildLevelRank extends GenericCommand {
         };
 
         if (maxPage(lb) == 0) {
-            respond(event, pages.apply(0));
+            event.reply(pages.apply(0));
             return;
         }
 
-        respond(event, pages.apply(0), message -> {
-            MultipageHandler handler = new MultipageHandler(
-                    message,
-                    event.getAuthor().getIdLong(),
-                    pages,
-                    () -> maxPage(lb)
-            );
-            this.reactionManager.addEventListener(handler);
-        });
+        event.replyMultiPage(pages.apply(0), pages, () -> maxPage(lb));
     }
 
     private static final int GUILDS_PER_PAGE = 20;
@@ -172,7 +172,8 @@ public class GuildLevelRank extends GenericCommand {
      * Trims and sorts leaderboard to make level rank leaderboard.
      * Since leaderboard retrieved from the API is sorted by territory number first and then levels,
      * discarding all entries below the lowest level guild with 0 territories will make an accurate level rank leaderboard.
-     * @param lb Original leaderboard retrieved from the Wynncraft API.
+     *
+     * @param lb   Original leaderboard retrieved from the Wynncraft API.
      * @param list If specified, custom guild list of the user.
      */
     private static void trimAndSortLB(List<GuildLeaderboard> lb, @Nullable List<GuildListEntry> list) {
@@ -192,22 +193,8 @@ public class GuildLevelRank extends GenericCommand {
         lb.sort((g1, g2) -> g2.compareLevelAndXP(g1));
     }
 
-    private static class Display {
-        private final String num;
-        private final String guildName;
-        private final String lv;
-        private final String xp;
-        private final String gainedXp;
-        private final String territory;
-
-        private Display(String num, String guildName, String lv, String xp, String gainedXp, String territory) {
-            this.num = num;
-            this.guildName = guildName;
-            this.lv = lv;
-            this.xp = xp;
-            this.gainedXp = gainedXp;
-            this.territory = territory;
-        }
+    private record Display(String num, String guildName, String lv, String xp,
+                           String gainedXp, String territory) {
     }
 
     private static List<Display> getDisplays(int page, List<GuildLeaderboard> lb, Map<String, GuildXpLeaderboard> xpGainedMap) {
@@ -233,20 +220,8 @@ public class GuildLevelRank extends GenericCommand {
         return displays;
     }
 
-    private static class LBDisplay {
-        private final int maxPage;
-        private final String lbDuration;
-        private final String totalXPGained;
-        private final String totalTerritories;
-        private final Date lastUpdate;
-
-        private LBDisplay(int maxPage, String lbDuration, String totalXPGained, String totalTerritories, Date lastUpdate) {
-            this.maxPage = maxPage;
-            this.lbDuration = lbDuration;
-            this.totalXPGained = totalXPGained;
-            this.totalTerritories = totalTerritories;
-            this.lastUpdate = lastUpdate;
-        }
+    private record LBDisplay(int maxPage, String lbDuration, String totalXPGained,
+                             String totalTerritories, Date lastUpdate) {
     }
 
     private static String formatDisplays(int page, List<Display> displays,

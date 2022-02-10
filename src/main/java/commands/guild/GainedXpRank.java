@@ -2,6 +2,7 @@ package commands.guild;
 
 import app.Bot;
 import commands.base.GenericCommand;
+import commands.event.CommandEvent;
 import db.model.dateFormat.CustomDateFormat;
 import db.model.guildList.GuildListEntry;
 import db.model.guildXpLeaderboard.GuildXpLeaderboard;
@@ -10,11 +11,9 @@ import db.repository.base.*;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import update.multipage.MultipageHandler;
-import update.reaction.ReactionManager;
 import utils.ArgumentParser;
 import utils.FormatUtils;
 import utils.TableFormatter;
@@ -30,7 +29,6 @@ import static utils.TableFormatter.Justify.Left;
 import static utils.TableFormatter.Justify.Right;
 
 public class GainedXpRank extends GenericCommand {
-    private final ReactionManager reactionManager;
     private final GuildXpLeaderboardRepository guildXpLeaderboardRepository;
     private final DateFormatRepository dateFormatRepository;
     private final TimeZoneRepository timeZoneRepository;
@@ -38,7 +36,6 @@ public class GainedXpRank extends GenericCommand {
     private final GuildListRepository guildListRepository;
 
     public GainedXpRank(Bot bot) {
-        this.reactionManager = bot.getReactionManager();
         this.guildXpLeaderboardRepository = bot.getDatabase().getGuildXpLeaderboardRepository();
         this.dateFormatRepository = bot.getDatabase().getDateFormatRepository();
         this.timeZoneRepository = bot.getDatabase().getTimeZoneRepository();
@@ -53,24 +50,34 @@ public class GainedXpRank extends GenericCommand {
     }
 
     @Override
+    public @NotNull String[] slashName() {
+        return new String[]{"g", "xp"};
+    }
+
+    @Override
+    public @NotNull OptionData[] slashOptions() {
+        return new OptionData[]{};
+    }
+
+    @Override
     public @NotNull String syntax() {
         return "g xp [-cl <list name>]";
     }
 
     @Override
     public @NotNull String shortHelp() {
-        return "Shows top guilds in order of amount of XP gained in last 24 hours. " +
-                "Append your custom guild list name to arguments to view the rank of guilds in the list.";
+        return "Top guilds in order of amount of XP gained in last 24 hours.";
     }
 
     @Override
     public @NotNull Message longHelp() {
         return new MessageBuilder(
                 new EmbedBuilder()
-                .setAuthor("Gained XP Command Help")
-                .setDescription(this.shortHelp())
-                .addField("Syntax", this.syntax(), false)
-                .build()
+                        .setAuthor("Gained XP Command Help")
+                        .setDescription(this.shortHelp() + "\n" +
+                                "Append your custom guild list name to arguments to view the rank of guilds in the list.")
+                        .addField("Syntax", this.syntax(), false)
+                        .build()
         ).build();
     }
 
@@ -81,6 +88,7 @@ public class GainedXpRank extends GenericCommand {
 
     /**
      * Parses the command args and returns non-null list name if custom guild list was specified.
+     *
      * @param args Command args.
      * @return List name if specified.
      */
@@ -102,28 +110,28 @@ public class GainedXpRank extends GenericCommand {
     }
 
     @Override
-    public void process(@NotNull MessageReceivedEvent event, @NotNull String[] args) {
+    public void process(@NotNull CommandEvent event, @NotNull String[] args) {
         String listName = parseListName(args);
         List<GuildListEntry> list = null;
         if (listName != null) {
             list = this.guildListRepository.getList(event.getAuthor().getIdLong(), listName);
             if (list == null) {
-                respondError(event, "Something went wrong while retrieving data...");
+                event.replyError("Something went wrong while retrieving data...");
                 return;
             }
             if (list.isEmpty()) {
-                respond(event, String.format("You don't seem to have a custom guild list called `%s`.", listName));
+                event.reply(String.format("You don't seem to have a custom guild list called `%s`.", listName));
                 return;
             }
         }
 
         List<GuildXpLeaderboard> xpLeaderboard = getLeaderboard(list);
         if (xpLeaderboard == null) {
-            respondError(event, "Something went wrong while getting XP leaderboard...");
+            event.replyError("Something went wrong while getting XP leaderboard...");
             return;
         }
         if (xpLeaderboard.size() == 0) {
-            respond(event, "Somehow, there were no guilds to display on the leaderboard.");
+            event.reply("Somehow, there were no guilds to display on the leaderboard.");
             return;
         }
 
@@ -134,16 +142,11 @@ public class GainedXpRank extends GenericCommand {
 
         Function<Integer, Message> pageSupplier = page -> getPage(page, xpLeaderboard, customDateFormat, customTimeZone);
         if (maxPage(xpLeaderboard) == 0) {
-            respond(event, pageSupplier.apply(0));
+            event.reply(pageSupplier.apply(0));
             return;
         }
 
-        respond(event, pageSupplier.apply(0), msg -> {
-            MultipageHandler handler = new MultipageHandler(
-                    msg, event.getAuthor().getIdLong(), pageSupplier, () -> maxPage(xpLeaderboard)
-            );
-            this.reactionManager.addEventListener(handler);
-        });
+        event.replyMultiPage(pageSupplier.apply(0), pageSupplier, () -> maxPage(xpLeaderboard));
     }
 
     private static final int GUILDS_PER_PAGE = 20;
@@ -152,23 +155,8 @@ public class GainedXpRank extends GenericCommand {
         return (leaderboard.size() - 1) / GUILDS_PER_PAGE;
     }
 
-    private static class Display {
-        private final String num;
-        // [prefix] guild name
-        private final String name;
-        private final int lv;
-        private final String xp;
-        private final String gained;
-        private final int territory;
-
-        private Display(String num, String name, int lv, String xp, String gained, int territory) {
-            this.num = num;
-            this.name = name;
-            this.lv = lv;
-            this.xp = xp;
-            this.gained = gained;
-            this.territory = territory;
-        }
+    private record Display(String num, String name, int lv, String xp,
+                           String gained, int territory) {
     }
 
     private List<Display> createDisplays(List<GuildXpLeaderboard> leaderboard) {
@@ -214,7 +202,7 @@ public class GainedXpRank extends GenericCommand {
         int max = Math.min((page + 1) * GUILDS_PER_PAGE, displays.size());
         for (int i = min; i < max; i++) {
             Display d = displays.get(i);
-            tf.addRow(d.num, d.name, ""+ d.lv, d.xp, d.gained, "" + d.territory);
+            tf.addRow(d.num, d.name, "" + d.lv, d.xp, d.gained, "" + d.territory);
         }
         tf.toString(sb);
         tf.addSeparator(sb);

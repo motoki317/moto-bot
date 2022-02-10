@@ -4,6 +4,7 @@ import api.wynn.WynnApi;
 import api.wynn.structs.WynnGuild;
 import app.Bot;
 import commands.base.GenericCommand;
+import commands.event.CommandEvent;
 import db.model.dateFormat.CustomDateFormat;
 import db.model.guildLeaderboard.GuildLeaderboard;
 import db.model.guildLeaderboard.GuildLeaderboardId;
@@ -14,10 +15,9 @@ import db.repository.base.*;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import net.dv8tion.jda.api.interactions.commands.OptionType;
+import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import org.jetbrains.annotations.NotNull;
-import update.multipage.MultipageHandler;
-import update.reaction.ReactionManager;
 import utils.FormatUtils;
 import utils.InputChecker;
 import utils.TableFormatter;
@@ -28,7 +28,6 @@ import java.text.DateFormat;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import static utils.TableFormatter.Justify.Left;
 import static utils.TableFormatter.Justify.Right;
@@ -44,6 +43,18 @@ public class GuildStats extends GenericCommand {
     @Override
     protected String[][] names() {
         return new String[][]{{"g", "guild"}, {"s", "stats", "info", "i"}};
+    }
+
+    @Override
+    public @NotNull String[] slashName() {
+        return new String[]{"g", "stats"};
+    }
+
+    @Override
+    public @NotNull OptionData[] slashOptions() {
+        return new OptionData[]{
+                new OptionData(OptionType.STRING, "guild", "Name or prefix of a guild", true)
+        };
     }
 
     @Override
@@ -77,9 +88,9 @@ public class GuildStats extends GenericCommand {
     }
 
     @Override
-    public void process(@NotNull MessageReceivedEvent event, @NotNull String[] args) {
+    public void process(@NotNull CommandEvent event, @NotNull String[] args) {
         if (args.length <= 2) {
-            respond(event, this.longHelp());
+            event.reply(this.longHelp());
             return;
         }
 
@@ -89,7 +100,6 @@ public class GuildStats extends GenericCommand {
 
     static class Handler {
         private final WynnApi wynnApi;
-        private final ReactionManager reactionManager;
         private final GuildNameResolver guildNameResolver;
         private final DateFormatRepository dateFormatRepository;
         private final TimeZoneRepository timeZoneRepository;
@@ -101,7 +111,6 @@ public class GuildStats extends GenericCommand {
 
         Handler(Bot bot) {
             this.wynnApi = new WynnApi(bot.getLogger());
-            this.reactionManager = bot.getReactionManager();
             this.guildNameResolver = new GuildNameResolver(
                     bot.getResponseManager(),
                     bot.getDatabase().getGuildRepository()
@@ -115,33 +124,33 @@ public class GuildStats extends GenericCommand {
             this.guildBannerUrl = bot.getProperties().guildBannerUrl;
         }
 
-        public void handle(@NotNull MessageReceivedEvent event, @NotNull String guildName) {
+        public void handle(@NotNull CommandEvent event, @NotNull String guildName) {
             if (!InputChecker.isValidWynncraftGuildName(guildName)) {
-                respond(event, String.format("Given guild name `%s` doesn't seem to be a valid Wynncraft guild name...",
+                event.reply(String.format("Given guild name `%s` doesn't seem to be a valid Wynncraft guild name...",
                         guildName));
                 return;
             }
 
             this.guildNameResolver.resolve(
                     guildName,
-                    event.getTextChannel(),
+                    event.getChannel(),
                     event.getAuthor(),
                     (resolvedName, prefix) -> handleResolved(event, resolvedName),
-                    reason -> respondError(event, reason)
+                    event::replyError
             );
         }
 
-        private void handleResolved(@NotNull MessageReceivedEvent event, @NotNull String guildName) {
+        private void handleResolved(@NotNull CommandEvent event, @NotNull String guildName) {
             WynnGuild guild;
             try {
                 guild = this.wynnApi.getGuildStats(guildName);
             } catch (RateLimitException e) {
-                respondException(event, e.getMessage());
+                event.replyException(e.getMessage());
                 return;
             }
 
             if (guild == null) {
-                respondException(event, String.format("Failed to retrieve guild data for %s.", guildName));
+                event.replyException(String.format("Failed to retrieve guild data for %s.", guildName));
                 return;
             }
 
@@ -149,12 +158,7 @@ public class GuildStats extends GenericCommand {
             CustomTimeZone customTimeZone = this.timeZoneRepository.getTimeZone(event);
 
             Function<Integer, Message> pageSupplier = page -> getPage(page, guild, customDateFormat, customTimeZone);
-            respond(event, pageSupplier.apply(0), msg -> {
-                MultipageHandler handler = new MultipageHandler(
-                        msg, event.getAuthor().getIdLong(), pageSupplier, () -> maxPage(guild)
-                );
-                this.reactionManager.addEventListener(handler);
-            });
+            event.replyMultiPage(pageSupplier.apply(0), pageSupplier, () -> maxPage(guild));
         }
 
         private static final int MEMBERS_PER_CONTRIBUTE_PAGE = 30;
@@ -211,7 +215,7 @@ public class GuildStats extends GenericCommand {
             }
 
             if (lb != null) {
-                // The guild is in the leaderboard so we can get exact xp,
+                // The guild is in the leaderboard, so we can get exact xp,
                 // but it is NOT on the xp leaderboard i.e. hasn't earned a single xp over the last 24h
                 sb.append(String.format("Level %s | %s%%, %s XP%s\n", guild.getLevel(), guild.getXp(),
                         FormatUtils.truncateNumber(BigDecimal.valueOf(lb.getXp())),
@@ -376,7 +380,8 @@ public class GuildStats extends GenericCommand {
             List<Member> onlineMembers = guild.getMembers().stream()
                     .map(m -> new Member(m.getName(), Rank.valueOf(m.getRank()), this.wynnApi.findPlayer(m.getName())))
                     .filter(m -> m.server != null)
-                    .sorted((m1, m2) -> m2.rank.rank - m1.rank.rank).collect(Collectors.toList());
+                    .sorted((m1, m2) -> m2.rank.rank - m1.rank.rank)
+                    .toList();
 
             if (onlineMembers.size() == 1) {
                 sb.append("---- Online Member (1) ----\n");
@@ -416,7 +421,7 @@ public class GuildStats extends GenericCommand {
                     .filter(m -> m.getRank().equals(rank.name()))
                     .map(m -> new Member(m.getName(), this.wynnApi.findPlayer(m.getName())))
                     .sorted(Comparator.comparing(m -> m.name))
-                    .collect(Collectors.toList());
+                    .toList();
 
             int justifyName = members.stream().mapToInt(e -> e.name.length()).max().orElse(1);
 
@@ -460,7 +465,7 @@ public class GuildStats extends GenericCommand {
                     .map(m -> new Member(
                             m.getName(), Rank.valueOf(m.getRank()), String.format("%,d xp", m.getContributed()
                     )))
-                    .collect(Collectors.toList());
+                    .toList();
 
             sb.append("---- XP Contributions ----\n");
             sb.append("\n");

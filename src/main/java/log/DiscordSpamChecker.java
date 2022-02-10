@@ -1,7 +1,6 @@
 package log;
 
-import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
-import utils.BotUtils;
+import commands.event.CommandEvent;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -14,7 +13,7 @@ public class DiscordSpamChecker {
         this.coolDowns = new HashMap<>();
     }
 
-    public synchronized boolean isSpam(MessageReceivedEvent event, long nextCoolDown) {
+    public synchronized boolean isSpam(CommandEvent event, long nextCoolDown) {
         long userId = event.getAuthor().getIdLong();
         long now = System.currentTimeMillis();
         long lastCoolDownExpire = this.coolDowns.getOrDefault(userId, -1L);
@@ -25,7 +24,7 @@ public class DiscordSpamChecker {
         }
 
         // Register next cool-down expire time
-        long nextCoolDownExpire = BotUtils.getIdCreationTime(event.getMessageIdLong()) + nextCoolDown;
+        long nextCoolDownExpire = event.getCreatedAt() + nextCoolDown;
         this.coolDowns.put(userId, nextCoolDownExpire);
 
         this.removeOldMessageCache(now);
@@ -34,6 +33,7 @@ public class DiscordSpamChecker {
 
     /**
      * Returns how much time is remained until the cool-down is expired for this user, in milliseconds.
+     *
      * @param userId User ID.
      * @return Remaining cool-down in milliseconds.
      */

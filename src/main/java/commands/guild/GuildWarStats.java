@@ -2,6 +2,7 @@ package commands.guild;
 
 import app.Bot;
 import commands.base.GenericCommand;
+import commands.event.CommandEvent;
 import db.model.dateFormat.CustomDateFormat;
 import db.model.guildWarLog.GuildWarLog;
 import db.model.territoryLog.TerritoryLog;
@@ -12,11 +13,10 @@ import db.repository.base.*;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import net.dv8tion.jda.api.interactions.commands.OptionType;
+import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import update.multipage.MultipageHandler;
-import update.reaction.ReactionManager;
 import utils.FormatUtils;
 
 import java.math.BigDecimal;
@@ -24,10 +24,10 @@ import java.math.RoundingMode;
 import java.text.DateFormat;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class GuildWarStats extends GenericCommand {
-    private final ReactionManager reactionManager;
     private final TimeZoneRepository timeZoneRepository;
     private final DateFormatRepository dateFormatRepository;
     private final GuildWarLogRepository guildWarLogRepository;
@@ -37,7 +37,6 @@ public class GuildWarStats extends GenericCommand {
     private final GuildNameResolver guildNameResolver;
 
     public GuildWarStats(Bot bot) {
-        this.reactionManager = bot.getReactionManager();
         this.timeZoneRepository = bot.getDatabase().getTimeZoneRepository();
         this.dateFormatRepository = bot.getDatabase().getDateFormatRepository();
         this.guildWarLogRepository = bot.getDatabase().getGuildWarLogRepository();
@@ -57,6 +56,18 @@ public class GuildWarStats extends GenericCommand {
     }
 
     @Override
+    public @NotNull String[] slashName() {
+        return new String[]{"g", "ws"};
+    }
+
+    @Override
+    public @NotNull OptionData[] slashOptions() {
+        return new OptionData[]{
+                new OptionData(OptionType.STRING, "guild", "Name or prefix of a guild", true)
+        };
+    }
+
+    @Override
     public @NotNull String syntax() {
         return "g warstats <guild name>";
     }
@@ -70,12 +81,12 @@ public class GuildWarStats extends GenericCommand {
     public @NotNull Message longHelp() {
         return new MessageBuilder(
                 new EmbedBuilder()
-                .setAuthor("Guild War Stats Help")
-                .setDescription("Shows war activities of a guild.")
-                .addField("Syntax",
-                        "`" + this.syntax() + "`",
-                        false
-                )
+                        .setAuthor("Guild War Stats Help")
+                        .setDescription("Shows war activities of a guild.")
+                        .addField("Syntax",
+                                "`" + this.syntax() + "`",
+                                false
+                        )
         ).build();
     }
 
@@ -88,29 +99,29 @@ public class GuildWarStats extends GenericCommand {
     private static final int PLAYERS_LIST_LENGTH = 1500 / LOGS_PER_PAGE;
 
     @Override
-    public void process(@NotNull MessageReceivedEvent event, @NotNull String[] args) {
+    public void process(@NotNull CommandEvent event, @NotNull String[] args) {
         if (args.length < 3) {
-            respond(event, "Please specify a guild name to see the guild's war activities!");
+            event.reply("Please specify a guild name to see the guild's war activities!");
             return;
         }
 
         String guildName = String.join(" ", Arrays.copyOfRange(args, 2, args.length));
         this.guildNameResolver.resolve(
                 guildName,
-                event.getTextChannel(),
+                event.getChannel(),
                 event.getAuthor(),
                 (resolvedName, prefix) -> handleChosenGuild(event, resolvedName, prefix),
-                reason -> respondError(event, reason)
+                event::replyError
         );
     }
 
-    private void handleChosenGuild(MessageReceivedEvent event, @NotNull String guildName, @Nullable String guildPrefix) {
+    private void handleChosenGuild(CommandEvent event, @NotNull String guildName, @Nullable String guildPrefix) {
         int count = this.guildWarLogRepository.countGuildLogs(guildName);
         if (count < 0) {
-            respondError(event, "Something went wrong while retrieving data...");
+            event.replyError("Something went wrong while retrieving data...");
             return;
         } else if (count == 0) {
-            respond(event, String.format("Specified guild `%s` does not seem to have any logged war activities...", guildName));
+            event.reply(String.format("Specified guild `%s` does not seem to have any logged war activities...", guildName));
             return;
         }
 
@@ -118,19 +129,12 @@ public class GuildWarStats extends GenericCommand {
         CustomDateFormat dateFormat = this.dateFormatRepository.getDateFormat(event);
 
         if (count <= LOGS_PER_PAGE) {
-            respond(event, format(guildName, guildPrefix, 0, timeZone, dateFormat));
+            event.reply(format(guildName, guildPrefix, 0, timeZone, dateFormat));
             return;
         }
 
-        respond(event, format(guildName, guildPrefix, 0, timeZone, dateFormat), success -> {
-            MultipageHandler handler = new MultipageHandler(
-                    success,
-                    event.getAuthor().getIdLong(),
-                    page -> new MessageBuilder(format(guildName, guildPrefix, page, timeZone, dateFormat)).build(),
-                    () -> maxPage(guildName)
-            );
-            this.reactionManager.addEventListener(handler);
-        });
+        Function<Integer, Message> pages = page -> new MessageBuilder(format(guildName, guildPrefix, page, timeZone, dateFormat)).build();
+        event.replyMultiPage(pages.apply(0), pages, () -> maxPage(guildName));
     }
 
     private int maxPage(String guildName) {
@@ -241,10 +245,11 @@ public class GuildWarStats extends GenericCommand {
                     // territory lost
                     event = "Territory lost!";
                 }
-                return String.format("%s. %s : %s\n" +
-                                "   %s (%s) → %s (%s)\n" +
-                                "   Time: %s\n" +
-                                "   Held for %s",
+                return String.format("""
+                                %s. %s : %s
+                                   %s (%s) → %s (%s)
+                                   Time: %s
+                                   Held for %s""",
                         seq, event, territoryLog.getTerritoryName(),
                         territoryLog.getOldGuildName(), territoryLog.getOldGuildTerrAmt(),
                         territoryLog.getNewGuildName(), territoryLog.getNewGuildTerrAmt(),
@@ -270,9 +275,10 @@ public class GuildWarStats extends GenericCommand {
                     // War ongoing
                     event = "In fight...";
                 }
-                return String.format("%s. %s : %s\n" +
-                                "   War Time: %s ~ %s\n" +
-                                "   Players: %s",
+                return String.format("""
+                                %s. %s : %s
+                                   War Time: %s ~ %s
+                                   Players: %s""",
                         seq, warLog.getServerName(), event,
                         formatter.format(warLog.getCreatedAt()), formatter.format(warLog.getLastUp()),
                         formatPlayers(warLog.getPlayers())
@@ -281,10 +287,11 @@ public class GuildWarStats extends GenericCommand {
                 TerritoryLog territoryLog = territoryLogs.get(log.getTerritoryLogId());
                 // Assert territory acquired, and war was a success
                 if (territoryLog.getNewGuildName().equals(guildName)) {
-                    return String.format("%s. %s : %s\n" +
-                            "   %s (%s) → %s (%s)\n" +
-                            "   War Time: %s ~ %s\n" +
-                            "   Players: %s",
+                    return String.format("""
+                                    %s. %s : %s
+                                       %s (%s) → %s (%s)
+                                       War Time: %s ~ %s
+                                       Players: %s""",
                             seq, warLog.getServerName(), territoryLog.getTerritoryName(),
                             territoryLog.getOldGuildName(), territoryLog.getOldGuildTerrAmt(),
                             territoryLog.getNewGuildName(), territoryLog.getNewGuildTerrAmt(),

@@ -5,10 +5,12 @@ import api.wynn.structs.Item;
 import api.wynn.structs.ItemDB;
 import app.Bot;
 import commands.base.GenericCommand;
+import commands.event.CommandEvent;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import net.dv8tion.jda.api.interactions.commands.OptionType;
+import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -35,6 +37,18 @@ public class ItemView extends GenericCommand {
     }
 
     @Override
+    public @NotNull String[] slashName() {
+        return new String[]{"item"};
+    }
+
+    @Override
+    public @NotNull OptionData[] slashOptions() {
+        return new OptionData[]{
+                new OptionData(OptionType.STRING, "name", "Name of item", true)
+        };
+    }
+
+    @Override
     public @NotNull String syntax() {
         return "item <item name>";
     }
@@ -48,9 +62,9 @@ public class ItemView extends GenericCommand {
     public @NotNull Message longHelp() {
         return new MessageBuilder(
                 new EmbedBuilder()
-                .setAuthor("Item Stats Command Help")
-                .setDescription("Shows an item's stats. Give partial or full item name to the argument.")
-                .build()
+                        .setAuthor("Item Stats Command Help")
+                        .setDescription("Shows an item's stats. Give partial or full item name to the argument.")
+                        .build()
         ).build();
     }
 
@@ -60,15 +74,15 @@ public class ItemView extends GenericCommand {
     }
 
     @Override
-    public void process(@NotNull MessageReceivedEvent event, @NotNull String[] args) {
+    public void process(@NotNull CommandEvent event, @NotNull String[] args) {
         if (args.length < 2) {
-            respond(event, "Please input the item name you want to view stats of.");
+            event.reply("Please input the item name you want to view stats of.");
             return;
         }
 
         ItemDB db = this.wynnApi.mustGetItemDB(false);
         if (db == null) {
-            respondError(event, "Something went wrong while requesting Wynncraft API.");
+            event.replyError("Something went wrong while requesting Wynncraft API.");
             return;
         }
 
@@ -76,10 +90,10 @@ public class ItemView extends GenericCommand {
         List<Item> matched = searchItem(input, db.getItems());
 
         if (matched.size() == 0) {
-            respond(event, String.format("No items matched with input `%s`.", input));
+            event.reply(String.format("No items matched with input `%s`.", input));
             return;
         } else if (matched.size() > 1) {
-            respond(event, String.format("Multiple items (%s items) matched with input `%s`.\nMatched items: %s",
+            event.reply(String.format("Multiple items (%s items) matched with input `%s`.\nMatched items: %s",
                     matched.size(), input,
                     matched.stream().limit(50).map(i -> "`" + i.getName() + "`")
                             .collect(Collectors.joining(", "))));
@@ -88,7 +102,7 @@ public class ItemView extends GenericCommand {
 
         Item item = matched.get(0);
 
-        respond(event, formatItemInfo(item, this.imageURLBase));
+        event.reply(formatItemInfo(item, this.imageURLBase));
     }
 
     static List<Item> searchItem(String input, List<Item> items) {
@@ -179,15 +193,8 @@ public class ItemView extends GenericCommand {
         }
     }
 
-    private static class Damage {
-        private final Function<Item, String> status;
-        private final String displayName;
-
-        private Damage(Function<Item, String> status, String displayName) {
-            this.status = status;
-            this.displayName = displayName;
-        }
-
+    private record Damage(Function<Item, String> status,
+                          String displayName) {
         private double getAverageDamage(Item item) {
             // Damage example "0-0"
             String[] status = this.status.apply(item).split("-");
@@ -446,7 +453,7 @@ public class ItemView extends GenericCommand {
 
     private static String getIDs(Item item) {
         List<Identification> availableIDs = Arrays.stream(identifications)
-                .filter(i -> i.status.apply(item) != 0).collect(Collectors.toList());
+                .filter(i -> i.status.apply(item) != 0).toList();
 
         List<String> ret = new ArrayList<>();
         if (availableIDs.isEmpty()) {
@@ -467,6 +474,7 @@ public class ItemView extends GenericCommand {
 
     /**
      * Retrieves image name such as "160-14.gif"
+     *
      * @param item Item
      * @return Image name
      */
@@ -480,6 +488,7 @@ public class ItemView extends GenericCommand {
 
     /**
      * Retrieves image name such as "160-14"
+     *
      * @param item Item
      * @return Image ID
      */
@@ -508,7 +517,8 @@ public class ItemView extends GenericCommand {
 
     /**
      * Retrieves item ID from type and armor type
-     * @param type Type such as "Helmet"
+     *
+     * @param type      Type such as "Helmet"
      * @param armorType Armor type such as "Leather"
      * @return Numeric item ID such as "298"
      */
@@ -532,6 +542,7 @@ public class ItemView extends GenericCommand {
 
     /**
      * Retrieves corresponding theme color from item tier.
+     *
      * @param tier Item tier such as "Mythic"
      * @return Color
      */

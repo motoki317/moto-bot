@@ -2,7 +2,7 @@ package commands.guild;
 
 import db.model.guild.Guild;
 import db.repository.base.GuildRepository;
-import net.dv8tion.jda.api.entities.TextChannel;
+import net.dv8tion.jda.api.entities.MessageChannel;
 import net.dv8tion.jda.api.entities.User;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -27,14 +27,15 @@ public class GuildNameResolver {
 
     /**
      * Resolves guild name from user input.
+     *
      * @param guildName Guild name, or possibly guild prefix.
-     * @param textChannel For guild selection.
-     * @param author For guild selection.
+     * @param channel   For guild selection.
+     * @param author    For guild selection.
      * @param onResolve On resolve, guild name and guild prefix are given.
      * @param onFailure On error, reason is given.
      */
     public void resolve(@NotNull String guildName,
-                        TextChannel textChannel,
+                        MessageChannel channel,
                         User author,
                         BiConsumer<@NotNull String, @Nullable String> onResolve,
                         Consumer<@NotNull String> onFailure) {
@@ -58,12 +59,12 @@ public class GuildNameResolver {
             List<String> guildNames = guilds.stream().map(Guild::getName).collect(Collectors.toList());
             Map<String, String> guildPrefixes = guilds.stream().collect(Collectors.toMap(Guild::getName, Guild::getPrefix));
             SelectionHandler handler = new SelectionHandler(
-                    textChannel.getIdLong(),
+                    channel.getIdLong(),
                     author.getIdLong(),
                     guildNames,
                     name -> onResolve.accept(name, guildPrefixes.get(name))
             );
-            handler.sendMessage(textChannel, author, () -> this.responseManager.addEventListener(handler));
+            handler.sendMessage(channel, author, () -> this.responseManager.addEventListener(handler));
             return;
         }
 
@@ -72,6 +73,7 @@ public class GuildNameResolver {
 
     /**
      * Finds guild with specified name (both full name or prefix was possibly specified).
+     *
      * @param specified Specified name.
      * @return List of found guilds. null if something went wrong.
      */

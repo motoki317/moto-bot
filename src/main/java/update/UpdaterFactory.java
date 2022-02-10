@@ -1,5 +1,6 @@
 package update;
 
+import update.button.ButtonClickManager;
 import update.reaction.ReactionManager;
 import update.response.ResponseManager;
 
@@ -7,4 +8,5 @@ import update.response.ResponseManager;
 public interface UpdaterFactory {
     ReactionManager getReactionManager();
     ResponseManager getResponseManager();
+    ButtonClickManager getButtonClickManager();
 }

@@ -2,6 +2,7 @@ package commands.guild;
 
 import app.Bot;
 import commands.base.GenericCommand;
+import commands.event.CommandEvent;
 import db.model.dateFormat.CustomDateFormat;
 import db.model.timezone.CustomTimeZone;
 import db.model.warLog.WarLog;
@@ -13,10 +14,8 @@ import db.repository.base.WorldRepository;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import org.jetbrains.annotations.NotNull;
-import update.multipage.MultipageHandler;
-import update.reaction.ReactionManager;
 import utils.FormatUtils;
 import utils.TableFormatter;
 
@@ -36,20 +35,27 @@ public class CurrentWars extends GenericCommand {
     private final TimeZoneRepository timeZoneRepository;
     private final DateFormatRepository dateFormatRepository;
 
-    private final ReactionManager reactionManager;
-
     public CurrentWars(Bot bot) {
         this.worldRepository = bot.getDatabase().getWorldRepository();
         this.warLogRepository = bot.getDatabase().getWarLogRepository();
         this.timeZoneRepository = bot.getDatabase().getTimeZoneRepository();
         this.dateFormatRepository = bot.getDatabase().getDateFormatRepository();
-        this.reactionManager = bot.getReactionManager();
     }
 
     @NotNull
     @Override
     protected String[][] names() {
         return new String[][]{{"g", "guild"}, {"war", "wars"}};
+    }
+
+    @Override
+    public @NotNull String[] slashName() {
+        return new String[]{"g", "war"};
+    }
+
+    @Override
+    public @NotNull OptionData[] slashOptions() {
+        return new OptionData[]{};
     }
 
     @Override
@@ -66,8 +72,8 @@ public class CurrentWars extends GenericCommand {
     public @NotNull Message longHelp() {
         return new MessageBuilder(
                 new EmbedBuilder()
-                .setAuthor("Guild War Command Help")
-                .setDescription(this.shortHelp())
+                        .setAuthor("Guild War Command Help")
+                        .setDescription(this.shortHelp())
         ).build();
     }
 
@@ -77,12 +83,12 @@ public class CurrentWars extends GenericCommand {
     }
 
     @Override
-    public void process(@NotNull MessageReceivedEvent event, @NotNull String[] args) {
+    public void process(@NotNull CommandEvent event, @NotNull String[] args) {
         List<WarLog> wars = this.warLogRepository.findAllNotEnded();
         List<World> notYetStartedWars = this.worldRepository.findAllWarWorlds();
 
         if (wars == null || notYetStartedWars == null) {
-            respondError(event, "Something went wrong while retrieving data...");
+            event.replyError("Something went wrong while retrieving data...");
             return;
         }
 
@@ -90,7 +96,7 @@ public class CurrentWars extends GenericCommand {
         notYetStartedWars = notYetStartedWars.stream().filter(w -> !startedWars.contains(w.getName())).collect(Collectors.toList());
 
         if (wars.isEmpty() && notYetStartedWars.isEmpty()) {
-            respond(event, "There doesn't seem to be any guild wars going on.");
+            event.reply("There doesn't seem to be any guild wars going on.");
             return;
         }
 
@@ -105,30 +111,18 @@ public class CurrentWars extends GenericCommand {
         List<Display> displays = formatDisplays(wars, notYetStartedWars);
         int pages = (displays.size() - 1) / WARS_PER_PAGE;
         if (pages == 0) {
-            respond(event, formatMessage(0, wars.size(), displays, lastUpdate, customTimeZone, customDateFormat));
+            event.reply(formatMessage(0, wars.size(), displays, lastUpdate, customTimeZone, customDateFormat));
             return;
         }
-        respond(event, formatMessage(0, wars.size(), displays, lastUpdate, customTimeZone, customDateFormat),
-                message ->
-                        this.reactionManager.addEventListener(new MultipageHandler(message, event.getAuthor().getIdLong(),
-                                page -> new MessageBuilder(formatMessage(page, wars.size(), displays, lastUpdate, customTimeZone, customDateFormat)).build(),
-                                () -> pages)));
+
+        Function<Integer, Message> pageSupplier = page -> new MessageBuilder(formatMessage(page, wars.size(), displays, lastUpdate, customTimeZone, customDateFormat)).build();
+        event.replyMultiPage(pageSupplier.apply(0), pageSupplier, () -> pages);
     }
 
     private static final int WARS_PER_PAGE = 20;
 
-    private static class Display {
-        private final String server;
-        private final String guild;
-        private final String players;
-        private final String elapsed;
-
-        private Display(String server, String guild, String players, String elapsed) {
-            this.server = server;
-            this.guild = guild;
-            this.players = players;
-            this.elapsed = elapsed;
-        }
+    private record Display(String server, String guild, String players,
+                           String elapsed) {
     }
 
     @NotNull
@@ -153,7 +147,7 @@ public class CurrentWars extends GenericCommand {
         );
 
         List<Display> displays = wars.stream().map(createDisplay).collect(Collectors.toList());
-        displays.addAll(notYetStartedWars.stream().map(createDisplayFromWorld).collect(Collectors.toList()));
+        displays.addAll(notYetStartedWars.stream().map(createDisplayFromWorld).toList());
         return displays;
     }
 

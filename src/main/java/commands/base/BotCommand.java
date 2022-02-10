@@ -1,20 +1,18 @@
 package commands.base;
 
-import net.dv8tion.jda.api.EmbedBuilder;
+import commands.event.CommandEvent;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.entities.MessageChannel;
-import net.dv8tion.jda.api.entities.MessageEmbed;
-import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import net.dv8tion.jda.api.interactions.commands.build.BaseCommand;
+import net.dv8tion.jda.api.interactions.commands.build.CommandData;
+import net.dv8tion.jda.api.interactions.commands.build.OptionData;
+import net.dv8tion.jda.api.interactions.commands.build.SubcommandData;
 import org.jetbrains.annotations.NotNull;
-import utils.MinecraftColor;
 
-import java.time.Instant;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.function.Consumer;
 
 public abstract class BotCommand {
     public abstract boolean guildOnly();
@@ -24,16 +22,52 @@ public abstract class BotCommand {
      * Examples:
      * {{"help", "h"}} for 1-argument command.
      * {{"guild", "g"}, {"levelRank", "lRank"}} for 2-arguments command.
+     *
      * @return Command names.
      */
     @NotNull
     protected abstract String[][] names();
 
     /**
+     * Command name for slash command.
+     * Command name returned by this MUST also be included by {@link BotCommand#names()}.
+     * Should return valid slash command name: use lower-case letters and hyphens ("-").
+     *
+     * @return Command name.
+     */
+    @NotNull
+    public abstract String[] slashName();
+
+    /**
+     * Command options used by slash command.
+     *
+     * @return Slash command options.
+     */
+    @NotNull
+    public abstract OptionData[] slashOptions();
+
+    /**
+     * For a more controllable slash command registering, override this method.
+     *
+     * @return Slash command instance.
+     */
+    @NotNull
+    public BaseCommand<CommandData> slashCommand() {
+        String[] slashName = this.slashName();
+        return switch (slashName.length) {
+            case 1 -> new CommandData(slashName[0], this.shortHelp()).addOptions(this.slashOptions());
+            case 2 -> new SubcommandData(slashName[1], this.shortHelp()).addOptions(this.slashOptions());
+            case 3 -> new SubcommandData(slashName[2], this.shortHelp()).addOptions(this.slashOptions());
+            default -> throw new Error("Slash command name should be of length >= 1 and <= 3");
+        };
+    }
+
+    /**
      * Get names for this command including aliases.
      * Examples:
      * {"help", "h"} for 1-argument command.
      * {"guild levelRank", "guild lRank", "g levelRank", "g lRank"} for 2-arguments command.
+     *
      * @return Names. Values possibly includes spaces.
      */
     public Set<String> getNames() {
@@ -59,6 +93,7 @@ public abstract class BotCommand {
      * Examples:
      * "help" command: 1,
      * "g levelRank" command: 2
+     *
      * @return Length of base arguments.
      */
     public int getArgumentsLength() {
@@ -69,13 +104,15 @@ public abstract class BotCommand {
      * Command syntax. Used in help display.
      * Example:
      * "help [command name]"
+     *
      * @return Command syntax.
      */
     @NotNull
     public abstract String syntax();
 
     /**
-     * Shows short help in help command.
+     * Short help for use in help and slash command.
+     *
      * @return Short help.
      */
     @NotNull
@@ -83,6 +120,7 @@ public abstract class BotCommand {
 
     /**
      * Shows long help in help (cmd name) command.
+     *
      * @return Long help message.
      */
     @NotNull
@@ -92,6 +130,7 @@ public abstract class BotCommand {
      * Get required guild permissions to execute this command.
      * All permission given by this has to be satisfied by the member.
      * If no permission is required, returns an empty list.
+     *
      * @return List of permissions.
      */
     @NotNull
@@ -101,6 +140,7 @@ public abstract class BotCommand {
 
     /**
      * Checks if this command requires any guild permissions.
+     *
      * @return Returns {@code true} this command requires guild perms.
      */
     public boolean requirePermissions() {
@@ -110,6 +150,7 @@ public abstract class BotCommand {
     /**
      * Checks if the given member has enough permissions to execute this command.
      * Should check {@link BotCommand#requirePermissions()} first before calling this.
+     *
      * @param member Guild member.
      * @return {@code true} if
      */
@@ -128,99 +169,16 @@ public abstract class BotCommand {
     /**
      * Retrieves command cool-down in milliseconds.
      * The user will not be able to execute any other commands for this much time, after executing this command.
+     *
      * @return Cool-down in milliseconds.
      */
     public abstract long getCoolDown();
 
     /**
      * Process a command.
-     * @param event Discord message received event.
-     * @param args Argument array, separated by space characters.
+     *
+     * @param event Command event.
+     * @param args  Argument array, separated by space characters.
      */
-    public abstract void process(@NotNull MessageReceivedEvent event, @NotNull String[] args);
-
-    public static void respond(MessageReceivedEvent event, CharSequence message) {
-        event.getChannel().sendMessage(message).queue();
-    }
-    public static void respond(MessageReceivedEvent event, Message message) {
-        event.getChannel().sendMessage(message).queue();
-    }
-    public static void respond(MessageReceivedEvent event, MessageEmbed message) {
-        event.getChannel().sendMessageEmbeds(message).queue();
-    }
-    public static void respond(MessageChannel channel, CharSequence message) {
-        channel.sendMessage(message).queue();
-    }
-    public static void respond(MessageChannel channel, Message message) {
-        channel.sendMessage(message).queue();
-    }
-    public static void respond(MessageChannel channel, MessageEmbed message) {
-        channel.sendMessageEmbeds(message).queue();
-    }
-    public static void respond(MessageReceivedEvent event, CharSequence message, Consumer<? super Message> onSuccess) {
-        event.getChannel().sendMessage(message).queue(onSuccess);
-    }
-    public static void respond(MessageReceivedEvent event, Message message, Consumer<? super Message> onSuccess) {
-        event.getChannel().sendMessage(message).queue(onSuccess);
-    }
-    public static void respond(MessageReceivedEvent event, MessageEmbed message, Consumer<? super Message> onSuccess) {
-        event.getChannel().sendMessageEmbeds(message).queue(onSuccess);
-    }
-    public static void respond(MessageChannel channel, CharSequence message, Consumer<? super Message> onSuccess) {
-        channel.sendMessage(message).queue(onSuccess);
-    }
-    public static void respond(MessageChannel channel, Message message, Consumer<? super Message> onSuccess) {
-        channel.sendMessage(message).queue(onSuccess);
-    }
-    public static void respond(MessageChannel channel, MessageEmbed message, Consumer<? super Message> onSuccess) {
-        channel.sendMessageEmbeds(message).queue(onSuccess);
-    }
-
-    /**
-     * Respond exception in red embed message.
-     * @param event Message received event.
-     * @param message Description of the exception.
-     */
-    public static void respondException(MessageReceivedEvent event, CharSequence message) {
-        respond(event,
-                new EmbedBuilder()
-                        .setColor(MinecraftColor.RED.getColor())
-                        .setDescription(message)
-                        .build()
-        );
-    }
-
-    /**
-     * Respond exception in red embed message.
-     * @param channel Message channel.
-     * @param message Description of the exception.
-     */
-    public static void respondException(MessageChannel channel, CharSequence message) {
-        respond(channel,
-                new EmbedBuilder()
-                        .setColor(MinecraftColor.RED.getColor())
-                        .setDescription(message)
-                        .build()
-        );
-    }
-
-    /**
-     * Respond error message when something seriously went wrong (not because of bad user action) while processing a command.
-     * @param event Message received event.
-     * @param message Description of the error.
-     */
-    public static void respondError(MessageReceivedEvent event, CharSequence message) {
-        event.getChannel().sendMessageEmbeds(
-                new EmbedBuilder()
-                .setColor(MinecraftColor.RED.getColor())
-                // Heavy exclamation mark :exclamation: ❗
-                .setAuthor("\u2757 Error!", null, event.getAuthor().getEffectiveAvatarUrl())
-                .setDescription(message)
-                .addField("What is this?", "An unexpected error occurred while processing your command. " +
-                        "If the error persists, please contact the bot owner.", false)
-                .setFooter("For more, visit the bot support server via info cmd.")
-                .setTimestamp(Instant.now())
-                .build()
-        ).queue();
-    }
+    public abstract void process(@NotNull CommandEvent event, @NotNull String[] args);
 }

@@ -3,11 +3,12 @@ package commands;
 import app.Bot;
 import app.Properties;
 import commands.base.GenericCommand;
+import commands.event.CommandEvent;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.User;
-import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.Instant;
@@ -28,6 +29,16 @@ public class Info extends GenericCommand {
         return new String[][]{{"info"}};
     }
 
+    @Override
+    public @NotNull String[] slashName() {
+        return new String[]{"info"};
+    }
+
+    @Override
+    public @NotNull OptionData[] slashOptions() {
+        return new OptionData[]{};
+    }
+
     @NotNull
     @Override
     public String syntax() {
@@ -37,14 +48,14 @@ public class Info extends GenericCommand {
     @NotNull
     @Override
     public String shortHelp() {
-        return "Shows this bot's meta info.";
+        return "Shows meta info of the bot.";
     }
 
     @NotNull
     @Override
     public Message longHelp() {
         return new MessageBuilder(
-                "Shows this bot's meta info, such as version, bot invite link and bot support server link."
+                "Shows meta info of the bot, such as version, bot invite link and bot support server link."
         ).build();
     }
 
@@ -54,8 +65,8 @@ public class Info extends GenericCommand {
     }
 
     @Override
-    public void process(@NotNull MessageReceivedEvent event, @NotNull String[] args) {
-        respond(event, getInfo().build());
+    public void process(@NotNull CommandEvent event, @NotNull String[] args) {
+        event.reply(getInfo().build());
     }
 
     private EmbedBuilder getInfo() {

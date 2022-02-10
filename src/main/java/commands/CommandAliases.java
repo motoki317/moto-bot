@@ -1,33 +1,45 @@
 package commands;
 
+import app.CommandComplex;
 import commands.base.BotCommand;
 import commands.base.GenericCommand;
+import commands.event.CommandEvent;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageEmbed;
-import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import net.dv8tion.jda.api.interactions.commands.OptionType;
+import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Arrays;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 public class CommandAliases extends GenericCommand {
-    private final Map<String, BotCommand> commandNameMap;
-    private final Supplier<Integer> maxArgumentsLength;
+    private final Supplier<CommandComplex> commands;
 
-    public CommandAliases(Map<String, BotCommand> commandNameMap, Supplier<Integer> maxArgumentsLength) {
-        this.commandNameMap = commandNameMap;
-        this.maxArgumentsLength = maxArgumentsLength;
+    public CommandAliases(Supplier<CommandComplex> commands) {
+        this.commands = commands;
     }
 
     @NotNull
     @Override
     protected String[][] names() {
         return new String[][]{{"alias", "aliases"}};
+    }
+
+    @Override
+    public @NotNull String[] slashName() {
+        return new String[]{"alias"};
+    }
+
+    @Override
+    public @NotNull OptionData[] slashOptions() {
+        return new OptionData[]{
+                new OptionData(OptionType.STRING, "command", "Command to get help for", true)
+        };
     }
 
     @Override
@@ -44,10 +56,10 @@ public class CommandAliases extends GenericCommand {
     public @NotNull Message longHelp() {
         return new MessageBuilder(
                 new EmbedBuilder()
-                .setAuthor("Alias Command Help")
-                .setDescription(this.shortHelp())
-                .addField("Syntax", this.syntax(), false)
-                .addField("Example", "`alias up`\n`alias g levelRank`", false)
+                        .setAuthor("Alias Command Help")
+                        .setDescription(this.shortHelp())
+                        .addField("Syntax", this.syntax(), false)
+                        .addField("Example", "`alias up`\n`alias g levelRank`", false)
         ).build();
     }
 
@@ -57,24 +69,22 @@ public class CommandAliases extends GenericCommand {
     }
 
     @Override
-    public void process(@NotNull MessageReceivedEvent event, @NotNull String[] args) {
+    public void process(@NotNull CommandEvent event, @NotNull String[] args) {
         if (args.length <= 1) {
-            respond(event, this.longHelp());
+            event.reply(this.longHelp());
             return;
         }
 
         // Supports nested command (e.g. ">alias guild levelRank")
-        args = Arrays.copyOfRange(args, 1, args.length);
-        for (int argLength = Math.min(this.maxArgumentsLength.get(), args.length); argLength > 0; argLength--) {
-            String cmdBase = String.join(" ", Arrays.copyOfRange(args, 0, argLength));
-            if (this.commandNameMap.containsKey(cmdBase.toLowerCase())) {
-                BotCommand cmd = this.commandNameMap.get(cmdBase.toLowerCase());
-                respond(event, formatMessage(cmd));
-                return;
-            }
+        CommandComplex.Result res = this.commands.get().getCommand(
+                Arrays.copyOfRange(args, 1, args.length)
+        );
+        if (res == null) {
+            event.reply("Command not found, try `help`.");
+            return;
         }
 
-        respond(event, "Command not found, try `help`.");
+        event.reply(formatMessage(res.command()));
     }
 
     private static MessageEmbed formatMessage(BotCommand cmd) {

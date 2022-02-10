@@ -2,6 +2,7 @@ package commands.guild.leaderboard;
 
 import app.Bot;
 import commands.base.GenericCommand;
+import commands.event.CommandEvent;
 import commands.guild.GuildPrefixesResolver;
 import db.model.dateFormat.CustomDateFormat;
 import db.model.guildWarLeaderboard.GuildWarLeaderboard;
@@ -13,11 +14,9 @@ import db.repository.base.TimeZoneRepository;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import update.multipage.MultipageHandler;
-import update.reaction.ReactionManager;
 import utils.ArgumentParser;
 
 import java.text.DateFormat;
@@ -38,8 +37,6 @@ public class GuildWarLeaderboardCmd extends GenericCommand {
     private final DateFormatRepository dateFormatRepository;
     private final TimeZoneRepository timeZoneRepository;
 
-    private final ReactionManager reactionManager;
-
     private final GuildPrefixesResolver guildPrefixesResolver;
 
     public GuildWarLeaderboardCmd(Bot bot) {
@@ -48,7 +45,6 @@ public class GuildWarLeaderboardCmd extends GenericCommand {
         this.dateFormatRepository = bot.getDatabase().getDateFormatRepository();
         this.timeZoneRepository = bot.getDatabase().getTimeZoneRepository();
 
-        this.reactionManager = bot.getReactionManager();
         this.guildPrefixesResolver = new GuildPrefixesResolver(bot.getDatabase().getGuildRepository());
     }
 
@@ -56,6 +52,16 @@ public class GuildWarLeaderboardCmd extends GenericCommand {
     @Override
     protected String[][] names() {
         return new String[][]{{"g", "guild"}, {"lb", "leaderboard", "wlb", "warLeaderboard", "warLB"}};
+    }
+
+    @Override
+    public @NotNull String[] slashName() {
+        return new String[]{"g", "lb"};
+    }
+
+    @Override
+    public @NotNull OptionData[] slashOptions() {
+        return new OptionData[]{};
     }
 
     @Override
@@ -74,9 +80,10 @@ public class GuildWarLeaderboardCmd extends GenericCommand {
                 new EmbedBuilder()
                         .setAuthor("Guild War Leaderboard Help")
                         .setDescription(
-                                "This command displays war leaderboard for guilds.\n" +
-                                        "They are ordered by their # of success wars by default.\n" +
-                                        "Note: Wars are logged and stored since around the beginning of April 2018."
+                                """
+                                        This command displays war leaderboard for guilds.
+                                        They are ordered by their # of success wars by default.
+                                        Note: Wars are logged and stored since around the beginning of April 2018."""
                         )
                         .addField("Syntax",
                                 this.syntax(),
@@ -135,7 +142,7 @@ public class GuildWarLeaderboardCmd extends GenericCommand {
     private static final long MAX_RANGE = TimeUnit.DAYS.toMillis(32);
 
     @Override
-    public void process(@NotNull MessageReceivedEvent event, @NotNull String[] args) {
+    public void process(@NotNull CommandEvent event, @NotNull String[] args) {
         Map<String, String> parsedArgs = new ArgumentParser(args).getArgumentMap();
 
         CustomDateFormat customDateFormat = this.dateFormatRepository.getDateFormat(event);
@@ -146,7 +153,7 @@ public class GuildWarLeaderboardCmd extends GenericCommand {
         try {
             range = parseRange(parsedArgs, customTimeZone.getTimeZoneInstance(), MAX_RANGE);
         } catch (IllegalArgumentException e) {
-            respondException(event, e.getMessage());
+            event.replyException(e.getMessage());
             return;
         }
 
@@ -161,46 +168,18 @@ public class GuildWarLeaderboardCmd extends GenericCommand {
 
         Function<Integer, Message> pageSupplier = page -> getPage(page, sortType, range, customDateFormat, customTimeZone, maxPageSupplier);
         if (maxPageSupplier.get() == 0) {
-            respond(event, pageSupplier.apply(0));
+            event.reply(pageSupplier.apply(0));
             return;
         }
 
-        respond(event, pageSupplier.apply(0), message -> {
-            MultipageHandler handler = new MultipageHandler(message, event.getAuthor().getIdLong(), pageSupplier, maxPageSupplier);
-            this.reactionManager.addEventListener(handler);
-        });
+        event.replyMultiPage(pageSupplier.apply(0), pageSupplier, maxPageSupplier);
     }
 
-    private static class Display {
-        private final String rank;
-        private final String guildName;
-        private final String successWarNum;
-        private final String totalWarNum;
-        private final String successRate;
-
-        private Display(String rank, String guildName, String successWarNum, String totalWarNum, String successRate) {
-            this.rank = rank;
-            this.guildName = guildName;
-            this.successWarNum = successWarNum;
-            this.totalWarNum = totalWarNum;
-            this.successRate = successRate;
-        }
+    private record Display(String rank, String guildName, String successWarNum,
+                           String totalWarNum, String successRate) {
     }
 
-    private static class Justify {
-        private final int rank;
-        private final int guildName;
-        private final int successWarNum;
-        private final int totalWarNum;
-        private final int successRate;
-
-        private Justify(int rank, int guildName, int successWarNum, int totalWarNum, int successRate) {
-            this.rank = rank;
-            this.guildName = guildName;
-            this.successWarNum = successWarNum;
-            this.totalWarNum = totalWarNum;
-            this.successRate = successRate;
-        }
+    private record Justify(int rank, int guildName, int successWarNum, int totalWarNum, int successRate) {
     }
 
     // Get max page for all time leaderboard

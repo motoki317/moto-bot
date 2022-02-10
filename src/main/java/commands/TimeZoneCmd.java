@@ -1,6 +1,7 @@
 package commands;
 
 import commands.base.GenericCommand;
+import commands.event.CommandEvent;
 import db.model.timezone.CustomTimeZone;
 import db.model.timezone.CustomTimeZoneId;
 import db.repository.base.DateFormatRepository;
@@ -8,7 +9,8 @@ import db.repository.base.TimeZoneRepository;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import net.dv8tion.jda.api.interactions.commands.OptionType;
+import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import org.jetbrains.annotations.NotNull;
 import utils.MinecraftColor;
 
@@ -35,6 +37,22 @@ public class TimeZoneCmd extends GenericCommand {
         return new String[][]{{"timezone"}};
     }
 
+    @Override
+    public @NotNull String[] slashName() {
+        return new String[]{"timezone"};
+    }
+
+    @Override
+    public @NotNull OptionData[] slashOptions() {
+        return new OptionData[]{
+                new OptionData(OptionType.STRING, "timezone", "Timezone", true),
+                new OptionData(OptionType.STRING, "target", "Setting target")
+                        .addChoice("guild", "guild")
+                        .addChoice("channel", "channel")
+                        .addChoice("user", "user")
+        };
+    }
+
     @NotNull
     @Override
     public String syntax() {
@@ -44,7 +62,7 @@ public class TimeZoneCmd extends GenericCommand {
     @NotNull
     @Override
     public String shortHelp() {
-        return "Sets local timezone for a guild, a channel or an user, for easier view of time stamps.";
+        return "Sets local timezone for easier view of time stamps.";
     }
 
     @NotNull
@@ -60,7 +78,7 @@ public class TimeZoneCmd extends GenericCommand {
                                         "`" + this.syntax() + "`",
                                         "`<num|timezone|reset>` argument specifies the timezone.",
                                         "Specify a number between -23 ~ +23 to set offset in hours.",
-                                                "Specify a 4-digit number (e.g. \"+0930\") to set a custom minute-wise offset. " +
+                                        "Specify a 4-digit number (e.g. \"+0930\") to set a custom minute-wise offset. " +
                                                 "You can also specify a timezone name (e.g. \"EST\", \"America/New_York\"), " +
                                                 "based on Java-8 TimeZone class.",
                                         "Specify \"reset\" to reset the setting.",
@@ -78,9 +96,9 @@ public class TimeZoneCmd extends GenericCommand {
     }
 
     @Override
-    public void process(@NotNull MessageReceivedEvent event, @NotNull String[] args) {
+    public void process(@NotNull CommandEvent event, @NotNull String[] args) {
         if (args.length <= 1) {
-            respond(event, getStatus(event));
+            event.reply(getStatus(event));
             return;
         }
 
@@ -98,13 +116,13 @@ public class TimeZoneCmd extends GenericCommand {
                     type = Type.User;
                     break;
                 default:
-                    respond(event, "Specified 2nd argument is invalid: please specify one of `guild`, `channel`, or `user`.");
+                    event.reply("Specified 2nd argument is invalid: please specify one of `guild`, `channel`, or `user`.");
                     return;
             }
         }
 
         if (type == Type.Guild && !event.isFromGuild()) {
-            respond(event, "You cannot set a guild settings from a DM.");
+            event.reply("You cannot set a guild settings from a DM.");
             return;
         }
 
@@ -118,7 +136,7 @@ public class TimeZoneCmd extends GenericCommand {
             }
 
             if (hours < -23 || 23 < hours) {
-                respond(event, "Specified 1st argument is invalid: please specify a number between -23 ~ +23.");
+                event.reply("Specified 1st argument is invalid: please specify a number between -23 ~ +23.");
                 return;
             }
 
@@ -137,8 +155,8 @@ public class TimeZoneCmd extends GenericCommand {
             int minutes = Integer.parseInt(m2.group(3));
 
             if (hours < 0 || 23 < hours
-            || minutes < 0 || 59 < minutes) {
-                respond(event, "Specified 1st argument is invalid: please specify a 4-digit number indicating " +
+                    || minutes < 0 || 59 < minutes) {
+                event.reply("Specified 1st argument is invalid: please specify a 4-digit number indicating " +
                         "24-hour time. e.g. `+0930`");
                 return;
             }
@@ -156,7 +174,7 @@ public class TimeZoneCmd extends GenericCommand {
         if (timeZoneExists(timezoneId)) {
             addSetting(event, timezoneId, type);
         } else {
-            respond(event, String.format("Couldn't find a timezone matching your input: `%s`...", args[1]));
+            event.reply(String.format("Couldn't find a timezone matching your input: `%s`...", args[1]));
         }
     }
 
@@ -165,7 +183,7 @@ public class TimeZoneCmd extends GenericCommand {
         Channel,
         User;
 
-        private long getDiscordId(MessageReceivedEvent event) {
+        private long getDiscordId(CommandEvent event) {
             return switch (this) {
                 case Guild -> event.getGuild().getIdLong();
                 case Channel -> event.getChannel().getIdLong();
@@ -186,29 +204,29 @@ public class TimeZoneCmd extends GenericCommand {
         return false;
     }
 
-    private void resetSetting(MessageReceivedEvent event, Type type) {
+    private void resetSetting(CommandEvent event, Type type) {
         CustomTimeZoneId id = () -> type.getDiscordId(event);
         boolean success = !this.timeZoneRepository.exists(id) || this.timeZoneRepository.delete(id);
         if (success) {
-            respond(event, ":white_check_mark: Successfully reset the setting!");
+            event.reply(":white_check_mark: Successfully reset the setting!");
         } else {
-            respondError(event, "Something went wrong while saving your settings...");
+            event.replyError("Something went wrong while saving your settings...");
         }
     }
 
-    private void addSetting(MessageReceivedEvent event, String timezoneId, Type type) {
+    private void addSetting(CommandEvent event, String timezoneId, Type type) {
         CustomTimeZone customTimeZone = new CustomTimeZone(type.getDiscordId(event), timezoneId);
         boolean success = this.timeZoneRepository.exists(customTimeZone)
                 ? this.timeZoneRepository.update(customTimeZone)
                 : this.timeZoneRepository.create(customTimeZone);
         if (success) {
-            respond(event, ":white_check_mark: Successfully saved your settings!");
+            event.reply(":white_check_mark: Successfully saved your settings!");
         } else {
-            respondError(event, "Something went wrong while saving your settings...");
+            event.replyError("Something went wrong while saving your settings...");
         }
     }
 
-    private Message getStatus(MessageReceivedEvent event) {
+    private Message getStatus(CommandEvent event) {
         EmbedBuilder eb = new EmbedBuilder()
                 .setColor(MinecraftColor.DARK_GREEN.getColor())
                 .setAuthor("TimeZone Settings", null, event.getAuthor().getEffectiveAvatarUrl())

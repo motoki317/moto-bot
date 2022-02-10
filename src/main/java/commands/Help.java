@@ -1,40 +1,49 @@
 package commands;
 
 import app.Bot;
+import app.CommandComplex;
 import commands.base.BotCommand;
 import commands.base.GenericCommand;
+import commands.event.CommandEvent;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import net.dv8tion.jda.api.interactions.commands.OptionType;
+import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import org.jetbrains.annotations.NotNull;
-import update.multipage.MultipageHandler;
 
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
 public class Help extends GenericCommand {
     private final Bot bot;
 
-    private final List<BotCommand> commands;
-    private final Map<String, BotCommand> commandNameMap;
-    private final Supplier<Integer> maxArgumentsLength;
+    private final Supplier<CommandComplex> commands;
 
-    public Help(Bot bot, List<BotCommand> commands, Map<String, BotCommand> commandNameMap, Supplier<Integer> maxArgumentsLength) {
+    public Help(Bot bot, Supplier<CommandComplex> commands) {
         this.bot = bot;
         this.commands = commands;
-        this.commandNameMap = commandNameMap;
-        this.maxArgumentsLength = maxArgumentsLength;
     }
 
     @NotNull
     @Override
     public String[][] names() {
         return new String[][]{{"help", "h"}};
+    }
+
+    @Override
+    public @NotNull String[] slashName() {
+        return new String[]{"help"};
+    }
+
+    @Override
+    public @NotNull OptionData[] slashOptions() {
+        return new OptionData[]{
+                new OptionData(OptionType.STRING, "command", "Command to get help for")
+        };
     }
 
     @NotNull
@@ -46,7 +55,7 @@ public class Help extends GenericCommand {
     @NotNull
     @Override
     public String shortHelp() {
-        return "Calls this help. Use with arguments to view detailed help of each command. e.g. `help ping`";
+        return "Calls help (of each command).";
     }
 
     @NotNull
@@ -63,32 +72,27 @@ public class Help extends GenericCommand {
     }
 
     @Override
-    public void process(@NotNull MessageReceivedEvent event, @NotNull String[] args) {
+    public void process(@NotNull CommandEvent event, @NotNull String[] args) {
         if (args.length == 1) {
             if (this.maxPage() == 0) {
-                respond(event, this.getPage(0));
+                event.reply(this.getPage(0));
                 return;
             }
 
-            respond(event, this.getPage(0), message -> {
-                MultipageHandler handler = new MultipageHandler(message, event.getAuthor().getIdLong(), this::getPage, this::maxPage);
-                bot.getReactionManager().addEventListener(handler);
-            });
+            event.replyMultiPage(this.getPage(0), this::getPage, this::maxPage);
             return;
         }
 
         // Supports nested command help (e.g. ">help guild levelRank")
-        args = Arrays.copyOfRange(args, 1, args.length);
-        for (int argLength = Math.min(this.maxArgumentsLength.get(), args.length); argLength > 0; argLength--) {
-            String cmdBase = String.join(" ", Arrays.copyOfRange(args, 0, argLength));
-            if (this.commandNameMap.containsKey(cmdBase.toLowerCase())) {
-                BotCommand cmd = this.commandNameMap.get(cmdBase.toLowerCase());
-                respond(event, cmd.longHelp());
-                return;
-            }
+        CommandComplex.Result res = this.commands.get().getCommand(
+                Arrays.copyOfRange(args, 1, args.length)
+        );
+        if (res == null) {
+            event.reply("Command not found, try `help`.");
+            return;
         }
 
-        respond(event, "Command not found, try `help`.");
+        event.reply(res.command().longHelp());
     }
 
     private static final int COMMANDS_PER_PAGE = 5;
@@ -100,10 +104,11 @@ public class Help extends GenericCommand {
                 .setFooter("<text> means required, and [text] means optional arguments.")
                 .setTimestamp(Instant.now());
 
+        List<BotCommand> commands = this.commands.get().getCommands();
         int min = COMMANDS_PER_PAGE * page;
-        int max = Math.min(COMMANDS_PER_PAGE * (page + 1), this.commands.size());
+        int max = Math.min(COMMANDS_PER_PAGE * (page + 1), commands.size());
         for (int i = min; i < max; i++) {
-            BotCommand cmd = this.commands.get(i);
+            BotCommand cmd = commands.get(i);
             eb.addField(
                     this.bot.getProperties().prefix + cmd.syntax(),
                     cmd.shortHelp(),
@@ -116,6 +121,6 @@ public class Help extends GenericCommand {
     }
 
     private int maxPage() {
-        return (this.commands.size() - 1) / COMMANDS_PER_PAGE;
+        return (this.commands.get().getCommands().size() - 1) / COMMANDS_PER_PAGE;
     }
 }

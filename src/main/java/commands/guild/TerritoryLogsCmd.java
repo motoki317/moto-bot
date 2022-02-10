@@ -2,6 +2,7 @@ package commands.guild;
 
 import app.Bot;
 import commands.base.GenericCommand;
+import commands.event.CommandEvent;
 import db.model.dateFormat.CustomDateFormat;
 import db.model.territory.Territory;
 import db.model.territoryLog.TerritoryLog;
@@ -13,16 +14,16 @@ import db.repository.base.TimeZoneRepository;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import net.dv8tion.jda.api.interactions.commands.OptionType;
+import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import update.multipage.MultipageHandler;
-import update.reaction.ReactionManager;
 import utils.FormatUtils;
 
 import java.text.DateFormat;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class TerritoryLogsCmd extends GenericCommand {
@@ -30,14 +31,12 @@ public class TerritoryLogsCmd extends GenericCommand {
     private final TerritoryLogRepository territoryLogRepository;
     private final DateFormatRepository dateFormatRepository;
     private final TimeZoneRepository timeZoneRepository;
-    private final ReactionManager reactionManager;
 
     public TerritoryLogsCmd(Bot bot) {
         this.territoryRepository = bot.getDatabase().getTerritoryRepository();
         this.territoryLogRepository = bot.getDatabase().getTerritoryLogRepository();
         this.dateFormatRepository = bot.getDatabase().getDateFormatRepository();
         this.timeZoneRepository = bot.getDatabase().getTimeZoneRepository();
-        this.reactionManager = bot.getReactionManager();
     }
 
     @NotNull
@@ -47,25 +46,37 @@ public class TerritoryLogsCmd extends GenericCommand {
     }
 
     @Override
+    public @NotNull String[] slashName() {
+        return new String[]{"g", "territory"};
+    }
+
+    @Override
+    public @NotNull OptionData[] slashOptions() {
+        return new OptionData[]{
+                new OptionData(OptionType.STRING, "territory", "Name of a territory", true)
+        };
+    }
+
+    @Override
     public @NotNull String syntax() {
         return "g territory <territory name>";
     }
 
     @Override
     public @NotNull String shortHelp() {
-        return "Shows transition of territory owners, of the given territory name.";
+        return "Shows transition of owners of a specific territory.";
     }
 
     @Override
     public @NotNull Message longHelp() {
         return new MessageBuilder(
                 new EmbedBuilder()
-                .setAuthor("Territory command help")
-                .setDescription(String.join("\n", new String[]{
-                        this.shortHelp(),
-                        "Give a full, or prefix of territory name that can identify unique territory to the first argument."
-                }))
-                .build()
+                        .setAuthor("Territory command help")
+                        .setDescription(String.join("\n", new String[]{
+                                this.shortHelp(),
+                                "Give a full, or prefix of territory name that can identify unique territory to the first argument."
+                        }))
+                        .build()
         ).build();
     }
 
@@ -75,21 +86,21 @@ public class TerritoryLogsCmd extends GenericCommand {
     }
 
     @Override
-    public void process(@NotNull MessageReceivedEvent event, @NotNull String[] args) {
+    public void process(@NotNull CommandEvent event, @NotNull String[] args) {
         if (args.length < 3) {
-            respond(event, this.longHelp());
+            event.reply(this.longHelp());
             return;
         }
 
         String prefix = String.join(" ", Arrays.copyOfRange(args, 2, args.length));
         List<String> candidates = this.territoryRepository.territoryNamesBeginsWith(prefix);
         if (candidates == null) {
-            respondError(event, "Something went wrong while retrieving data...");
+            event.replyError("Something went wrong while retrieving data...");
             return;
         }
 
         if (candidates.isEmpty()) {
-            respond(event, String.format("No territories matched given the name or prefix \"%s\".", prefix));
+            event.reply(String.format("No territories matched given the name or prefix \"%s\".", prefix));
             return;
         }
 
@@ -103,7 +114,7 @@ public class TerritoryLogsCmd extends GenericCommand {
         }
 
         if (candidates.size() > 1 && exactMatch == null) {
-            respond(event, String.format("Multiple territories (%s) matched given the name or prefix.\n%s",
+            event.reply(String.format("Multiple territories (%s) matched given the name or prefix.\n%s",
                     candidates.size(),
                     candidates.stream().limit(50).map(s -> "`" + s + "`").collect(Collectors.joining(", "))));
             return;
@@ -119,18 +130,12 @@ public class TerritoryLogsCmd extends GenericCommand {
         CustomTimeZone customTimeZone = this.timeZoneRepository.getTimeZone(event);
 
         if (maxPage(territoryName) == 0) {
-            respond(event, format(territoryName, 0, customDateFormat, customTimeZone));
+            event.reply(format(territoryName, 0, customDateFormat, customTimeZone));
             return;
         }
 
-        respond(event, format(territoryName, 0, customDateFormat, customTimeZone), message -> {
-            MultipageHandler handler = new MultipageHandler(
-                    message, event.getAuthor().getIdLong(),
-                    page -> new MessageBuilder(format(territoryName, page, customDateFormat, customTimeZone)).build(),
-                    () -> this.maxPage(territoryName)
-            );
-            this.reactionManager.addEventListener(handler);
-        });
+        Function<Integer, Message> pages = page -> new MessageBuilder(format(territoryName, page, customDateFormat, customTimeZone)).build();
+        event.replyMultiPage(pages.apply(0), pages, () -> this.maxPage(territoryName));
     }
 
     private static final int LOGS_PER_PAGE = 5;
@@ -151,20 +156,8 @@ public class TerritoryLogsCmd extends GenericCommand {
         }
     }
 
-    private static class Display {
-        private final String num;
-        private final String guildName;
-        private final String dateFrom;
-        private final String dateTo;
-        private final String heldTime;
-
-        private Display(String num, String guildName, String dateFrom, String dateTo, String heldTime) {
-            this.num = num;
-            this.guildName = guildName;
-            this.dateFrom = dateFrom;
-            this.dateTo = dateTo;
-            this.heldTime = heldTime;
-        }
+    private record Display(String num, String guildName, String dateFrom,
+                           String dateTo, String heldTime) {
     }
 
     private String format(String territoryName, int page, CustomDateFormat customDateFormat, CustomTimeZone customTimeZone) {

@@ -2,6 +2,7 @@ package commands.guild;
 
 import app.Bot;
 import commands.base.GenericCommand;
+import commands.event.CommandEvent;
 import db.model.dateFormat.CustomDateFormat;
 import db.model.territory.Territory;
 import db.model.territoryList.TerritoryListEntry;
@@ -12,16 +13,15 @@ import db.repository.base.TerritoryRepository;
 import db.repository.base.TimeZoneRepository;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import org.jetbrains.annotations.NotNull;
-import update.multipage.MultipageHandler;
-import update.reaction.ReactionManager;
 import utils.FormatUtils;
 import utils.TableFormatter;
 
 import java.text.DateFormat;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static utils.TableFormatter.Justify.Left;
@@ -32,23 +32,31 @@ public class CustomTerritoryListCmd extends GenericCommand {
     private final TerritoryListRepository territoryListRepository;
     private final TimeZoneRepository timeZoneRepository;
     private final DateFormatRepository dateFormatRepository;
-    private final ReactionManager reactionManager;
 
     public CustomTerritoryListCmd(Bot bot) {
         this.territoryRepository = bot.getDatabase().getTerritoryRepository();
         this.territoryListRepository = bot.getDatabase().getTerritoryListRepository();
         this.timeZoneRepository = bot.getDatabase().getTimeZoneRepository();
         this.dateFormatRepository = bot.getDatabase().getDateFormatRepository();
-        this.reactionManager = bot.getReactionManager();
     }
 
     @NotNull
     @Override
     protected String[][] names() {
         return new String[][]{{"g", "guild"}, {
-                "customTerritoryList", "customTerrList", "customTList",
+                "customTerritoryList", "custom-territory-list",
                 "myList", "ml"
         }};
+    }
+
+    @Override
+    public @NotNull String[] slashName() {
+        return new String[]{"g", "custom-territory-list"};
+    }
+
+    @Override
+    public @NotNull OptionData[] slashOptions() {
+        return new OptionData[]{};
     }
 
     @Override
@@ -58,7 +66,7 @@ public class CustomTerritoryListCmd extends GenericCommand {
 
     @Override
     public @NotNull String shortHelp() {
-        return "Customize your own territory list to view a set of territory stats at one time. \">g myList help\" for more." ;
+        return "Customize your own territory list to view a set of territory stats at one time.";
     }
 
     @Override
@@ -85,7 +93,7 @@ public class CustomTerritoryListCmd extends GenericCommand {
     }
 
     @Override
-    public void process(@NotNull MessageReceivedEvent event, @NotNull String[] args) {
+    public void process(@NotNull CommandEvent event, @NotNull String[] args) {
         if (args.length <= 2) {
             viewUserLists(event);
             return;
@@ -98,14 +106,14 @@ public class CustomTerritoryListCmd extends GenericCommand {
         }
     }
 
-    private void viewUserLists(MessageReceivedEvent event) {
+    private void viewUserLists(CommandEvent event) {
         Map<String, Integer> lists = this.territoryListRepository.getUserLists(event.getAuthor().getIdLong());
         if (lists == null) {
-            respondError(event, "Something went wrong while retrieving data...");
+            event.replyError("Something went wrong while retrieving data...");
             return;
         }
         if (lists.isEmpty()) {
-            respond(event, "You do not have any custom territory lists configured. `>g myList help` for more.");
+            event.reply("You do not have any custom territory lists configured. `>g myList help` for more.");
             return;
         }
 
@@ -117,19 +125,19 @@ public class CustomTerritoryListCmd extends GenericCommand {
                     e.getKey(), e.getValue(), e.getValue() == 1 ? "territory" : "territories"));
         }
 
-        respond(event, String.join("\n", ret));
+        event.reply(String.join("\n", ret));
     }
 
     private static final int TERRITORIES_PER_PAGE = 10;
 
-    private void viewList(MessageReceivedEvent event, String listName) {
+    private void viewList(CommandEvent event, String listName) {
         List<TerritoryListEntry> list = this.territoryListRepository.getList(event.getAuthor().getIdLong(), listName);
         if (list == null) {
-            respondError(event, "Something went wrong while retrieving data...");
+            event.replyError("Something went wrong while retrieving data...");
             return;
         }
         if (list.isEmpty()) {
-            respond(event, String.format("You don't seem to have any territories in a list named `%s`. " +
+            event.reply(String.format("You don't seem to have any territories in a list named `%s`. " +
                     "Check your spelling or try adding territories first.", listName));
             return;
         }
@@ -140,42 +148,26 @@ public class CustomTerritoryListCmd extends GenericCommand {
         List<String> territoryNames = list.stream().map(TerritoryListEntry::getTerritoryName).collect(Collectors.toList());
         List<Territory> territories = this.territoryRepository.findAllIn(territoryNames);
         if (territories == null) {
-            respondError(event, "Something went wrong while retrieving data...");
+            event.replyError("Something went wrong while retrieving data...");
             return;
         }
         if (territories.isEmpty()) {
-            respondException(event, String.format("Somehow, there were no territories to display on this list `%s`...", listName));
+            event.replyException(String.format("Somehow, there were no territories to display on this list `%s`...", listName));
             return;
         }
 
         int maxPage = (territories.size() - 1) / TERRITORIES_PER_PAGE;
         if (maxPage == 0) {
-            respond(event, formatPage(0, listName, territoryNames, customTimeZone, customDateFormat));
+            event.reply(formatPage(0, listName, territoryNames, customTimeZone, customDateFormat));
             return;
         }
 
-        respond(event, formatPage(0, listName, territoryNames, customTimeZone, customDateFormat), message -> {
-            MultipageHandler handler = new MultipageHandler(
-                    message, event.getAuthor().getIdLong(),
-                    page -> new MessageBuilder(formatPage(page, listName, territoryNames, customTimeZone, customDateFormat)).build(),
-                    () -> maxPage
-            );
-            this.reactionManager.addEventListener(handler);
-        });
+        Function<Integer, Message> pages = page -> new MessageBuilder(formatPage(page, listName, territoryNames, customTimeZone, customDateFormat)).build();
+        event.replyMultiPage(pages.apply(0), pages, () -> maxPage);
     }
 
-    private static class Display {
-        private final String num;
-        private final String territory;
-        private final String owner;
-        private final String heldTime;
-
-        private Display(String num, String territory, String owner, String heldTime) {
-            this.num = num;
-            this.territory = territory;
-            this.owner = owner;
-            this.heldTime = heldTime;
-        }
+    private record Display(String num, String territory, String owner,
+                           String heldTime) {
     }
 
     private String formatPage(int page, String listName, List<String> territoryNames,
@@ -232,9 +224,9 @@ public class CustomTerritoryListCmd extends GenericCommand {
         return String.join("\n", ret);
     }
 
-    private void addToList(MessageReceivedEvent event, String[] args) {
+    private void addToList(CommandEvent event, String[] args) {
         if (args.length <= 4) {
-            respond(event, "Please specify a list name and at least one territory name to add.");
+            event.reply("Please specify a list name and at least one territory name to add.");
             return;
         }
 
@@ -243,11 +235,11 @@ public class CustomTerritoryListCmd extends GenericCommand {
                 .split(",")).map(String::trim).collect(Collectors.toList());
         List<Territory> territories = this.territoryRepository.findAllIn(territoryNames);
         if (territories == null) {
-            respondError(event, "Something went wrong while retrieving data...");
+            event.replyError("Something went wrong while retrieving data...");
             return;
         }
         if (territories.isEmpty()) {
-            respond(event, "No territories found with the given names. Make sure the territory exists and give the exact name(s).");
+            event.reply("No territories found with the given names. Make sure the territory exists and give the exact name(s).");
             return;
         }
 
@@ -262,18 +254,18 @@ public class CustomTerritoryListCmd extends GenericCommand {
                 .reduce(true, (acc, elt) -> acc && elt);
 
         if (!success) {
-            respondError(event, "Something went wrong while saving data...");
+            event.replyError("Something went wrong while saving data...");
             return;
         }
 
-        respond(event, String.format("Successfully added %s %s to list `%s`!\n%s",
+        event.reply(String.format("Successfully added %s %s to list `%s`!\n%s",
                 territories.size(), territories.size() == 1 ? "territory" : "territories", listName,
                 territories.stream().map(t -> "`" + t.getName() + "`").collect(Collectors.joining(", "))));
     }
 
-    private void removeFromList(MessageReceivedEvent event, String[] args) {
+    private void removeFromList(CommandEvent event, String[] args) {
         if (args.length <= 3) {
-            respond(event, "Please specify a list name (and list of territories) to remove from the list.");
+            event.reply("Please specify a list name (and list of territories) to remove from the list.");
             return;
         }
         String listName = args[3];
@@ -282,11 +274,11 @@ public class CustomTerritoryListCmd extends GenericCommand {
             // no territories specified
             List<TerritoryListEntry> list = this.territoryListRepository.getList(event.getAuthor().getIdLong(), listName);
             if (list == null) {
-                respondError(event, "Something went wrong while retrieving data...");
+                event.replyError("Something went wrong while retrieving data...");
                 return;
             }
             if (list.isEmpty()) {
-                respond(event, String.format("No territories to remove for list `%s`.", listName));
+                event.reply(String.format("No territories to remove for list `%s`.", listName));
                 return;
             }
 
@@ -297,11 +289,11 @@ public class CustomTerritoryListCmd extends GenericCommand {
                     .split(",")).map(String::trim).collect(Collectors.toList());
             List<Territory> territories = this.territoryRepository.findAllIn(specifiedNames);
             if (territories == null) {
-                respondError(event, "Something went wrong while retrieving data...");
+                event.replyError("Something went wrong while retrieving data...");
                 return;
             }
             if (territories.isEmpty()) {
-                respond(event, "No territories found with the given names. Make sure the territory exists and give the exact name(s).");
+                event.reply("No territories found with the given names. Make sure the territory exists and give the exact name(s).");
                 return;
             }
 
@@ -319,11 +311,11 @@ public class CustomTerritoryListCmd extends GenericCommand {
                 .reduce(true, (acc, elt) -> acc && elt);
 
         if (!success) {
-            respondError(event, "Something went wrong while saving data...");
+            event.replyError("Something went wrong while saving data...");
             return;
         }
 
-        respond(event, String.format("Successfully removed %s %s from list `%s`!\n%s",
+        event.reply(String.format("Successfully removed %s %s from list `%s`!\n%s",
                 territoryNames.size(), territoryNames.size() == 1 ? "territory" : "territories", listName,
                 territoryNames.stream().map(t -> "`" + t + "`").collect(Collectors.joining(", "))));
     }

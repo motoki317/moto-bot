@@ -2,12 +2,14 @@ package commands;
 
 import app.Bot;
 import commands.base.GenericCommand;
+import commands.event.CommandEvent;
 import db.model.timezone.CustomTimeZone;
 import db.repository.base.TimeZoneRepository;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import net.dv8tion.jda.api.interactions.commands.OptionType;
+import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import org.jetbrains.annotations.NotNull;
 import utils.BotUtils;
 
@@ -30,19 +32,31 @@ public class DiscordIdInfo extends GenericCommand {
     }
 
     @Override
+    public @NotNull String[] slashName() {
+        return new String[]{"idinfo"};
+    }
+
+    @Override
+    public @NotNull OptionData[] slashOptions() {
+        return new OptionData[]{
+                new OptionData(OptionType.INTEGER, "id", "Discord ID (such as user, channel, guild id)", true)
+        };
+    }
+
+    @Override
     public @NotNull String syntax() {
         return "idInfo <discord id>";
     }
 
     @Override
     public @NotNull String shortHelp() {
-        return "Given a number discord ID, parse and display its creation time. " +
-                "Can be used to extract user / channel / guild creation time.";
+        return "Given a discord ID, parse and display its creation time.";
     }
 
     @Override
     public @NotNull Message longHelp() {
-        return new MessageBuilder(this.shortHelp()).build();
+        return new MessageBuilder(this.shortHelp() + "\n" +
+                "Can be used to extract creation time of ID (and its object).").build();
     }
 
     @Override
@@ -51,9 +65,9 @@ public class DiscordIdInfo extends GenericCommand {
     }
 
     @Override
-    public void process(@NotNull MessageReceivedEvent event, @NotNull String[] args) {
+    public void process(@NotNull CommandEvent event, @NotNull String[] args) {
         if (args.length <= 1) {
-            respond(event, this.longHelp());
+            event.reply(this.longHelp());
             return;
         }
 
@@ -61,7 +75,7 @@ public class DiscordIdInfo extends GenericCommand {
         try {
             id = Long.parseLong(args[1]);
         } catch (NumberFormatException e) {
-            respond(event, "Please input a valid number (discord ID).");
+            event.reply("Please input a valid number (discord ID).");
             return;
         }
 
@@ -70,14 +84,14 @@ public class DiscordIdInfo extends GenericCommand {
         dateFormat.setTimeZone(customTimeZone.getTimeZoneInstance());
 
         long createdAt = BotUtils.getIdCreationTime(id);
-        respond(event, new MessageBuilder(
+        event.reply(new MessageBuilder(
                 new EmbedBuilder()
-                .setAuthor("ID Info")
-                .setDescription(String.valueOf(id))
-                .addField("ID Created At",
-                        String.format("%s (%s)", dateFormat.format(new Date(createdAt)), customTimeZone.getFormattedTime()),
-                        false)
-                .build()
+                        .setAuthor("ID Info")
+                        .setDescription(String.valueOf(id))
+                        .addField("ID Created At",
+                                String.format("%s (%s)", dateFormat.format(new Date(createdAt)), customTimeZone.getFormattedTime()),
+                                false)
+                        .build()
         ).build());
     }
 }

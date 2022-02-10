@@ -1,13 +1,12 @@
 package log;
 
 import app.Bot;
+import commands.event.CommandEvent;
 import net.dv8tion.jda.api.entities.TextChannel;
-import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import utils.FormatUtils;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.Map;
 import java.util.TimeZone;
@@ -40,8 +39,9 @@ public class DiscordLogger implements Logger {
     /**
      * Appends time to the given message and logs to discord channels.
      * Also prints to the std out.
+     *
      * @param botLogCh Channel to log.
-     * @param message Message to log.
+     * @param message  Message to log.
      */
     public void log(int botLogCh, CharSequence message) {
         Date now = new Date();
@@ -55,8 +55,9 @@ public class DiscordLogger implements Logger {
 
     /**
      * Logs to discord channel.
+     *
      * @param botLogCh Channel to log.
-     * @param message Raw message.
+     * @param message  Raw message.
      */
     private void logToDiscord(int botLogCh, String message) {
         if (!this.logChannels.containsKey(botLogCh)) {
@@ -74,8 +75,9 @@ public class DiscordLogger implements Logger {
     /**
      * Sends long message (supports string longer than 2000 chars) to text channel.
      * Splits the message into parts to send to discord.
+     *
      * @param message Message to send.
-     * @param ch Text channel to post on.
+     * @param ch      Text channel to post on.
      */
     private void sendLongMessage(String message, TextChannel ch) {
         double length = message.length();
@@ -101,9 +103,10 @@ public class DiscordLogger implements Logger {
 
     /**
      * Logs message received event to bot-log-4.
+     *
      * @param event Guild message received event.
      */
-    public void logEvent(MessageReceivedEvent event, boolean isSpam) {
+    public void logEvent(CommandEvent event, boolean isSpam) {
         String logMsg = createCommandLog(event, isSpam);
         this.log(4, logMsg);
     }
@@ -113,17 +116,18 @@ public class DiscordLogger implements Logger {
      * Example output <br/>
      * 2018/10/01 11:02:46.430 (Guild)[Channel]&lt;User&gt;: `>ping` <br/>
      * 2019/12/04 19:12:06.334 [DM UserName#1234]&lt;User&gt;: `>help`
+     *
      * @param event Guild message received event.
-     * @return Human readable user command usage log.
+     * @return Human-readable user command usage log.
      */
-    static String createCommandLog(MessageReceivedEvent event, boolean isSpam) {
+    static String createCommandLog(CommandEvent event, boolean isSpam) {
         if (event.isFromGuild()) {
             return String.format(
                     "(%s)[%s]<%s>: `%s`%s",
                     event.getGuild().getName(),
                     event.getChannel().getName(),
                     event.getAuthor().getName(),
-                    event.getMessage().getContentRaw(),
+                    event.getContentRaw(),
                     isSpam ? " Spam detected" : ""
             );
         } else {
@@ -131,7 +135,7 @@ public class DiscordLogger implements Logger {
                     "[DM %s]<%s>: `%s`%s",
                     FormatUtils.getUserFullName(event.getAuthor()),
                     event.getAuthor().getName(),
-                    event.getMessage().getContentRaw(),
+                    event.getContentRaw(),
                     isSpam ? " Spam detected" : ""
             );
         }
@@ -146,9 +150,7 @@ public class DiscordLogger implements Logger {
         );
         // Print short version to Discord channel 0
         this.logToDiscord(0, msgTimeAppended);
-        String fullStackTrace = msgTimeAppended + "\n";
-        fullStackTrace += Arrays.stream(e.getStackTrace()).map(elt -> "    at " + elt.toString()).collect(Collectors.joining("\n"));
-        // Full stack trace to standard out, and to Discord channel 2
-        this.log(2, fullStackTrace);
+        // Print full stack trace to stdout
+        e.printStackTrace();
     }
 }

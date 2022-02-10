@@ -2,6 +2,7 @@ package commands.guild;
 
 import app.Bot;
 import commands.base.GenericCommand;
+import commands.event.CommandEvent;
 import db.model.dateFormat.CustomDateFormat;
 import db.model.territory.TerritoryRank;
 import db.model.timezone.CustomTimeZone;
@@ -11,10 +12,8 @@ import db.repository.base.TimeZoneRepository;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import org.jetbrains.annotations.NotNull;
-import update.multipage.MultipageHandler;
-import update.reaction.ReactionManager;
 
 import java.text.DateFormat;
 import java.util.ArrayList;
@@ -28,19 +27,27 @@ public class GuildRank extends GenericCommand {
     private final TerritoryRepository territoryRepository;
     private final DateFormatRepository dateFormatRepository;
     private final TimeZoneRepository timeZoneRepository;
-    private final ReactionManager reactionManager;
 
     public GuildRank(Bot bot) {
         this.territoryRepository = bot.getDatabase().getTerritoryRepository();
         this.dateFormatRepository = bot.getDatabase().getDateFormatRepository();
         this.timeZoneRepository = bot.getDatabase().getTimeZoneRepository();
-        this.reactionManager = bot.getReactionManager();
     }
 
     @NotNull
     @Override
     protected String[][] names() {
         return new String[][]{{"g", "guild"}, {"rank", "r"}};
+    }
+
+    @Override
+    public @NotNull String[] slashName() {
+        return new String[]{"g", "rank"};
+    }
+
+    @Override
+    public @NotNull OptionData[] slashOptions() {
+        return new OptionData[]{};
     }
 
     @Override
@@ -57,9 +64,9 @@ public class GuildRank extends GenericCommand {
     public @NotNull Message longHelp() {
         return new MessageBuilder(
                 new EmbedBuilder()
-                .setAuthor("Guild Rank command help")
-                .setDescription("Shows guilds ranking by number of territories each guild possesses.")
-                .build()
+                        .setAuthor("Guild Rank command help")
+                        .setDescription("Shows guilds ranking by number of territories each guild possesses.")
+                        .build()
         ).build();
     }
 
@@ -69,22 +76,17 @@ public class GuildRank extends GenericCommand {
     }
 
     @Override
-    public void process(@NotNull MessageReceivedEvent event, @NotNull String[] args) {
+    public void process(@NotNull CommandEvent event, @NotNull String[] args) {
         CustomDateFormat customDateFormat = this.dateFormatRepository.getDateFormat(event);
         CustomTimeZone customTimeZone = this.timeZoneRepository.getTimeZone(event);
 
         Function<Integer, Message> pageSupplier = page -> getPage(page, customDateFormat, customTimeZone);
         if (maxPage() == 0) {
-            respond(event, pageSupplier.apply(0));
+            event.reply(pageSupplier.apply(0));
             return;
         }
 
-        respond(event, pageSupplier.apply(0), msg -> {
-            MultipageHandler handler = new MultipageHandler(
-                    msg, event.getAuthor().getIdLong(), pageSupplier, this::maxPage
-            );
-            this.reactionManager.addEventListener(handler);
-        });
+        event.replyMultiPage(pageSupplier.apply(0), pageSupplier, this::maxPage);
     }
 
     private static final int GUILDS_PER_PAGE = 10;

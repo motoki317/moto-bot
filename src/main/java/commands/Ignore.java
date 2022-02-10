@@ -1,12 +1,13 @@
 package commands;
 
 import commands.base.GenericCommand;
+import commands.event.CommandEvent;
 import db.model.ignoreChannel.IgnoreChannel;
 import db.repository.base.IgnoreChannelRepository;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.concurrent.TimeUnit;
@@ -25,13 +26,23 @@ public class Ignore extends GenericCommand {
     }
 
     @Override
+    public @NotNull String[] slashName() {
+        return new String[]{"ignore"};
+    }
+
+    @Override
+    public @NotNull OptionData[] slashOptions() {
+        return new OptionData[]{};
+    }
+
+    @Override
     public @NotNull String syntax() {
         return "ignore";
     }
 
     @Override
     public @NotNull String shortHelp() {
-        return "Make the bot ignore messages sent in a channel. Type this command again to un-ignore a channel.";
+        return "Make the bot ignore messages sent in a channel. (Has no effect on slash commands!)";
     }
 
     @Override
@@ -51,24 +62,24 @@ public class Ignore extends GenericCommand {
     }
 
     @Override
-    public void process(@NotNull MessageReceivedEvent event, @NotNull String[] args) {
+    public void process(@NotNull CommandEvent event, @NotNull String[] args) {
         long channelId = event.getChannel().getIdLong();
 
         boolean isIgnored = this.ignoreChannelRepository.exists(() -> channelId);
         if (isIgnored) {
             boolean res = this.ignoreChannelRepository.delete(() -> channelId);
             if (res) {
-                respond(event, ":open_mouth: The bot will now respond to messages in this channel.");
+                event.reply(":open_mouth: The bot will now respond to messages in this channel.");
             } else {
-                respondError(event, "Something went wrong while saving data...");
+                event.replyError("Something went wrong while saving data...");
             }
         } else {
             boolean res = this.ignoreChannelRepository.create(new IgnoreChannel(channelId));
             if (res) {
-                respond(event, ":no_mouth: The bot will no longer respond to messages in this channel. " +
+                event.reply(":no_mouth: The bot will no longer respond to messages in this channel. " +
                         "Type in the same command (`ignore`) to un-ignore this channel.");
             } else {
-                respondError(event, "Something went wrong while saving data...");
+                event.replyError("Something went wrong while saving data...");
             }
         }
     }

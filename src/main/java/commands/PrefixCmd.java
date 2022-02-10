@@ -1,6 +1,7 @@
 package commands;
 
 import commands.base.GenericCommand;
+import commands.event.CommandEvent;
 import db.model.prefix.Prefix;
 import db.model.prefix.PrefixId;
 import db.repository.base.PrefixRepository;
@@ -9,7 +10,8 @@ import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import net.dv8tion.jda.api.interactions.commands.OptionType;
+import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import org.jetbrains.annotations.NotNull;
 import utils.MinecraftColor;
 
@@ -32,13 +34,29 @@ public class PrefixCmd extends GenericCommand {
     }
 
     @Override
+    public @NotNull String[] slashName() {
+        return new String[]{"prefix"};
+    }
+
+    @Override
+    public @NotNull OptionData[] slashOptions() {
+        return new OptionData[]{
+                new OptionData(OptionType.STRING, "prefix", "New prefix", true),
+                new OptionData(OptionType.STRING, "target", "Setting target")
+                        .addChoice("guild", "guild")
+                        .addChoice("channel", "channel")
+                        .addChoice("user", "user")
+        };
+    }
+
+    @Override
     public @NotNull String syntax() {
         return "prefix <new prefix> [guild|channel|user]";
     }
 
     @Override
     public @NotNull String shortHelp() {
-        return "Sets new prefix for bot commands.";
+        return "Sets new prefix for bot commands. (Has no effect for slash commands!)";
     }
 
     @Override
@@ -56,7 +74,10 @@ public class PrefixCmd extends GenericCommand {
                                                 "Prefix should be as short as possible and no longer than " + PREFIX_MAX_LENGTH + " characters.",
                                         "Specify \"reset\" to reset the setting.",
                                         "`[guild|channel|user]` optional argument will set the prefix for guild, channel, or user (yourself). " +
-                                                "Default is channel."
+                                                "Default is channel.",
+                                        "",
+                                        "**Note that this command has no effect for slash commands!**",
+                                        "This is only for the good-old normal text channel based commands."
                                 ),
                                 false)
                         .build()
@@ -72,7 +93,8 @@ public class PrefixCmd extends GenericCommand {
 
     /**
      * Checks if the member has enough permissions to change the given type prefix.
-     * @param type Prefix type.
+     *
+     * @param type   Prefix type.
      * @param member Guild member.
      * @return {@code true} if the guild member has enough permissions.
      */
@@ -88,9 +110,9 @@ public class PrefixCmd extends GenericCommand {
     }
 
     @Override
-    public void process(@NotNull MessageReceivedEvent event, @NotNull String[] args) {
+    public void process(@NotNull CommandEvent event, @NotNull String[] args) {
         if (args.length <= 1) {
-            respond(event, getStatus(event));
+            event.reply(getStatus(event));
             return;
         }
 
@@ -108,24 +130,24 @@ public class PrefixCmd extends GenericCommand {
                     type = Type.User;
                     break;
                 default:
-                    respond(event, "Specified 2nd argument is invalid: please specify one of `guild`, `channel`, or `user`.");
+                    event.reply("Specified 2nd argument is invalid: please specify one of `guild`, `channel`, or `user`.");
                     return;
             }
         }
 
         if (type == Type.Guild && !event.isFromGuild()) {
-            respond(event, "You cannot set a guild settings from a DM.");
+            event.reply("You cannot set a guild settings from a DM.");
             return;
         }
 
         if (event.isFromGuild()) {
             Member member = event.getMember();
             if (member == null) {
-                respondError(event, "Something went wrong while retrieving your permissions...");
+                event.replyError("Something went wrong while retrieving your permissions...");
                 return;
             }
             if (!hasPermissions(type, member)) {
-                respond(event, "You do not have enough permissions to change this prefix.");
+                event.reply("You do not have enough permissions to change this prefix.");
                 return;
             }
         }
@@ -139,7 +161,7 @@ public class PrefixCmd extends GenericCommand {
         if (newPrefix.length() <= PREFIX_MAX_LENGTH) {
             addSetting(event, newPrefix, type);
         } else {
-            respond(event, "Given new prefix is too long, a prefix must be shorter than " + PREFIX_MAX_LENGTH + " characters.");
+            event.reply("Given new prefix is too long, a prefix must be shorter than " + PREFIX_MAX_LENGTH + " characters.");
         }
     }
 
@@ -148,7 +170,7 @@ public class PrefixCmd extends GenericCommand {
         Channel,
         User;
 
-        private long getDiscordId(MessageReceivedEvent event) {
+        private long getDiscordId(CommandEvent event) {
             return switch (this) {
                 case Guild -> event.getGuild().getIdLong();
                 case Channel -> event.getChannel().getIdLong();
@@ -157,29 +179,29 @@ public class PrefixCmd extends GenericCommand {
         }
     }
 
-    private void resetSetting(MessageReceivedEvent event, Type type) {
+    private void resetSetting(CommandEvent event, Type type) {
         PrefixId id = () -> type.getDiscordId(event);
         boolean success = !this.prefixRepository.exists(id) || this.prefixRepository.delete(id);
         if (success) {
-            respond(event, ":white_check_mark: Successfully reset the setting!");
+            event.reply(":white_check_mark: Successfully reset the setting!");
         } else {
-            respondError(event, "Something went wrong while saving your settings...");
+            event.replyError("Something went wrong while saving your settings...");
         }
     }
 
-    private void addSetting(MessageReceivedEvent event, String prefix, Type type) {
+    private void addSetting(CommandEvent event, String prefix, Type type) {
         Prefix p = new Prefix(type.getDiscordId(event), prefix);
         boolean success = this.prefixRepository.exists(p)
                 ? this.prefixRepository.update(p)
                 : this.prefixRepository.create(p);
         if (success) {
-            respond(event, ":white_check_mark: Successfully saved your settings!");
+            event.reply(":white_check_mark: Successfully saved your settings!");
         } else {
-            respondError(event, "Something went wrong while saving your settings...");
+            event.replyError("Something went wrong while saving your settings...");
         }
     }
 
-    private Message getStatus(MessageReceivedEvent event) {
+    private Message getStatus(CommandEvent event) {
         EmbedBuilder eb = new EmbedBuilder()
                 .setColor(MinecraftColor.DARK_GREEN.getColor())
                 .setAuthor("Prefix Settings", null, event.getAuthor().getEffectiveAvatarUrl())

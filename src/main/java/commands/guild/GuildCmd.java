@@ -2,10 +2,13 @@ package commands.guild;
 
 import app.Bot;
 import commands.base.GenericCommand;
+import commands.event.CommandEvent;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import net.dv8tion.jda.api.interactions.commands.OptionType;
+import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Arrays;
@@ -25,13 +28,25 @@ public class GuildCmd extends GenericCommand {
     }
 
     @Override
+    public @NotNull String[] slashName() {
+        return new String[]{"gs"};
+    }
+
+    @Override
+    public @NotNull OptionData[] slashOptions() {
+        return new OptionData[]{
+                new OptionData(OptionType.STRING, "guild", "Name or prefix of a guild", true)
+        };
+    }
+
+    @Override
     public @NotNull String syntax() {
         return "g <guild name>";
     }
 
     @Override
     public @NotNull String shortHelp() {
-        return "Shows a guild's general information. Alias for g stats or gstats.";
+        return "Shows a guild's information.";
     }
 
     @Override
@@ -55,9 +70,9 @@ public class GuildCmd extends GenericCommand {
     }
 
     @Override
-    public void process(@NotNull MessageReceivedEvent event, @NotNull String[] args) {
+    public void process(@NotNull CommandEvent event, @NotNull String[] args) {
         if (args.length <= 1) {
-            respond(event, this.longHelp());
+            event.reply(this.longHelp());
             return;
         }
 

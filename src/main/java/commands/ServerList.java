@@ -2,6 +2,7 @@ package commands;
 
 import app.Bot;
 import commands.base.GenericCommand;
+import commands.event.CommandEvent;
 import db.model.timezone.CustomTimeZone;
 import db.model.world.World;
 import db.repository.base.DateFormatRepository;
@@ -10,11 +11,10 @@ import db.repository.base.WorldRepository;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import net.dv8tion.jda.api.interactions.commands.OptionType;
+import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import update.multipage.MultipageHandler;
-import update.reaction.ReactionManager;
 import utils.FormatUtils;
 import utils.TableFormatter;
 
@@ -34,14 +34,12 @@ public class ServerList extends GenericCommand {
     private static final int WORLDS_PER_PAGE_MAX = 50;
 
     private final WorldRepository repo;
-    private final ReactionManager reactionManager;
 
     private final TimeZoneRepository timeZoneRepository;
     private final DateFormatRepository dateFormatRepository;
 
     public ServerList(Bot bot) {
         this.repo = bot.getDatabase().getWorldRepository();
-        this.reactionManager = bot.getReactionManager();
         this.timeZoneRepository = bot.getDatabase().getTimeZoneRepository();
         this.dateFormatRepository = bot.getDatabase().getDateFormatRepository();
     }
@@ -50,6 +48,20 @@ public class ServerList extends GenericCommand {
     @Override
     public String[][] names() {
         return new String[][]{{"serverlist", "servers", "up"}};
+    }
+
+    @Override
+    public @NotNull String[] slashName() {
+        return new String[]{"up"};
+    }
+
+    @Override
+    public @NotNull OptionData[] slashOptions() {
+        return new OptionData[]{
+                new OptionData(OptionType.INTEGER, "per-page", "Worlds per page"),
+                new OptionData(OptionType.STRING, "all", "Show all worlds not just WC")
+                        .addChoice("all", "all")
+        };
     }
 
     @NotNull
@@ -61,7 +73,7 @@ public class ServerList extends GenericCommand {
     @NotNull
     @Override
     public String shortHelp() {
-        return "Returns a list of Wynncraft servers and their respective uptime.";
+        return "Shows Wynncraft servers and their respective uptime.";
     }
 
     @NotNull
@@ -69,17 +81,17 @@ public class ServerList extends GenericCommand {
     public Message longHelp() {
         return new MessageBuilder(
                 new EmbedBuilder()
-                .setAuthor("Server List Command Help")
-                .setDescription("This command returns a list of Wynncraft servers and their respective uptime.")
-                .addField("Syntax",
-                        String.join("\n",
-                                "`" + this.syntax() + "`",
-                                "`[all]` optional argument will, when specified, show all worlds excluding WAR worlds: " +
-                                        "not only main WC/EU servers but also lobby, GM and other servers.",
-                                "`[num]` optional argument will, when specified, set the max number of worlds to show per page." +
-                                        " The default is " + WORLDS_PER_PAGE_DEFAULT + " worlds per page."),
-                        false)
-                .build()
+                        .setAuthor("Server List Command Help")
+                        .setDescription("This command returns a list of Wynncraft servers and their respective uptime.")
+                        .addField("Syntax",
+                                String.join("\n",
+                                        "`" + this.syntax() + "`",
+                                        "`[all]` optional argument will, when specified, show all worlds excluding WAR worlds: " +
+                                                "not only main WC/EU servers but also lobby, GM and other servers.",
+                                        "`[num]` optional argument will, when specified, set the max number of worlds to show per page." +
+                                                " The default is " + WORLDS_PER_PAGE_DEFAULT + " worlds per page."),
+                                false)
+                        .build()
         ).build();
     }
 
@@ -90,6 +102,7 @@ public class ServerList extends GenericCommand {
 
     /**
      * Retrieves world list.
+     *
      * @param getAll If {@code true}, retrieves all worlds including lobby etc., but excluding WAR worlds.
      * @return World list.
      */
@@ -106,7 +119,7 @@ public class ServerList extends GenericCommand {
     }
 
     @Override
-    public void process(@NotNull MessageReceivedEvent event, @NotNull String[] args) {
+    public void process(@NotNull CommandEvent event, @NotNull String[] args) {
         boolean getAll = false;
         int worldsPerPage = WORLDS_PER_PAGE_DEFAULT;
         if (args.length > 1) {
@@ -120,18 +133,18 @@ public class ServerList extends GenericCommand {
         }
 
         if (worldsPerPage < 1 || WORLDS_PER_PAGE_MAX < worldsPerPage) {
-            respond(event, "Invalid number specified for worlds per page argument.\n" +
+            event.reply("Invalid number specified for worlds per page argument.\n" +
                     "Please specify a number between 1 and " + WORLDS_PER_PAGE_MAX + ".");
             return;
         }
 
         List<World> worlds = getWorlds(getAll);
         if (worlds == null) {
-            respondError(event, "Something went wrong while retrieving data...");
+            event.replyError("Something went wrong while retrieving data...");
             return;
         }
         if (worlds.isEmpty()) {
-            respond(event, "There doesn't seem to be any " + (getAll ? "" : "main ") + "worlds online...");
+            event.reply("There doesn't seem to be any " + (getAll ? "" : "main ") + "worlds online...");
             return;
         }
 
@@ -140,7 +153,7 @@ public class ServerList extends GenericCommand {
     }
 
     // Send actual message
-    private void sendMessage(@NotNull MessageReceivedEvent event, int worldsPerPage, List<World> worlds) {
+    private void sendMessage(@NotNull CommandEvent event, int worldsPerPage, List<World> worlds) {
         CustomTimeZone timeZone = this.timeZoneRepository.getTimeZone(event);
         DateFormat dateFormat = this.dateFormatRepository.getDateFormat(event).getDateFormat().getMinuteFormat();
         dateFormat.setTimeZone(timeZone.getTimeZoneInstance());
@@ -150,14 +163,11 @@ public class ServerList extends GenericCommand {
         int maxPage = maxPage(worlds.size(), worldsPerPage);
 
         if (maxPage == 0) {
-            respond(event, pages.apply(0));
+            event.reply(pages.apply(0));
             return;
         }
 
-        respond(event, pages.apply(0), message -> {
-            MultipageHandler handler = new MultipageHandler(message, event.getAuthor().getIdLong(), pages, () -> maxPage);
-            this.reactionManager.addEventListener(handler);
-        });
+        event.replyMultiPage(pages.apply(0), pages, () -> maxPage);
     }
 
     private static int maxPage(int worldsSize, int worldsPerPage) {

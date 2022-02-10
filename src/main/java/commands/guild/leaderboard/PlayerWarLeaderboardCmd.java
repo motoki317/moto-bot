@@ -4,6 +4,7 @@ import api.wynn.WynnApi;
 import api.wynn.structs.WynnGuild;
 import app.Bot;
 import commands.base.GenericCommand;
+import commands.event.CommandEvent;
 import commands.guild.GuildNameResolver;
 import db.model.dateFormat.CustomDateFormat;
 import db.model.playerWarLeaderboard.PlayerWarLeaderboard;
@@ -15,11 +16,9 @@ import db.repository.base.TimeZoneRepository;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import update.multipage.MultipageHandler;
-import update.reaction.ReactionManager;
 import utils.ArgumentParser;
 import utils.FormatUtils;
 import utils.UUID;
@@ -43,8 +42,6 @@ public class PlayerWarLeaderboardCmd extends GenericCommand {
     private final DateFormatRepository dateFormatRepository;
     private final TimeZoneRepository timeZoneRepository;
 
-    private final ReactionManager reactionManager;
-
     private final WynnApi wynnApi;
     private final GuildNameResolver guildNameResolver;
 
@@ -53,8 +50,6 @@ public class PlayerWarLeaderboardCmd extends GenericCommand {
         this.playerWarLeaderboardRepository = bot.getDatabase().getPlayerWarLeaderboardRepository();
         this.dateFormatRepository = bot.getDatabase().getDateFormatRepository();
         this.timeZoneRepository = bot.getDatabase().getTimeZoneRepository();
-
-        this.reactionManager = bot.getReactionManager();
 
         this.wynnApi = new WynnApi(bot.getLogger());
         this.guildNameResolver = new GuildNameResolver(bot.getResponseManager(), bot.getDatabase().getGuildRepository());
@@ -68,52 +63,63 @@ public class PlayerWarLeaderboardCmd extends GenericCommand {
     }
 
     @Override
+    public @NotNull String[] slashName() {
+        return new String[]{"g", "plb"};
+    }
+
+    @Override
+    public @NotNull OptionData[] slashOptions() {
+        return new OptionData[]{};
+    }
+
+    @Override
     public @NotNull String syntax() {
         return "g plb [-g|--guild <guild name>] [-t|--total] [-sc|--success] [-sr|--survived] [-d|--days <num>] [--since|-S <date>] [--until|-U <date>]";
     }
 
     @Override
     public @NotNull String shortHelp() {
-        return "Player war leaderboard. `g plb help` for more.";
+        return "Player war leaderboard.";
     }
 
     @Override
     public @NotNull Message longHelp() {
         return new MessageBuilder(
                 new EmbedBuilder()
-                .setAuthor("Player War Leaderboard Help")
-                .setDescription(
-                        "This command displays war leaderboard for players.\n" +
-                        "They are ordered by their # of success wars by default.\n" +
-                        "Note: Wars are logged and stored since around the beginning of April 2018."
-                )
-                .addField("Syntax",
-                        this.syntax(),
-                        false
-                )
-                .addField("Optional Arguments",
-                        String.join("\n",
-                                "**-g|--guild <guild name>** : Specifies a guild, and display leaderboard for that guild.",
-                                "**--scoped|-s** : When used with guild name specified, only counts wars in the guild for each player.",
-                                "**-t --total** : Sorts in order of # of total wars.",
-                                "**-sc --success** : Sorts in order of # of success wars.",
-                                "**-sr --survived** : Sorts in order of # of survived wars.",
-                                "**-d|--days <days>** : Specifies the range of leaderboard, day-specifying is up to 30 days.",
-                                "**--since|-S <date>**, **--until|-U <date>** : Directly specifies time range of the leaderboard.",
-                                "If --until is omitted, current time is specified.",
-                                "Acceptable formats: \"2020/01/01\", \"2020-01-01 15:00:00\", \"15 days ago\", \"8 hours ago\", \"30 minutes ago\""
-                        ),
-                        false
-                )
-                .addField("Examples",
-                        String.join("\n",
-                                ">g plb : Displays leaderboard of all players ordered by # of success wars.",
-                                ">g plb -g UXs -t -s : Displays leaderboard of players in the guild UXs ordered by # of total wars.",
-                                ">g plb -sc -d 7 : Displays leaderboard of all players, in last 7 days, and in order of # of success rate.",
-                                ">g plb --since 3 days ago --until 1 day ago : Displays leaderboard from 3 days ago to 1 day ago."
-                        ),
-                        false
-                ).build()
+                        .setAuthor("Player War Leaderboard Help")
+                        .setDescription(
+                                """
+                                        This command displays war leaderboard for players.
+                                        They are ordered by their # of success wars by default.
+                                        Note: Wars are logged and stored since around the beginning of April 2018."""
+                        )
+                        .addField("Syntax",
+                                this.syntax(),
+                                false
+                        )
+                        .addField("Optional Arguments",
+                                String.join("\n",
+                                        "**-g|--guild <guild name>** : Specifies a guild, and display leaderboard for that guild.",
+                                        "**--scoped|-s** : When used with guild name specified, only counts wars in the guild for each player.",
+                                        "**-t --total** : Sorts in order of # of total wars.",
+                                        "**-sc --success** : Sorts in order of # of success wars.",
+                                        "**-sr --survived** : Sorts in order of # of survived wars.",
+                                        "**-d|--days <days>** : Specifies the range of leaderboard, day-specifying is up to 30 days.",
+                                        "**--since|-S <date>**, **--until|-U <date>** : Directly specifies time range of the leaderboard.",
+                                        "If --until is omitted, current time is specified.",
+                                        "Acceptable formats: \"2020/01/01\", \"2020-01-01 15:00:00\", \"15 days ago\", \"8 hours ago\", \"30 minutes ago\""
+                                ),
+                                false
+                        )
+                        .addField("Examples",
+                                String.join("\n",
+                                        ">g plb : Displays leaderboard of all players ordered by # of success wars.",
+                                        ">g plb -g UXs -t -s : Displays leaderboard of players in the guild UXs ordered by # of total wars.",
+                                        ">g plb -sc -d 7 : Displays leaderboard of all players, in last 7 days, and in order of # of success rate.",
+                                        ">g plb --since 3 days ago --until 1 day ago : Displays leaderboard from 3 days ago to 1 day ago."
+                                ),
+                                false
+                        ).build()
         ).build();
     }
 
@@ -236,7 +242,7 @@ public class PlayerWarLeaderboardCmd extends GenericCommand {
     private static final long MAX_RANGE = TimeUnit.DAYS.toMillis(32);
 
     @Override
-    public void process(@NotNull MessageReceivedEvent event, @NotNull String[] args) {
+    public void process(@NotNull CommandEvent event, @NotNull String[] args) {
         Map<String, String> parsedArgs = new ArgumentParser(args).getArgumentMap();
 
         CustomDateFormat customDateFormat = this.dateFormatRepository.getDateFormat(event);
@@ -247,7 +253,7 @@ public class PlayerWarLeaderboardCmd extends GenericCommand {
         try {
             range = parseRange(parsedArgs, customTimeZone.getTimeZoneInstance(), MAX_RANGE);
         } catch (IllegalArgumentException e) {
-            respondException(event, e.getMessage());
+            event.replyException(e.getMessage());
             return;
         }
 
@@ -258,14 +264,14 @@ public class PlayerWarLeaderboardCmd extends GenericCommand {
                     : parsedArgs.get("-guild");
             boolean scoped = parsedArgs.containsKey("s") || parsedArgs.containsKey("-scoped");
 
-            this.guildNameResolver.resolve(specifiedName, event.getTextChannel(), event.getAuthor(),
+            this.guildNameResolver.resolve(specifiedName, event.getChannel(), event.getAuthor(),
                     (guildName, prefix) -> {
                         GuildPlayerLeaderboard glb = new GuildPlayerLeaderboard(
                                 guildName, prefix, sortType, range, scoped, new Date()
                         );
                         processGuildPlayerLeaderboard(event, customDateFormat, customTimeZone, glb);
                     },
-                    error -> respondError(event, error)
+                    event::replyError
             );
             return;
         }
@@ -276,18 +282,15 @@ public class PlayerWarLeaderboardCmd extends GenericCommand {
         respondLeaderboard(event, maxPage, pageSupplier);
     }
 
-    private void respondLeaderboard(MessageReceivedEvent event,
+    private void respondLeaderboard(CommandEvent event,
                                     Supplier<Integer> maxPage,
                                     Function<Integer, Message> pageSupplier) {
         if (maxPage.get() == 0) {
-            respond(event, pageSupplier.apply(0));
+            event.reply(pageSupplier.apply(0));
             return;
         }
 
-        respond(event, pageSupplier.apply(0), message -> {
-            MultipageHandler handler = new MultipageHandler(message, event.getAuthor().getIdLong(), pageSupplier, maxPage);
-            this.reactionManager.addEventListener(handler);
-        });
+        event.replyMultiPage(pageSupplier.apply(0), pageSupplier, maxPage);
     }
 
     @Nullable
@@ -312,7 +315,7 @@ public class PlayerWarLeaderboardCmd extends GenericCommand {
         }
     }
 
-    private void processGuildPlayerLeaderboard(@NotNull MessageReceivedEvent event,
+    private void processGuildPlayerLeaderboard(@NotNull CommandEvent event,
                                                CustomDateFormat customDateFormat,
                                                CustomTimeZone customTimeZone,
                                                @NotNull GuildPlayerLeaderboard glb) {
@@ -320,15 +323,15 @@ public class PlayerWarLeaderboardCmd extends GenericCommand {
         try {
             guildLeaderboard = getGuildPlayerLeaderboard(glb.guildName, glb.scoped, glb.range);
         } catch (RateLimitException | RuntimeException e) {
-            respondException(event, e.getMessage());
+            event.replyException(e.getMessage());
             return;
         }
         if (guildLeaderboard == null) {
-            respondError(event, "Something went wrong while retrieving leaderboard.");
+            event.replyError("Something went wrong while retrieving leaderboard.");
             return;
         }
         if (guildLeaderboard.isEmpty()) {
-            respond(event, String.format("No war logs found for members of guild `%s` `[%s]` (within the provided time frame).",
+            event.reply(String.format("No war logs found for members of guild `%s` `[%s]` (within the provided time frame).",
                     glb.guildName, glb.prefix));
             return;
         }
@@ -339,36 +342,11 @@ public class PlayerWarLeaderboardCmd extends GenericCommand {
         respondLeaderboard(event, maxPage, pageSupplier);
     }
 
-    private static class Display {
-        private final String rank;
-        private final String playerName;
-        private final String firstWarNum;
-        private final String totalWarNum;
-        private final String rate;
-
-        private Display(String rank, String playerName, String firstWarNum, String totalWarNum, String rate) {
-            this.rank = rank;
-            this.playerName = playerName;
-            this.firstWarNum = firstWarNum;
-            this.totalWarNum = totalWarNum;
-            this.rate = rate;
-        }
+    private record Display(String rank, String playerName, String firstWarNum,
+                           String totalWarNum, String rate) {
     }
 
-    private static class Justify {
-        private final int rank;
-        private final int playerName;
-        private final int firstWarNum;
-        private final int totalWarNum;
-        private final int rate;
-
-        private Justify(int rank, int playerName, int firstWarNum, int totalWarNum, int rate) {
-            this.rank = rank;
-            this.playerName = playerName;
-            this.firstWarNum = firstWarNum;
-            this.totalWarNum = totalWarNum;
-            this.rate = rate;
-        }
+    private record Justify(int rank, int playerName, int firstWarNum, int totalWarNum, int rate) {
     }
 
     private static class GuildPlayerLeaderboard {
@@ -384,7 +362,7 @@ public class PlayerWarLeaderboardCmd extends GenericCommand {
         private final Date updatedAt;
 
         private GuildPlayerLeaderboard(@NotNull String guildName, @Nullable String prefix,
-                               SortType sortType, @Nullable Range range, boolean scoped, Date updatedAt) {
+                                       SortType sortType, @Nullable Range range, boolean scoped, Date updatedAt) {
             this.guildName = guildName;
             this.prefix = prefix;
             this.sortType = sortType;

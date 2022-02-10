@@ -1,6 +1,7 @@
 package commands;
 
 import commands.base.GenericCommand;
+import commands.event.CommandEvent;
 import db.model.dateFormat.CustomDateFormat;
 import db.model.dateFormat.CustomFormat;
 import db.model.timezone.CustomTimeZone;
@@ -9,7 +10,8 @@ import db.repository.base.TimeZoneRepository;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import net.dv8tion.jda.api.interactions.commands.OptionType;
+import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import org.jetbrains.annotations.NotNull;
 import utils.MinecraftColor;
 
@@ -34,13 +36,31 @@ public class DateFormatCmd extends GenericCommand {
     }
 
     @Override
+    public @NotNull String[] slashName() {
+        return new String[]{"timeformat"};
+    }
+
+    @Override
+    public @NotNull OptionData[] slashOptions() {
+        return new OptionData[]{
+                new OptionData(OptionType.STRING, "format", "New format", true)
+                        .addChoice("12h", "12h")
+                        .addChoice("24h", "24h"),
+                new OptionData(OptionType.STRING, "target", "Setting target")
+                        .addChoice("guild", "guild")
+                        .addChoice("channel", "channel")
+                        .addChoice("user", "user")
+        };
+    }
+
+    @Override
     public @NotNull String syntax() {
         return "timeformat <12h|24h> [guild|channel|user]";
     }
 
     @Override
     public @NotNull String shortHelp() {
-        return "Configures time format for a guild, a channel or an user, to 12-hour or 24-hour format.";
+        return "Configures time format to 12h/24h format.";
     }
 
     @Override
@@ -72,7 +92,7 @@ public class DateFormatCmd extends GenericCommand {
         Channel,
         User;
 
-        private long getDiscordId(MessageReceivedEvent event) {
+        private long getDiscordId(CommandEvent event) {
             return switch (this) {
                 case Guild -> event.getGuild().getIdLong();
                 case Channel -> event.getChannel().getIdLong();
@@ -82,9 +102,9 @@ public class DateFormatCmd extends GenericCommand {
     }
 
     @Override
-    public void process(@NotNull MessageReceivedEvent event, @NotNull String[] args) {
+    public void process(@NotNull CommandEvent event, @NotNull String[] args) {
         if (args.length <= 1) {
-            respond(event, getStatus(event));
+            event.reply(getStatus(event));
             return;
         }
 
@@ -94,7 +114,7 @@ public class DateFormatCmd extends GenericCommand {
             default -> null;
         };
         if (specified == null) {
-            respond(event, "Please specify either \"12h\" or \"24h\".");
+            event.reply("Please specify either \"12h\" or \"24h\".");
             return;
         }
 
@@ -118,13 +138,13 @@ public class DateFormatCmd extends GenericCommand {
         }
 
         if (res) {
-            respond(event, ":white_check_mark: Successfully updated settings!");
+            event.reply(":white_check_mark: Successfully updated settings!");
         } else {
-            respondError(event, "Something went wrong while saving settings...");
+            event.replyError("Something went wrong while saving settings...");
         }
     }
 
-    private Message getStatus(MessageReceivedEvent event) {
+    private Message getStatus(CommandEvent event) {
         EmbedBuilder eb = new EmbedBuilder()
                 .setColor(MinecraftColor.BLUE.getColor())
                 .setAuthor("Time Format Settings", null, event.getAuthor().getEffectiveAvatarUrl())

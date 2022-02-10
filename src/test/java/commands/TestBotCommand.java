@@ -1,9 +1,10 @@
 package commands;
 
 import commands.base.BotCommand;
+import commands.event.CommandEvent;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
@@ -28,6 +29,16 @@ class TestBotCommand {
             }
 
             @Override
+            public @NotNull String[] slashName() {
+                return new String[]{"help"};
+            }
+
+            @Override
+            public @NotNull OptionData[] slashOptions() {
+                return new OptionData[]{};
+            }
+
+            @Override
             public @NotNull String syntax() {
                 return "syntax";
             }
@@ -48,7 +59,8 @@ class TestBotCommand {
             }
 
             @Override
-            public void process(@NotNull MessageReceivedEvent event, @NotNull String[] args) {}
+            public void process(@NotNull CommandEvent event, @NotNull String[] args) {
+            }
         };
 
         Set<String> helpNames = new HashSet<>();
@@ -70,6 +82,16 @@ class TestBotCommand {
             }
 
             @Override
+            public @NotNull String[] slashName() {
+                return new String[]{"g", "levelrank"};
+            }
+
+            @Override
+            public @NotNull OptionData[] slashOptions() {
+                return new OptionData[]{};
+            }
+
+            @Override
             public @NotNull String syntax() {
                 return "syntax";
             }
@@ -90,7 +112,8 @@ class TestBotCommand {
             }
 
             @Override
-            public void process(@NotNull MessageReceivedEvent event, @NotNull String[] args) {}
+            public void process(@NotNull CommandEvent event, @NotNull String[] args) {
+            }
         };
 
         Set<String> levelRankNames = new HashSet<>();
