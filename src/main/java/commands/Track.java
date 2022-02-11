@@ -18,7 +18,8 @@ import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.interactions.commands.build.OptionData;
+import net.dv8tion.jda.api.interactions.commands.OptionType;
+import net.dv8tion.jda.api.interactions.commands.build.*;
 import org.jetbrains.annotations.NotNull;
 import utils.UUID;
 
@@ -60,6 +61,38 @@ public class Track extends GuildCommand {
     @Override
     public @NotNull OptionData[] slashOptions() {
         return new OptionData[]{};
+    }
+
+    @Override
+    public @NotNull BaseCommand<CommandData> slashCommand() {
+        return new CommandData("track", this.shortHelp())
+                .addSubcommands(
+                        new SubcommandData("server", "Tracks server start/close.")
+                                .addOptions(
+                                        new OptionData(OptionType.STRING, "type", "Track type", true)
+                                                .addChoice("start", "start")
+                                                .addChoice("close", "close"),
+                                        new OptionData(OptionType.STRING, "all", "Track all servers not just WC")
+                                                .addChoice("all", "all")),
+                        new SubcommandData("guild", "Tracks guild creation/deletion.")
+                                .addOptions(
+                                        new OptionData(OptionType.STRING, "type", "Track type", true)
+                                                .addChoice("create", "create")
+                                                .addChoice("delete", "delete")),
+                        new SubcommandData("update", "Update expiration time of tracking in this channel."))
+                .addSubcommandGroups(
+                        new SubcommandGroupData("war", "Tracks guild wars.")
+                                .addSubcommands(
+                                        new SubcommandData("all", "Tracks all guild wars."),
+                                        new SubcommandData("guild", "Tracks wars of a specific guild.")
+                                                .addOption(OptionType.STRING, "guild", "Guild name or prefix", true),
+                                        new SubcommandData("player", "Tracks wars of a specific player.")
+                                                .addOption(OptionType.STRING, "player", "Player name or UUID", true)),
+                        new SubcommandGroupData("territory", "Tracks territory transfers.")
+                                .addSubcommands(
+                                        new SubcommandData("all", "Tracks all territory transfers."),
+                                        new SubcommandData("guild", "Tracks territory transfers of a specific guild.")
+                                                .addOption(OptionType.STRING, "guild", "Guild name or prefix", true)));
     }
 
     @NotNull
