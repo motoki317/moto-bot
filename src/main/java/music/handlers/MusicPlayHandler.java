@@ -603,9 +603,9 @@ public class MusicPlayHandler {
                             return;
                         }
 
-                        s.getId(messageId -> {
+                        s.getMessage(botRespMsg -> {
                             MusicSelectButtonHandler handler = new MusicSelectButtonHandler(
-                                    messageId, audioPlaylist.getTracks(), event, state);
+                                    botRespMsg.getIdLong(), audioPlaylist.getTracks(), event, state);
                             s.editMessage(handler.getPage(0), next ->
                                     buttonClickManager.addEventListener(handler));
                         });

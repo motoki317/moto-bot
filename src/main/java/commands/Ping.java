@@ -91,8 +91,8 @@ public class Ping extends GenericCommand {
     private Consumer<SentMessage> onMessageCreate(EmbedBuilder eb, long messageCreationTime, long receivedTime) {
         return message -> {
             long load = receivedTime - messageCreationTime;
-            message.getId(messageId -> {
-                long send = BotUtils.getIdCreationTime(messageId) - receivedTime;
+            message.getMessage(actualMsg -> {
+                long send = BotUtils.getIdCreationTime(actualMsg.getIdLong()) - receivedTime;
                 long total = load + send;
 
                 eb.addField(

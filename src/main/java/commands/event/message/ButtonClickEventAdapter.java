@@ -10,8 +10,8 @@ import java.util.function.Consumer;
 
 public record ButtonClickEventAdapter(ButtonClickEvent event) implements SentMessage {
     @Override
-    public void getId(Consumer<Long> callback) {
-        callback.accept(event.getIdLong());
+    public void getMessage(Consumer<Message> callback) {
+        callback.accept(event.getMessage());
     }
 
     @Override
