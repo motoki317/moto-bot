@@ -130,6 +130,8 @@ public class CommandListener extends ListenerAdapter {
 
     @Override
     public void onSlashCommand(@NotNull SlashCommandEvent event) {
+        this.logger.debug("Received slash command event: " + event.getCommandString());
+
         // Do not process if JDA is disconnected from WS
         if (!this.bot.isConnected(this.bot.getShardId(event.getJDA()))) return;
 
@@ -203,6 +205,8 @@ public class CommandListener extends ListenerAdapter {
     }
 
     private void processCommand(@Nonnull CommandEvent event, CommandComplex.Result res, String[] args) {
+        this.logger.debug("Processing command event: " + event.getContentRaw());
+
         BotCommand command = res.command();
 
         // Check guild-only command
