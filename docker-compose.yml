@@ -20,6 +20,7 @@ services:
       BOT_LOG_CHANNEL_2: ${BOT_LOG_CHANNEL_2}
       BOT_LOG_CHANNEL_3: ${BOT_LOG_CHANNEL_3}
       BOT_LOG_CHANNEL_4: ${BOT_LOG_CHANNEL_4}
+      LOGBACK_LEVEL: info
     ports:
       - "8080:8080"
     depends_on:
