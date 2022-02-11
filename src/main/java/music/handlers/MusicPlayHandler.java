@@ -29,7 +29,6 @@ import net.dv8tion.jda.api.events.interaction.ButtonClickEvent;
 import net.dv8tion.jda.api.exceptions.InsufficientPermissionException;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.Button;
-import net.dv8tion.jda.api.interactions.components.ComponentLayout;
 import net.dv8tion.jda.api.managers.AudioManager;
 import net.dv8tion.jda.api.sharding.ShardManager;
 import org.jetbrains.annotations.NotNull;
@@ -604,7 +603,12 @@ public class MusicPlayHandler {
                             return;
                         }
 
-                        selectSong(event, s, state, audioPlaylist);
+                        s.getId(messageId -> {
+                            MusicSelectButtonHandler handler = new MusicSelectButtonHandler(
+                                    messageId, audioPlaylist.getTracks(), event, state);
+                            s.editMessage(handler.getPage(0), next ->
+                                    buttonClickManager.addEventListener(handler));
+                        });
                     }
 
                     @Override
@@ -622,69 +626,86 @@ public class MusicPlayHandler {
                 }));
     }
 
-    private void selectSong(CommandEvent event, SentMessage s, MusicState state, AudioPlaylist playlist) {
-        List<AudioTrack> tracks = playlist.getTracks();
-        List<String> desc = new ArrayList<>();
-        int max = Math.min(10, tracks.size());
-        for (int i = 0; i < max; i++) {
-            AudioTrack track = tracks.get(i);
-            AudioTrackInfo info = track.getInfo();
-            desc.add(String.format("%s. %s `[%s]`",
-                    i + 1,
-                    info.title,
-                    info.isStream ? "LIVE" : formatLength(info.length)));
-        }
-        desc.add("");
-        desc.add(String.format("all: Play all (%s songs)", tracks.size()));
-        desc.add("");
-        desc.add("c: Cancel");
-
-        EmbedBuilder eb = new EmbedBuilder()
-                .setAuthor(String.format("%s, Select a song!", event.getAuthor().getName()),
-                        null, event.getAuthor().getEffectiveAvatarUrl())
-                .setDescription(String.join("\n", desc));
-
-        s.editMessage(eb.build(), botResp ->
-                botResp.getId(messageId -> {
-                    MusicSelectButtonHandler handler = new MusicSelectButtonHandler(botResp, messageId, tracks, event, state);
-                    this.buttonClickManager.addEventListener(handler);
-                }));
-    }
-
     private class MusicSelectButtonHandler extends ButtonClickHandler {
+        private static final String BUTTON_ID_LEFT_PAGE = "left_page";
+        private static final String BUTTON_ID_RIGHT_PAGE = "right_page";
+        private static final String BUTTON_ID_PLAY_ALL = "all";
+        private static final String BUTTON_ID_CANCEL = "cancel";
+
+        private static final int TRACKS_PER_PAGE = 10;
+
+        private static int getSelectUIMaxPage(int trackCount) {
+            return (trackCount - 1) / TRACKS_PER_PAGE;
+        }
+
+        private static MessageEmbed getSelectUI(CommandEvent event, List<AudioTrack> tracks, int page) {
+            String description = IntStream.range(page * TRACKS_PER_PAGE, Math.min((page + 1) * TRACKS_PER_PAGE, tracks.size()))
+                    .mapToObj(i -> {
+                        AudioTrack track = tracks.get(i);
+                        AudioTrackInfo info = track.getInfo();
+                        return String.format("%s. %s `[%s]`",
+                                i + 1,
+                                info.title,
+                                info.isStream ? "LIVE" : formatLength(info.length));
+                    })
+                    .collect(Collectors.joining("\n"));
+
+            return new EmbedBuilder()
+                    .setAuthor(String.format("%s, Select a song!", event.getAuthor().getName()),
+                            null, event.getAuthor().getEffectiveAvatarUrl())
+                    .setDescription(description)
+                    .setFooter(String.format("Page [ %d / %d ]", page + 1, getSelectUIMaxPage(tracks.size()) + 1))
+                    .build();
+        }
+
+        private static List<ActionRow> getLayout(int maxTracks, int page) {
+            List<ActionRow> layouts = new ArrayList<>();
+            layouts.add(ActionRow.of(IntStream
+                    .range(page * TRACKS_PER_PAGE, Math.min(maxTracks, page * TRACKS_PER_PAGE + 5))
+                    .mapToObj(i -> Button.primary("track-" + i, String.valueOf(i + 1)))
+                    .collect(Collectors.toCollection(ArrayList::new))));
+            if (maxTracks > page * TRACKS_PER_PAGE + 5) {
+                layouts.add(ActionRow.of(IntStream
+                        .range(page * TRACKS_PER_PAGE + 5, Math.min(maxTracks, (page + 1) * TRACKS_PER_PAGE))
+                        .mapToObj(i -> Button.primary("track-" + i, String.valueOf(i + 1)))
+                        .collect(Collectors.toCollection(ArrayList::new))));
+            }
+            if (getSelectUIMaxPage(maxTracks) == 0) {
+                layouts.add(ActionRow.of(
+                        Button.secondary(BUTTON_ID_PLAY_ALL, "Play all"),
+                        Button.danger(BUTTON_ID_CANCEL, "Cancel")
+                ));
+            } else {
+                layouts.add(ActionRow.of(
+                        Button.primary(BUTTON_ID_LEFT_PAGE, Emoji.fromUnicode("\u2B05")),
+                        Button.primary(BUTTON_ID_RIGHT_PAGE, Emoji.fromUnicode("\u27A1")),
+                        Button.secondary(BUTTON_ID_PLAY_ALL, "Play all"),
+                        Button.danger(BUTTON_ID_CANCEL, "Cancel")
+                ));
+            }
+            return layouts;
+        }
+
         private final List<AudioTrack> tracks;
         private final CommandEvent cEvent;
         private final MusicState state;
+        private int page;
 
-        public MusicSelectButtonHandler(SentMessage message, long messageId, List<AudioTrack> tracks, CommandEvent cEvent, MusicState state) {
+        public MusicSelectButtonHandler(long messageId, List<AudioTrack> tracks, CommandEvent cEvent, MusicState state) {
             super(messageId, (event) -> false, () -> {
             });
 
             this.tracks = tracks;
             this.cEvent = cEvent;
             this.state = state;
-
-            int max = Math.min(10, tracks.size());
-            message.editComponents(getLayout(max).toArray(new ComponentLayout[]{}));
+            this.page = 0;
         }
 
-        private static List<ComponentLayout> getLayout(int maxTracks) {
-            List<ComponentLayout> layouts = new ArrayList<>();
-            layouts.add(ActionRow.of(IntStream
-                    .range(0, Math.min(maxTracks, 5))
-                    .mapToObj(i -> Button.primary("track-" + i, String.valueOf(i + 1)))
-                    .collect(Collectors.toCollection(ArrayList::new))));
-            if (maxTracks > 5) {
-                layouts.add(ActionRow.of(IntStream
-                        .range(5, Math.min(maxTracks, 10))
-                        .mapToObj(i -> Button.primary("track-" + i, String.valueOf(i + 1)))
-                        .collect(Collectors.toCollection(ArrayList::new))));
-            }
-            layouts.add(ActionRow.of(
-                    Button.secondary("all", "Play all"),
-                    Button.danger("cancel", "Cancel")
-            ));
-            return layouts;
+        public Message getPage(int page) {
+            return new MessageBuilder()
+                    .setEmbeds(getSelectUI(this.cEvent, this.tracks, page))
+                    .setActionRows(getLayout(this.tracks.size(), page))
+                    .build();
         }
 
         @Override
@@ -695,8 +716,22 @@ public class MusicPlayHandler {
 
             String buttonId = event.getButton().getId();
             switch (buttonId) {
-                case "all" -> MusicPlayHandler.this.enqueueMultipleSongs(this.cEvent, new ButtonClickEventAdapter(event), this.state, this.tracks);
-                case "cancel" -> event.editMessage(new MessageBuilder().setEmbeds(new EmbedBuilder().setDescription("Cancelled.").build()).build())
+                case BUTTON_ID_LEFT_PAGE -> {
+                    int mod = getSelectUIMaxPage(this.tracks.size()) + 1;
+                    int nextPage = (this.page - 1 + mod) % mod;
+                    event.editMessage(this.getPage(nextPage)).queue();
+                    this.page = nextPage;
+                    return false;
+                }
+                case BUTTON_ID_RIGHT_PAGE -> {
+                    int mod = getSelectUIMaxPage(this.tracks.size()) + 1;
+                    int nextPage = (this.page + 1) % mod;
+                    event.editMessage(this.getPage(nextPage)).queue();
+                    this.page = nextPage;
+                    return false;
+                }
+                case BUTTON_ID_PLAY_ALL -> MusicPlayHandler.this.enqueueMultipleSongs(this.cEvent, new ButtonClickEventAdapter(event), this.state, this.tracks);
+                case BUTTON_ID_CANCEL -> event.editMessage(new MessageBuilder().setEmbeds(new EmbedBuilder().setDescription("Cancelled.").build()).build())
                         .queue(m -> m.deleteOriginal().queueAfter(3, TimeUnit.SECONDS));
                 default -> { // "track-i"
                     if (!buttonId.startsWith("track-")) {
