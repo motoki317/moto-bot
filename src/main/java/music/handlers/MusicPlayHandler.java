@@ -515,7 +515,7 @@ public class MusicPlayHandler {
      * @return {@code true} if success.
      */
     private boolean saveQueue(long guildId, @NotNull QueueState queue) {
-        List<QueueEntry> tracks = new ArrayList<>(queue.getQueue());
+        List<QueueEntry> tracks = new ArrayList<>(queue.queue());
         if (tracks.isEmpty()) {
             return true;
         }
@@ -527,9 +527,9 @@ public class MusicPlayHandler {
             toSave.add(new MusicQueueEntry(
                     guildId,
                     i,
-                    track.getUserId(),
-                    track.getTrack().getInfo().uri,
-                    i == 0 ? queue.getPosition() : 0L,
+                    track.userId(),
+                    track.track().getInfo().uri,
+                    i == 0 ? queue.position() : 0L,
                     new Date(now)
             ));
         }
@@ -755,8 +755,8 @@ public class MusicPlayHandler {
 
     private void enqueueSong(CommandEvent event, SentMessage msg, MusicState state, AudioTrack audioTrack) {
         long userId = event.getAuthor().getIdLong();
-        boolean toShowQueuedMsg = !state.getCurrentQueue().getQueue().isEmpty();
-        int queueSize = state.getCurrentQueue().getQueue().size();
+        boolean toShowQueuedMsg = !state.getCurrentQueue().queue().isEmpty();
+        int queueSize = state.getCurrentQueue().queue().size();
         long remainingLength = state.getRemainingLength();
 
         if (!toShowQueuedMsg) {
@@ -791,7 +791,7 @@ public class MusicPlayHandler {
     private void enqueueMultipleSongs(CommandEvent event, SentMessage msg, MusicState state, List<AudioTrack> tracks) {
         long userId = event.getAuthor().getIdLong();
         long remainingLength = state.getRemainingLength();
-        int queueSize = state.getCurrentQueue().getQueue().size();
+        int queueSize = state.getCurrentQueue().queue().size();
 
         int success = 0;
         long queuedLength = 0;

@@ -56,7 +56,7 @@ public class WynnApi {
     /**
      * GET https://api.wynncraft.com/public_api.php?action=onlinePlayers
      * <br>"must" as in it does not throw {@link RateLimitException}.
-     * @return Online players struct.
+     * @return Online-players struct.
      */
     @Nullable
     @CheckReturnValue

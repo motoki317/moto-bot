@@ -136,7 +136,7 @@ class TestGuildRepository {
 
         List<Guild> retrieved = repo.findAllByPrefixCaseInsensitive("Fox");
         assert retrieved != null && retrieved.size() == 3;
-        List<String> names = retrieved.stream().map(Guild::getName).collect(Collectors.toList());
+        List<String> names = retrieved.stream().map(Guild::getName).toList();
         assert names.contains("FoxTaleSkeletons");
         assert names.contains("Kingdom Foxes");
         assert names.contains("illuminati");
@@ -157,7 +157,7 @@ class TestGuildRepository {
 
         List<Guild> retrieved = repo.findAllByPrefix("Fox");
         assert retrieved != null && retrieved.size() == 1;
-        List<String> names = retrieved.stream().map(Guild::getName).collect(Collectors.toList());
+        List<String> names = retrieved.stream().map(Guild::getName).toList();
         assert !names.contains("FoxTaleSkeletons");
         assert names.contains("Kingdom Foxes");
         assert !names.contains("illuminati");

@@ -55,7 +55,7 @@ public class Ping extends GenericCommand {
     @Override
     public Message longHelp() {
         return new MessageBuilder(
-                "Checks the bot's ping.\n" +
+                "Checks ping of bot.\n" +
                         "It is preferable that the ping takes no longer than 250 ms, and be stable."
         ).build();
     }

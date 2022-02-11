@@ -165,7 +165,7 @@ public class PlayerWarStats extends GenericCommand {
                 event.replyError("Something went wrong while retrieving player UUID...");
                 return;
             }
-            if (!retrieved.containsKey(specified) || (uuid = retrieved.get(specified).getUuid()) == null) {
+            if (!retrieved.containsKey(specified) || (uuid = retrieved.get(specified).uuid()) == null) {
                 event.reply(String.format("Failed to retrieve player UUID for %s. " +
                         "Please check the username.", specified));
                 return;

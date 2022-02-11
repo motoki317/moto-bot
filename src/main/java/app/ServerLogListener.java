@@ -62,14 +62,7 @@ public class ServerLogListener extends ListenerAdapter {
         return new SimpleDateFormat("yyyy/MM/dd E',' HH:mm:ss.SSS");
     }
 
-    private static class MessageCache {
-        private final String content;
-        private final long userId;
-
-        private MessageCache(String content, long userId) {
-            this.content = content;
-            this.userId = userId;
-        }
+    private record MessageCache(String content, long userId) {
     }
 
     private static final DataCache<Long, MessageCache> messageCache = new HashMapDataCache<>(

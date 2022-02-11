@@ -128,12 +128,12 @@ class RangeParserTest {
             Range range = parseRange(t.args, utc, null);
             String caseStr = String.format("Test case %s", t.args);
             assertNotNull(range, caseStr);
-            assertEquals(t.expected, range.end.getTime() - range.start.getTime(), caseStr);
+            assertEquals(t.expected, range.end().getTime() - range.start().getTime(), caseStr);
             if (t.expectedSince != null) {
-                assertEquals(t.expectedSince, range.start, caseStr);
+                assertEquals(t.expectedSince, range.start(), caseStr);
             }
             if (t.expectedUntil != null) {
-                assertEquals(t.expectedUntil, range.end, caseStr);
+                assertEquals(t.expectedUntil, range.end(), caseStr);
             }
         }
     }

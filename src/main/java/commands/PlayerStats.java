@@ -249,7 +249,7 @@ public class PlayerStats extends GenericCommand {
         String headAvatarUrl = "https://minotar.net/helm/" + player.getUsername();
         eb.setAuthor(player.getUsername(), null, headAvatarUrl);
 
-        // Add official stats page in description
+        // Add official stats. page in description
         String officialStatsUrl = "https://wynncraft.com/stats/player/" + player.getUsername();
         desc.add("[Official Stats Page](" + officialStatsUrl + ")");
 

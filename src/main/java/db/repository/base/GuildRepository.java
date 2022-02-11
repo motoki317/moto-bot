@@ -18,7 +18,7 @@ public interface GuildRepository extends Repository<Guild, GuildId> {
     List<Guild> findAllIn(@NotNull String... guildNames);
 
     /**
-     * Find all matches with case insensitive and ignoring trailing spaces search.
+     * Find all matches with case-insensitive and ignoring trailing spaces search.
      * Should probably want to call {@link #findOne(Object id)} first.
      * @param guildName Guild name.
      * @return List of guilds.
@@ -27,7 +27,7 @@ public interface GuildRepository extends Repository<Guild, GuildId> {
     List<Guild> findAllCaseInsensitive(@NotNull String guildName);
 
     /**
-     * Find all guilds having the specified prefix. Case sensitive.
+     * Find all guilds having the specified prefix. Case-sensitive.
      * @param prefix Prefix.
      * @return List of guilds.
      */

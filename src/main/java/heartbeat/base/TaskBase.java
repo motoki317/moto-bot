@@ -3,7 +3,7 @@ package heartbeat.base;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * Interface for tasks to be scheduled at a fixed rate between each runs.
+ * Interface for tasks to be scheduled at a fixed rate between each run.
  */
 public interface TaskBase {
     /**

@@ -91,8 +91,8 @@ public class TrackScheduler extends AudioEventAdapter {
     }
 
     private static boolean hasDuplicate(Deque<QueueEntry> queue, QueueEntry toQueue) {
-        Set<String> URLs = queue.stream().map(q -> q.getTrack().getInfo().uri).collect(Collectors.toSet());
-        return URLs.contains(toQueue.getTrack().getInfo().uri);
+        Set<String> URLs = queue.stream().map(q -> q.track().getInfo().uri).collect(Collectors.toSet());
+        return URLs.contains(toQueue.track().getInfo().uri);
     }
 
     void enqueue(QueueEntry entry) throws DuplicateTrackException, QueueFullException {
@@ -108,7 +108,7 @@ public class TrackScheduler extends AudioEventAdapter {
         boolean toStartPlaying = this.queue.isEmpty();
         this.queue.add(entry);
         if (toStartPlaying) {
-            this.playTrack(entry.getTrack());
+            this.playTrack(entry.track());
         }
     }
 
@@ -135,7 +135,7 @@ public class TrackScheduler extends AudioEventAdapter {
     }
 
     long getQueueLength() {
-        return this.queue.stream().mapToLong(q -> q.getTrack().getDuration()).sum();
+        return this.queue.stream().mapToLong(q -> q.track().getDuration()).sum();
     }
 
     @Override
@@ -145,7 +145,7 @@ public class TrackScheduler extends AudioEventAdapter {
         }
 
         MusicSetting setting = this.gateway.getSetting();
-        User user = queue.peek() != null ? this.gateway.getUser(queue.peek().getUserId()) : null;
+        User user = queue.peek() != null ? this.gateway.getUser(queue.peek().userId()) : null;
 
         boolean showPosition = track.getPosition() > TimeUnit.SECONDS.toMillis(1);
 
@@ -187,7 +187,7 @@ public class TrackScheduler extends AudioEventAdapter {
             this.sendEmptyQueueMessage();
             return;
         }
-        playTrack(next.getTrack());
+        playTrack(next.track());
     }
 
     /**
@@ -202,13 +202,13 @@ public class TrackScheduler extends AudioEventAdapter {
                 this.sendEmptyQueueMessage();
                 return;
             }
-            next = getQueueEntry(prev.getTrack(), true, prev);
+            next = getQueueEntry(prev.track(), true, prev);
         }
         if (next == null) {
             this.sendEmptyQueueMessage();
             return;
         }
-        playTrack(next.getTrack());
+        playTrack(next.track());
     }
 
     /**
@@ -228,13 +228,13 @@ public class TrackScheduler extends AudioEventAdapter {
                 // If this was a manual skip (or an unexpected finish), forcefully skip to the next track
                 if (!isManualSkip) {
                     // Re-add the cloned track
-                    QueueEntry newEntry = new QueueEntry(finishedTrack.makeClone(), track.getUserId());
+                    QueueEntry newEntry = new QueueEntry(finishedTrack.makeClone(), track.userId());
                     this.queue.addFirst(newEntry);
                 }
                 break;
             case QUEUE:
                 // Re-add the cloned track
-                QueueEntry newEntry = new QueueEntry(finishedTrack.makeClone(), track.getUserId());
+                QueueEntry newEntry = new QueueEntry(finishedTrack.makeClone(), track.userId());
                 this.queue.add(newEntry);
                 break;
             case RANDOM:
@@ -242,7 +242,7 @@ public class TrackScheduler extends AudioEventAdapter {
                 break;
             case RANDOM_REPEAT:
                 // Re-add the cloned track
-                newEntry = new QueueEntry(finishedTrack.makeClone(), track.getUserId());
+                newEntry = new QueueEntry(finishedTrack.makeClone(), track.userId());
                 this.queue.add(newEntry);
                 shuffleQueue();
                 break;

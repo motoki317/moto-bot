@@ -137,9 +137,7 @@ public class PlayerWarLeaderboardCmd extends GenericCommand {
         Success,
         Survived;
 
-        private static SortType getDefault() {
-            return Success;
-        }
+        private static final SortType DEFAULT = Success;
 
         private String getWarNumbersMessage() {
             if (this == Survived) {
@@ -177,25 +175,25 @@ public class PlayerWarLeaderboardCmd extends GenericCommand {
     private int getSuccessWars(@Nullable Range range, @NotNull String guildName) {
         return range == null
                 ? this.guildWarLogRepository.countSuccessWars(guildName)
-                : this.guildWarLogRepository.countSuccessWars(guildName, range.start, range.end);
+                : this.guildWarLogRepository.countSuccessWars(guildName, range.start(), range.end());
     }
 
     private int getTotalWars(@Nullable Range range, @NotNull String guildName) {
         return range == null
                 ? this.guildWarLogRepository.countTotalWars(guildName)
-                : this.guildWarLogRepository.countTotalWars(guildName, range.start, range.end);
+                : this.guildWarLogRepository.countTotalWars(guildName, range.start(), range.end());
     }
 
     private int getSuccessWarSum(@Nullable Range range) {
         return range == null
                 ? this.guildWarLogRepository.countSuccessWarsSum()
-                : this.guildWarLogRepository.countSuccessWarsSum(range.start, range.end);
+                : this.guildWarLogRepository.countSuccessWarsSum(range.start(), range.end());
     }
 
     private int getTotalWarSum(@Nullable Range range) {
         return range == null
                 ? this.guildWarLogRepository.countTotalWarsSum()
-                : this.guildWarLogRepository.countTotalWarsSum(range.start, range.end);
+                : this.guildWarLogRepository.countTotalWarsSum(range.start(), range.end());
     }
 
     // Get description of the leaderboard of the given context in arguments
@@ -217,8 +215,8 @@ public class PlayerWarLeaderboardCmd extends GenericCommand {
             String startAndEnd = String.format(
                     "Start: %s (%s)\n" +
                             "  End: %s (%s)",
-                    dateFormat.format(range.start), customTimeZone.getFormattedTime(),
-                    dateFormat.format(range.end), customTimeZone.getFormattedTime());
+                    dateFormat.format(range.start()), customTimeZone.getFormattedTime(),
+                    dateFormat.format(range.end()), customTimeZone.getFormattedTime());
 
             return switch (sortType) {
                 case Total -> String.format("Ranged: by # of total wars\n%s", startAndEnd);
@@ -239,7 +237,7 @@ public class PlayerWarLeaderboardCmd extends GenericCommand {
         } else if (parsedArgs.containsKey("sr") || parsedArgs.containsKey("-survived")) {
             return SortType.Survived;
         } else {
-            return SortType.getDefault();
+            return SortType.DEFAULT;
         }
     }
 
@@ -305,7 +303,7 @@ public class PlayerWarLeaderboardCmd extends GenericCommand {
         if (scoped) {
             return range == null
                     ? this.playerWarLeaderboardRepository.getGuildScoped(guildName)
-                    : this.playerWarLeaderboardRepository.getGuildScoped(guildName, range.start, range.end);
+                    : this.playerWarLeaderboardRepository.getGuildScoped(guildName, range.start(), range.end());
         } else {
             WynnGuild wynnGuild;
             wynnGuild = this.wynnApi.getGuildStats(guildName);
@@ -318,7 +316,7 @@ public class PlayerWarLeaderboardCmd extends GenericCommand {
                     .collect(Collectors.toList());
             return range == null
                     ? this.playerWarLeaderboardRepository.getRecordsOf(guildMemberUUIDs)
-                    : this.playerWarLeaderboardRepository.getRecordsOf(guildMemberUUIDs, range.start, range.end);
+                    : this.playerWarLeaderboardRepository.getRecordsOf(guildMemberUUIDs, range.start(), range.end());
         }
     }
 
@@ -465,7 +463,7 @@ public class PlayerWarLeaderboardCmd extends GenericCommand {
         if (range == null) {
             count = (int) this.playerWarLeaderboardRepository.count();
         } else {
-            count = this.playerWarLeaderboardRepository.getPlayersInRange(range.start, range.end);
+            count = this.playerWarLeaderboardRepository.getPlayersInRange(range.start(), range.end());
         }
         return (count - 1) / PLAYERS_PER_PAGE;
     }
@@ -482,9 +480,9 @@ public class PlayerWarLeaderboardCmd extends GenericCommand {
             };
         } else {
             return switch (sortType) {
-                case Total -> this.playerWarLeaderboardRepository.getByTotalWarDescending(PLAYERS_PER_PAGE, offset, range.start, range.end);
-                case Success -> this.playerWarLeaderboardRepository.getBySuccessWarDescending(PLAYERS_PER_PAGE, offset, range.start, range.end);
-                case Survived -> this.playerWarLeaderboardRepository.getBySurvivedWarDescending(PLAYERS_PER_PAGE, offset, range.start, range.end);
+                case Total -> this.playerWarLeaderboardRepository.getByTotalWarDescending(PLAYERS_PER_PAGE, offset, range.start(), range.end());
+                case Success -> this.playerWarLeaderboardRepository.getBySuccessWarDescending(PLAYERS_PER_PAGE, offset, range.start(), range.end());
+                case Survived -> this.playerWarLeaderboardRepository.getBySurvivedWarDescending(PLAYERS_PER_PAGE, offset, range.start(), range.end());
             };
         }
     }
@@ -580,7 +578,7 @@ public class PlayerWarLeaderboardCmd extends GenericCommand {
         );
     }
 
-    // Formats displays according the given justify info.
+    // Displays according the given justify info.
     // Asserts that justify info should make sense for the given displays.
     private static String formatTableDisplays(List<Display> displays, int begin, int end, Justify justify,
                                               String rateMessage,

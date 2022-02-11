@@ -6,47 +6,19 @@ import utils.UUID;
 import java.util.Comparator;
 import java.util.List;
 
-public class NameHistory {
-    public static class NameHistoryEntry {
-        private final String username;
-        // unix millis
-        private final long changedToAt;
-
-        public NameHistoryEntry(String username, long changedToAt) {
-            this.username = username;
-            this.changedToAt = changedToAt;
-        }
-
-        public String getUsername() {
-            return username;
-        }
-
-        public long getChangedToAt() {
-            return changedToAt;
-        }
+public record NameHistory(@NotNull UUID uuid, @NotNull List<NameHistoryEntry> history) {
+    public record NameHistoryEntry(String username, long changedToAt) {
     }
 
-    private final UUID uuid;
-    private final List<NameHistoryEntry> history;
-
-    public NameHistory(UUID uuid, List<NameHistoryEntry> history) {
+    public NameHistory(@NotNull UUID uuid, @NotNull List<NameHistoryEntry> history) {
         this.uuid = uuid;
         this.history = history;
         this.history.sort(Comparator.comparingLong(h -> h.changedToAt));
     }
 
-    @NotNull
-    public UUID getUuid() {
-        return uuid;
-    }
-
-    @NotNull
-    public List<NameHistoryEntry> getHistory() {
-        return history;
-    }
-
     /**
      * Retrieves username at given unix millis time.
+     *
      * @param unixMillis Unix milliseconds.
      * @return Username at given time.
      */

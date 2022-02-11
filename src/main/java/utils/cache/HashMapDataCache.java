@@ -5,12 +5,8 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class HashMapDataCache<K, T> implements DataCache<K, T> {
-    private static class Record<T> {
-        @Nullable
-        private final T data;
-        private final long createdAt;
-
-        Record(@Nullable T data, long createdAt) {
+    private record Record<T>(@Nullable T data, long createdAt) {
+        private Record(@Nullable T data, long createdAt) {
             this.data = data;
             this.createdAt = createdAt;
         }

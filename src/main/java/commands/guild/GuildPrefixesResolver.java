@@ -18,7 +18,7 @@ public class GuildPrefixesResolver {
     /**
      * Retrieves a map containing guild name -> prefix data.
      * @param guildNames List of guild names.
-     * @return Map from guild names to prefixes.
+     * @return Map from guild name to prefix.
      */
     @NotNull
     public Map<String, String> resolveGuildPrefixes(List<String> guildNames) {

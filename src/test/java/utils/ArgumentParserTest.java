@@ -12,16 +12,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @SuppressWarnings("OverlyLongMethod")
 class ArgumentParserTest {
-    private static class TestCase {
-        private final String[] input;
-        private final Map<String, String> expectOutput;
-        private final String expectedNormalArg;
-
-        private TestCase(String[] input, Map<String, String> expectOutput, String expectedNormalArg) {
-            this.input = input;
-            this.expectOutput = expectOutput;
-            this.expectedNormalArg = expectedNormalArg;
-        }
+    private record TestCase(String[] input,
+                            Map<String, String> expectOutput,
+                            String expectedNormalArg) {
     }
 
     @TestOnly

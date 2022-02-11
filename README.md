@@ -37,7 +37,7 @@ Manual build and installation (does not use docker)
 4. Set these environment variables for the bot.
     - `PORT` ... Server port. Exposes Prometheus metrics on `/metrics`.
     - `DISCORD_ACCESS_TOKEN` ... Discord bot account access token
-    - `BOT_DISCORD_ID` ... Bot's discord user ID
+    - `BOT_DISCORD_ID` ... Discord user ID of the bot
     - `BOT_LOG_CHANNEL_0` ~ `BOT_LOG_CHANNEL_4` ... Discord channel IDs to which bot sends logs
     - `PLAYER_TRACKER_CHANNEL` ... Discord channel ID to which bot sends player number logs once a day
     - `BOT_RESTART_CHANNEL` ... Discord channel ID to which bot sends a log on every restart

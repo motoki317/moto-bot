@@ -38,7 +38,7 @@ public class MusicManagementHandler {
      */
     public void handleNowPlaying(CommandEvent event, @NotNull MusicState state) {
         QueueState queueState = state.getCurrentQueue();
-        List<QueueEntry> entries = queueState.getQueue();
+        List<QueueEntry> entries = queueState.queue();
         if (entries.isEmpty()) {
             event.reply("Nothing seems to be playing right now.");
             return;
@@ -47,7 +47,7 @@ public class MusicManagementHandler {
         QueueEntry first = entries.get(0);
 
         event.reply(MusicUtils.formatNowPlaying(
-                first.getTrack(), this.manager.getUserById(first.getUserId()),
+                first.track(), this.manager.getUserById(first.userId()),
                 state.getSetting(), event.getJDA().getSelfUser().getEffectiveAvatarUrl(),
                 true
         ));
@@ -61,7 +61,7 @@ public class MusicManagementHandler {
      */
     public void handleQueue(CommandEvent event, @NotNull MusicState state) {
         QueueState queueState = state.getCurrentQueue();
-        if (queueState.getQueue().isEmpty()) {
+        if (queueState.queue().isEmpty()) {
             event.reply("Nothing seems to be playing right now.");
             return;
         }
@@ -79,7 +79,7 @@ public class MusicManagementHandler {
     private static final int SONGS_PER_PAGE = 10;
 
     private static int maxQueuePage(MusicState state) {
-        int queueSize = state.getCurrentQueue().getQueue().size();
+        int queueSize = state.getCurrentQueue().queue().size();
         // subtract one because the first one is the current song
         queueSize = Math.max(0, queueSize - 1);
         return (queueSize - 1) / SONGS_PER_PAGE;
@@ -97,7 +97,7 @@ public class MusicManagementHandler {
                 .setTimestamp(Instant.now());
 
         QueueState queueState = state.getCurrentQueue();
-        List<QueueEntry> entries = queueState.getQueue();
+        List<QueueEntry> entries = queueState.queue();
 
         QueueEntry nowPlaying = entries.size() > 0 ? entries.get(0) : null;
 
@@ -140,8 +140,8 @@ public class MusicManagementHandler {
      * @return Formatted entry.
      */
     private String formatQueueEntry(QueueEntry entry, boolean showPosition) {
-        User user = this.manager.getUserById(entry.getUserId());
-        AudioTrack track = entry.getTrack();
+        User user = this.manager.getUserById(entry.userId());
+        AudioTrack track = entry.track();
         AudioTrackInfo info = track.getInfo();
 
         return String.format("[%s](%s) `[%s]` | Requested by %s",
@@ -183,7 +183,7 @@ public class MusicManagementHandler {
      */
     public void handleSkip(CommandEvent event, String[] args, @NotNull MusicState state) {
         QueueState queueState = state.getCurrentQueue();
-        if (queueState.getQueue().isEmpty()) {
+        if (queueState.queue().isEmpty()) {
             event.reply("Nothing seems to be playing right now.");
             return;
         }
@@ -198,9 +198,9 @@ public class MusicManagementHandler {
                 event.replyException("Please input a valid number for the skip amount!");
                 return;
             }
-            if (skipAmount < 1 || queueState.getQueue().size() < skipAmount) {
+            if (skipAmount < 1 || queueState.queue().size() < skipAmount) {
                 event.replyException(String.format("Please input a number between 1 and %s for the skip amount!",
-                        queueState.getQueue().size()));
+                        queueState.queue().size()));
                 return;
             }
         }
@@ -223,13 +223,13 @@ public class MusicManagementHandler {
         }
 
         QueueState queueState = state.getCurrentQueue();
-        if (queueState.getQueue().isEmpty()) {
+        if (queueState.queue().isEmpty()) {
             event.reply("Nothing seems to be playing right now.");
             return;
         }
 
-        QueueEntry np = queueState.getQueue().get(0);
-        if (!np.getTrack().isSeekable()) {
+        QueueEntry np = queueState.queue().get(0);
+        if (!np.track().isSeekable()) {
             event.reply("This track is not seek-able.");
             return;
         }
@@ -243,15 +243,15 @@ public class MusicManagementHandler {
             return;
         }
 
-        np.getTrack().setPosition(position);
+        np.track().setPosition(position);
 
-        User user = this.manager.getUserById(np.getUserId());
+        User user = this.manager.getUserById(np.userId());
         String botAvatarURL = event.getJDA().getSelfUser().getEffectiveAvatarUrl();
         event.getChannel().sendMessage(String.format("Seeked to %s.", positionStr))
                 .delay(1, TimeUnit.SECONDS)
                 .flatMap(Message::delete)
                 .flatMap(v -> event.getChannel().sendMessageEmbeds(
-                        formatNowPlaying(np.getTrack(), user, state.getSetting(), botAvatarURL, true)
+                        formatNowPlaying(np.track(), user, state.getSetting(), botAvatarURL, true)
                 )).queue();
     }
 
@@ -263,7 +263,7 @@ public class MusicManagementHandler {
      */
     public void handleShuffle(CommandEvent event, @NotNull MusicState state) {
         QueueState queueState = state.getCurrentQueue();
-        if (queueState.getQueue().isEmpty()) {
+        if (queueState.queue().isEmpty()) {
             event.reply("Nothing seems to be playing right now.");
             return;
         }

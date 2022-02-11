@@ -17,7 +17,7 @@ public interface WarLogRepository extends Repository<WarLog, WarLogId> {
     int createAndGetLastInsertId(@NotNull WarLog entity);
 
     /**
-     * Finds all logs that is contained in the given list of IDs.
+     * Finds all logs that are contained in the given list of IDs.
      * @param ids List of IDs.
      * @return List of logs.
      */
@@ -25,14 +25,14 @@ public interface WarLogRepository extends Repository<WarLog, WarLogId> {
     List<WarLog> findAllIn(List<Integer> ids);
 
     /**
-     * Finds all records that is NOT marked as `ended`.
+     * Finds all records that are NOT marked as `ended`.
      * @return List of records.
      */
     @Nullable
     List<WarLog> findAllNotEnded();
 
     /**
-     * Finds all records that is NOT marked as `log_ended`.
+     * Finds all records that are NOT marked as `log_ended`.
      * @return List of records.
      */
     @Nullable

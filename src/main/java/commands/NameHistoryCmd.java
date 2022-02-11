@@ -125,7 +125,7 @@ public class NameHistoryCmd extends GenericCommand {
 
     private static int maxPage(NameHistory history) {
         // 1st page displaying all name, and other page displaying each history
-        return (history.getHistory().size() - 1) / HISTORIES_PER_PAGE + 1;
+        return (history.history().size() - 1) / HISTORIES_PER_PAGE + 1;
     }
 
     private static Message formatPage(int page, NameHistory history,
@@ -143,23 +143,23 @@ public class NameHistoryCmd extends GenericCommand {
     private static final String AVATAR_URL = "https://minotar.net/avatar/";
 
     private static Message formatFirstPage(NameHistory history) {
-        String currentName = history.getHistory().get(
-                history.getHistory().size() - 1
-        ).getUsername();
+        String currentName = history.history().get(
+                history.history().size() - 1
+        ).username();
         int maxPage = maxPage(history);
 
         String description = String.format("*%s had these name(s) in the past:* %s",
                 currentName,
-                history.getHistory().stream().map(h -> "**" + escapeUsername(h.getUsername()) + "**")
+                history.history().stream().map(h -> "**" + escapeUsername(h.username()) + "**")
                         .distinct().collect(Collectors.joining(", "))
         );
 
         return new MessageBuilder(
                 new EmbedBuilder()
                         .setAuthor(String.format("%s's Name History : Page [%s/%s]", currentName, 1, maxPage + 1),
-                                null, AVATAR_URL + history.getUuid())
+                                null, AVATAR_URL + history.uuid())
                         .setDescription(description)
-                        .setFooter("UUID: " + history.getUuid().toStringWithHyphens())
+                        .setFooter("UUID: " + history.uuid().toStringWithHyphens())
                         .build()
         ).build();
     }
@@ -172,52 +172,52 @@ public class NameHistoryCmd extends GenericCommand {
     private static Message formatDetailsPage(int page, NameHistory history,
                                              CustomDateFormat customDateFormat, CustomTimeZone customTimeZone) {
         int begin = page * HISTORIES_PER_PAGE;
-        int end = Math.min((page + 1) * HISTORIES_PER_PAGE, history.getHistory().size());
+        int end = Math.min((page + 1) * HISTORIES_PER_PAGE, history.history().size());
 
-        String currentName = history.getHistory().get(
-                history.getHistory().size() - 1
-        ).getUsername();
+        String currentName = history.history().get(
+                history.history().size() - 1
+        ).username();
         int maxPage = maxPage(history);
 
         EmbedBuilder eb = new EmbedBuilder();
         // details page num = given page num + 2
         eb.setAuthor(String.format("%s's Name History : Page [%s/%s]", currentName, page + 2, maxPage + 1),
-                null, AVATAR_URL + history.getUuid());
+                null, AVATAR_URL + history.uuid());
         eb.setDescription(String.format("Timezone: %s", customTimeZone.getFormattedTime()));
 
         DateFormat dateFormat = customDateFormat.getDateFormat().getMinuteFormat();
         dateFormat.setTimeZone(customTimeZone.getTimeZoneInstance());
         for (int i = begin; i < end; i++) {
-            NameHistory.NameHistoryEntry e = history.getHistory().get(i);
+            NameHistory.NameHistoryEntry e = history.history().get(i);
             String startStr, endStr, rangeStr;
-            if (e.getChangedToAt() == 0L) {
+            if (e.changedToAt() == 0L) {
                 startStr = "(Beginning)";
             } else {
-                startStr = dateFormat.format(new Date(e.getChangedToAt()));
+                startStr = dateFormat.format(new Date(e.changedToAt()));
             }
-            if (i == (history.getHistory().size() - 1)) {
+            if (i == (history.history().size() - 1)) {
                 endStr = "(Now)";
             } else {
-                NameHistory.NameHistoryEntry next = history.getHistory().get(i + 1);
-                endStr = dateFormat.format(new Date(next.getChangedToAt()));
+                NameHistory.NameHistoryEntry next = history.history().get(i + 1);
+                endStr = dateFormat.format(new Date(next.changedToAt()));
             }
-            if (e.getChangedToAt() > 0L) {
-                long changedToAt = i < (history.getHistory().size() - 1)
-                        ? history.getHistory().get(i + 1).getChangedToAt()
+            if (e.changedToAt() > 0L) {
+                long changedToAt = i < (history.history().size() - 1)
+                        ? history.history().get(i + 1).changedToAt()
                         : System.currentTimeMillis();
-                long seconds = (changedToAt - e.getChangedToAt()) / 1000L;
+                long seconds = (changedToAt - e.changedToAt()) / 1000L;
                 rangeStr = FormatUtils.formatReadableTime(seconds, false, "m");
             } else {
                 rangeStr = "";
             }
 
-            eb.addField(String.format("%s. %s", i + 1, e.getUsername()),
+            eb.addField(String.format("%s. %s", i + 1, e.username()),
                     startStr + " ~ " + endStr + (rangeStr.isEmpty() ? "" : "\n" + rangeStr),
                     false
             );
         }
 
-        eb.setFooter("UUID: " + history.getUuid().toStringWithHyphens());
+        eb.setFooter("UUID: " + history.uuid().toStringWithHyphens());
 
         return new MessageBuilder(eb.build()).build();
     }
