@@ -303,7 +303,7 @@ public class Music extends GuildCommand {
                         new SubcommandData("skip", "Skips the current song.")
                                 .addOption(OptionType.INTEGER, "num", "Number of songs to skip"),
                         new SubcommandData("seek", "Seek to a specified time.")
-                                .addOption(OptionType.STRING, "time", "Time to seek to", true),
+                                .addOption(OptionType.STRING, "time", "Time to seek to. e.g. `4:33`", true),
                         new SubcommandData("shuffle", "Shuffles the queue."),
                         new SubcommandData("purge", "Purges the queue. Does not stop the current song."),
 
