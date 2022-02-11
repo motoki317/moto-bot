@@ -3,6 +3,7 @@ package log;
 import app.Bot;
 import commands.event.CommandEvent;
 import net.dv8tion.jda.api.entities.TextChannel;
+import org.slf4j.LoggerFactory;
 import utils.FormatUtils;
 
 import java.text.DateFormat;
@@ -23,7 +24,7 @@ public class DiscordLogger implements Logger {
 
     private final DateFormat logFormat;
 
-    private final boolean debug;
+    private final org.slf4j.Logger logger;
 
     public DiscordLogger(Bot bot, TimeZone logTimeZone) {
         this.bot = bot;
@@ -33,7 +34,7 @@ public class DiscordLogger implements Logger {
 
         this.logFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss.SSS");
         this.logFormat.setTimeZone(logTimeZone);
-        this.debug = "1".equals(System.getenv("DEBUG"));
+        this.logger = LoggerFactory.getLogger(DiscordLogger.class);
     }
 
     /**
@@ -48,7 +49,7 @@ public class DiscordLogger implements Logger {
         String msgTimeAppended = this.logFormat.format(now) + " " + message;
 
         // To standard out
-        System.out.println(msgTimeAppended);
+        this.logger.info(message.toString());
         // To Discord channel
         this.logToDiscord(botLogCh, msgTimeAppended);
     }
@@ -95,10 +96,7 @@ public class DiscordLogger implements Logger {
 
     @Override
     public void debug(CharSequence message) {
-        if (!debug) return;
-        Date now = new Date();
-        String msg = this.logFormat.format(now) + " " + message;
-        System.out.println(msg);
+        this.logger.debug(message.toString());
     }
 
     /**
@@ -150,7 +148,7 @@ public class DiscordLogger implements Logger {
         );
         // Print short version to Discord channel 0
         this.logToDiscord(0, msgTimeAppended);
-        // Print full stack trace to stdout
-        e.printStackTrace();
+        // Full log to logger
+        this.logger.warn("Exception caught", e);
     }
 }

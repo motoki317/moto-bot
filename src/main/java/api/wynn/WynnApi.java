@@ -3,6 +3,7 @@ package api.wynn;
 import api.wynn.structs.*;
 import log.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.LoggerFactory;
 import utils.rateLimit.RateLimitException;
 import utils.rateLimit.RateLimiter;
 import utils.rateLimit.WaitableRateLimiter;
@@ -21,7 +22,8 @@ public class WynnApi {
 
         // As of June 6th, 2020: rate limit for all endpoints (including legacy and V2) is 180 requests / 1 minute.
         long waitBetweenRequests = TimeUnit.MINUTES.toMillis(1) / 180;
-        System.out.printf("Wynn API: setting wait between requests to %s ms\n", waitBetweenRequests);
+        org.slf4j.Logger logger = LoggerFactory.getLogger(WynnApi.class);
+        logger.info(String.format("Wynn API: setting wait between requests to %s ms", waitBetweenRequests));
         rateLimiter = new WaitableRateLimiter(
                 "Wynn", waitBetweenRequests, maxRequestStack
         );

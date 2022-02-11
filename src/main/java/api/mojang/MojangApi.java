@@ -3,6 +3,7 @@ package api.mojang;
 import api.mojang.structs.NameHistory;
 import api.mojang.structs.NullableUUID;
 import log.Logger;
+import org.slf4j.LoggerFactory;
 import utils.UUID;
 import utils.rateLimit.RateLimiter;
 import utils.rateLimit.WaitableRateLimiter;
@@ -23,7 +24,8 @@ public class MojangApi {
         final int rateLimitPerTenMinutes = 600;
         final int maxRequestStacks = 5;
         final long waitBetweenRequests = TimeUnit.MINUTES.toMillis(10) / rateLimitPerTenMinutes;
-        System.out.println("Setting Mojang API minimum request wait time to " + waitBetweenRequests + " ms. " +
+        org.slf4j.Logger logger = LoggerFactory.getLogger(MojangApi.class);
+        logger.info("Setting Mojang API minimum request wait time to " + waitBetweenRequests + " ms. " +
                 "(i.e. " + rateLimitPerTenMinutes + " requests per 10 minutes)");
 
         rateLimiter = new WaitableRateLimiter("Mojang", waitBetweenRequests, maxRequestStacks);

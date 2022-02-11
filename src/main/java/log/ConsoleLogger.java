@@ -1,11 +1,7 @@
 package log;
 
 import commands.event.CommandEvent;
-
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.TimeZone;
+import org.slf4j.LoggerFactory;
 
 import static log.DiscordLogger.createCommandLog;
 
@@ -13,26 +9,19 @@ import static log.DiscordLogger.createCommandLog;
  * ConsoleLogger only logs to standard output.
  */
 public class ConsoleLogger implements Logger {
-    private final DateFormat logFormat;
-    private final boolean debug;
+    private final org.slf4j.Logger logger;
 
-    public ConsoleLogger(TimeZone logTimeZone) {
-        this.logFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss.SSS");
-        this.logFormat.setTimeZone(logTimeZone);
-        this.debug = "1".equals(System.getenv("DEBUG"));
+    public ConsoleLogger() {
+        this.logger = LoggerFactory.getLogger(ConsoleLogger.class);
     }
 
     @Override
     public void log(int botLogCh, CharSequence message) {
-        Date now = new Date();
-        String msg = this.logFormat.format(now) + " " + message;
-        System.out.println(msg);
+        this.logger.info(message.toString());
     }
 
     @Override
     public void debug(CharSequence message) {
-        if (!debug) return;
-
         this.log(-1, message);
     }
 
@@ -44,7 +33,6 @@ public class ConsoleLogger implements Logger {
 
     @Override
     public void logException(CharSequence message, Throwable e) {
-        this.log(0, message);
-        e.printStackTrace();
+        this.logger.warn("Exception caught", e);
     }
 }

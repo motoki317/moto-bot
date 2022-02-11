@@ -112,7 +112,7 @@ public class App implements Runnable, Bot {
 
     public App(Properties properties, UpdaterFactory updaterFactory) throws LoginException {
         this.properties = properties;
-        this.logger = new ConsoleLogger(this.properties.logTimeZone);
+        this.logger = new ConsoleLogger();
         this.buttonClickManager = updaterFactory.getButtonClickManager();
         this.connected = new boolean[this.properties.shards];
 
@@ -199,7 +199,7 @@ public class App implements Runnable, Bot {
 
     public void onShutDown() {
         this.logger.log(0, "Bot shutting down...");
-        this.logger = new ConsoleLogger(this.properties.logTimeZone);
+        this.logger = new ConsoleLogger();
         this.heartBeat.terminate();
     }
 }

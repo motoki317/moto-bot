@@ -3,7 +3,6 @@ package utils.rateLimit;
 import log.ConsoleLogger;
 import log.Logger;
 
-import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
 
 public class WaitableRateLimiter implements RateLimiter {
@@ -23,7 +22,7 @@ public class WaitableRateLimiter implements RateLimiter {
         this.waitBetweenRequests = waitBetweenRequests;
         this.maxRequestStack = maxRequestStack;
         this.lock = new Object();
-        this.logger = new ConsoleLogger(TimeZone.getTimeZone("Asia/Tokyo"));
+        this.logger = new ConsoleLogger();
     }
 
     public void setLogger(Logger logger) {
