@@ -6,7 +6,7 @@ import commands.event.message.SentMessageAdapter;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.*;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
-import update.multipage.MultipageHandler;
+import update.multipage.ButtonMultiPageHandler;
 import utils.BotUtils;
 
 import java.util.function.Consumer;
@@ -101,22 +101,28 @@ public record MessageReceivedEventAdapter(MessageReceivedEvent event, Bot bot) i
 
     @Override
     public void replyMultiPage(String message, Function<Integer, Message> pages, Supplier<Integer> maxPage) {
-        event.getChannel().sendMessage(message).queue(m ->
-                bot.getReactionManager().addEventListener(
-                        new MultipageHandler(m, event.getAuthor().getIdLong(), pages, maxPage)));
+        event.getChannel().sendMessage(message)
+                .setActionRow(ButtonMultiPageHandler.getActionRow())
+                .queue(m ->
+                        bot.getButtonClickManager().addEventListener(
+                                new ButtonMultiPageHandler(new SentMessageAdapter(m), m.getIdLong(), pages, maxPage)));
     }
 
     @Override
     public void replyMultiPage(Message message, Function<Integer, Message> pages, Supplier<Integer> maxPage) {
-        event.getChannel().sendMessage(message).queue(m ->
-                bot.getReactionManager().addEventListener(
-                        new MultipageHandler(m, event.getAuthor().getIdLong(), pages, maxPage)));
+        event.getChannel().sendMessage(message)
+                .setActionRow(ButtonMultiPageHandler.getActionRow())
+                .queue(m ->
+                        bot.getButtonClickManager().addEventListener(
+                                new ButtonMultiPageHandler(new SentMessageAdapter(m), m.getIdLong(), pages, maxPage)));
     }
 
     @Override
     public void replyMultiPage(MessageEmbed embed, Function<Integer, Message> pages, Supplier<Integer> maxPage) {
-        event.getChannel().sendMessageEmbeds(embed).queue(m ->
-                bot.getReactionManager().addEventListener(
-                        new MultipageHandler(m, event.getAuthor().getIdLong(), pages, maxPage)));
+        event.getChannel().sendMessageEmbeds(embed)
+                .setActionRow(ButtonMultiPageHandler.getActionRow())
+                .queue(m ->
+                        bot.getButtonClickManager().addEventListener(
+                                new ButtonMultiPageHandler(new SentMessageAdapter(m), m.getIdLong(), pages, maxPage)));
     }
 }

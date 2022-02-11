@@ -15,6 +15,11 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 public class ButtonMultiPageHandler extends ButtonClickHandler {
+    private static final String ARROW_LEFT = "\u2B05";
+    private static final String ARROW_RIGHT = "\u27A1";
+    private static final String WHITE_CHECK_MARK = "\u2705";
+    private static final String X = "\u274C";
+
     private static final String BUTTON_ID_LEFT_PAGE = "left_page";
     private static final String BUTTON_ID_RIGHT_PAGE = "right_page";
     private static final String BUTTON_ID_REFRESH = "refresh";
@@ -38,10 +43,10 @@ public class ButtonMultiPageHandler extends ButtonClickHandler {
 
     public static Component[] getActionRow() {
         return new Component[]{
-                Button.primary(BUTTON_ID_LEFT_PAGE, Emoji.fromUnicode("\u2B05")),
-                Button.primary(BUTTON_ID_RIGHT_PAGE, Emoji.fromUnicode("\u27A1")),
-                Button.secondary(BUTTON_ID_REFRESH, Emoji.fromUnicode("\u2705")),
-                Button.danger(BUTTON_ID_CANCEL, Emoji.fromUnicode("\u274C"))
+                Button.primary(BUTTON_ID_LEFT_PAGE, Emoji.fromUnicode(ARROW_LEFT)),
+                Button.primary(BUTTON_ID_RIGHT_PAGE, Emoji.fromUnicode(ARROW_RIGHT)),
+                Button.secondary(BUTTON_ID_REFRESH, Emoji.fromUnicode(WHITE_CHECK_MARK)),
+                Button.danger(BUTTON_ID_CANCEL, Emoji.fromUnicode(X))
         };
     }
 
