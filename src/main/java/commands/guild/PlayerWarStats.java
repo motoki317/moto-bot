@@ -7,6 +7,7 @@ import api.wynn.structs.Player;
 import app.Bot;
 import commands.base.GenericCommand;
 import commands.event.CommandEvent;
+import commands.event.message.SentMessage;
 import db.model.dateFormat.CustomDateFormat;
 import db.model.guild.Guild;
 import db.model.guildWarLog.GuildWarLog;
@@ -58,7 +59,10 @@ public class PlayerWarStats extends GenericCommand {
         this.dateFormatRepository = bot.getDatabase().getDateFormatRepository();
         this.timeZoneRepository = bot.getDatabase().getTimeZoneRepository();
 
-        this.guildNameResolver = new GuildNameResolver(bot.getResponseManager(), this.guildRepository);
+        this.guildNameResolver = new GuildNameResolver(
+                bot.getDatabase().getGuildRepository(),
+                bot.getButtonClickManager()
+        );
     }
 
     @NotNull
@@ -179,27 +183,28 @@ public class PlayerWarStats extends GenericCommand {
         Map<String, String> parsedArgs = new ArgumentParser(args).getArgumentMap();
         if (parsedArgs.containsKey("g")) {
             this.guildNameResolver.resolve(
-                    parsedArgs.get("g"), event.getChannel(), event.getAuthor(),
-                    (guildName, prefix) -> respondLeaderboard(event, uuid, playerNameDisplay, guildName),
-                    event::replyError
+                    parsedArgs.get("g"),
+                    event,
+                    (next, guildName, prefix) -> respondLeaderboard(event, next, uuid, playerNameDisplay, guildName)
             );
             return;
         }
 
-        respondLeaderboard(event, uuid, playerNameDisplay, null);
+        event.reply(new EmbedBuilder().setDescription("Processing...").build(), next ->
+                respondLeaderboard(event, next, uuid, playerNameDisplay, null));
     }
 
-    private void respondLeaderboard(@NotNull CommandEvent event, UUID uuid, String playerNameDisplay, String guildName) {
+    private void respondLeaderboard(@NotNull CommandEvent event, SentMessage next, UUID uuid, String playerNameDisplay, String guildName) {
         CustomTimeZone customTimeZone = this.timeZoneRepository.getTimeZone(event);
         CustomDateFormat customDateFormat = this.dateFormatRepository.getDateFormat(event);
 
         if (maxPage(uuid, guildName) == 0) {
-            event.reply(format(0, uuid, playerNameDisplay, guildName, customTimeZone, customDateFormat));
+            next.editMessage(format(0, uuid, playerNameDisplay, guildName, customTimeZone, customDateFormat));
             return;
         }
 
         Function<Integer, Message> pages = page -> new MessageBuilder(format(page, uuid, playerNameDisplay, guildName, customTimeZone, customDateFormat)).build();
-        event.replyMultiPage(pages.apply(0), pages, () -> maxPage(uuid, guildName));
+        next.editMultiPage(event.getBot(), pages, () -> maxPage(uuid, guildName));
     }
 
     private static final int LOGS_PER_PAGE = 5;

@@ -4,6 +4,7 @@ import app.Bot;
 import commands.event.message.SentMessage;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.JDA;
+import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.entities.*;
 import utils.MinecraftColor;
 
@@ -78,10 +79,15 @@ public interface CommandEvent {
      * @param message Description of the exception.
      */
     default void replyException(CharSequence message) {
-        reply(new EmbedBuilder()
+        reply(buildException(message));
+    }
+
+    static Message buildException(CharSequence message) {
+        return new MessageBuilder().setEmbeds(new EmbedBuilder()
                 .setColor(MinecraftColor.RED.getColor())
                 .setDescription(message)
-                .build());
+                .build()
+        ).build();
     }
 
     /**
@@ -90,15 +96,20 @@ public interface CommandEvent {
      * @param message Description of the error.
      */
     default void replyError(String message) {
-        reply(new EmbedBuilder()
+        reply(buildError(getAuthor(), message));
+    }
+
+    static Message buildError(User author, String message) {
+        return new MessageBuilder().setEmbeds(new EmbedBuilder()
                 .setColor(MinecraftColor.RED.getColor())
                 // Heavy exclamation mark :exclamation: ❗
-                .setAuthor("\u2757 Error!", null, getAuthor().getEffectiveAvatarUrl())
+                .setAuthor("\u2757 Error!", null, author.getEffectiveAvatarUrl())
                 .setDescription(message)
                 .addField("What is this?", "An unexpected error occurred while processing your command. " +
                         "If the error persists, please contact the bot owner.", false)
                 .setFooter("For more, visit the bot support server via info cmd.")
                 .setTimestamp(Instant.now())
-                .build());
+                .build()
+        ).build();
     }
 }

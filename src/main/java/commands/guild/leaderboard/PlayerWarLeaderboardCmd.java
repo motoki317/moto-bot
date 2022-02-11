@@ -5,6 +5,7 @@ import api.wynn.structs.WynnGuild;
 import app.Bot;
 import commands.base.GenericCommand;
 import commands.event.CommandEvent;
+import commands.event.message.SentMessage;
 import commands.guild.GuildNameResolver;
 import db.model.dateFormat.CustomDateFormat;
 import db.model.playerWarLeaderboard.PlayerWarLeaderboard;
@@ -52,7 +53,10 @@ public class PlayerWarLeaderboardCmd extends GenericCommand {
         this.timeZoneRepository = bot.getDatabase().getTimeZoneRepository();
 
         this.wynnApi = new WynnApi(bot.getLogger());
-        this.guildNameResolver = new GuildNameResolver(bot.getResponseManager(), bot.getDatabase().getGuildRepository());
+        this.guildNameResolver = new GuildNameResolver(
+                bot.getDatabase().getGuildRepository(),
+                bot.getButtonClickManager()
+        );
     }
 
     @NotNull
@@ -264,14 +268,15 @@ public class PlayerWarLeaderboardCmd extends GenericCommand {
                     : parsedArgs.get("-guild");
             boolean scoped = parsedArgs.containsKey("s") || parsedArgs.containsKey("-scoped");
 
-            this.guildNameResolver.resolve(specifiedName, event.getChannel(), event.getAuthor(),
-                    (guildName, prefix) -> {
+            this.guildNameResolver.resolve(
+                    specifiedName,
+                    event,
+                    (next, guildName, prefix) -> {
                         GuildPlayerLeaderboard glb = new GuildPlayerLeaderboard(
                                 guildName, prefix, sortType, range, scoped, new Date()
                         );
-                        processGuildPlayerLeaderboard(event, customDateFormat, customTimeZone, glb);
-                    },
-                    event::replyError
+                        processGuildPlayerLeaderboard(event, next, customDateFormat, customTimeZone, glb);
+                    }
             );
             return;
         }
@@ -279,18 +284,20 @@ public class PlayerWarLeaderboardCmd extends GenericCommand {
         // Else, all players leaderboard
         Supplier<Integer> maxPage = () -> this.getMaxPageAllPlayers(range);
         Function<Integer, Message> pageSupplier = page -> allPlayersPageSupplier(page, sortType, range, customDateFormat, customTimeZone);
-        respondLeaderboard(event, maxPage, pageSupplier);
+        event.reply(new EmbedBuilder().setDescription("Processing...").build(), next ->
+                respondLeaderboard(event, next, maxPage, pageSupplier));
     }
 
     private void respondLeaderboard(CommandEvent event,
+                                    SentMessage next,
                                     Supplier<Integer> maxPage,
                                     Function<Integer, Message> pageSupplier) {
         if (maxPage.get() == 0) {
-            event.reply(pageSupplier.apply(0));
+            next.editMessage(pageSupplier.apply(0));
             return;
         }
 
-        event.replyMultiPage(pageSupplier.apply(0), pageSupplier, maxPage);
+        next.editMultiPage(event.getBot(), pageSupplier, maxPage);
     }
 
     @Nullable
@@ -316,6 +323,7 @@ public class PlayerWarLeaderboardCmd extends GenericCommand {
     }
 
     private void processGuildPlayerLeaderboard(@NotNull CommandEvent event,
+                                               @NotNull SentMessage next,
                                                CustomDateFormat customDateFormat,
                                                CustomTimeZone customTimeZone,
                                                @NotNull GuildPlayerLeaderboard glb) {
@@ -323,15 +331,15 @@ public class PlayerWarLeaderboardCmd extends GenericCommand {
         try {
             guildLeaderboard = getGuildPlayerLeaderboard(glb.guildName, glb.scoped, glb.range);
         } catch (RateLimitException | RuntimeException e) {
-            event.replyException(e.getMessage());
+            next.editException(e.getMessage());
             return;
         }
         if (guildLeaderboard == null) {
-            event.replyError("Something went wrong while retrieving leaderboard.");
+            next.editError(event.getAuthor(), "Something went wrong while retrieving leaderboard.");
             return;
         }
         if (guildLeaderboard.isEmpty()) {
-            event.reply(String.format("No war logs found for members of guild `%s` `[%s]` (within the provided time frame).",
+            next.editMessage(String.format("No war logs found for members of guild `%s` `[%s]` (within the provided time frame).",
                     glb.guildName, glb.prefix));
             return;
         }
@@ -339,7 +347,7 @@ public class PlayerWarLeaderboardCmd extends GenericCommand {
 
         Function<Integer, Message> pageSupplier = guildPageSupplier(glb, customDateFormat, customTimeZone);
         Supplier<Integer> maxPage = () -> (guildLeaderboard.size() - 1) / PLAYERS_PER_PAGE;
-        respondLeaderboard(event, maxPage, pageSupplier);
+        respondLeaderboard(event, next, maxPage, pageSupplier);
     }
 
     private record Display(String rank, String playerName, String firstWarNum,

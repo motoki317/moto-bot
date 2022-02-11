@@ -10,18 +10,13 @@ import net.dv8tion.jda.api.events.channel.text.TextChannelDeleteEvent;
 import net.dv8tion.jda.api.events.guild.GuildJoinEvent;
 import net.dv8tion.jda.api.events.guild.GuildLeaveEvent;
 import net.dv8tion.jda.api.events.interaction.ButtonClickEvent;
-import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.sharding.ShardManager;
 import org.jetbrains.annotations.NotNull;
 import update.button.ButtonClickManager;
-import update.response.ResponseManager;
-
-import javax.annotation.Nonnull;
 
 public class UpdaterListener extends ListenerAdapter {
     private final Bot bot;
-    private final ResponseManager responseManager;
     private final ButtonClickManager buttonClickManager;
     private final Logger logger;
     private final ShardManager manager;
@@ -30,7 +25,6 @@ public class UpdaterListener extends ListenerAdapter {
 
     UpdaterListener(Bot bot) {
         this.bot = bot;
-        this.responseManager = bot.getResponseManager();
         this.buttonClickManager = bot.getButtonClickManager();
         this.logger = bot.getLogger();
         this.manager = bot.getManager();
@@ -70,14 +64,6 @@ public class UpdaterListener extends ListenerAdapter {
     // ----------------------------
     // User response / reaction handlers
     // ----------------------------
-
-    @Override
-    public void onMessageReceived(@Nonnull MessageReceivedEvent event) {
-        // Do not respond to webhook/bot messages
-        if (event.isWebhookMessage() || event.getAuthor().isBot()) return;
-
-        this.responseManager.handle(event);
-    }
 
     @Override
     public void onButtonClick(@NotNull ButtonClickEvent event) {

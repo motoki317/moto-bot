@@ -3,6 +3,7 @@ package commands.guild;
 import app.Bot;
 import commands.base.GenericCommand;
 import commands.event.CommandEvent;
+import commands.event.message.SentMessage;
 import db.model.dateFormat.CustomDateFormat;
 import db.model.guildWarLog.GuildWarLog;
 import db.model.territoryLog.TerritoryLog;
@@ -44,8 +45,8 @@ public class GuildWarStats extends GenericCommand {
         this.territoryLogRepository = bot.getDatabase().getTerritoryLogRepository();
 
         this.guildNameResolver = new GuildNameResolver(
-                bot.getResponseManager(),
-                bot.getDatabase().getGuildRepository()
+                bot.getDatabase().getGuildRepository(),
+                bot.getButtonClickManager()
         );
     }
 
@@ -108,20 +109,18 @@ public class GuildWarStats extends GenericCommand {
         String guildName = String.join(" ", Arrays.copyOfRange(args, 2, args.length));
         this.guildNameResolver.resolve(
                 guildName,
-                event.getChannel(),
-                event.getAuthor(),
-                (resolvedName, prefix) -> handleChosenGuild(event, resolvedName, prefix),
-                event::replyError
+                event,
+                (next, resolvedName, prefix) -> handleChosenGuild(event, next, resolvedName, prefix)
         );
     }
 
-    private void handleChosenGuild(CommandEvent event, @NotNull String guildName, @Nullable String guildPrefix) {
+    private void handleChosenGuild(CommandEvent event, SentMessage next, @NotNull String guildName, @Nullable String guildPrefix) {
         int count = this.guildWarLogRepository.countGuildLogs(guildName);
         if (count < 0) {
-            event.replyError("Something went wrong while retrieving data...");
+            next.editError(event.getAuthor(), "Something went wrong while retrieving data...");
             return;
         } else if (count == 0) {
-            event.reply(String.format("Specified guild `%s` does not seem to have any logged war activities...", guildName));
+            next.editMessage(String.format("Specified guild `%s` does not seem to have any logged war activities...", guildName));
             return;
         }
 
@@ -129,12 +128,12 @@ public class GuildWarStats extends GenericCommand {
         CustomDateFormat dateFormat = this.dateFormatRepository.getDateFormat(event);
 
         if (count <= LOGS_PER_PAGE) {
-            event.reply(format(guildName, guildPrefix, 0, timeZone, dateFormat));
+            next.editMessage(format(guildName, guildPrefix, 0, timeZone, dateFormat));
             return;
         }
 
         Function<Integer, Message> pages = page -> new MessageBuilder(format(guildName, guildPrefix, page, timeZone, dateFormat)).build();
-        event.replyMultiPage(pages.apply(0), pages, () -> maxPage(guildName));
+        next.editMultiPage(event.getBot(), pages, () -> maxPage(guildName));
     }
 
     private int maxPage(String guildName) {

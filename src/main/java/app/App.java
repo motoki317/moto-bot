@@ -16,7 +16,6 @@ import net.dv8tion.jda.api.sharding.ShardManager;
 import net.dv8tion.jda.api.utils.SessionControllerAdapter;
 import update.UpdaterFactory;
 import update.button.ButtonClickManager;
-import update.response.ResponseManager;
 import utils.FormatUtils;
 import utils.StoppableThread;
 
@@ -32,8 +31,6 @@ public class App implements Runnable, Bot {
     private final Database database;
 
     private Logger logger;
-
-    private final ResponseManager responseManager;
 
     private final ButtonClickManager buttonClickManager;
 
@@ -59,11 +56,6 @@ public class App implements Runnable, Bot {
     @Override
     public Logger getLogger() {
         return this.logger;
-    }
-
-    @Override
-    public ResponseManager getResponseManager() {
-        return this.responseManager;
     }
 
     @Override
@@ -121,7 +113,6 @@ public class App implements Runnable, Bot {
     public App(Properties properties, UpdaterFactory updaterFactory) throws LoginException {
         this.properties = properties;
         this.logger = new ConsoleLogger(this.properties.logTimeZone);
-        this.responseManager = updaterFactory.getResponseManager();
         this.buttonClickManager = updaterFactory.getButtonClickManager();
         this.connected = new boolean[this.properties.shards];
 
