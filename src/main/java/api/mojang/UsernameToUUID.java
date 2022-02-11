@@ -69,7 +69,7 @@ class UsernameToUUID {
     UUID mustGetUUIDAtTime(String username, long unixMillis) {
         NameHistory history = nameHistoryCache.get(username);
         if (history != null && history.getNameAt(unixMillis).equals(username)) {
-            return history.getUuid();
+            return history.uuid();
         }
 
         rateLimiter.stackUpRequest();

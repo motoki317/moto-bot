@@ -5,6 +5,7 @@ import api.wynn.structs.WynnGuild;
 import app.Bot;
 import commands.base.GenericCommand;
 import commands.event.CommandEvent;
+import commands.event.message.SentMessage;
 import db.model.dateFormat.CustomDateFormat;
 import db.model.guildLeaderboard.GuildLeaderboard;
 import db.model.guildLeaderboard.GuildLeaderboardId;
@@ -112,8 +113,8 @@ public class GuildStats extends GenericCommand {
         Handler(Bot bot) {
             this.wynnApi = new WynnApi(bot.getLogger());
             this.guildNameResolver = new GuildNameResolver(
-                    bot.getResponseManager(),
-                    bot.getDatabase().getGuildRepository()
+                    bot.getDatabase().getGuildRepository(),
+                    bot.getButtonClickManager()
             );
             this.dateFormatRepository = bot.getDatabase().getDateFormatRepository();
             this.timeZoneRepository = bot.getDatabase().getTimeZoneRepository();
@@ -133,24 +134,22 @@ public class GuildStats extends GenericCommand {
 
             this.guildNameResolver.resolve(
                     guildName,
-                    event.getChannel(),
-                    event.getAuthor(),
-                    (resolvedName, prefix) -> handleResolved(event, resolvedName),
-                    event::replyError
+                    event,
+                    (next, resolvedName, prefix) -> handleResolved(event, next, resolvedName)
             );
         }
 
-        private void handleResolved(@NotNull CommandEvent event, @NotNull String guildName) {
+        private void handleResolved(@NotNull CommandEvent event, @NotNull SentMessage next, @NotNull String guildName) {
             WynnGuild guild;
             try {
                 guild = this.wynnApi.getGuildStats(guildName);
             } catch (RateLimitException e) {
-                event.replyException(e.getMessage());
+                next.editException(e.getMessage());
                 return;
             }
 
             if (guild == null) {
-                event.replyException(String.format("Failed to retrieve guild data for %s.", guildName));
+                next.editException(String.format("Failed to retrieve guild data for %s.", guildName));
                 return;
             }
 
@@ -158,7 +157,7 @@ public class GuildStats extends GenericCommand {
             CustomTimeZone customTimeZone = this.timeZoneRepository.getTimeZone(event);
 
             Function<Integer, Message> pageSupplier = page -> getPage(page, guild, customDateFormat, customTimeZone);
-            event.replyMultiPage(pageSupplier.apply(0), pageSupplier, () -> maxPage(guild));
+            next.editMultiPage(event.getBot(), pageSupplier, () -> maxPage(guild));
         }
 
         private static final int MEMBERS_PER_CONTRIBUTE_PAGE = 30;

@@ -52,7 +52,7 @@ public class MusicAutoLeaveChecker {
             return false;
         }
 
-        if (state.getCurrentQueue().getQueue().isEmpty()) {
+        if (state.getCurrentQueue().queue().isEmpty()) {
             return true;
         }
 

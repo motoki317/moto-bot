@@ -146,7 +146,7 @@ public class TerritoryTracker implements TaskBase {
         }
         List<WarLog> warLogs = this.warLogRepository
                 .findAllIn(guildLogs.stream().map(GuildWarLog::getWarLogId)
-                                .filter(Objects::nonNull).collect(Collectors.toList()));
+                        .filter(Objects::nonNull).collect(Collectors.toList()));
         if (warLogs == null) {
             this.logger.log(0, "Territory tracker: failed to retrieve corresponding war logs.");
             return new HashMap<>();
@@ -159,6 +159,7 @@ public class TerritoryTracker implements TaskBase {
 
     /**
      * Do territory tracking. Sends all territory_log from oldLastId (exclusive) to newLastId (inclusive).
+     *
      * @param oldLastId Last max id in territory_log before db update.
      * @param newLastId Current max id in territory_log table after db update.
      */
@@ -209,16 +210,18 @@ public class TerritoryTracker implements TaskBase {
 
     /**
      * Formats territory log in order to send it to tracking channels.
-     * @param log Territory log.
+     *
+     * @param log        Territory log.
      * @param serverName War server name.
      * @return Formatted string.
      */
     private static String formatBase(TerritoryLog log, @Nullable String serverName) {
         String heldForFormatted = FormatUtils.formatReadableTime(log.getTimeDiff() / 1000, false, "s");
 
-        return String.format(
-                "%s: *%s* (%s) → **%s** (%s) [%s]\n" +
-                        "    Territory held for %s\n",
+        return String.format("""
+                        %s: *%s* (%s) → **%s** (%s) [%s]
+                            Territory held for %s
+                        """,
                 log.getTerritoryName(),
                 log.getOldGuildName(), log.getOldGuildTerrAmt(),
                 log.getNewGuildName(), log.getNewGuildTerrAmt(),

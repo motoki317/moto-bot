@@ -103,17 +103,17 @@ public class PlayerUUIDRetriever implements TaskBase {
     }
 
     private void fillPlayerUUIDs(NameHistory nameHistory) {
-        List<NameHistory.NameHistoryEntry> history = nameHistory.getHistory();
-        UUID uuid = nameHistory.getUuid();
+        List<NameHistory.NameHistoryEntry> history = nameHistory.history();
+        UUID uuid = nameHistory.uuid();
         for (int i = 0; i < history.size(); i++) {
             long start, end;
-            start = history.get(i).getChangedToAt();
+            start = history.get(i).changedToAt();
             if (i == history.size() - 1) {
                 end = System.currentTimeMillis();
             } else {
-                end = history.get(i + 1).getChangedToAt();
+                end = history.get(i + 1).changedToAt();
             }
-            String username = history.get(i).getUsername();
+            String username = history.get(i).username();
 
             // update corresponding entries
             if (!this.warPlayerRepository.updatePlayerUUIDBetween(username, uuid, new Date(start), new Date(end))) {

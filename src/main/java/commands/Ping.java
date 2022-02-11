@@ -55,7 +55,7 @@ public class Ping extends GenericCommand {
     @Override
     public Message longHelp() {
         return new MessageBuilder(
-                "Checks the bot's ping.\n" +
+                "Checks ping of bot.\n" +
                         "It is preferable that the ping takes no longer than 250 ms, and be stable."
         ).build();
     }
@@ -91,8 +91,8 @@ public class Ping extends GenericCommand {
     private Consumer<SentMessage> onMessageCreate(EmbedBuilder eb, long messageCreationTime, long receivedTime) {
         return message -> {
             long load = receivedTime - messageCreationTime;
-            message.getId(messageId -> {
-                long send = BotUtils.getIdCreationTime(messageId) - receivedTime;
+            message.getMessage(actualMsg -> {
+                long send = BotUtils.getIdCreationTime(actualMsg.getIdLong()) - receivedTime;
                 long total = load + send;
 
                 eb.addField(

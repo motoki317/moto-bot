@@ -1,14 +1,22 @@
 package commands.event.message;
 
+import app.Bot;
+import commands.event.CommandEvent;
+import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageEmbed;
+import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.ComponentLayout;
+import update.multipage.ButtonMultiPageHandler;
 
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 public interface SentMessage {
-    void getId(Consumer<Long> callback);
+    void getMessage(Consumer<Message> callback);
 
     void editMessage(String message);
 
@@ -27,4 +35,22 @@ public interface SentMessage {
     void delete();
 
     void deleteAfter(long timeout, TimeUnit unit);
+
+    default void editException(CharSequence message) {
+        editMessage(CommandEvent.buildException(message));
+    }
+
+    default void editError(User author, String message) {
+        editMessage(CommandEvent.buildError(author, message));
+    }
+
+    default void editMultiPage(Bot bot, Function<Integer, Message> pages, Supplier<Integer> maxPage) {
+        editMessage(
+                new MessageBuilder(pages.apply(0))
+                        .setActionRows(ActionRow.of(ButtonMultiPageHandler.getActionRow())).build(),
+                next ->
+                        next.getMessage(m ->
+                                bot.getButtonClickManager().addEventListener(
+                                        new ButtonMultiPageHandler(new SentMessageAdapter(m), m.getIdLong(), pages, maxPage))));
+    }
 }

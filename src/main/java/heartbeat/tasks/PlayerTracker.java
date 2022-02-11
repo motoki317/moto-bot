@@ -326,11 +326,11 @@ public class PlayerTracker implements TaskBase {
 
         Map<String, NullableUUID> res = this.mojangApi.getUUIDsIterative(playerNamesUnknownUUID);
         if (res != null) {
-            res.entrySet().stream().filter(e -> e.getValue().getUuid() != null)
+            res.entrySet().stream().filter(e -> e.getValue().uuid() != null)
                     .forEach(
                     (e) -> warPlayers.stream()
                             .filter(p -> p.getPlayerName().equals(e.getKey())).findFirst()
-                            .ifPresent(p -> p.setPlayerUUID(e.getValue().getUuid().toStringWithHyphens()))
+                            .ifPresent(p -> p.setPlayerUUID(e.getValue().uuid().toStringWithHyphens()))
                     );
         }
     }
@@ -581,11 +581,12 @@ public class PlayerTracker implements TaskBase {
 
         DateFormat dateFormat = new SimpleDateFormat("EEE MMM d, yyyy");
         DateFormat timeFormat = new SimpleDateFormat("HH:mm:ss");
-        String message = String.format("```ml\n" +
-                "%s\n" +
-                "Maximum : %s players online at %s UTC\n" +
-                "Minimum : %s players online at %s UTC\n" +
-                "```",
+        String message = String.format("""
+                        ```ml
+                        %s
+                        Maximum : %s players online at %s UTC
+                        Minimum : %s players online at %s UTC
+                        ```""",
                 dateFormat.format(max.getDateTime()),
                 max.getPlayerNum(), timeFormat.format(max.getDateTime()),
                 min.getPlayerNum(), timeFormat.format(min.getDateTime())

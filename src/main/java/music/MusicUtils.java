@@ -16,7 +16,7 @@ import java.util.regex.Pattern;
 
 public class MusicUtils {
     private final static Pattern YOUTUBE_VIDEO = Pattern.compile("https://(www\\.)?youtube\\.com/watch\\?v=(.+)");
-    private final static String YOUTUBE_THUMBNAIL = "http://i.ytimg.com/vi/%s/default.jpg";
+    private final static String YOUTUBE_THUMBNAIL = "https://i.ytimg.com/vi/%s/default.jpg";
 
     /**
      * Tries to retrieve thumbnail URL for the given audio source URL.

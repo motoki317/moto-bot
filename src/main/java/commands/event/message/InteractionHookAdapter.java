@@ -10,8 +10,8 @@ import java.util.function.Consumer;
 
 public record InteractionHookAdapter(InteractionHook hook) implements SentMessage {
     @Override
-    public void getId(Consumer<Long> callback) {
-        hook.retrieveOriginal().queue(m -> callback.accept(m.getIdLong()));
+    public void getMessage(Consumer<Message> callback) {
+        hook.retrieveOriginal().queue(callback);
     }
 
     @Override

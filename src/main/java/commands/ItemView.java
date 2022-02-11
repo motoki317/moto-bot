@@ -106,7 +106,7 @@ public class ItemView extends GenericCommand {
     }
 
     static List<Item> searchItem(String input, List<Item> items) {
-        // case insensitive search
+        // case-insensitive search
         input = input.toLowerCase();
 
         List<Item> prefixMatch = new ArrayList<>();

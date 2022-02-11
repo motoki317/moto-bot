@@ -20,19 +20,20 @@ class TableFormatterTest {
             tf.addRow((i + 1) + ".", "WC" + (i + 1), "" + i * 5, i * 10 + " m");
         }
 
-        assertEquals("" +
-                "    | Server | Players | Uptime\n" +
-                "----+--------+---------+--------\n" +
-                "1.  | WC1    |       0 |    0 m\n" +
-                "2.  | WC2    |       5 |   10 m\n" +
-                "3.  | WC3    |      10 |   20 m\n" +
-                "4.  | WC4    |      15 |   30 m\n" +
-                "5.  | WC5    |      20 |   40 m\n" +
-                "6.  | WC6    |      25 |   50 m\n" +
-                "7.  | WC7    |      30 |   60 m\n" +
-                "8.  | WC8    |      35 |   70 m\n" +
-                "9.  | WC9    |      40 |   80 m\n" +
-                "10. | WC10   |      45 |   90 m\n",
+        assertEquals("""
+                            | Server | Players | Uptime
+                        ----+--------+---------+--------
+                        1.  | WC1    |       0 |    0 m
+                        2.  | WC2    |       5 |   10 m
+                        3.  | WC3    |      10 |   20 m
+                        4.  | WC4    |      15 |   30 m
+                        5.  | WC5    |      20 |   40 m
+                        6.  | WC6    |      25 |   50 m
+                        7.  | WC7    |      30 |   60 m
+                        8.  | WC8    |      35 |   70 m
+                        9.  | WC9    |      40 |   80 m
+                        10. | WC10   |      45 |   90 m
+                        """,
                 tf.toString());
         assertEquals(tf.widthAt(0), 3);
         assertEquals(tf.widthAt(1), 6);
@@ -53,21 +54,22 @@ class TableFormatterTest {
             tf.addRow((i + 1) + ".", "WC" + (i + 1), "" + i * 5, i * 10 + " m");
         }
 
-        assertEquals("" +
-                        "    | Server | Players | Uptime\n" +
-                        "----+--------+---------+--------\n" +
-                        "1.  | WC1    | 0       |    0 m\n" +
-                        "2.  | WC2    | 5       |   10 m\n" +
-                        "3.  | WC3    | 10      |   20 m\n" +
-                        "4.  | WC4    | 15      |   30 m\n" +
-                        "5.  | WC5    | 20      |   40 m\n" +
-                        "6.  | WC6    | 25      |   50 m\n" +
-                        "7.  | WC7    | 30      |   60 m\n" +
-                        "8.  | WC8    | 35      |   70 m\n" +
-                        "9.  | WC9    | 40      |   80 m\n" +
-                        "10. | WC10   | 45      |   90 m\n" +
-                        "----+--------+---------+--------\n" +
-                        "    |        | 225     | \n",
+        assertEquals("""
+                            | Server | Players | Uptime
+                        ----+--------+---------+--------
+                        1.  | WC1    | 0       |    0 m
+                        2.  | WC2    | 5       |   10 m
+                        3.  | WC3    | 10      |   20 m
+                        4.  | WC4    | 15      |   30 m
+                        5.  | WC5    | 20      |   40 m
+                        6.  | WC6    | 25      |   50 m
+                        7.  | WC7    | 30      |   60 m
+                        8.  | WC8    | 35      |   70 m
+                        9.  | WC9    | 40      |   80 m
+                        10. | WC10   | 45      |   90 m
+                        ----+--------+---------+--------
+                            |        | 225     |\s
+                        """,
                 tf.toString());
         assertEquals(tf.widthAt(0), 3);
         assertEquals(tf.widthAt(1), 6);

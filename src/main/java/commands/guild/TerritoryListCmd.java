@@ -3,6 +3,7 @@ package commands.guild;
 import app.Bot;
 import commands.base.GenericCommand;
 import commands.event.CommandEvent;
+import commands.event.message.SentMessage;
 import db.model.dateFormat.CustomDateFormat;
 import db.model.territory.Territory;
 import db.model.timezone.CustomTimeZone;
@@ -39,7 +40,10 @@ public class TerritoryListCmd extends GenericCommand {
         this.timeZoneRepository = bot.getDatabase().getTimeZoneRepository();
         this.dateFormatRepository = bot.getDatabase().getDateFormatRepository();
 
-        this.guildNameResolver = new GuildNameResolver(bot.getResponseManager(), bot.getDatabase().getGuildRepository());
+        this.guildNameResolver = new GuildNameResolver(
+                bot.getDatabase().getGuildRepository(),
+                bot.getButtonClickManager()
+        );
         this.guildPrefixesResolver = new GuildPrefixesResolver(bot.getDatabase().getGuildRepository());
     }
 
@@ -96,9 +100,9 @@ public class TerritoryListCmd extends GenericCommand {
 
         String specified = String.join("", Arrays.copyOfRange(args, 2, args.length));
         this.guildNameResolver.resolve(
-                specified, event.getChannel(), event.getAuthor(),
-                (guildName, prefix) -> showGuildTerritories(event, new Guild(guildName, prefix)),
-                event::replyError
+                specified,
+                event,
+                (next, guildName, prefix) -> showGuildTerritories(event, next, new Guild(guildName, prefix))
         );
     }
 
@@ -110,7 +114,8 @@ public class TerritoryListCmd extends GenericCommand {
             return;
         }
 
-        sendMessage(event, territories, lastUpdate, null);
+        event.reply(new EmbedBuilder().setDescription("Processing...").build(), next ->
+                sendMessage(event, next, territories, lastUpdate, null));
     }
 
     private record Guild(@NotNull String name, @Nullable String prefix) {
@@ -120,27 +125,30 @@ public class TerritoryListCmd extends GenericCommand {
         }
     }
 
-    private void showGuildTerritories(CommandEvent event, @NotNull Guild guild) {
+    private void showGuildTerritories(CommandEvent event, SentMessage next, @NotNull Guild guild) {
         List<Territory> territories = this.territoryRepository.getGuildTerritories(guild.name);
         Date lastUpdate = new Date();
         if (territories == null) {
-            event.replyError(String.format(
+            next.editError(event.getAuthor(), String.format(
                     "Something went wrong while retrieving a list of territories for guild `%s`...", guild.name
             ));
             return;
         }
         if (territories.isEmpty()) {
-            event.reply(String.format("Guild `%s` `[%s]` doesn't seem to own any territories.",
+            next.editMessage(String.format("Guild `%s` `[%s]` doesn't seem to own any territories.",
                     guild.name, guild.prefix != null ? guild.prefix : "???"));
             return;
         }
 
-        sendMessage(event, territories, lastUpdate, guild);
+        sendMessage(event, next, territories, lastUpdate, guild);
     }
 
     private static final int TERRITORIES_PER_PAGE = 5;
 
-    private void sendMessage(CommandEvent event, List<Territory> territories, Date lastUpdate,
+    private void sendMessage(CommandEvent event,
+                             SentMessage next,
+                             List<Territory> territories,
+                             Date lastUpdate,
                              @Nullable Guild guild) {
         // Sort by descending order of acquired time
         territories.sort((t1, t2) -> Long.compare(t2.getAcquired().getTime(), t1.getAcquired().getTime()));
@@ -148,12 +156,12 @@ public class TerritoryListCmd extends GenericCommand {
         int maxPage = (territories.size() - 1) / TERRITORIES_PER_PAGE;
 
         if (maxPage == 0) {
-            event.reply(formatPage(0, territories, event, lastUpdate, guild));
+            next.editMessage(formatPage(0, territories, event, lastUpdate, guild));
             return;
         }
 
         Function<Integer, Message> pages = page -> new MessageBuilder(formatPage(page, territories, event, lastUpdate, guild)).build();
-        event.replyMultiPage(pages.apply(0), pages, () -> maxPage);
+        next.editMultiPage(event.getBot(), pages, () -> maxPage);
     }
 
     private record Display(String num, String territoryName,

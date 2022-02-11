@@ -27,7 +27,7 @@ public interface TerritoryLogRepository extends Repository<TerritoryLog, Territo
     List<TerritoryLog> findAllInRange(int oldId, int newId);
 
     /**
-     * Finds all logs that is contained in the given list of IDs.
+     * Finds all logs that are contained in the given list of IDs.
      * @param ids List of IDs.
      * @return List of logs.
      */

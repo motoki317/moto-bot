@@ -12,23 +12,15 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class RangeParser {
-    public static class Range {
-        @NotNull
-        public final Date start;
-        @NotNull
-        public final Date end;
-
-        private Range(@NotNull Date start, @NotNull Date end) {
-            this.start = start;
-            this.end = end;
-        }
+    public record Range(@NotNull Date start, @NotNull Date end) {
     }
 
     /**
      * Parses range from the given arguments.
+     *
      * @param parsedArgs Parsed arguments in form of map. e.g. {"-since": "2020-01-01 12:00:00", "-until", "2020-01-05 12:00:00"} and so on.
-     * @param timeZone Time zone to parse with.
-     * @param maxRange Max range in milliseconds. If the parsed range exceeds this range, an exception is thrown.
+     * @param timeZone   Time zone to parse with.
+     * @param maxRange   Max-range in milliseconds. If the parsed range exceeds this range, an exception is thrown.
      * @return Time range.
      * @throws IllegalArgumentException On parse error, i.e. argument like "-since" was specified but unable to parse it.
      * @see ArgumentParser for parsedArgs argument.
@@ -96,14 +88,7 @@ public class RangeParser {
         return null;
     }
 
-    private static class TimePattern {
-        private final Pattern pattern;
-        private final TimeUnit unit;
-
-        private TimePattern(Pattern pattern, TimeUnit unit) {
-            this.pattern = pattern;
-            this.unit = unit;
-        }
+    private record TimePattern(Pattern pattern, TimeUnit unit) {
     }
 
     private final static List<DateFormat> acceptableFormats;

@@ -28,7 +28,10 @@ public class CustomGuildListCmd extends GenericCommand {
     public CustomGuildListCmd(Bot bot) {
         GuildRepository guildRepository = bot.getDatabase().getGuildRepository();
         this.guildListRepository = bot.getDatabase().getGuildListRepository();
-        this.guildNameResolver = new GuildNameResolver(bot.getResponseManager(), guildRepository);
+        this.guildNameResolver = new GuildNameResolver(
+                bot.getDatabase().getGuildRepository(),
+                bot.getButtonClickManager()
+        );
         this.guildPrefixesResolver = new GuildPrefixesResolver(guildRepository);
     }
 

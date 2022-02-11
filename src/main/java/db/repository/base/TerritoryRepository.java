@@ -57,7 +57,7 @@ public interface TerritoryRepository extends Repository<Territory, TerritoryId> 
     boolean updateAll(@NotNull List<Territory> territories);
 
     /**
-     * Retrieves all territory names that begins with the given prefix. Case insensitive.
+     * Retrieves all territory names that begins with the given prefix. Case-insensitive.
      * @param prefix Prefix.
      * @return List of territory names.
      */

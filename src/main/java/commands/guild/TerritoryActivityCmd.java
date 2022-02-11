@@ -120,7 +120,7 @@ public class TerritoryActivityCmd extends GenericCommand {
 
         List<TerritoryActivity> activities = range == null
                 ? this.territoryLogRepository.territoryActivity()
-                : this.territoryLogRepository.territoryActivity(range.start, range.end);
+                : this.territoryLogRepository.territoryActivity(range.start(), range.end());
         if (activities == null) {
             event.replyError("Something went wrong while retrieving data...");
             return;
@@ -170,9 +170,9 @@ public class TerritoryActivityCmd extends GenericCommand {
             String timeZoneStr = display.customTimeZone.getFormattedTime();
             ret.add("Ranged Activity");
             ret.add(String.format("From: %s (%s)",
-                    dateFormat.format(display.range.start), timeZoneStr));
+                    dateFormat.format(display.range.start()), timeZoneStr));
             ret.add(String.format("  To: %s (%s)",
-                    dateFormat.format(display.range.end), timeZoneStr));
+                    dateFormat.format(display.range.end()), timeZoneStr));
         }
         ret.add("");
 

@@ -4,6 +4,7 @@ import api.mojang.MojangApi;
 import app.Bot;
 import commands.base.GuildCommand;
 import commands.event.CommandEvent;
+import commands.event.message.SentMessage;
 import commands.guild.GuildNameResolver;
 import db.Database;
 import db.model.dateFormat.CustomDateFormat;
@@ -18,7 +19,8 @@ import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.interactions.commands.build.OptionData;
+import net.dv8tion.jda.api.interactions.commands.OptionType;
+import net.dv8tion.jda.api.interactions.commands.build.*;
 import org.jetbrains.annotations.NotNull;
 import utils.UUID;
 
@@ -26,6 +28,7 @@ import javax.annotation.Nullable;
 import java.text.DateFormat;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 public class Track extends GuildCommand {
@@ -43,7 +46,10 @@ public class Track extends GuildCommand {
         this.dateFormatRepository = db.getDateFormatRepository();
         this.timeZoneRepository = db.getTimeZoneRepository();
         this.mojangApi = new MojangApi(bot.getLogger());
-        this.guildNameResolver = new GuildNameResolver(bot.getResponseManager(), db.getGuildRepository());
+        this.guildNameResolver = new GuildNameResolver(
+                bot.getDatabase().getGuildRepository(),
+                bot.getButtonClickManager()
+        );
     }
 
     @NotNull
@@ -60,6 +66,38 @@ public class Track extends GuildCommand {
     @Override
     public @NotNull OptionData[] slashOptions() {
         return new OptionData[]{};
+    }
+
+    @Override
+    public @NotNull BaseCommand<CommandData> slashCommand() {
+        return new CommandData("track", this.shortHelp())
+                .addSubcommands(
+                        new SubcommandData("server", "Tracks server start/close.")
+                                .addOptions(
+                                        new OptionData(OptionType.STRING, "type", "Track type", true)
+                                                .addChoice("start", "start")
+                                                .addChoice("close", "close"),
+                                        new OptionData(OptionType.STRING, "all", "Track all servers not just WC")
+                                                .addChoice("all", "all")),
+                        new SubcommandData("guild", "Tracks guild creation/deletion.")
+                                .addOptions(
+                                        new OptionData(OptionType.STRING, "type", "Track type", true)
+                                                .addChoice("create", "create")
+                                                .addChoice("delete", "delete")),
+                        new SubcommandData("update", "Update expiration time of tracking in this channel."))
+                .addSubcommandGroups(
+                        new SubcommandGroupData("war", "Tracks guild wars.")
+                                .addSubcommands(
+                                        new SubcommandData("all", "Tracks all guild wars."),
+                                        new SubcommandData("guild", "Tracks wars of a specific guild.")
+                                                .addOption(OptionType.STRING, "guild", "Guild name or prefix", true),
+                                        new SubcommandData("player", "Tracks wars of a specific player.")
+                                                .addOption(OptionType.STRING, "player", "Player name or UUID", true)),
+                        new SubcommandGroupData("territory", "Tracks territory transfers.")
+                                .addSubcommands(
+                                        new SubcommandData("all", "Tracks all territory transfers."),
+                                        new SubcommandData("guild", "Tracks territory transfers of a specific guild.")
+                                                .addOption(OptionType.STRING, "guild", "Guild name or prefix", true)));
     }
 
     @NotNull
@@ -188,8 +226,8 @@ public class Track extends GuildCommand {
         try {
             resolveGuildOrPlayer(
                     event, args, entity,
-                    () -> saveTrackData(event, entity, true),
-                    () -> saveTrackData(event, entity, false)
+                    (next) -> saveTrackData(event, next, entity, true),
+                    (next) -> saveTrackData(event, next, entity, false)
             );
         } catch (IllegalArgumentException e) {
             event.replyException(e.getMessage());
@@ -200,23 +238,24 @@ public class Track extends GuildCommand {
      * Saves the final track channel entity.
      *
      * @param event            Command event.
+     * @param next             Next interaction target.
      * @param entity           Track entity.
      * @param safeGuildResolve {@code true} if the guild name was safely resolved.
      *                         If {@code false}, only tries to delete the existing track.
      */
-    private void saveTrackData(CommandEvent event, TrackChannel entity, boolean safeGuildResolve) {
+    private void saveTrackData(CommandEvent event, SentMessage next, TrackChannel entity, boolean safeGuildResolve) {
         if (this.trackChannelRepository.exists(entity)) {
-            disableTracking(event, entity);
+            disableTracking(next, entity);
         } else {
             // Prevent the track from being registered if an unknown guild has been resolved.
             if (!safeGuildResolve) {
-                event.replyException(String.format(
+                next.editException(String.format(
                         "Guild with name `%s` not found. Check the spells, or try again later.",
                         entity.getGuildName()
                 ));
                 return;
             }
-            enableTracking(event, entity);
+            enableTracking(event, next, entity);
         }
     }
 
@@ -230,7 +269,11 @@ public class Track extends GuildCommand {
      * @param unknownGuildResolved To be called on unknown guild name resolve.
      * @throws IllegalArgumentException On bad user input.
      */
-    private void resolveGuildOrPlayer(CommandEvent event, @NotNull String[] args, TrackChannel entity, Runnable onResolve, Runnable unknownGuildResolved) throws IllegalArgumentException {
+    private void resolveGuildOrPlayer(CommandEvent event,
+                                      @NotNull String[] args,
+                                      TrackChannel entity,
+                                      Consumer<SentMessage> onResolve,
+                                      Consumer<SentMessage> unknownGuildResolved) throws IllegalArgumentException {
         switch (entity.getType()) {
             case WAR_SPECIFIC, TERRITORY_SPECIFIC -> {
                 String specified = getName(args);
@@ -238,19 +281,19 @@ public class Track extends GuildCommand {
                     throw new IllegalArgumentException("Invalid arguments: guild name was not specified.");
                 }
                 this.guildNameResolver.resolve(
-                        specified, event.getChannel(), event.getAuthor(),
-                        (guildName, prefix) -> {
+                        specified,
+                        event,
+                        (next, guildName, prefix) -> {
                             entity.setGuildName(guildName);
                             if (prefix == null) {
-                                unknownGuildResolved.run();
+                                unknownGuildResolved.accept(next);
                             } else {
-                                onResolve.run();
+                                onResolve.accept(next);
                             }
-                        },
-                        event::replyException
+                        }
                 );
             }
-            case WAR_PLAYER -> {
+            case WAR_PLAYER -> event.reply(new EmbedBuilder().setDescription("Processing...").build(), next -> {
                 String playerName = getName(args);
                 if (playerName == null) {
                     throw new IllegalArgumentException("Invalid arguments: player name was not specified.");
@@ -261,41 +304,42 @@ public class Track extends GuildCommand {
                             "Check the spelling, and make sure the player with that name exists.", playerName));
                 }
                 entity.setPlayerUUID(uuid.toStringWithHyphens());
-                onResolve.run();
-            }
-            default -> onResolve.run();
+
+                onResolve.accept(next);
+            });
+            default -> event.reply(new EmbedBuilder().setDescription("Processing...").build(), onResolve);
         }
     }
 
-    private void disableTracking(@NotNull CommandEvent event, TrackChannel entity) {
+    private void disableTracking(@NotNull SentMessage next, TrackChannel entity) {
         if (this.trackChannelRepository.delete(entity)) {
-            event.reply(":mute: Successfully **disabled** " + entity.getDisplayName() + " for this channel.");
+            next.editMessage(":mute: Successfully **disabled** " + entity.getDisplayName() + " for this channel.");
             this.logger.log(0, ":mute: Tracking has been **disabled**:\n" + entity);
         } else {
-            event.replyError("Something went wrong while saving data.");
+            next.editMessage("Something went wrong while saving data.");
         }
     }
 
-    private void enableTracking(@NotNull CommandEvent event, TrackChannel entity) {
+    private void enableTracking(@NotNull CommandEvent event, @NotNull SentMessage next, TrackChannel entity) {
         // Check conflicting types
         List<TrackChannel> conflicting = getConflictingEntities(entity.getType(), event);
         if (conflicting == null) {
-            event.replyError("Something went wrong while retrieving data.");
+            next.editError(event.getAuthor(), "Something went wrong while retrieving data.");
             return;
         }
         if (!conflicting.isEmpty()) {
             String message = "You have conflicting type of tracking enabled in this channel." +
                     " Use a different channel, or remove the below before enabling the one you just specified:\n" +
                     conflicting.stream().map(TrackChannel::getDisplayName).collect(Collectors.joining("\n"));
-            event.reply(message);
+            next.editMessage(message);
             return;
         }
 
         if (this.trackChannelRepository.create(entity)) {
-            event.reply(":loud_sound: Successfully **enabled** " + entity.getDisplayName() + " for this channel!");
+            next.editMessage(":loud_sound: Successfully **enabled** " + entity.getDisplayName() + " for this channel!");
             this.logger.log(0, ":loud_sound: Tracking has been **enabled**:\n" + entity);
         } else {
-            event.replyError("Something went wrong while saving data.");
+            next.editError(event.getAuthor(), "Something went wrong while saving data.");
         }
     }
 

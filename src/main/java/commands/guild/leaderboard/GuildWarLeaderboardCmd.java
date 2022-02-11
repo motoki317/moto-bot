@@ -121,9 +121,7 @@ public class GuildWarLeaderboardCmd extends GenericCommand {
         Total,
         Success;
 
-        private static SortType getDefault() {
-            return Success;
-        }
+        private static final SortType DEFAULT = Success;
     }
 
     private static final int GUILDS_PER_PAGE = 10;
@@ -135,7 +133,7 @@ public class GuildWarLeaderboardCmd extends GenericCommand {
         } else if (parsedArgs.containsKey("sc") || parsedArgs.containsKey("-success")) {
             return SortType.Success;
         } else {
-            return SortType.getDefault();
+            return SortType.DEFAULT;
         }
     }
 
@@ -189,7 +187,7 @@ public class GuildWarLeaderboardCmd extends GenericCommand {
 
     // Get max page for ranged leaderboard
     private int getMaxPageRange(@NotNull Range range) {
-        return (this.guildWarLeaderboardRepository.getGuildsInRange(range.start, range.end) - 1) / GUILDS_PER_PAGE;
+        return (this.guildWarLeaderboardRepository.getGuildsInRange(range.start(), range.end()) - 1) / GUILDS_PER_PAGE;
     }
 
     // Retrieves sorted leaderboard of the given context in arguments
@@ -204,8 +202,8 @@ public class GuildWarLeaderboardCmd extends GenericCommand {
             };
         } else {
             return switch (sortType) {
-                case Total -> this.guildWarLeaderboardRepository.getByTotalWarDescending(GUILDS_PER_PAGE, offset, range.start, range.end);
-                case Success -> this.guildWarLeaderboardRepository.getBySuccessWarDescending(GUILDS_PER_PAGE, offset, range.start, range.end);
+                case Total -> this.guildWarLeaderboardRepository.getByTotalWarDescending(GUILDS_PER_PAGE, offset, range.start(), range.end());
+                case Success -> this.guildWarLeaderboardRepository.getBySuccessWarDescending(GUILDS_PER_PAGE, offset, range.start(), range.end());
             };
         }
     }
@@ -228,8 +226,8 @@ public class GuildWarLeaderboardCmd extends GenericCommand {
             String startAndEnd = String.format(
                     "Start: %s (%s)\n" +
                             "  End: %s (%s)",
-                    dateFormat.format(range.start), customTimeZone.getFormattedTime(),
-                    dateFormat.format(range.end), customTimeZone.getFormattedTime());
+                    dateFormat.format(range.start()), customTimeZone.getFormattedTime(),
+                    dateFormat.format(range.end()), customTimeZone.getFormattedTime());
 
             return switch (sortType) {
                 case Total -> String.format("Ranged: by # of total wars\n%s", startAndEnd);
@@ -241,13 +239,13 @@ public class GuildWarLeaderboardCmd extends GenericCommand {
     private int getSuccessWarSum(@Nullable Range range) {
         return range == null
                 ? this.guildWarLogRepository.countSuccessWarsSum()
-                : this.guildWarLogRepository.countSuccessWarsSum(range.start, range.end);
+                : this.guildWarLogRepository.countSuccessWarsSum(range.start(), range.end());
     }
 
     private int getTotalWarSum(@Nullable Range range) {
         return range == null
                 ? this.guildWarLogRepository.countTotalWarsSum()
-                : this.guildWarLogRepository.countTotalWarsSum(range.start, range.end);
+                : this.guildWarLogRepository.countTotalWarsSum(range.start(), range.end());
     }
 
     // Get single formatted page for given sort type and range
@@ -344,7 +342,7 @@ public class GuildWarLeaderboardCmd extends GenericCommand {
         return new MessageBuilder(String.join("\n", ret)).build();
     }
 
-    // Formats displays according the given justify info.
+    // Displays according the given justify info.
     // Asserts that justify info should make sense for the given displays.
     private static String formatTableDisplays(List<Display> displays, Justify justify,
                                               String rateMessage,

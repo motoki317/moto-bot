@@ -5,6 +5,7 @@ import api.wynn.structs.WynnGuild;
 import app.Bot;
 import commands.base.GenericCommand;
 import commands.event.CommandEvent;
+import commands.event.message.SentMessage;
 import commands.guild.GuildNameResolver;
 import db.model.dateFormat.CustomDateFormat;
 import db.model.playerWarLeaderboard.PlayerWarLeaderboard;
@@ -52,7 +53,10 @@ public class PlayerWarLeaderboardCmd extends GenericCommand {
         this.timeZoneRepository = bot.getDatabase().getTimeZoneRepository();
 
         this.wynnApi = new WynnApi(bot.getLogger());
-        this.guildNameResolver = new GuildNameResolver(bot.getResponseManager(), bot.getDatabase().getGuildRepository());
+        this.guildNameResolver = new GuildNameResolver(
+                bot.getDatabase().getGuildRepository(),
+                bot.getButtonClickManager()
+        );
     }
 
     @NotNull
@@ -133,9 +137,7 @@ public class PlayerWarLeaderboardCmd extends GenericCommand {
         Success,
         Survived;
 
-        private static SortType getDefault() {
-            return Success;
-        }
+        private static final SortType DEFAULT = Success;
 
         private String getWarNumbersMessage() {
             if (this == Survived) {
@@ -173,25 +175,25 @@ public class PlayerWarLeaderboardCmd extends GenericCommand {
     private int getSuccessWars(@Nullable Range range, @NotNull String guildName) {
         return range == null
                 ? this.guildWarLogRepository.countSuccessWars(guildName)
-                : this.guildWarLogRepository.countSuccessWars(guildName, range.start, range.end);
+                : this.guildWarLogRepository.countSuccessWars(guildName, range.start(), range.end());
     }
 
     private int getTotalWars(@Nullable Range range, @NotNull String guildName) {
         return range == null
                 ? this.guildWarLogRepository.countTotalWars(guildName)
-                : this.guildWarLogRepository.countTotalWars(guildName, range.start, range.end);
+                : this.guildWarLogRepository.countTotalWars(guildName, range.start(), range.end());
     }
 
     private int getSuccessWarSum(@Nullable Range range) {
         return range == null
                 ? this.guildWarLogRepository.countSuccessWarsSum()
-                : this.guildWarLogRepository.countSuccessWarsSum(range.start, range.end);
+                : this.guildWarLogRepository.countSuccessWarsSum(range.start(), range.end());
     }
 
     private int getTotalWarSum(@Nullable Range range) {
         return range == null
                 ? this.guildWarLogRepository.countTotalWarsSum()
-                : this.guildWarLogRepository.countTotalWarsSum(range.start, range.end);
+                : this.guildWarLogRepository.countTotalWarsSum(range.start(), range.end());
     }
 
     // Get description of the leaderboard of the given context in arguments
@@ -213,8 +215,8 @@ public class PlayerWarLeaderboardCmd extends GenericCommand {
             String startAndEnd = String.format(
                     "Start: %s (%s)\n" +
                             "  End: %s (%s)",
-                    dateFormat.format(range.start), customTimeZone.getFormattedTime(),
-                    dateFormat.format(range.end), customTimeZone.getFormattedTime());
+                    dateFormat.format(range.start()), customTimeZone.getFormattedTime(),
+                    dateFormat.format(range.end()), customTimeZone.getFormattedTime());
 
             return switch (sortType) {
                 case Total -> String.format("Ranged: by # of total wars\n%s", startAndEnd);
@@ -235,7 +237,7 @@ public class PlayerWarLeaderboardCmd extends GenericCommand {
         } else if (parsedArgs.containsKey("sr") || parsedArgs.containsKey("-survived")) {
             return SortType.Survived;
         } else {
-            return SortType.getDefault();
+            return SortType.DEFAULT;
         }
     }
 
@@ -264,14 +266,15 @@ public class PlayerWarLeaderboardCmd extends GenericCommand {
                     : parsedArgs.get("-guild");
             boolean scoped = parsedArgs.containsKey("s") || parsedArgs.containsKey("-scoped");
 
-            this.guildNameResolver.resolve(specifiedName, event.getChannel(), event.getAuthor(),
-                    (guildName, prefix) -> {
+            this.guildNameResolver.resolve(
+                    specifiedName,
+                    event,
+                    (next, guildName, prefix) -> {
                         GuildPlayerLeaderboard glb = new GuildPlayerLeaderboard(
                                 guildName, prefix, sortType, range, scoped, new Date()
                         );
-                        processGuildPlayerLeaderboard(event, customDateFormat, customTimeZone, glb);
-                    },
-                    event::replyError
+                        processGuildPlayerLeaderboard(event, next, customDateFormat, customTimeZone, glb);
+                    }
             );
             return;
         }
@@ -279,18 +282,20 @@ public class PlayerWarLeaderboardCmd extends GenericCommand {
         // Else, all players leaderboard
         Supplier<Integer> maxPage = () -> this.getMaxPageAllPlayers(range);
         Function<Integer, Message> pageSupplier = page -> allPlayersPageSupplier(page, sortType, range, customDateFormat, customTimeZone);
-        respondLeaderboard(event, maxPage, pageSupplier);
+        event.reply(new EmbedBuilder().setDescription("Processing...").build(), next ->
+                respondLeaderboard(event, next, maxPage, pageSupplier));
     }
 
     private void respondLeaderboard(CommandEvent event,
+                                    SentMessage next,
                                     Supplier<Integer> maxPage,
                                     Function<Integer, Message> pageSupplier) {
         if (maxPage.get() == 0) {
-            event.reply(pageSupplier.apply(0));
+            next.editMessage(pageSupplier.apply(0));
             return;
         }
 
-        event.replyMultiPage(pageSupplier.apply(0), pageSupplier, maxPage);
+        next.editMultiPage(event.getBot(), pageSupplier, maxPage);
     }
 
     @Nullable
@@ -298,7 +303,7 @@ public class PlayerWarLeaderboardCmd extends GenericCommand {
         if (scoped) {
             return range == null
                     ? this.playerWarLeaderboardRepository.getGuildScoped(guildName)
-                    : this.playerWarLeaderboardRepository.getGuildScoped(guildName, range.start, range.end);
+                    : this.playerWarLeaderboardRepository.getGuildScoped(guildName, range.start(), range.end());
         } else {
             WynnGuild wynnGuild;
             wynnGuild = this.wynnApi.getGuildStats(guildName);
@@ -311,11 +316,12 @@ public class PlayerWarLeaderboardCmd extends GenericCommand {
                     .collect(Collectors.toList());
             return range == null
                     ? this.playerWarLeaderboardRepository.getRecordsOf(guildMemberUUIDs)
-                    : this.playerWarLeaderboardRepository.getRecordsOf(guildMemberUUIDs, range.start, range.end);
+                    : this.playerWarLeaderboardRepository.getRecordsOf(guildMemberUUIDs, range.start(), range.end());
         }
     }
 
     private void processGuildPlayerLeaderboard(@NotNull CommandEvent event,
+                                               @NotNull SentMessage next,
                                                CustomDateFormat customDateFormat,
                                                CustomTimeZone customTimeZone,
                                                @NotNull GuildPlayerLeaderboard glb) {
@@ -323,15 +329,15 @@ public class PlayerWarLeaderboardCmd extends GenericCommand {
         try {
             guildLeaderboard = getGuildPlayerLeaderboard(glb.guildName, glb.scoped, glb.range);
         } catch (RateLimitException | RuntimeException e) {
-            event.replyException(e.getMessage());
+            next.editException(e.getMessage());
             return;
         }
         if (guildLeaderboard == null) {
-            event.replyError("Something went wrong while retrieving leaderboard.");
+            next.editError(event.getAuthor(), "Something went wrong while retrieving leaderboard.");
             return;
         }
         if (guildLeaderboard.isEmpty()) {
-            event.reply(String.format("No war logs found for members of guild `%s` `[%s]` (within the provided time frame).",
+            next.editMessage(String.format("No war logs found for members of guild `%s` `[%s]` (within the provided time frame).",
                     glb.guildName, glb.prefix));
             return;
         }
@@ -339,7 +345,7 @@ public class PlayerWarLeaderboardCmd extends GenericCommand {
 
         Function<Integer, Message> pageSupplier = guildPageSupplier(glb, customDateFormat, customTimeZone);
         Supplier<Integer> maxPage = () -> (guildLeaderboard.size() - 1) / PLAYERS_PER_PAGE;
-        respondLeaderboard(event, maxPage, pageSupplier);
+        respondLeaderboard(event, next, maxPage, pageSupplier);
     }
 
     private record Display(String rank, String playerName, String firstWarNum,
@@ -457,7 +463,7 @@ public class PlayerWarLeaderboardCmd extends GenericCommand {
         if (range == null) {
             count = (int) this.playerWarLeaderboardRepository.count();
         } else {
-            count = this.playerWarLeaderboardRepository.getPlayersInRange(range.start, range.end);
+            count = this.playerWarLeaderboardRepository.getPlayersInRange(range.start(), range.end());
         }
         return (count - 1) / PLAYERS_PER_PAGE;
     }
@@ -474,9 +480,9 @@ public class PlayerWarLeaderboardCmd extends GenericCommand {
             };
         } else {
             return switch (sortType) {
-                case Total -> this.playerWarLeaderboardRepository.getByTotalWarDescending(PLAYERS_PER_PAGE, offset, range.start, range.end);
-                case Success -> this.playerWarLeaderboardRepository.getBySuccessWarDescending(PLAYERS_PER_PAGE, offset, range.start, range.end);
-                case Survived -> this.playerWarLeaderboardRepository.getBySurvivedWarDescending(PLAYERS_PER_PAGE, offset, range.start, range.end);
+                case Total -> this.playerWarLeaderboardRepository.getByTotalWarDescending(PLAYERS_PER_PAGE, offset, range.start(), range.end());
+                case Success -> this.playerWarLeaderboardRepository.getBySuccessWarDescending(PLAYERS_PER_PAGE, offset, range.start(), range.end());
+                case Survived -> this.playerWarLeaderboardRepository.getBySurvivedWarDescending(PLAYERS_PER_PAGE, offset, range.start(), range.end());
             };
         }
     }
@@ -572,7 +578,7 @@ public class PlayerWarLeaderboardCmd extends GenericCommand {
         );
     }
 
-    // Formats displays according the given justify info.
+    // Displays according the given justify info.
     // Asserts that justify info should make sense for the given displays.
     private static String formatTableDisplays(List<Display> displays, int begin, int end, Justify justify,
                                               String rateMessage,

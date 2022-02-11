@@ -10,15 +10,15 @@ import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import org.jetbrains.annotations.NotNull;
-import update.reaction.ReactionManager;
+import update.button.ButtonClickManager;
 
 import java.util.concurrent.TimeUnit;
 
 public class SetPage extends GenericCommand {
-    private final ReactionManager reactionManager;
+    private final ButtonClickManager buttonClickManager;
 
     public SetPage(Bot bot) {
-        this.reactionManager = bot.getReactionManager();
+        this.buttonClickManager = bot.getButtonClickManager();
     }
 
     @NotNull
@@ -46,7 +46,7 @@ public class SetPage extends GenericCommand {
 
     @Override
     public @NotNull String shortHelp() {
-        return "Sets page for the last multi-page message sent in the channel, requested by you.";
+        return "Sets page for the last multi-page message sent in the channel.";
     }
 
     @Override
@@ -88,11 +88,10 @@ public class SetPage extends GenericCommand {
             return;
         }
 
-        long userId = event.getAuthor().getIdLong();
         long channelId = event.getChannel().getIdLong();
 
         // from 1-indexed to 0-indexed
-        if (this.reactionManager.setPage(userId, channelId, newPage - 1)) {
+        if (this.buttonClickManager.setPage(channelId, newPage - 1)) {
             // delete user message as well if possible
             if (event instanceof MessageReceivedEventAdapter a) {
                 try {

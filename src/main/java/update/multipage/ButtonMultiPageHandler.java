@@ -11,10 +11,16 @@ import net.dv8tion.jda.api.interactions.components.Button;
 import net.dv8tion.jda.api.interactions.components.Component;
 import update.button.ButtonClickHandler;
 
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
 public class ButtonMultiPageHandler extends ButtonClickHandler {
+    private static final String ARROW_LEFT = "\u2B05";
+    private static final String ARROW_RIGHT = "\u27A1";
+    private static final String WHITE_CHECK_MARK = "\u2705";
+    private static final String X = "\u274C";
+
     private static final String BUTTON_ID_LEFT_PAGE = "left_page";
     private static final String BUTTON_ID_RIGHT_PAGE = "right_page";
     private static final String BUTTON_ID_REFRESH = "refresh";
@@ -38,10 +44,10 @@ public class ButtonMultiPageHandler extends ButtonClickHandler {
 
     public static Component[] getActionRow() {
         return new Component[]{
-                Button.primary(BUTTON_ID_LEFT_PAGE, Emoji.fromUnicode("\u2B05")),
-                Button.primary(BUTTON_ID_RIGHT_PAGE, Emoji.fromUnicode("\u27A1")),
-                Button.secondary(BUTTON_ID_REFRESH, Emoji.fromUnicode("\u2705")),
-                Button.danger(BUTTON_ID_CANCEL, Emoji.fromUnicode("\u274C"))
+                Button.primary(BUTTON_ID_LEFT_PAGE, Emoji.fromUnicode(ARROW_LEFT)),
+                Button.primary(BUTTON_ID_RIGHT_PAGE, Emoji.fromUnicode(ARROW_RIGHT)),
+                Button.secondary(BUTTON_ID_REFRESH, Emoji.fromUnicode(WHITE_CHECK_MARK)),
+                Button.danger(BUTTON_ID_CANCEL, Emoji.fromUnicode(X))
         };
     }
 
@@ -51,32 +57,25 @@ public class ButtonMultiPageHandler extends ButtonClickHandler {
 
         if (event.getButton() == null || event.getButton().getId() == null) return false;
 
-        int nextPage = currentPage;
-        switch (event.getButton().getId()) {
-            case BUTTON_ID_LEFT_PAGE:
-                nextPage--;
-                break;
-            case BUTTON_ID_RIGHT_PAGE:
-                nextPage++;
-                break;
-            case BUTTON_ID_REFRESH:
-                break;
-            case BUTTON_ID_CANCEL:
-                this.message = new ButtonClickEventAdapter(event);
-                return true;
-            default:
-                return false;
+        if (BUTTON_ID_CANCEL.equals(event.getButton().getId())) {
+            this.message = new ButtonClickEventAdapter(event);
+            return true;
         }
 
         int mod = maxPage.get() + 1;
-        nextPage = (nextPage + mod) % mod;
+        int nextPage = switch (event.getButton().getId()) {
+            case BUTTON_ID_LEFT_PAGE -> (currentPage - 1 + mod) % mod;
+            case BUTTON_ID_RIGHT_PAGE -> (currentPage + 1) % mod;
+            default -> currentPage;
+        };
 
-        this.currentPage = nextPage;
         event.editMessage(
                 new MessageBuilder(pages.apply(nextPage))
                         .setActionRows(ActionRow.of(getActionRow()))
                         .build()
         ).queue();
+
+        this.currentPage = nextPage;
 
         return false;
     }
@@ -87,5 +86,22 @@ public class ButtonMultiPageHandler extends ButtonClickHandler {
 
         // Delete buttons
         this.message.editComponents();
+    }
+
+    public void getMessage(Consumer<Message> callback) {
+        this.message.getMessage(callback);
+    }
+
+    public void setPageAndUpdate(int page) {
+        int mod = this.maxPage.get() + 1;
+        int nextPage = ((page % mod) + mod) % mod;
+
+        this.message.editMessage(
+                new MessageBuilder(pages.apply(nextPage))
+                        .setActionRows(ActionRow.of(getActionRow()))
+                        .build()
+        );
+
+        this.currentPage = nextPage;
     }
 }

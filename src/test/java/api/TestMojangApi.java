@@ -29,7 +29,7 @@ class TestMojangApi {
         assert res != null;
         for (String player : playerList.keySet()) {
             assert res.containsKey(player);
-            UUID uuid = res.get(player).getUuid();
+            UUID uuid = res.get(player).uuid();
             assert uuid != null;
             assert uuid.toStringWithHyphens().equals(playerList.get(player));
         }

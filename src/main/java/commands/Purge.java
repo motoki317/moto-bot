@@ -104,8 +104,8 @@ public class Purge extends GuildCommand {
         MessageChannel channel = event.getChannel();
 
         event.reply("Purging " + limit + " messages...", s ->
-                s.getId(botRespId ->
-                        channel.getHistoryBefore(botRespId, limit).queue(history -> {
+                s.getMessage(botRespMsg ->
+                        channel.getHistoryBefore(botRespMsg.getIdLong(), limit).queue(history -> {
                                     try {
                                         CompletableFuture.allOf(
                                                 channel.purgeMessages(history.getRetrievedHistory()).toArray(new CompletableFuture[]{})

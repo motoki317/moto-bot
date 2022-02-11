@@ -7,17 +7,12 @@ import app.Bot;
 import commands.base.GenericCommand;
 import commands.event.CommandEvent;
 import commands.event.message.ButtonClickEventAdapter;
-import commands.event.message.InteractionHookAdapter;
 import commands.event.message.SentMessage;
-import commands.event.message.SentMessageAdapter;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.entities.Emoji;
 import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.events.interaction.ButtonClickEvent;
-import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent;
-import net.dv8tion.jda.api.exceptions.PermissionException;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
@@ -26,8 +21,6 @@ import net.dv8tion.jda.api.interactions.components.Component;
 import org.jetbrains.annotations.NotNull;
 import update.button.ButtonClickHandler;
 import update.button.ButtonClickManager;
-import update.reaction.ReactionManager;
-import update.reaction.ReactionResponse;
 import utils.ArgumentParser;
 
 import java.util.*;
@@ -40,13 +33,11 @@ import static commands.ItemView.*;
 public class IdentifyItem extends GenericCommand {
     private final WynnApi wynnApi;
     private final String imageURLBase;
-    private final ReactionManager reactionManager;
     private final ButtonClickManager buttonClickManager;
 
     public IdentifyItem(Bot bot) {
         this.wynnApi = new WynnApi(bot.getLogger());
         this.imageURLBase = bot.getProperties().githubImagesUrl;
-        this.reactionManager = bot.getReactionManager();
         this.buttonClickManager = bot.getButtonClickManager();
     }
 
@@ -120,7 +111,7 @@ public class IdentifyItem extends GenericCommand {
             event.reply(String.format("No items matched with input `%s`.", input));
             return;
         } else if (matched.size() > 1) {
-            event.reply(String.format("Multiple items (%s items) matched with input `%s`.\nMatched items: %s",
+            event.reply(String.format("%d items matched with input `%s`.\n%s",
                     matched.size(), input,
                     matched.stream().limit(50).map(i -> "`" + i.getName() + "`")
                             .collect(Collectors.joining(", "))));
@@ -135,84 +126,15 @@ public class IdentifyItem extends GenericCommand {
             return;
         }
 
-        event.reply(formatItemInfo(item, this.imageURLBase, 1), message -> {
-            // probably not the best code
-            if (message instanceof SentMessageAdapter sm) {
-                IDReactionHandler handler = new IDReactionHandler(sm.m(), event.getAuthor().getIdLong(),
-                        seq -> formatItemInfo(item, this.imageURLBase, seq));
-                this.reactionManager.addEventListener(handler);
-            } else if (message instanceof InteractionHookAdapter) {
-                message.getId(messageId -> {
-                    IDButtonHandler handler = new IDButtonHandler(message, messageId, seq -> formatItemInfo(item, this.imageURLBase, seq));
+        Function<Integer, Message> messageSupplier = seq ->
+                new MessageBuilder(formatItemInfo(item, imageURLBase, seq))
+                        .setActionRows(ActionRow.of(IDButtonHandler.actionRow()))
+                        .build();
+        event.reply(messageSupplier.apply(1), message ->
+                message.getMessage(actualMsg -> {
+                    IDButtonHandler handler = new IDButtonHandler(message, actualMsg.getIdLong(), messageSupplier);
                     this.buttonClickManager.addEventListener(handler);
-                });
-            }
-        });
-    }
-
-    private static class IDReactionHandler extends ReactionResponse {
-        private static final String WHITE_CHECK_MARK = "\u2705";
-        private static final String X = "\u274C";
-        private static final String[] reactions = {WHITE_CHECK_MARK, X};
-
-        private final Message message;
-        private final Function<Integer, Message> messageSupplier;
-        private int seq;
-
-        private IDReactionHandler(Message message, long userId, Function<Integer, Message> messageSupplier) {
-            super(message.getIdLong(), message.getChannel().getIdLong(), userId, false, event -> false);
-            this.onReaction = this::onReaction;
-            this.setOnDestroy(() -> deletePagingReactions(message.getAuthor()));
-
-            this.message = message;
-            this.messageSupplier = messageSupplier;
-            this.seq = 1;
-
-            addPagingReactions(message);
-        }
-
-        private boolean onReaction(MessageReactionAddEvent event) {
-            User author = event.getJDA().getUserById(event.getUserIdLong());
-            if (author != null) {
-                try {
-                    event.getReaction().removeReaction(author).queue();
-                } catch (PermissionException ignored) {
-                }
-            }
-
-            String reactionName = event.getReactionEmote().getName();
-            if (reactionName.equals(X)) {
-                return true;
-            }
-
-            seq++;
-            this.message.editMessage(
-                    this.messageSupplier.apply(seq)
-            ).queue();
-            return false;
-        }
-
-        /**
-         * Adds paging reactions to a message.
-         *
-         * @param message Message to add reactions to.
-         */
-        private static void addPagingReactions(Message message) {
-            for (String reaction : reactions) {
-                message.addReaction(reaction).queue();
-            }
-        }
-
-        /**
-         * Deletes paging reactions from the sent message.
-         *
-         * @param self Bot user.
-         */
-        private void deletePagingReactions(User self) {
-            for (String reaction : reactions) {
-                this.message.removeReaction(reaction, self).queue();
-            }
-        }
+                }));
     }
 
     private static class IDButtonHandler extends ButtonClickHandler {
@@ -220,18 +142,16 @@ public class IdentifyItem extends GenericCommand {
         private static final String BUTTON_ID_CANCEL = "cancel";
 
         private SentMessage message;
-        private final Function<Integer, Message> messageSupplier;
         private int seq;
+        private final Function<Integer, Message> messageSupplier;
 
         public IDButtonHandler(SentMessage message, long messageId, Function<Integer, Message> messageSupplier) {
             super(messageId, (event) -> false, () -> {
             });
 
             this.message = message;
-            this.messageSupplier = messageSupplier;
             this.seq = 1;
-
-            message.editComponents(ActionRow.of(actionRow()));
+            this.messageSupplier = messageSupplier;
         }
 
         private static Component[] actionRow() {
@@ -256,11 +176,7 @@ public class IdentifyItem extends GenericCommand {
             }
 
             this.seq++;
-            event.editMessage(
-                    new MessageBuilder(messageSupplier.apply(this.seq))
-                            .setActionRows(ActionRow.of(actionRow()))
-                            .build()
-            ).queue();
+            event.editMessage(this.messageSupplier.apply(this.seq)).queue();
 
             return false;
         }
