@@ -5,19 +5,16 @@ import db.repository.base.ServerLogRepository;
 import db.repository.base.TrackChannelRepository;
 import log.Logger;
 import net.dv8tion.jda.api.entities.Guild;
-import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.events.*;
 import net.dv8tion.jda.api.events.channel.text.TextChannelDeleteEvent;
 import net.dv8tion.jda.api.events.guild.GuildJoinEvent;
 import net.dv8tion.jda.api.events.guild.GuildLeaveEvent;
 import net.dv8tion.jda.api.events.interaction.ButtonClickEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
-import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.sharding.ShardManager;
 import org.jetbrains.annotations.NotNull;
 import update.button.ButtonClickManager;
-import update.reaction.ReactionManager;
 import update.response.ResponseManager;
 
 import javax.annotation.Nonnull;
@@ -25,7 +22,6 @@ import javax.annotation.Nonnull;
 public class UpdaterListener extends ListenerAdapter {
     private final Bot bot;
     private final ResponseManager responseManager;
-    private final ReactionManager reactionManager;
     private final ButtonClickManager buttonClickManager;
     private final Logger logger;
     private final ShardManager manager;
@@ -35,7 +31,6 @@ public class UpdaterListener extends ListenerAdapter {
     UpdaterListener(Bot bot) {
         this.bot = bot;
         this.responseManager = bot.getResponseManager();
-        this.reactionManager = bot.getReactionManager();
         this.buttonClickManager = bot.getButtonClickManager();
         this.logger = bot.getLogger();
         this.manager = bot.getManager();
@@ -87,17 +82,6 @@ public class UpdaterListener extends ListenerAdapter {
     @Override
     public void onButtonClick(@NotNull ButtonClickEvent event) {
         this.buttonClickManager.handle(event);
-    }
-
-    @Override
-    public void onMessageReactionAdd(@Nonnull MessageReactionAddEvent event) {
-        // Do not respond to bot messages
-        long authorId = event.getUserIdLong();
-        User author = event.getJDA().getUserById(authorId);
-        long botId = event.getJDA().getSelfUser().getIdLong();
-        if (authorId == botId || (author != null && author.isBot())) return;
-
-        this.reactionManager.handle(event);
     }
 
     // ----------------------------

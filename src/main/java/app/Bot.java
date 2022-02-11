@@ -5,7 +5,6 @@ import log.Logger;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.sharding.ShardManager;
 import update.button.ButtonClickManager;
-import update.reaction.ReactionManager;
 import update.response.ResponseManager;
 
 public interface Bot {
@@ -13,7 +12,6 @@ public interface Bot {
     Properties getProperties();
     Database getDatabase();
     Logger getLogger();
-    ReactionManager getReactionManager();
     ResponseManager getResponseManager();
     ButtonClickManager getButtonClickManager();
 
