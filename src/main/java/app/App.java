@@ -114,15 +114,16 @@ public class App implements Runnable, Bot {
         this.properties = properties;
         this.logger = new ConsoleLogger();
         this.buttonClickManager = updaterFactory.getButtonClickManager();
-        this.connected = new boolean[this.properties.shards];
 
         this.manager = DefaultShardManagerBuilder.createDefault(this.properties.botAccessToken)
                 // For server log feature
                 .enableIntents(GatewayIntent.GUILD_MEMBERS)
                 .setSessionController(new SessionControllerAdapter())
-                .setShardsTotal(this.properties.shards)
-                .setShards(0, this.properties.shards - 1)
+                // Use recommended amount of shards returned by GET /gateway/bot
+                // https://discord.com/developers/docs/topics/gateway#get-gateway-bot
+                .setShardsTotal(-1)
                 .build();
+        this.connected = new boolean[this.manager.getShardsTotal()];
 
         this.manager.setActivity(Activity.playing("Bot restarting..."));
 
@@ -152,15 +153,15 @@ public class App implements Runnable, Bot {
      * Waits and blocks this thread until all JDA shards are loaded.
      */
     private void waitJDALoading() {
-        for (int i = 0; i < this.properties.shards; i++) {
-            while (manager.getStatus(i) != JDA.Status.CONNECTED) {
-                try {
-                    Thread.sleep(50);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+        List<JDA> shards = this.manager.getShards();
+        for (int i = 0; i < shards.size(); i++) {
+            JDA shard = shards.get(i);
+            try {
+                shard.awaitReady();
+                this.setConnected(i, true);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
-            this.setConnected(i, true);
         }
         this.logger.log(-1, "JDA Sharding: All shards loaded!");
     }

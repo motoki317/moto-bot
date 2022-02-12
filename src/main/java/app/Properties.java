@@ -25,7 +25,6 @@ public class Properties {
     final long botRestartChannelId;
 
     public final String prefix;
-    final int shards;
 
     private final String mainColor;
     public final String githubImagesUrl;
@@ -60,7 +59,6 @@ public class Properties {
         this.botRestartChannelId = Long.parseLong(getEnv("BOT_RESTART_CHANNEL"));
 
         this.prefix = getProperty("prefix");
-        this.shards = getPropertyInt("shards");
 
         this.mainColor = getProperty("mainColor");
         this.githubImagesUrl = getProperty("githubImagesUrl");
