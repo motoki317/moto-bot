@@ -23,5 +23,6 @@ db:
 	docker-compose -f ./docker-compose.dev.yml exec mysql mysql -uroot -ppassword moto-bot
 
 .PHONY: javadoc
-javadoc: # Downloads javadoc
+javadoc: # Downloads source (and javadoc)
+	mvn dependency:sources
 	mvn dependency:resolve -D classifier=javadoc
