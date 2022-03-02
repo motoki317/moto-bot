@@ -311,7 +311,7 @@ public class Music extends GuildCommand {
                                 .addOption(OptionType.INTEGER, "volume", "Volume in percentage.", true),
                         new SubcommandData("repeat", "Sets the repeat mode.")
                                 .addOptions(new OptionData(OptionType.STRING, "mode", "Repeat mode")
-                                        .addChoice("none", "none")
+                                        .addChoice("off", "off")
                                         .addChoice("one", "one")
                                         .addChoice("queue", "queue")
                                         .addChoice("random", "random")
