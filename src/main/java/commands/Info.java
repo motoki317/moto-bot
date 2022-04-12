@@ -100,7 +100,7 @@ public class Info extends GenericCommand {
                 """
                         The bot may collect and log your message content for the following purposes.
                         1. The bot will log your command message to improve the bot by analyzing command uses. Only the bot author can access the command usage data.
-                        2. The bot will collect all message content it can see in order to log message edits/deletes in the server log feature (`>serverlog`). This is **disabled by default**. Only admins of the server can enable this. The bot author cannot access this message content data.
+                        2. The bot will collect all message content it can see in order to log its content when the message was edited or deleted, for the server log feature (`>serverlog`). This is **disabled by default**. Only admins of the server can enable this and choose the logging channel. The bot author cannot access this message content data.
                         For more and if you have any questions, join the bot support server via the invite link above, or DM the bot author.
                         """,
                 false);
