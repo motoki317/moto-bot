@@ -55,7 +55,7 @@ public class Info extends GenericCommand {
     @Override
     public Message longHelp() {
         return new MessageBuilder(
-                "Shows meta info of the bot, such as version, bot invite link and bot support server link."
+                "Shows info of the bot, such as version, bot invite link, privacy policy, and bot support server link."
         ).build();
     }
 
@@ -95,6 +95,15 @@ public class Info extends GenericCommand {
         description.add("[WynnStats Bot](https://forums.wynncraft.com/threads/214023/) by Infernis#6699");
 
         eb.setDescription(String.join("\n", description));
+
+        eb.addField("About your message content",
+                """
+                        The bot may collect and log your message content for the following purposes.
+                        1. The bot will log your command message to improve the bot by analyzing command uses. Only the bot author can access the command usage data.
+                        2. The bot will collect all message content it can see in order to log message edits/deletes in the server log feature (`>serverlog`). This is **disabled by default**. Only admins of the server can enable this. The bot author cannot access this message content data.
+                        For more and if you have any questions, join the bot support server via the invite link above, or DM the bot author.
+                        """,
+                false);
 
         User botUser = this.bot.getManager().getUserById(properties.botDiscordId);
         if (botUser != null) {

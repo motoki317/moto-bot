@@ -53,7 +53,9 @@ public class ServerLogCmd extends GuildCommand {
                 new EmbedBuilder()
                         .setAuthor("Server Log Command Help")
                         .setDescription(this.shortHelp() + "\n" +
-                                "The bot will send all notable actions in the server such as member join, leave to the channel.")
+                                "The bot will send all notable actions in the server such as member join, leave to the channel. " +
+                                "You are highly advised to set the log channel to a private channel where only server admins/moderators can see, " +
+                                "because the bot will log **all** actions and messages it can see in the server.")
         ).build();
     }
 
