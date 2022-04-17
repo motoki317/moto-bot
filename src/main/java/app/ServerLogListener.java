@@ -42,7 +42,7 @@ import utils.BotUtils;
 import utils.FormatUtils;
 import utils.MinecraftColor;
 import utils.cache.DataCache;
-import utils.cache.HashMapDataCache;
+import utils.cache.LRUDataCache;
 
 import javax.annotation.Nonnull;
 import java.awt.*;
@@ -65,15 +65,14 @@ public class ServerLogListener extends ListenerAdapter {
     private record MessageCache(String content, long userId) {
     }
 
-    private static final DataCache<Long, MessageCache> messageCache = new HashMapDataCache<>(
-            5000, TimeUnit.HOURS.toMillis(3), TimeUnit.MINUTES.toMillis(10)
-    );
+    private static final DataCache<Long, MessageCache> messageCache = new LRUDataCache<>(10000);
 
     private interface Handler<T> {
         /**
          * Handles event and adds description to embed message.
+         *
          * @param event Event.
-         * @param eb Embed builder.
+         * @param eb    Embed builder.
          * @return Returns null if the message should not be sent.
          */
         @Nullable
@@ -83,8 +82,9 @@ public class ServerLogListener extends ListenerAdapter {
     private interface GuildEventHandler<T> {
         /**
          * Handles guild event and adds description to embed message.
-         * @param event Event.
-         * @param eb Embed builder.
+         *
+         * @param event            Event.
+         * @param eb               Embed builder.
          * @param getFormattedTime If given a unix milliseconds time, formats the date.
          * @return Returns null if the message should not be sent.
          */
@@ -412,10 +412,10 @@ public class ServerLogListener extends ListenerAdapter {
                             "Guild Owner Updated"
                     )
                     .addField("Old Owner", String.format("%s (%d)",
-                            oldOwner != null ? oldOwner.getAsMention() : "None", event.getOldOwnerIdLong()),
+                                    oldOwner != null ? oldOwner.getAsMention() : "None", event.getOldOwnerIdLong()),
                             false)
                     .addField("New Owner", String.format("%s (%d)",
-                            newOwner != null ? newOwner.getAsMention() : "None", event.getNewOwnerIdLong()),
+                                    newOwner != null ? newOwner.getAsMention() : "None", event.getNewOwnerIdLong()),
                             false);
         });
         addGuildEventHandler(GuildUpdateSplashEvent.class, (event, eb, getFormattedTime) ->
@@ -852,8 +852,8 @@ public class ServerLogListener extends ListenerAdapter {
             String formattedDate = getFormattedCurrentTime(log.getGuildId(), log.getChannelId());
             logChannel.sendMessageEmbeds(
                     new EmbedBuilder(eb)
-                    .setFooter(String.format("User ID: %s | %s", userId, formattedDate))
-                    .build()
+                            .setFooter(String.format("User ID: %s | %s", userId, formattedDate))
+                            .build()
             ).queue();
         }
     }
