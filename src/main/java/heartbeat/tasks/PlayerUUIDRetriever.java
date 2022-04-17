@@ -11,11 +11,11 @@ import heartbeat.base.TaskBase;
 import log.Logger;
 import org.jetbrains.annotations.NotNull;
 import utils.UUID;
-import utils.cache.DataCache;
-import utils.cache.HashMapDataCache;
 
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -42,9 +42,7 @@ public class PlayerUUIDRetriever implements TaskBase {
     @Override
     public void run() {
         // tried players and
-        DataCache<String, Long> tried = new HashMapDataCache<>(
-                100, TimeUnit.MINUTES.toMillis(30), TimeUnit.MINUTES.toMillis(30)
-        );
+        Map<String, Long> tried = new HashMap<>();
         retriever:
         while (true) {
             // Pick one player whose logged UUID is null
@@ -66,7 +64,7 @@ public class PlayerUUIDRetriever implements TaskBase {
                 break;
             }
 
-            tried.add(warPlayer.getPlayerName(), warLog.getCreatedAt().getTime());
+            tried.put(warPlayer.getPlayerName(), warLog.getCreatedAt().getTime());
 
             UUID uuid = this.mojangApi.mustGetUUIDAtTime(warPlayer.getPlayerName(), warLog.getCreatedAt().getTime());
             if (uuid == null) {
