@@ -19,7 +19,7 @@ COPY --from=build /work/target/moto-bot-jar-with-dependencies.jar ./moto-bot.jar
 
 # add libconnector.so for aarch64
 RUN mkdir -p natives/linux-aarch64 && \
-    wget -O natives/linux-aarch64/libconnector.so https://github.com/aikaterna/lavaplayer-natives/raw/master/linux-aarch64/libconnector.so && \
+    wget -O natives/linux-aarch64/libconnector.so "https://github.com/aikaterna/lavaplayer-natives/blob/original/src/main/resources/natives/linux-aarch64/libconnector.so?raw=true" && \
     zip moto-bot.jar natives/linux-aarch64/libconnector.so && \
     rm -r natives
 
