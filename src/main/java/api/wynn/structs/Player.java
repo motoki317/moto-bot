@@ -164,7 +164,6 @@ public class Player {
         private final int pvpKills;
         private final int pvpDeaths;
 
-        private final int chestsFound;
         private final long blocksWalked;
         private final int logins;
         private final int deaths;
@@ -192,7 +191,6 @@ public class Player {
             mobsKilled = data.get("mobsKilled").asInt();
             pvpKills = data.get("pvp").get("kills").asInt();
             pvpDeaths = data.get("pvp").get("deaths").asInt();
-            chestsFound = data.get("chestsFound").asInt();
             blocksWalked = data.get("blocksWalked").asLong();
             logins = data.get("logins").asInt();
             deaths = data.get("deaths").asInt();
@@ -247,10 +245,6 @@ public class Player {
 
         public int getPvpDeaths() {
             return pvpDeaths;
-        }
-
-        public int getChestsFound() {
-            return chestsFound;
         }
 
         public long getBlocksWalked() {
@@ -399,7 +393,6 @@ public class Player {
     public static class GlobalInfo {
         private final Player parent;
 
-        private final int chestsFound;
         private final long blocksWalked;
         private final int itemsIdentified;
         private final int mobsKilled;
@@ -425,7 +418,6 @@ public class Player {
 
             pvpKills = data.get("pvp").get("kills").asInt();
             pvpDeaths = data.get("pvp").get("deaths").asInt();
-            chestsFound = data.get("chestsFound").asInt();
             blocksWalked = data.get("blocksWalked").asLong();
             logins = data.get("logins").asInt();
             deaths = data.get("deaths").asInt();
@@ -439,10 +431,6 @@ public class Player {
             for (WynnClass wc : this.parent.classes)
                 c += wc.playtime;
             return c;
-        }
-
-        public int getChestsFound() {
-            return chestsFound;
         }
 
         public long getBlocksWalked() {

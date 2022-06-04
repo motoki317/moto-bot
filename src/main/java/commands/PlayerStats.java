@@ -210,9 +210,6 @@ public class PlayerStats extends GenericCommand {
                 new Display("Mobs Killed", String.format("%,d", player.getGlobalInfo().getMobsKilled()))
         );
         displays.add(
-                new Display("Chests Looted", String.format("%,d", player.getGlobalInfo().getChestsFound()))
-        );
-        displays.add(
                 new Display("Deaths", String.format("%,d", player.getGlobalInfo().getDeaths()))
         );
         displays.add(
