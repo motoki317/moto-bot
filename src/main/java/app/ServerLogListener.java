@@ -731,9 +731,11 @@ public class ServerLogListener extends ListenerAdapter {
                 .setFooter("Message ID: " + event.getMessageIdLong())
                 .setDescription(
                         String.format("%s\nSent time: %s (%s ago)",
-                                user == null
-                                        ? "Message deleted in " + event.getChannel().getAsMention()
-                                        : "Message sent by " + user.getAsMention() + " deleted in " + event.getChannel().getAsMention(),
+                                user != null ?
+                                        "Message sent by " + user.getAsMention() + " deleted in " + event.getChannel().getAsMention() :
+                                        oldMessage != null ?
+                                                "Message sent by <userId: " + oldMessage.userId + "> deleted in " + event.getChannel().getAsMention() :
+                                                "Message deleted in " + event.getChannel().getAsMention(),
                                 getFormattedTime.apply(BotUtils.getIdCreationTime(messageId)),
                                 FormatUtils.formatReadableTime(elapsedSeconds, false, "s"))
                 );
