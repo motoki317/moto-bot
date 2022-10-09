@@ -85,6 +85,11 @@ public class NameHistoryCmd extends GenericCommand {
             return;
         }
 
+        if (true) {
+            event.reply("Name history for a player is no longer available publicly. See https://help.minecraft.net/hc/en-us/articles/8969841895693.");
+            return;
+        }
+
         String playerName = args[1];
         UUID uuid;
         if (UUID.isUUID(playerName)) {

@@ -42,13 +42,4 @@ class TestMojangApi {
         assert uuid != null;
         assert uuid.toStringWithHyphens().equals("db9b5cad-5785-48d3-be91-18a9876ec00e");
     }
-
-    @Test
-    void testNameHistory() {
-        MojangApi api = getApi();
-        NameHistory history = api.mustGetNameHistory(new UUID("1d378fba-e8d2-44bc-b731-db5d42dfc791"));
-        assert history != null;
-        assert history.getNameAt(1000L).equals("GOden02");
-        assert history.getNameAt(1457572526000L).equals("MidnightGoden");
-    }
 }

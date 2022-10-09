@@ -25,7 +25,8 @@ public class HeartBeat extends StoppableThread {
         addTask(new GuildTracker(bot));
         addTask(new GuildLeaderboardTracker(bot));
         addTask(new TrackingManager(bot));
-        addTask(new PlayerUUIDRetriever(bot));
+        // Player name history is not retrievable anymore: https://help.minecraft.net/hc/en-us/articles/8969841895693
+        // addTask(new PlayerUUIDRetriever(bot));
     }
 
     private void addTask(TaskBase task) {
