@@ -48,3 +48,4 @@ jobs:
         MYSQL_DATABASE: moto-bot_test
         MYSQL_USER: moto-bot
         MYSQL_PASSWORD: password
+        LOGBACK_TIMEZONE: Asia/Tokyo
