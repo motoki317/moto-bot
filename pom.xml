@@ -164,6 +164,7 @@
                 <version>3.0.0-M7</version>
                 <configuration>
                     <environmentVariables>
+                        <LOGBACK_TIMEZONE>Asia/Tokyo</LOGBACK_TIMEZONE>
                         <MYSQL_HOST>localhost</MYSQL_HOST>
                         <MYSQL_DATABASE>moto-bot_test</MYSQL_DATABASE>
                         <MYSQL_USER>moto-bot</MYSQL_USER>
