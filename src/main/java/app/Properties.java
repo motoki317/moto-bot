@@ -69,13 +69,19 @@ public class Properties {
                 this.botDiscordId
         );
         this.wynnIconUrl = getProperty("wynnIconUrl");
-        this.guildBannerUrl = getProperty("guildBannerUrl");
+        this.guildBannerUrl = getEnv("GUILD_BANNER_URL", "https://wynn-guild-banner.toki317.dev/banners/");
 
         this.logTimeZone = TimeZone.getTimeZone(getProperty("logTimeZone"));
     }
 
     private String getEnv(String name) {
-        return System.getenv(name);
+        return getEnv(name, null);
+    }
+
+    private String getEnv(String name, String fallback) {
+        String value = System.getenv(name);
+        if (value == null) return fallback;
+        return value;
     }
 
     private int getEnvInt(String name, int fallback) {
