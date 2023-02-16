@@ -1,5 +1,6 @@
 package api.wynn.structs;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -11,6 +12,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class Territory {
     private static final ObjectMapper mapper = new ObjectMapper();
 
