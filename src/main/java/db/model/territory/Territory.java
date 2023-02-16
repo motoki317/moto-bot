@@ -12,7 +12,7 @@ public class Territory implements TerritoryId {
     private final String guild;
     private final Date acquired;
     @Nullable
-    private final String attacker;
+    private final String attacker; // TODO: delete
     private final Location location;
 
     public Territory(@NotNull String name, @NotNull String guild, Date acquired, @Nullable String attacker, @NotNull Location location) {

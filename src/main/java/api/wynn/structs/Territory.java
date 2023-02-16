@@ -21,8 +21,6 @@ public class Territory {
     private String guild;
     private String acquired;
     @Nullable
-    private String attacker;
-    @Nullable
     private Location location;
 
     public String getTerritory() {
@@ -40,11 +38,6 @@ public class Territory {
 
     private Date getAcquiredDate() throws ParseException {
         return format.parse(this.acquired);
-    }
-
-    @Nullable
-    public String getAttacker() {
-        return attacker;
     }
 
     @Nullable
@@ -97,7 +90,7 @@ public class Territory {
                 this.territory,
                 this.guild,
                 this.getAcquiredDate(),
-                this.attacker,
+                null,
                 convertLocation(this.location)
         );
     }
