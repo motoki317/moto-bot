@@ -840,6 +840,9 @@ public class ServerLogListener extends ListenerAdapter {
         // Retrieve channels to send
         long userId = event.getUser().getIdLong();
         long[] guildIDs = event.getUser().getMutualGuilds().stream().mapToLong(ISnowflake::getIdLong).toArray();
+        if (guildIDs.length == 0) {
+            return;
+        }
         List<ServerLogEntry> logs = this.serverLogRepository.findAllIn(guildIDs);
         if (logs == null) {
             return;
