@@ -302,15 +302,6 @@ public class ServerLogListener extends ListenerAdapter {
                     .addField("Before", event.getOldName() + "#" + event.getUser().getDiscriminator(), false)
                     .addField("After", event.getNewName() + "#" + event.getUser().getDiscriminator(), false);
         });
-        addHandler(UserUpdateDiscriminatorEvent.class, (event, eb) -> {
-            String nameWithDiscriminator = event.getUser().getName() + "#" + event.getUser().getDiscriminator();
-            return eb.setColor(MinecraftColor.GRAY.getColor())
-                    .setDescription(
-                            "User Discriminator Changed: " + nameWithDiscriminator
-                    )
-                    .addField("Before", event.getUser().getName() + "#" + event.getOldDiscriminator(), false)
-                    .addField("After", event.getUser().getName() + "#" + event.getNewDiscriminator(), false);
-        });
 
         // Generic guild
         addGuildEventHandler(GuildBanEvent.class, ServerLogListener::handleGuildBan);
