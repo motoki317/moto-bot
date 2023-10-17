@@ -1,4 +1,4 @@
-FROM maven:3.9.4-openjdk-21 AS build
+FROM maven:3.9.4-amazoncorretto-21 AS build
 
 WORKDIR /work
 
@@ -23,7 +23,7 @@ RUN mkdir -p natives/linux-aarch64 && \
     zip moto-bot.jar natives/linux-aarch64/libconnector.so && \
     rm -r natives
 
-FROM openjdk:21-slim AS runtime
+FROM amazoncorretto:21-alpine AS runtime
 
 WORKDIR /work
 
