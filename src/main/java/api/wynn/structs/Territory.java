@@ -16,6 +16,7 @@ import java.util.Date;
 public class Territory {
     private static final ObjectMapper mapper = new ObjectMapper();
     private static final DateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSSSS");
+    private static final DateFormat format2 = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
 
     private String territory;
     @Nullable
@@ -38,7 +39,11 @@ public class Territory {
     }
 
     private Date getAcquiredDate() throws ParseException {
-        return format.parse(this.acquired);
+        try {
+            return format.parse(this.acquired);
+        } catch (ParseException ignored) {
+            return format2.parse(this.acquired);
+        }
     }
 
     @Nullable
