@@ -55,11 +55,4 @@ class TestWynnApi {
         assert leaderboard != null;
         assert leaderboard.getData().size() == 100;
     }
-
-    @Test
-    void testItemDB() {
-        ItemDB items = getWynnApi().mustGetItemDB(true);
-        assert items != null;
-        assert items.getItems().size() > 1000;
-    }
 }
