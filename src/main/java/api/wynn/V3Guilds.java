@@ -1,22 +1,20 @@
 package api.wynn;
 
 import api.wynn.structs.GuildList;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import log.Logger;
 import utils.HttpUtils;
 import utils.rateLimit.RateLimiter;
 
 import javax.annotation.Nullable;
 
-class LegacyGuilds {
-    private static final String guildListPath = "/public_api.php?action=guildList";
-    private static final ObjectMapper mapper = new ObjectMapper();
+class V3Guilds {
+    private static final String guildListPath = "/v3/guild/list/guild";
 
     private final String baseURL;
     private final RateLimiter rateLimiter;
     private final Logger logger;
 
-    LegacyGuilds(String baseURL, RateLimiter rateLimiter, Logger logger) {
+    V3Guilds(String baseURL, RateLimiter rateLimiter, Logger logger) {
         this.baseURL = baseURL;
         this.rateLimiter = rateLimiter;
         this.logger = logger;
@@ -34,7 +32,7 @@ class LegacyGuilds {
 
             if (body == null) throw new Exception("returned body was null");
 
-            return mapper.readValue(body, GuildList.class);
+            return new GuildList(body);
         } catch (Exception e) {
             this.logger.logException("an exception occurred while requesting / parsing guild list", e);
             return null;

@@ -1,7 +1,6 @@
 package api.wynn;
 
 import api.wynn.structs.WynnGuildLeaderboard;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import log.Logger;
 import utils.HttpUtils;
 import utils.rateLimit.RateLimiter;
@@ -10,7 +9,6 @@ import javax.annotation.Nullable;
 
 class V3GuildLeaderboard {
     private static final String guildLeaderboardPath = "/v3/leaderboards/guildLevel";
-    private static final ObjectMapper mapper = new ObjectMapper();
 
     private final String baseURL;
     private final RateLimiter rateLimiter;

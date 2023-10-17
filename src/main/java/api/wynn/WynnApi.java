@@ -32,7 +32,6 @@ public class WynnApi {
     // ----- Legacy Routes -----
     private final LegacyPlayers legacyPlayers;
     private final LegacyTerritories legacyTerritories;
-    private final LegacyGuilds legacyGuilds;
     private final LegacyGuildStats legacyGuildStats;
     private final LegacyForumId legacyForumId;
     private final LegacyItemDB legacyItemDB;
@@ -41,6 +40,7 @@ public class WynnApi {
     private final V2PlayerStats v2PlayerStats;
 
     // ----- V3 Routes -----
+    private final V3Guilds v3Guilds;
     private final V3GuildLeaderboard v3GuildLeaderboard;
 
     public WynnApi(Logger logger) {
@@ -48,13 +48,13 @@ public class WynnApi {
 
         this.legacyPlayers = new LegacyPlayers(baseURL, rateLimiter, logger);
         this.legacyTerritories = new LegacyTerritories(baseURL, rateLimiter, logger);
-        this.legacyGuilds = new LegacyGuilds(baseURL, rateLimiter, logger);
         this.legacyGuildStats = new LegacyGuildStats(baseURL, rateLimiter, logger);
         this.legacyForumId = new LegacyForumId(baseURL, rateLimiter, logger);
         this.legacyItemDB = new LegacyItemDB(baseURL, rateLimiter, logger);
 
         this.v2PlayerStats = new V2PlayerStats(baseURL, rateLimiter, logger);
 
+        this.v3Guilds = new V3Guilds(baseURL, rateLimiter, logger);
         this.v3GuildLeaderboard = new V3GuildLeaderboard(baseURL, rateLimiter, logger);
     }
 
@@ -114,7 +114,7 @@ public class WynnApi {
      */
     @Nullable
     public GuildList mustGetGuildList() {
-        return this.legacyGuilds.mustGetGuildList();
+        return this.v3Guilds.mustGetGuildList();
     }
 
     /**

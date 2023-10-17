@@ -19,7 +19,6 @@ import net.dv8tion.jda.api.sharding.ShardManager;
 import org.jetbrains.annotations.NotNull;
 
 import java.text.DateFormat;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -70,7 +69,6 @@ public class GuildTracker implements TaskBase {
         if (guildList == null) {
             return;
         }
-        Set<String> retrievedGuildNames = new HashSet<>(guildList.getGuilds());
 
         List<Guild> guildsInDb = this.guildRepository.findAll();
         if (guildsInDb == null) {
@@ -78,10 +76,10 @@ public class GuildTracker implements TaskBase {
         }
         Map<String, Guild> guildNamesInDb = guildsInDb.stream().collect(Collectors.toMap(Guild::getName, g -> g));
 
-        for (String retrievedGuildName : retrievedGuildNames) {
-            if (!guildNamesInDb.containsKey(retrievedGuildName)) {
+        for (var retrievedGuild : guildList.getGuilds()) {
+            if (!guildNamesInDb.containsKey(retrievedGuild.getName())) {
                 // Guild created
-                handleGuildCreation(retrievedGuildName);
+                handleGuildCreation(retrievedGuild.getName());
                 // Sleep so it doesn't spam Wynn API
                 try {
                     Thread.sleep(GUILD_STATS_RETRIEVAL_DELAY);
@@ -90,6 +88,11 @@ public class GuildTracker implements TaskBase {
                 }
             }
         }
+
+        Set<String> retrievedGuildNames = guildList.getGuilds()
+                .stream()
+                .map(GuildList.GuildListEntry::getName)
+                .collect(Collectors.toSet());
         for (String existingGuildName : guildNamesInDb.keySet()) {
             if (!retrievedGuildNames.contains(existingGuildName)) {
                 // Guild deleted
