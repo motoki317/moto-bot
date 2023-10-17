@@ -1,4 +1,4 @@
-FROM maven:3.8.4-openjdk-17 AS build
+FROM maven:3.9.4-openjdk-21 AS build
 
 WORKDIR /work
 
@@ -23,7 +23,7 @@ RUN mkdir -p natives/linux-aarch64 && \
     zip moto-bot.jar natives/linux-aarch64/libconnector.so && \
     rm -r natives
 
-FROM openjdk:17-slim AS runtime
+FROM openjdk:21-slim AS runtime
 
 WORKDIR /work
 
@@ -31,4 +31,4 @@ COPY --from=build-mod /work/moto-bot.jar ./moto-bot.jar
 
 EXPOSE 8080
 
-ENTRYPOINT ["java", "-jar", "--enable-preview", "./moto-bot.jar"]
+ENTRYPOINT ["java", "-jar", "./moto-bot.jar"]

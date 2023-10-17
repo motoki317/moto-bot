@@ -524,7 +524,8 @@ public class ItemView extends GenericCommand {
      */
     private static int getArmorID(String type, String armorType) {
         int offset = switch (type) {
-            case "Helmet", default -> 0;
+            default -> 0;
+            case "Helmet" -> 0;
             case "Chestplate" -> 1;
             case "Leggings" -> 2;
             case "Boots" -> 3;
