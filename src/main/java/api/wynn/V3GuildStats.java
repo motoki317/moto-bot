@@ -1,8 +1,6 @@
 package api.wynn;
 
 import api.wynn.structs.WynnGuild;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import log.Logger;
 import org.jetbrains.annotations.Nullable;
 import utils.HttpUtils;
@@ -13,9 +11,8 @@ import utils.rateLimit.RateLimiter;
 
 import java.util.concurrent.TimeUnit;
 
-class LegacyGuildStats {
-    private static final String guildStatsPath = "/public_api.php?action=guildStats&command=%s";
-    private static final ObjectMapper mapper = new ObjectMapper();
+class V3GuildStats {
+    private static final String guildStatsPath = "/v3/guild/%s";
     private static final DataCache<String, WynnGuild> guildStatsCache = new HashMapDataCache<>(
             100, TimeUnit.MINUTES.toMillis(10), TimeUnit.MINUTES.toMillis(10)
     );
@@ -24,7 +21,7 @@ class LegacyGuildStats {
     private final RateLimiter rateLimiter;
     private final Logger logger;
 
-    LegacyGuildStats(String baseURL, RateLimiter rateLimiter, Logger logger) {
+    V3GuildStats(String baseURL, RateLimiter rateLimiter, Logger logger) {
         this.baseURL = baseURL;
         this.rateLimiter = rateLimiter;
         this.logger = logger;
@@ -63,16 +60,7 @@ class LegacyGuildStats {
 
             if (body == null) throw new Exception("returned body was null");
 
-            // Legacy Wynn API could return error with 200 codes
-            // check for "error" field
-            JsonNode node = mapper.readTree(body);
-            if (node.has("error")) {
-                this.logger.debug(String.format("Wynn API: Guild %s not found: %s", guildName, node.get("error").asText()));
-                guildStatsCache.add(guildName, null);
-                return null;
-            }
-
-            WynnGuild guild = mapper.readValue(body, WynnGuild.class);
+            WynnGuild guild = new WynnGuild(body);
             guildStatsCache.add(guildName, guild);
             return guild;
         } catch (Exception e) {

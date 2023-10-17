@@ -30,7 +30,6 @@ public class WynnApi {
     }
 
     // ----- Legacy Routes -----
-    private final LegacyGuildStats legacyGuildStats;
     private final LegacyForumId legacyForumId;
     private final LegacyItemDB legacyItemDB;
 
@@ -41,12 +40,12 @@ public class WynnApi {
     private final V3Players v3Players;
     private final V3Territories v3Territories;
     private final V3Guilds v3Guilds;
+    private final V3GuildStats v3GuildStats;
     private final V3GuildLeaderboard v3GuildLeaderboard;
 
     public WynnApi(Logger logger) {
         rateLimiter.setLogger(logger);
 
-        this.legacyGuildStats = new LegacyGuildStats(baseURL, rateLimiter, logger);
         this.legacyForumId = new LegacyForumId(baseURL, rateLimiter, logger);
         this.legacyItemDB = new LegacyItemDB(baseURL, rateLimiter, logger);
 
@@ -55,6 +54,7 @@ public class WynnApi {
         this.v3Players = new V3Players(baseURL, rateLimiter, logger);
         this.v3Territories = new V3Territories(baseURL, rateLimiter, logger);
         this.v3Guilds = new V3Guilds(baseURL, rateLimiter, logger);
+        this.v3GuildStats = new V3GuildStats(baseURL, rateLimiter, logger);
         this.v3GuildLeaderboard = new V3GuildLeaderboard(baseURL, rateLimiter, logger);
     }
 
@@ -125,7 +125,7 @@ public class WynnApi {
      */
     @Nullable
     public WynnGuild mustGetGuildStats(String guildName) {
-        return this.legacyGuildStats.mustGetGuildStats(guildName);
+        return this.v3GuildStats.mustGetGuildStats(guildName);
     }
 
     /**
@@ -135,7 +135,7 @@ public class WynnApi {
      */
     @Nullable
     public WynnGuild getGuildStats(String guildName) throws RateLimitException {
-        return this.legacyGuildStats.getGuildStats(guildName);
+        return this.v3GuildStats.getGuildStats(guildName);
     }
 
     /**

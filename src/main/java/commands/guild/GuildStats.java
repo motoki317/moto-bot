@@ -164,7 +164,7 @@ public class GuildStats extends GenericCommand {
 
         private int maxPage(WynnGuild guild) {
             int count = (int) guild.getMembers().stream()
-                    .filter(m -> m.getContributed() != 0).count();
+                    .filter(m -> m.contributed() != 0).count();
             int contributeExtraPages = (count - 1) / MEMBERS_PER_CONTRIBUTE_PAGE;
             // 0: main
             // 1: online players
@@ -179,7 +179,7 @@ public class GuildStats extends GenericCommand {
             Date lastUpdatedAt = this.guildLeaderboardRepository.getNewestDate();
             if (lastUpdatedAt == null) {
                 // Default view
-                sb.append(String.format("Level %s | %s%%\n", guild.getLevel(), guild.getXp()));
+                sb.append(String.format("Level %s | %s%%\n", guild.getLevel(), guild.getXpPercent()));
                 return;
             }
             GuildLeaderboard lb = this.guildLeaderboardRepository.findOne(new GuildLeaderboardId() {
@@ -202,7 +202,7 @@ public class GuildStats extends GenericCommand {
             int xpRank = this.guildXpLeaderboardRepository.getXPRank(guildName);
             if (xpLBEntry != null && xpRank != -1 && lb != null) {
                 // The guild is in the leaderboard, and has earned at least 1 xp over the last 24h
-                sb.append(String.format("Level %s | %s%%, %s XP%s\n", guild.getLevel(), guild.getXp(),
+                sb.append(String.format("Level %s | %s%%, %s XP%s\n", guild.getLevel(), guild.getXpPercent(),
                         FormatUtils.truncateNumber(BigDecimal.valueOf(xpLBEntry.getXp())),
                         levelRankStr
                 ));
@@ -216,7 +216,7 @@ public class GuildStats extends GenericCommand {
             if (lb != null) {
                 // The guild is in the leaderboard, so we can get exact xp,
                 // but it is NOT on the xp leaderboard i.e. hasn't earned a single xp over the last 24h
-                sb.append(String.format("Level %s | %s%%, %s XP%s\n", guild.getLevel(), guild.getXp(),
+                sb.append(String.format("Level %s | %s%%, %s XP%s\n", guild.getLevel(), guild.getXpPercent(),
                         FormatUtils.truncateNumber(BigDecimal.valueOf(lb.getXp())),
                         levelRankStr
                 ));
@@ -226,7 +226,7 @@ public class GuildStats extends GenericCommand {
             if (xpLBEntry != null && xpRank != -1) {
                 // The guild is on the xp leaderboard, i.e. has earned at least 1 xp over the last 24h,
                 // but it is no longer on the current leaderboard so we can-NOT get the exact xp
-                sb.append(String.format("Level %s | %s%%\n", guild.getLevel(), guild.getXp()));
+                sb.append(String.format("Level %s | %s%%\n", guild.getLevel(), guild.getXpPercent()));
                 long seconds = (xpLBEntry.getTo().getTime() - xpLBEntry.getFrom().getTime()) / 1000L;
                 // `to` time of the xp lb might not be the last updated time
                 sb.append(String.format("%s XP gained in %s (#%s)\n",
@@ -236,7 +236,7 @@ public class GuildStats extends GenericCommand {
             }
 
             // Default view
-            sb.append(String.format("Level %s | %s%%\n", guild.getLevel(), guild.getXp()));
+            sb.append(String.format("Level %s | %s%%\n", guild.getLevel(), guild.getXpPercent()));
         }
 
         private Message getPage(int page,
@@ -252,7 +252,7 @@ public class GuildStats extends GenericCommand {
 
             sb.append("\n");
             makeGuildInfo(sb, guild);
-            int bars = (int) Math.round(Double.parseDouble(guild.getXp()) / 5.0d);
+            int bars = (int) Math.round((double) guild.getXpPercent() / 5.0d);
             sb.append(makeBar(bars));
 
             sb.append("\n\n");
@@ -260,7 +260,7 @@ public class GuildStats extends GenericCommand {
             sb.append("\n");
 
             sb.append(String.format("  last guild info update: %s\n",
-                    dateFormat.format(new Date(guild.getRequest().getTimestamp() * 1000))
+                    dateFormat.format(guild.getRequestedAt())
             ));
             sb.append(String.format("last online stats update: %s\n",
                     dateFormat.format(getLastOnlinePlayerUpdate())
@@ -339,7 +339,7 @@ public class GuildStats extends GenericCommand {
             sb.append("Owner: ").append(guild.getOwnerName()).append("\n");
 
             long onlineMembers = guild.getMembers().stream()
-                    .filter(m -> this.wynnApi.findPlayer(m.getName()) != null).count();
+                    .filter(m -> this.wynnApi.findPlayer(m.name()) != null).count();
             sb.append(String.format(
                     "Members: %s (Online: %s)\n",
                     guild.getMembers().size(),
@@ -377,7 +377,7 @@ public class GuildStats extends GenericCommand {
             }
 
             List<Member> onlineMembers = guild.getMembers().stream()
-                    .map(m -> new Member(m.getName(), Rank.valueOf(m.getRank()), this.wynnApi.findPlayer(m.getName())))
+                    .map(m -> new Member(m.name(), Rank.valueOf(m.rank().toUpperCase()), this.wynnApi.findPlayer(m.name())))
                     .filter(m -> m.server != null)
                     .sorted((m1, m2) -> m2.rank.rank - m1.rank.rank)
                     .toList();
@@ -390,7 +390,9 @@ public class GuildStats extends GenericCommand {
 
             sb.append("\n");
 
-            if (onlineMembers.size() != 0) {
+            if (onlineMembers.isEmpty()) {
+                sb.append("There are no members online.\n");
+            } else {
                 TableFormatter tf = new TableFormatter(false);
                 tf.addColumn("Name", Left, Left)
                         .addColumn("Rank", Left, Left)
@@ -399,8 +401,6 @@ public class GuildStats extends GenericCommand {
                     tf.addRow(m.name, nCopies("*", m.rank.rank), m.server);
                 }
                 tf.toString(sb);
-            } else {
-                sb.append("There are no members online.\n");
             }
         }
 
@@ -417,8 +417,8 @@ public class GuildStats extends GenericCommand {
                 }
             }
             List<Member> members = guild.getMembers().stream()
-                    .filter(m -> m.getRank().equals(rank.name()))
-                    .map(m -> new Member(m.getName(), this.wynnApi.findPlayer(m.getName())))
+                    .filter(m -> m.rank().equals(rank.name()))
+                    .map(m -> new Member(m.name(), this.wynnApi.findPlayer(m.name())))
                     .sorted(Comparator.comparing(m -> m.name))
                     .toList();
 
@@ -459,10 +459,10 @@ public class GuildStats extends GenericCommand {
                 }
             }
             List<Member> members = guild.getMembers().stream()
-                    .filter(m -> m.getContributed() != 0)
-                    .sorted((m1, m2) -> Long.compare(m2.getContributed(), m1.getContributed()))
+                    .filter(m -> m.contributed() != 0)
+                    .sorted((m1, m2) -> Long.compare(m2.contributed(), m1.contributed()))
                     .map(m -> new Member(
-                            m.getName(), Rank.valueOf(m.getRank()), String.format("%,d xp", m.getContributed()
+                            m.name(), Rank.valueOf(m.rank().toUpperCase()), String.format("%,d xp", m.contributed()
                     )))
                     .toList();
 

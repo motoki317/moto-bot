@@ -312,7 +312,7 @@ public class PlayerWarLeaderboardCmd extends GenericCommand {
             }
 
             List<UUID> guildMemberUUIDs = wynnGuild.getMembers().stream()
-                    .map(m -> new UUID(m.getUuid()))
+                    .map(m -> new UUID(m.uuid()))
                     .collect(Collectors.toList());
             return range == null
                     ? this.playerWarLeaderboardRepository.getRecordsOf(guildMemberUUIDs)

@@ -1,35 +1,92 @@
 package api.wynn.structs;
 
-import api.wynn.structs.common.Request;
-import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import javax.annotation.Nullable;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class WynnGuild {
-    private String name;
-    private String prefix;
+    private static final ObjectMapper mapper = new ObjectMapper();
+    private static final DateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSSSS");
 
-    private List<Member> members;
+    private static final String[] ranks = new String[]{
+            "owner",
+            "chief",
+            "strategist",
+            "captain",
+            "recruiter",
+            "recruit",
+    };
 
-    private String xp;
-    private int level;
+    private final String name;
+    private final String prefix;
 
-    private Date created;
-    private String createdFriendly;
+    private final int level;
+    private final int xpPercent;
 
-    private int territories;
+    private final int territories;
+    private final int wars;
 
-    private Banner banner;
+    private final Date created;
 
-    private Request request;
+    private final List<Member> members;
+
+    private final int online;
+
+    private final Banner banner;
+
+    // seasonRanks;
+
+    private final Date requestedAt;
+
+    public WynnGuild(String body) throws JsonProcessingException, ParseException {
+        var json = mapper.readTree(body);
+
+        this.name = json.get("name").asText();
+        this.prefix = json.get("prefix").asText();
+        this.level = json.get("level").asInt();
+        this.xpPercent = json.get("xpPercent").asInt();
+        this.territories = json.get("territories").asInt();
+        this.wars = json.get("wars").asInt();
+        this.created = format.parse(json.get("created").asText());
+
+        this.members = new ArrayList<>();
+        var members = json.get("members");
+        // int total = members.get("total").asInt();
+        for (String rank : ranks) {
+            var rankMembers = members.get(rank);
+            for (var fields = rankMembers.fields(); fields.hasNext(); ) {
+                var f = fields.next();
+                var name = f.getKey();
+                var p = f.getValue();
+                var member = new Member(
+                        rank,
+                        name,
+                        p.get("uuid").asText(),
+                        p.get("online").asBoolean(),
+                        p.get("server").asText(),
+                        p.get("contributed").asLong(),
+                        p.get("guildRank").asInt(),
+                        format.parse(p.get("joined").asText())
+                );
+                this.members.add(member);
+            }
+        }
+
+        this.online = json.get("online").asInt();
+
+        this.banner = mapper.readValue(json.get("banner").toString(), Banner.class);
+
+        this.requestedAt = new Date();
+    }
 
     public String getName() {
         return name;
@@ -39,101 +96,56 @@ public class WynnGuild {
         return prefix;
     }
 
-    public List<Member> getMembers() {
-        return members;
-    }
-
-    public String getXp() {
-        return xp;
-    }
-
     public int getLevel() {
         return level;
     }
 
-    public Date getCreated() {
-        return created;
-    }
-
-    public String getCreatedFriendly() {
-        return createdFriendly;
+    public int getXpPercent() {
+        return xpPercent;
     }
 
     public int getTerritories() {
         return territories;
     }
 
+    public int getWars() {
+        return wars;
+    }
+
+    public Date getCreated() {
+        return created;
+    }
+
+    public List<Member> getMembers() {
+        return members;
+    }
+
+    public int getOnline() {
+        return online;
+    }
+
     public Banner getBanner() {
         return banner;
     }
 
-    public Request getRequest() {
-        return request;
+    public Date getRequestedAt() {
+        return requestedAt;
     }
 
     @Nullable
     public String getOwnerName() {
-        return this.members.stream().filter(m -> "OWNER".equals(m.rank))
+        return this.members.stream().filter(m -> "owner".equals(m.rank))
                 .map(m -> m.name).findFirst().orElse(null);
     }
 
-    @JsonIgnoreProperties(ignoreUnknown = true)
-    public static class Member {
-        private static final DateFormat apiFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
-
-        private final String name;
-        private final String uuid;
-        private final String rank;
-        private final long contributed;
-        private Date joined;
-        private final String joinedFriendly;
-
-        @JsonCreator
-        public Member(@JsonProperty("name") String name,
-                      @JsonProperty("uuid") String uuid,
-                      @JsonProperty("rank") String rank,
-                      @JsonProperty("contributed") long contributed,
-                      @JsonProperty("joined") String joined,
-                      @JsonProperty("joinedFriendly") String joinedFriendly) {
-            this.name = name;
-            this.uuid = uuid;
-            this.rank = rank;
-            this.contributed = contributed;
-            try {
-                this.joined = apiFormat.parse(joined);
-            } catch (ParseException e) {
-                e.printStackTrace();
-            }
-            this.joinedFriendly = joinedFriendly;
-        }
-
-        public static DateFormat getApiFormat() {
-            return apiFormat;
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        public String getUuid() {
-            return uuid;
-        }
-
-        public String getRank() {
-            return rank;
-        }
-
-        public long getContributed() {
-            return contributed;
-        }
-
-        public Date getJoined() {
-            return joined;
-        }
-
-        public String getJoinedFriendly() {
-            return joinedFriendly;
-        }
+    public record Member(String rank,
+                         String name,
+                         String uuid,
+                         boolean online,
+                         @Nullable String server,
+                         long contributed,
+                         int guildRank,
+                         Date joined) {
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
