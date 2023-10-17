@@ -74,7 +74,7 @@ public class WynnGuild {
                         p.get("online").asBoolean(),
                         p.get("server").asText(),
                         p.get("contributed").asLong(),
-                        p.get("contributionRank").asInt(),
+                        // p.get("contributionRank").asInt(),
                         format.parse(p.get("joined").asText())
                 );
                 this.members.add(member);
@@ -144,7 +144,7 @@ public class WynnGuild {
                          boolean online,
                          @Nullable String server,
                          long contributed,
-                         int contributionRank,
+                         // int contributionRank,
                          Date joined) {
     }
 
