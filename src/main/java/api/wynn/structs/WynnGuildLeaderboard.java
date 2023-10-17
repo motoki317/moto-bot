@@ -1,25 +1,33 @@
 package api.wynn.structs;
 
-import api.wynn.structs.common.Request;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.jetbrains.annotations.Nullable;
 
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-@JsonIgnoreProperties(ignoreUnknown = true)
 public class WynnGuildLeaderboard {
-    private static final DateFormat apiFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS");
+    private static final ObjectMapper mapper = new ObjectMapper();
+    private static final DateFormat apiFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSSSS");
 
-    private Request request;
-    private List<Guild> data;
+    private final List<Guild> data;
 
-    public Request getRequest() {
-        return request;
+    public WynnGuildLeaderboard(String body) throws JsonProcessingException {
+        this.data = new ArrayList<>();
+
+        var json = mapper.readTree(body);
+        for (var i = json.fields(); i.hasNext(); ) {
+            var entry = i.next();
+            var value = entry.getValue();
+            this.data.add(mapper.readValue(value.toString(), Guild.class));
+        }
     }
 
     public List<Guild> getData() {
@@ -31,13 +39,15 @@ public class WynnGuildLeaderboard {
         private String name;
         private String prefix;
         private long xp;
+        private int territories;
+        private int wars;
         private int level;
+        private int members;
         private String created;
+
+        // private long xp;
         @Nullable
         private Banner banner;
-        private int territories;
-        private int membersCount;
-        private int num;
 
         public String getName() {
             return name;
@@ -79,18 +89,15 @@ public class WynnGuildLeaderboard {
             return territories;
         }
 
-        public int getMembersCount() {
-            return membersCount;
-        }
-
-        public int getNum() {
-            return num;
+        public int getMembers() {
+            return members;
         }
 
         @JsonIgnoreProperties(ignoreUnknown = true)
-        private static class Banner {
+        public static class Banner {
             private String base;
             private int tier;
+            private String structure;
             private List<Layer> layers;
 
             public String getBase() {
@@ -101,11 +108,15 @@ public class WynnGuildLeaderboard {
                 return tier;
             }
 
+            public String getStructure() {
+                return structure;
+            }
+
             public List<Layer> getLayers() {
                 return layers;
             }
 
-            private static class Layer {
+            public static class Layer {
                 private String colour;
                 private String pattern;
 

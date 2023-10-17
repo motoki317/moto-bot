@@ -35,11 +35,13 @@ public class WynnApi {
     private final LegacyGuilds legacyGuilds;
     private final LegacyGuildStats legacyGuildStats;
     private final LegacyForumId legacyForumId;
-    private final LegacyGuildLeaderboard legacyGuildLeaderboard;
     private final LegacyItemDB legacyItemDB;
 
     // ----- V2 Routes -----
     private final V2PlayerStats v2PlayerStats;
+
+    // ----- V3 Routes -----
+    private final V3GuildLeaderboard v3GuildLeaderboard;
 
     public WynnApi(Logger logger) {
         rateLimiter.setLogger(logger);
@@ -49,14 +51,15 @@ public class WynnApi {
         this.legacyGuilds = new LegacyGuilds(baseURL, rateLimiter, logger);
         this.legacyGuildStats = new LegacyGuildStats(baseURL, rateLimiter, logger);
         this.legacyForumId = new LegacyForumId(baseURL, rateLimiter, logger);
-        this.legacyGuildLeaderboard = new LegacyGuildLeaderboard(baseURL, rateLimiter, logger);
         this.legacyItemDB = new LegacyItemDB(baseURL, rateLimiter, logger);
 
         this.v2PlayerStats = new V2PlayerStats(baseURL, rateLimiter, logger);
+
+        this.v3GuildLeaderboard = new V3GuildLeaderboard(baseURL, rateLimiter, logger);
     }
 
     /**
-     * GET https://api.wynncraft.com/public_api.php?action=onlinePlayers
+     * Retrieve online players.
      * <br>"must" as in it does not throw {@link RateLimitException}.
      * @return Online-players struct.
      */
@@ -94,7 +97,7 @@ public class WynnApi {
     }
 
     /**
-     * GET https://api.wynncraft.com/public_api.php?action=territoryList
+     * Retrieve territory list.
      * <br>"must" as in it does not throw {@link RateLimitException}.
      * @return Territory list struct.
      */
@@ -105,7 +108,7 @@ public class WynnApi {
     }
 
     /**
-     * GET https://api.wynncraft.com/public_api.php?action=guildList
+     * Retrieve guild list.
      * <br>"must" as in it does not throw {@link RateLimitException}.
      * @return Guild list.
      */
@@ -115,7 +118,7 @@ public class WynnApi {
     }
 
     /**
-     * GET https://api.wynncraft.com/public_api.php?action=guildStats&command={guild name}
+     * Retrieve guild stats.
      * <br>"must" as in it does not throw {@link RateLimitException}.
      * @param guildName Guild name.
      * @return Guild stats.
@@ -126,7 +129,7 @@ public class WynnApi {
     }
 
     /**
-     * GET https://api.wynncraft.com/public_api.php?action=guildStats&command=:guildName
+     * Retrieve guild stats.
      * @param guildName Guild name.
      * @return Guild stats.
      */
@@ -136,7 +139,7 @@ public class WynnApi {
     }
 
     /**
-     * GET https://api.wynncraft.com/forums/getForumId/:playerName
+     * Retrieve player forum id.
      * @param playerName Player name
      * @return Forum id.
      */
@@ -146,13 +149,13 @@ public class WynnApi {
     }
 
     /**
-     * GET https://api.wynncraft.com/public_api.php?action=statsLeaderboard&type=guild&timeframe=alltime
+     * Retrieve guild leaderboard.
      * <br>"must" as in it does not throw {@link RateLimitException}.
      * @return Guild leaderboard.
      */
     @Nullable
     public WynnGuildLeaderboard mustGetGuildLeaderboard() {
-        return this.legacyGuildLeaderboard.mustGetGuildLeaderboard();
+        return this.v3GuildLeaderboard.mustGetGuildLeaderboard();
     }
 
     /**

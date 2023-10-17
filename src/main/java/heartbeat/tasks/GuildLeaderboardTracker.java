@@ -87,17 +87,19 @@ public class GuildLeaderboardTracker implements TaskBase {
     @NotNull
     private static List<GuildLeaderboard> convertLeaderboard(WynnGuildLeaderboard leaderboard) {
         List<GuildLeaderboard> ret = new ArrayList<>();
-        Date updatedAt = new Date(leaderboard.getRequest().getTimestamp() * 1000);
+        Date updatedAt = new Date();
 
-        for (WynnGuildLeaderboard.Guild datum : leaderboard.getData()) {
+        var data = leaderboard.getData();
+        for (int i = 0; i < data.size(); i++) {
+            var datum = data.get(i);
             ret.add(new GuildLeaderboard(
                     datum.getName(),
                     datum.getPrefix(),
                     datum.getXp(),
                     datum.getLevel(),
-                    datum.getNum(),
+                    i+1,
                     datum.getTerritories(),
-                    datum.getMembersCount(),
+                    datum.getMembers(),
                     updatedAt
             ));
         }

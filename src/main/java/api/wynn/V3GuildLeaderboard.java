@@ -8,15 +8,15 @@ import utils.rateLimit.RateLimiter;
 
 import javax.annotation.Nullable;
 
-class LegacyGuildLeaderboard {
-    private static final String guildLeaderboardPath = "/public_api.php?action=statsLeaderboard&type=guild&timeframe=alltime";
+class V3GuildLeaderboard {
+    private static final String guildLeaderboardPath = "/v3/leaderboards/guildLevel";
     private static final ObjectMapper mapper = new ObjectMapper();
 
     private final String baseURL;
     private final RateLimiter rateLimiter;
     private final Logger logger;
 
-    LegacyGuildLeaderboard(String baseURL, RateLimiter rateLimiter, Logger logger) {
+    V3GuildLeaderboard(String baseURL, RateLimiter rateLimiter, Logger logger) {
         this.baseURL = baseURL;
         this.rateLimiter = rateLimiter;
         this.logger = logger;
@@ -34,7 +34,7 @@ class LegacyGuildLeaderboard {
 
             if (body == null) throw new Exception("returned body was null");
 
-            return mapper.readValue(body, WynnGuildLeaderboard.class);
+            return new WynnGuildLeaderboard(body);
         } catch (Exception e) {
             this.logger.logException("an exception occurred while requesting / parsing guild leaderboard", e);
             return null;
