@@ -15,12 +15,11 @@ import java.util.Date;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class Territory {
     private static final ObjectMapper mapper = new ObjectMapper();
-
-    private static final DateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+    private static final DateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSSSS");
 
     private String territory;
     @Nullable
-    private String guild;
+    private Guild guild;
     private String acquired;
     @Nullable
     private Location location;
@@ -30,7 +29,7 @@ public class Territory {
     }
 
     @Nullable
-    public String getGuild() {
+    public Guild getGuild() {
         return guild;
     }
 
@@ -47,35 +46,37 @@ public class Territory {
         return location;
     }
 
+    public static class Guild {
+        private String name;
+        private String prefix;
+
+        public String getName() {
+            return name;
+        }
+
+        public String getPrefix() {
+            return prefix;
+        }
+    }
+
     public static class Location {
-        private int startX;
-        private int startZ;
-        private int endX;
-        private int endZ;
+        private int[] start;
+        private int[] end;
 
-        public int getStartX() {
-            return startX;
+        public int[] getStart() {
+            return start;
         }
 
-        // 'y' should be 'z' here but wynn's api faults
-        @JsonProperty("startY")
-        public int getStartZ() {
-            return startZ;
-        }
-
-        public int getEndX() {
-            return endX;
-        }
-
-        @JsonProperty("endY")
-        public int getEndZ() {
-            return endZ;
+        public int[] getEnd() {
+            return end;
         }
     }
 
     @NotNull
-    static Territory parse(String body) throws JsonProcessingException {
-        return mapper.readValue(body, Territory.class);
+    static Territory parse(String territory, String body) throws JsonProcessingException {
+        var t = mapper.readValue(body, Territory.class);
+        t.territory = territory;
+        return t;
     }
 
     /**
@@ -90,7 +91,7 @@ public class Territory {
         }
         return new db.model.territory.Territory(
                 this.territory,
-                this.guild,
+                this.guild.name,
                 this.getAcquiredDate(),
                 null,
                 convertLocation(this.location)
@@ -101,6 +102,6 @@ public class Territory {
         if (l == null) {
             return new db.model.territory.Territory.Location(0, 0, 0, 0);
         }
-        return new db.model.territory.Territory.Location(l.startX, l.startZ, l.endX, l.endZ);
+        return new db.model.territory.Territory.Location(l.start[0], l.start[1], l.end[0], l.end[1]);
     }
 }

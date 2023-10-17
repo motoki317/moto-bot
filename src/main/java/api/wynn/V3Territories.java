@@ -7,14 +7,14 @@ import utils.rateLimit.RateLimiter;
 
 import javax.annotation.Nullable;
 
-class LegacyTerritories {
-    private static final String territoryListPath = "/public_api.php?action=territoryList";
+class V3Territories {
+    private static final String territoryListPath = "/v3/guild/list/territory";
 
     private final String baseURL;
     private final RateLimiter rateLimiter;
     private final Logger logger;
 
-    LegacyTerritories(String baseURL, RateLimiter rateLimiter, Logger logger) {
+    V3Territories(String baseURL, RateLimiter rateLimiter, Logger logger) {
         this.baseURL = baseURL;
         this.rateLimiter = rateLimiter;
         this.logger = logger;
