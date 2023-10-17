@@ -31,7 +31,7 @@ public class WynnApi {
 
     // ----- Legacy Routes -----
     private final LegacyForumId legacyForumId;
-    private final LegacyItemDB legacyItemDB;
+    // private final LegacyItemDB legacyItemDB;
 
     // ----- V2 Routes -----
     private final V2PlayerStats v2PlayerStats;
@@ -47,7 +47,7 @@ public class WynnApi {
         rateLimiter.setLogger(logger);
 
         this.legacyForumId = new LegacyForumId(baseURL, rateLimiter, logger);
-        this.legacyItemDB = new LegacyItemDB(baseURL, rateLimiter, logger);
+        // this.legacyItemDB = new LegacyItemDB(baseURL, rateLimiter, logger);
 
         this.v2PlayerStats = new V2PlayerStats(baseURL, rateLimiter, logger);
 
@@ -165,10 +165,9 @@ public class WynnApi {
      */
     @Nullable
     public ItemDB mustGetItemDB(boolean forceReload) {
-        return this.legacyItemDB.mustGetItemDB(forceReload);
+        throw new RuntimeException("legacy item db api has been removed");
+        // return this.legacyItemDB.mustGetItemDB(forceReload);
     }
-
-    // ---- V2 Routes ----
 
     /**
      * Get player statistics.

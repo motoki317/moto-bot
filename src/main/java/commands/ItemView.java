@@ -89,7 +89,7 @@ public class ItemView extends GenericCommand {
         String input = String.join(" ", Arrays.copyOfRange(args, 1, args.length));
         List<Item> matched = searchItem(input, db.getItems());
 
-        if (matched.size() == 0) {
+        if (matched.isEmpty()) {
             event.reply(String.format("No items matched with input `%s`.", input));
             return;
         } else if (matched.size() > 1) {

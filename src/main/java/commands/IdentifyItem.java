@@ -107,7 +107,7 @@ public class IdentifyItem extends GenericCommand {
         String input = parser.getNormalArgument();
         List<Item> matched = searchItem(input, db.getItems());
 
-        if (matched.size() == 0) {
+        if (matched.isEmpty()) {
             event.reply(String.format("No items matched with input `%s`.", input));
             return;
         } else if (matched.size() > 1) {

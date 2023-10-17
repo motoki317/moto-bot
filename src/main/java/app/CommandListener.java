@@ -98,8 +98,10 @@ public class CommandListener extends ListenerAdapter {
         b.addCommand(new PlayerStats(bot));
         b.addCommand(new NameHistoryCmd(bot));
 
-        b.addCommand(new ItemView(bot));
-        b.addCommand(new IdentifyItem(bot));
+        // No longer updated due to legacy API being removed
+        // v3 item structure is poorly documented and the author doesn't have time to reverse-engineer the schema
+        // b.addCommand(new ItemView(bot));
+        // b.addCommand(new IdentifyItem(bot));
 
         b.addCommand(new GuildCmd(bot));
         b.addCommand(new GuildStats(bot));
