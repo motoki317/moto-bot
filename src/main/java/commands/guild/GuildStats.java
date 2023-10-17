@@ -417,7 +417,7 @@ public class GuildStats extends GenericCommand {
                 }
             }
             List<Member> members = guild.getMembers().stream()
-                    .filter(m -> m.rank().equals(rank.name()))
+                    .filter(m -> m.rank().toUpperCase().equals(rank.name()))
                     .map(m -> new Member(m.name(), this.wynnApi.findPlayer(m.name())))
                     .sorted(Comparator.comparing(m -> m.name))
                     .toList();
