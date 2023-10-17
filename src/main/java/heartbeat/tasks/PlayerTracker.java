@@ -100,7 +100,7 @@ public class PlayerTracker implements TaskBase {
             return;
         }
 
-        Timestamp retrievedAt = new Timestamp(players.getRequest().getTimestamp() * 1000L);
+        Timestamp retrievedAt = new Timestamp(players.getRetrievedAt().getTime());
         Map<String, World> currentWorlds = players.getWorlds().entrySet().stream()
                 .collect(Collectors.toMap(Map.Entry::getKey, e -> new World(e.getKey(), e.getValue().size(), retrievedAt, retrievedAt)));
         synchronized (this.dbLock) {
@@ -112,10 +112,9 @@ public class PlayerTracker implements TaskBase {
 
         Map<String, World> prevWorlds = prevWorldList.stream().collect(Collectors.toMap(World::getName, w -> w));
 
-        Date apiRetrievalTime = new Date(players.getRequest().getTimestamp() * 1000L);
         int onlinePlayers = countOnlinePlayers(currentWorlds.values());
         this.manager.setActivity(Activity.playing("Wynn " + onlinePlayers + " online"));
-        this.handlePlayerNumberTracking(apiRetrievalTime, onlinePlayers);
+        this.handlePlayerNumberTracking(players.getRetrievedAt(), onlinePlayers);
 
         this.handleServerTracking(currentWorlds, prevWorlds);
         synchronized (this.dbLock) {
@@ -146,7 +145,7 @@ public class PlayerTracker implements TaskBase {
 
         // make both timestamps in seconds
         long old = prevWorldList.get(0).getUpdatedAt().getTime() / 1000;
-        long retrieved = newData.getRequest().getTimestamp();
+        long retrieved = newData.getRetrievedAt().getTime();
 
         // Process only if the timestamp is newer; do not process if the timestamp is the same as before
         return old < retrieved;
@@ -190,7 +189,7 @@ public class PlayerTracker implements TaskBase {
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
         Map<String, WarLog> prevWars = knownWarLogs.stream().collect(Collectors.toMap(WarLog::getServerName, w -> w));
 
-        Date now = new Date(players.getRequest().getTimestamp() * 1000);
+        Date now = players.getRetrievedAt();
         for (Map.Entry<String, List<String>> entry : currentWars.entrySet()) {
             if (!prevWars.containsKey(entry.getKey())) {
                 // New war server

@@ -1,50 +1,55 @@
 package api.wynn.structs;
 
-import api.wynn.structs.common.Request;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class OnlinePlayers {
     private static final ObjectMapper mapper = new ObjectMapper();
 
-    private Request request;
-    // player list has to be bound by hand
+    private final Date retrievedAt;
+    private final int total;
+    // world name -> player list
     private final Map<String, List<String>> worlds;
+    // player name -> world name
+    private final Map<String, String> players;
 
-    public Request getRequest() {
-        return request;
+    public OnlinePlayers(String body) throws JsonProcessingException {
+        JsonNode json = mapper.readTree(body);
+
+        this.retrievedAt = new Date();
+        this.total = json.get("total").asInt();
+        this.worlds = new HashMap<>();
+        this.players = new HashMap<>();
+
+        for (var fields = json.get("players").fields(); fields.hasNext(); ) {
+            var field = fields.next();
+            var player = field.getKey();
+            var world = field.getValue().asText();
+
+            if (!this.worlds.containsKey(world)) {
+                this.worlds.put(world, new ArrayList<>());
+            }
+            this.worlds.get(world).add(player);
+            this.players.put(player, world);
+        }
+    }
+
+    public Date getRetrievedAt() {
+        return retrievedAt;
+    }
+
+    public int getTotal() {
+        return total;
     }
 
     public Map<String, List<String>> getWorlds() {
         return worlds;
     }
 
-    public OnlinePlayers(String body) throws JsonProcessingException {
-        JsonNode json = mapper.readTree(body);
-
-        this.worlds = new HashMap<>();
-
-        for (Iterator<Map.Entry<String, JsonNode>> i = json.fields(); i.hasNext(); ) {
-            Map.Entry<String, JsonNode> e = i.next();
-
-            if (e.getKey().equals("request")) {
-                this.request = mapper.readValue(e.getValue().toString(), Request.class);
-                continue;
-            }
-
-            List<String> players = mapper.readValue(e.getValue().toString(), new TypeReference<>(){});
-            this.worlds.put(e.getKey(), players);
-        }
-
-        if (request == null) {
-            throw new RuntimeException("Request field is null");
-        }
+    public Map<String, String> getPlayers() {
+        return players;
     }
 }

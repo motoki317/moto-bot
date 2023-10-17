@@ -7,25 +7,20 @@ import utils.HttpUtils;
 import utils.rateLimit.RateLimiter;
 
 import javax.annotation.Nullable;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
-class LegacyPlayers {
-    private static final String onlinePlayersPath = "/public_api.php?action=onlinePlayers";
+class V3Players {
+    private static final String onlinePlayersPath = "/v3/player";
 
     // Caches for the find player method
     private static final Object onlinePlayersCacheLock = new Object();
     @Nullable
     private static OnlinePlayers onlinePlayersCache;
-    @Nullable
-    private static Map<String, String> onlinePlayersMap;
 
     private final String baseURL;
     private final RateLimiter rateLimiter;
     private final Logger logger;
 
-    LegacyPlayers(String baseURL, RateLimiter rateLimiter, Logger logger) {
+    V3Players(String baseURL, RateLimiter rateLimiter, Logger logger) {
         this.baseURL = baseURL;
         this.rateLimiter = rateLimiter;
         this.logger = logger;
@@ -48,7 +43,6 @@ class LegacyPlayers {
             // create cache of the response
             synchronized (onlinePlayersCacheLock) {
                 onlinePlayersCache = onlinePlayers;
-                onlinePlayersMap = null;
             }
 
             return onlinePlayers;
@@ -70,17 +64,7 @@ class LegacyPlayers {
         }
 
         synchronized (onlinePlayersCacheLock) {
-            if (onlinePlayersMap == null) {
-                onlinePlayersMap = new HashMap<>();
-                for (Map.Entry<String, List<String>> entry : onlinePlayersCache.getWorlds().entrySet()) {
-                    String world = entry.getKey();
-                    for (String player : entry.getValue()) {
-                        onlinePlayersMap.put(player, world);
-                    }
-                }
-            }
-
-            return onlinePlayersMap.getOrDefault(playerName, null);
+            return onlinePlayersCache.getPlayers().getOrDefault(playerName, null);
         }
     }
 }

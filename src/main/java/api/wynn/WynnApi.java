@@ -30,7 +30,6 @@ public class WynnApi {
     }
 
     // ----- Legacy Routes -----
-    private final LegacyPlayers legacyPlayers;
     private final LegacyTerritories legacyTerritories;
     private final LegacyGuildStats legacyGuildStats;
     private final LegacyForumId legacyForumId;
@@ -40,13 +39,13 @@ public class WynnApi {
     private final V2PlayerStats v2PlayerStats;
 
     // ----- V3 Routes -----
+    private final V3Players v3Players;
     private final V3Guilds v3Guilds;
     private final V3GuildLeaderboard v3GuildLeaderboard;
 
     public WynnApi(Logger logger) {
         rateLimiter.setLogger(logger);
 
-        this.legacyPlayers = new LegacyPlayers(baseURL, rateLimiter, logger);
         this.legacyTerritories = new LegacyTerritories(baseURL, rateLimiter, logger);
         this.legacyGuildStats = new LegacyGuildStats(baseURL, rateLimiter, logger);
         this.legacyForumId = new LegacyForumId(baseURL, rateLimiter, logger);
@@ -54,6 +53,7 @@ public class WynnApi {
 
         this.v2PlayerStats = new V2PlayerStats(baseURL, rateLimiter, logger);
 
+        this.v3Players = new V3Players(baseURL, rateLimiter, logger);
         this.v3Guilds = new V3Guilds(baseURL, rateLimiter, logger);
         this.v3GuildLeaderboard = new V3GuildLeaderboard(baseURL, rateLimiter, logger);
     }
@@ -66,7 +66,7 @@ public class WynnApi {
     @Nullable
     @CheckReturnValue
     public synchronized OnlinePlayers mustGetOnlinePlayers() {
-        return this.legacyPlayers.mustGetOnlinePlayers();
+        return this.v3Players.mustGetOnlinePlayers();
     }
 
     /**
@@ -78,7 +78,7 @@ public class WynnApi {
     @Nullable
     @CheckReturnValue
     public String mustFindPlayer(@NotNull String playerName) {
-        return this.legacyPlayers.mustFindPlayer(playerName);
+        return this.v3Players.mustFindPlayer(playerName);
     }
 
     /**
@@ -89,7 +89,7 @@ public class WynnApi {
     @Nullable
     public String findPlayer(@NotNull String playerName) {
         try {
-            return this.legacyPlayers.mustFindPlayer(playerName);
+            return this.v3Players.mustFindPlayer(playerName);
         } catch (RuntimeException e) {
             e.printStackTrace();
             return null;
