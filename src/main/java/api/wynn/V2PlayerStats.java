@@ -13,16 +13,18 @@ import javax.annotation.Nullable;
 import java.util.concurrent.TimeUnit;
 
 class V2PlayerStats {
-    private static final String playerStatisticsUrl = "https://api.wynncraft.com/v2/player/%s/stats";
+    private static final String playerStatisticsPath = "/v2/player/%s/stats";
     private static final DataCache<String, Player> playerStatsCache = new HashMapDataCache<>(
             100, TimeUnit.MINUTES.toMillis(10), TimeUnit.MINUTES.toMillis(10)
     );
     private static final int PLAYER_NOT_FOUND = 400;
 
+    private final String url;
     private final RateLimiter rateLimiter;
     private final Logger logger;
 
-    V2PlayerStats(RateLimiter rateLimiter, Logger logger) {
+    V2PlayerStats(String basePath, RateLimiter rateLimiter, Logger logger) {
+        this.url = basePath + playerStatisticsPath;
         this.rateLimiter = rateLimiter;
         this.logger = logger;
     }
@@ -53,7 +55,7 @@ class V2PlayerStats {
     private Player requestPlayerStatistics(String playerName) {
         try {
             long start = System.nanoTime();
-            String body = HttpUtils.get(String.format(playerStatisticsUrl, playerName), PLAYER_NOT_FOUND);
+            String body = HttpUtils.get(String.format(this.url, playerName), PLAYER_NOT_FOUND);
             long end = System.nanoTime();
             if (body == null) throw new Exception("returned body was null");
             this.logger.debug(String.format("Wynn API: Requested player stats for %s, took %s ms.", playerName, (double) (end - start) / 1_000_000d));

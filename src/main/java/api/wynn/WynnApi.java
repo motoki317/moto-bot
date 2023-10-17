@@ -13,7 +13,7 @@ import javax.annotation.Nullable;
 import java.util.concurrent.TimeUnit;
 
 public class WynnApi {
-    private static final String legacyBaseURL = "https://api.wynncraft.com";
+    private static final String baseURL = "https://api.wynncraft.com";
 
     private static final RateLimiter rateLimiter;
 
@@ -44,15 +44,15 @@ public class WynnApi {
     public WynnApi(Logger logger) {
         rateLimiter.setLogger(logger);
 
-        this.legacyPlayers = new LegacyPlayers(legacyBaseURL, rateLimiter, logger);
-        this.legacyTerritories = new LegacyTerritories(legacyBaseURL, rateLimiter, logger);
-        this.legacyGuilds = new LegacyGuilds(legacyBaseURL, rateLimiter, logger);
-        this.legacyGuildStats = new LegacyGuildStats(legacyBaseURL, rateLimiter, logger);
-        this.legacyForumId = new LegacyForumId(legacyBaseURL, rateLimiter, logger);
-        this.legacyGuildLeaderboard = new LegacyGuildLeaderboard(legacyBaseURL, rateLimiter, logger);
-        this.legacyItemDB = new LegacyItemDB(legacyBaseURL, rateLimiter, logger);
+        this.legacyPlayers = new LegacyPlayers(baseURL, rateLimiter, logger);
+        this.legacyTerritories = new LegacyTerritories(baseURL, rateLimiter, logger);
+        this.legacyGuilds = new LegacyGuilds(baseURL, rateLimiter, logger);
+        this.legacyGuildStats = new LegacyGuildStats(baseURL, rateLimiter, logger);
+        this.legacyForumId = new LegacyForumId(baseURL, rateLimiter, logger);
+        this.legacyGuildLeaderboard = new LegacyGuildLeaderboard(baseURL, rateLimiter, logger);
+        this.legacyItemDB = new LegacyItemDB(baseURL, rateLimiter, logger);
 
-        this.v2PlayerStats = new V2PlayerStats(rateLimiter, logger);
+        this.v2PlayerStats = new V2PlayerStats(baseURL, rateLimiter, logger);
     }
 
     /**
