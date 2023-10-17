@@ -4,6 +4,7 @@ import api.wynn.structs.WynnGuild;
 import log.Logger;
 import org.jetbrains.annotations.Nullable;
 import utils.HttpUtils;
+import utils.StatusCodeException;
 import utils.cache.DataCache;
 import utils.cache.HashMapDataCache;
 import utils.rateLimit.RateLimitException;
@@ -53,7 +54,8 @@ class V3GuildStats {
         try {
             long start = System.nanoTime();
             String body = HttpUtils.get(
-                    String.format(this.baseURL + guildStatsPath, HttpUtils.encodeValue(guildName))
+                    String.format(this.baseURL + guildStatsPath, HttpUtils.encodeValue(guildName)),
+                    404
             );
             long end = System.nanoTime();
             this.logger.debug(String.format("Wynn API: Requested guild stats for %s, took %s ms.", guildName, (double) (end - start) / 1_000_000d));
@@ -63,6 +65,10 @@ class V3GuildStats {
             WynnGuild guild = new WynnGuild(body);
             guildStatsCache.add(guildName, guild);
             return guild;
+        } catch (StatusCodeException e) {
+            this.logger.debug(String.format("Wynn API: Guild %s not found", guildName));
+            guildStatsCache.add(guildName, null);
+            return null;
         } catch (Exception e) {
             this.logger.logException(String.format("an exception occurred while requesting / parsing guild stats for %s",
                     guildName
