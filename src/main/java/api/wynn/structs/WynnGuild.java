@@ -16,6 +16,15 @@ import java.util.List;
 public class WynnGuild {
     private static final ObjectMapper mapper = new ObjectMapper();
     private static final DateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSSSS");
+    private static final DateFormat format2 = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
+
+    private static Date parseDate(String s) throws ParseException {
+        try {
+            return format.parse(s);
+        } catch (ParseException e) {
+            return format2.parse(s);
+        }
+    }
 
     private static final String[] ranks = new String[]{
             "owner",
@@ -56,7 +65,7 @@ public class WynnGuild {
         this.xpPercent = json.get("xpPercent").asInt();
         this.territories = json.get("territories").asInt();
         this.wars = json.get("wars").asInt();
-        this.created = format.parse(json.get("created").asText());
+        this.created = parseDate(json.get("created").asText());
 
         this.members = new ArrayList<>();
         var members = json.get("members");
@@ -75,7 +84,7 @@ public class WynnGuild {
                         p.get("server").asText(),
                         p.get("contributed").asLong(),
                         // p.get("contributionRank").asInt(),
-                        format.parse(p.get("joined").asText())
+                        parseDate(p.get("joined").asText())
                 );
                 this.members.add(member);
             }
